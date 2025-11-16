@@ -1,0 +1,6 @@
+# Pacotes necessários para pesquisa na internet e extração de conteúdo
+
+npm install axios cheerio
+
+# axios - para fazer requisições HTTP
+# cheerio - para extrair conteúdo HTML de páginas web

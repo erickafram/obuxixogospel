@@ -1,0 +1,126 @@
+'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+module.exports = {
+  async up (queryInterface, Sequelize) {
+    // Inserir configurações iniciais do sistema
+    await queryInterface.bulkInsert('configuracoes_sistema', [
+      {
+        chave: 'ia_ativa',
+        valor: 'true',
+        descricao: 'Ativa ou desativa o assistente de IA',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'ia_api_key',
+        valor: '',
+        descricao: 'Chave da API Together AI (configure no painel)',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'ia_api_url',
+        valor: 'https://api.together.xyz/v1/chat/completions',
+        descricao: 'URL da API Together AI',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'ia_model',
+        valor: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+        descricao: 'Modelo de IA a ser utilizado',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'site_nome',
+        valor: 'O Buxixo Gospel',
+        descricao: 'Nome do portal',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'site_descricao',
+        valor: 'Portal de notícias gospel e evangélicas',
+        descricao: 'Descrição do portal',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'site_url',
+        valor: 'https://obuxixogospel.com',
+        descricao: 'URL principal do site',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'seo_titulo_padrao',
+        valor: 'O Buxixo Gospel - Notícias Gospel e Evangélicas',
+        descricao: 'Título padrão para SEO',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'seo_descricao_padrao',
+        valor: 'Portal de notícias gospel com as últimas novidades do mundo evangélico, música gospel, eventos, testemunhos e muito mais.',
+        descricao: 'Descrição padrão para SEO',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'seo_keywords',
+        valor: 'gospel, notícias gospel, música gospel, evangélico, igreja, louvor, adoração',
+        descricao: 'Palavras-chave padrão para SEO',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'analytics_google',
+        valor: '',
+        descricao: 'ID do Google Analytics (ex: G-XXXXXXXXXX)',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'analytics_facebook_pixel',
+        valor: '',
+        descricao: 'ID do Facebook Pixel',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'redes_sociais_facebook',
+        valor: 'https://facebook.com/obuxixogospel',
+        descricao: 'URL da página no Facebook',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'redes_sociais_instagram',
+        valor: 'https://instagram.com/obuxixogospel',
+        descricao: 'URL do perfil no Instagram',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'redes_sociais_youtube',
+        valor: 'https://youtube.com/@obuxixogospel',
+        descricao: 'URL do canal no YouTube',
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        chave: 'redes_sociais_twitter',
+        valor: 'https://twitter.com/obuxixogospel',
+        descricao: 'URL do perfil no Twitter/X',
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    ], {});
+  },
+
+  async down (queryInterface, Sequelize) {
+    await queryInterface.bulkDelete('configuracoes_sistema', null, {});
+  }
+};
