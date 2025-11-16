@@ -1,0 +1,117 @@
+<!-- Barra de Administração (apenas para usuários logados) -->
+<% if (typeof user !== 'undefined' && user) { %>
+<div class="admin-bar">
+    <div class="container">
+        <div class="admin-bar-content">
+            <div class="admin-bar-left">
+                <i class="fas fa-user-shield"></i>
+                <span>Olá, <strong><%= user.nome || user.email %></strong></span>
+            </div>
+            <div class="admin-bar-right">
+                <% if (typeof article !== 'undefined' && article && article.id) { %>
+                <a href="/dashboard/posts/editar/<%= article.id %>" class="admin-bar-btn">
+                    <i class="fas fa-edit"></i> Editar Post
+                </a>
+                <% } %>
+                <a href="/dashboard/posts/novo" class="admin-bar-btn">
+                    <i class="fas fa-plus"></i> Novo Post
+                </a>
+                <a href="/dashboard" class="admin-bar-btn">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="/logout" class="admin-bar-btn admin-bar-btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-bar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 0;
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .admin-bar-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .admin-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
+    
+    .admin-bar-left i {
+        font-size: 18px;
+    }
+    
+    .admin-bar-right {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .admin-bar-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .admin-bar-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .admin-bar-btn i {
+        font-size: 12px;
+    }
+    
+    .admin-bar-btn-logout {
+        background: rgba(239, 68, 68, 0.3);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+    
+    .admin-bar-btn-logout:hover {
+        background: rgba(239, 68, 68, 0.5);
+    }
+    
+    @media (max-width: 768px) {
+        .admin-bar-content {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .admin-bar-left,
+        .admin-bar-right {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .admin-bar-btn {
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+    }
+</style>
+<% } %>

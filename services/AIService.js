@@ -940,11 +940,32 @@ Retorne APENAS um objeto JSON válido:
             
             const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
             
+            // Adicionar embed do Instagram se houver link de referência
+            let conteudoFinal = parsed.conteudo;
+            console.log('🔗 Links recebidos:', links);
+            if (links && links.length > 0 && links[0].includes('instagram.com')) {
+              console.log('📱 Adicionando embed do Instagram:', links[0]);
+              const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
+              
+              // Adicionar embed no final do conteúdo
+              conteudoFinal += embedCode;
+              console.log('✅ Embed adicionado ao conteúdo');
+            } else {
+              console.log('⚠️ Nenhum link do Instagram encontrado');
+            }
+            
             // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
-            return {
+            const resultado = {
               ...parsed,
+              conteudo: conteudoFinal,
               imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
             };
+            
+            // Log para debug
+            console.log('📝 Conteúdo final contém embed?', conteudoFinal.includes('instagram-media'));
+            console.log('📏 Tamanho do conteúdo:', conteudoFinal.length);
+            
+            return resultado;
           }
         } catch (parseError) {
           // Se falhar, tentar limpar quebras de linha dentro das strings
@@ -970,11 +991,32 @@ Retorne APENAS um objeto JSON válido:
               
               const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
               
+              // Adicionar embed do Instagram se houver link de referência
+              let conteudoFinal = parsed.conteudo;
+              console.log('🔗 Links recebidos (2ª tentativa):', links);
+              if (links && links.length > 0 && links[0].includes('instagram.com')) {
+                console.log('📱 Adicionando embed do Instagram (2ª tentativa):', links[0]);
+                const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
+                
+                // Adicionar embed no final do conteúdo
+                conteudoFinal += embedCode;
+                console.log('✅ Embed adicionado ao conteúdo (2ª tentativa)');
+              } else {
+                console.log('⚠️ Nenhum link do Instagram encontrado (2ª tentativa)');
+              }
+              
               // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
-              return {
+              const resultado = {
                 ...parsed,
+                conteudo: conteudoFinal,
                 imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
               };
+              
+              // Log para debug
+              console.log('📝 Conteúdo final contém embed? (2ª tentativa)', conteudoFinal.includes('instagram-media'));
+              console.log('📏 Tamanho do conteúdo: (2ª tentativa)', conteudoFinal.length);
+              
+              return resultado;
             }
           } catch (secondError) {
             console.error('Segunda tentativa falhou:', secondError.message);
@@ -1115,6 +1157,148 @@ Retorne APENAS a descrição, sem explicações.`;
     ];
 
     return await this.makeRequest(messages, 0.7, 200);
+  }
+
+  /**
+   * Processa múltiplos posts do Instagram e gera matérias
+   * @param {Array} posts - Array de posts do Instagram
+   * @param {string} categoria - Categoria das matérias
+   */
+  static async processarPostsEmLote(posts, categoria = 'Notícias') {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    console.log(`🚀 Processando ${posts.length} posts em lote...`);
+    const materias = [];
+    const erros = [];
+
+    for (let i = 0; i < posts.length; i++) {
+      const post = posts[i];
+      
+      try {
+        console.log(`\n📝 Processando post ${i + 1}/${posts.length}: ${post.shortcode}`);
+        
+        // Verificar se o post tem conteúdo suficiente
+        if (!post.caption || post.caption.trim().length < 50) {
+          console.log(`⚠️ Post ${post.shortcode} ignorado: texto muito curto`);
+          erros.push({
+            post: post,
+            erro: 'Texto da postagem muito curto (mínimo 50 caracteres)'
+          });
+          continue;
+        }
+
+        // Criar matéria usando o mesmo método do "Por Tema" para manter estrutura consistente
+        const materia = await this.criarMateria(
+          post.caption, // tema baseado no texto do post
+          categoria,
+          '', // palavras-chave vazias
+          false, // não pesquisar na internet (já temos o conteúdo)
+          [post.url] // link do post como referência
+        );
+
+        // Priorizar imagem do Instagram se disponível
+        let imagensSugeridas = materia.imagensSugeridas || [];
+        
+        // Se o post tem thumbnail, tentar baixar e adicionar como primeira opção
+        if (post.thumbnail) {
+          console.log(`📸 Baixando imagem do Instagram: ${post.thumbnail.substring(0, 80)}...`);
+          
+          try {
+            // Baixar imagem diretamente no serviço ao invés de chamar API
+            const axios = require('axios');
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Baixar a imagem
+            const response = await axios.get(post.thumbnail, {
+              responseType: 'arraybuffer',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                'Referer': 'https://www.instagram.com/',
+                'Origin': 'https://www.instagram.com'
+              },
+              timeout: 15000
+            });
+
+            // Gerar nome único para o arquivo
+            const timestamp = Date.now();
+            const filename = `instagram-${post.shortcode || timestamp}.jpg`;
+            const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+            const filepath = path.join(uploadDir, filename);
+
+            // Criar diretório se não existir
+            if (!fs.existsSync(uploadDir)) {
+              fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            // Salvar arquivo
+            fs.writeFileSync(filepath, response.data);
+
+            const publicUrl = `/uploads/${filename}`;
+            console.log(`✅ Imagem baixada e salva: ${publicUrl}`);
+            
+            imagensSugeridas.unshift({
+              url: publicUrl,
+              descricao: 'Imagem original do post do Instagram',
+              origem: 'instagram',
+              local: true
+            });
+          } catch (error) {
+            console.log(`⚠️ Erro ao baixar imagem: ${error.message}, usando URL direta`);
+            imagensSugeridas.unshift({
+              url: post.thumbnail,
+              descricao: 'Imagem original do post do Instagram',
+              origem: 'instagram'
+            });
+          }
+        }
+        
+        console.log(`🖼️ Total de imagens disponíveis: ${imagensSugeridas.length} (Instagram: ${post.thumbnail ? 'Sim' : 'Não'})`);
+
+        // Adicionar informações do post original
+        materias.push({
+          ...materia,
+          imagensSugeridas, // Imagens com Instagram em primeiro
+          instagramPostId: post.id || post.url, // ID do post para tracking
+          postOriginal: {
+            url: post.url,
+            shortcode: post.shortcode,
+            likes: post.likes,
+            comments: post.comments,
+            timestamp: post.timestamp,
+            thumbnail: post.thumbnail
+          },
+          status: 'gerada'
+        });
+
+        console.log(`✅ Matéria ${i + 1} gerada com sucesso: ${materia.titulo}`);
+
+        // Aguardar 2 segundos entre requisições para não sobrecarregar a API
+        if (i < posts.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+      } catch (error) {
+        console.error(`❌ Erro ao processar post ${post.shortcode}:`, error.message);
+        erros.push({
+          post: post,
+          erro: error.message
+        });
+      }
+    }
+
+    console.log(`\n✅ Processamento concluído: ${materias.length} matérias geradas, ${erros.length} erros`);
+
+    return {
+      materias,
+      erros,
+      total: posts.length,
+      sucesso: materias.length,
+      falhas: erros.length
+    };
   }
 }
 

@@ -1,16 +1,17 @@
-<%- include('partials/header') %>
+<% 
+const categoryNames = {
+    'g1': 'Notícias',
+    'ge': 'Música', 
+    'gshow': 'Eventos',
+    'quem': 'Ministérios',
+    'valor': 'Estudos'
+};
+%>
+<%- include('partials/article-head') %>
+<%- include('partials/admin-bar') %>
 
 <main class="main-content article-page">
     <div class="container">
-        <% 
-        const categoryNames = {
-            'g1': 'Notícias',
-            'ge': 'Música', 
-            'gshow': 'Eventos',
-            'quem': 'Ministérios',
-            'valor': 'Estudos'
-        };
-        %>
         <nav class="breadcrumb">
             <a href="/" class="breadcrumb-item">
                 <i class="fas fa-home"></i> Início
@@ -71,6 +72,22 @@
                 <div class="article-body">
                     <%- article.conteudo %>
                 </div>
+                
+                <script>
+                    // Forçar Instagram a processar embeds após carregamento da página
+                    if (window.instgrm) {
+                        window.instgrm.Embeds.process();
+                    } else {
+                        // Se o script ainda não carregou, aguardar e processar
+                        window.addEventListener('load', function() {
+                            setTimeout(function() {
+                                if (window.instgrm) {
+                                    window.instgrm.Embeds.process();
+                                }
+                            }, 1000);
+                        });
+                    }
+                </script>
 
                 <% if (article.tags && article.tags.length > 0) { %>
                 <div class="article-tags">
@@ -81,6 +98,116 @@
                 </div>
                 <% } %>
             </article>
+
+            <!-- Seção de Comentários -->
+            <section class="comments-section">
+                <h2 class="comments-title">
+                    <i class="fas fa-comments"></i> Comentários
+                </h2>
+
+                <!-- Tabs de Comentários -->
+                <div class="comments-tabs">
+                    <button class="comment-tab active" onclick="switchCommentTab('facebook')">
+                        <i class="fab fa-facebook"></i> Facebook
+                    </button>
+                    <button class="comment-tab" onclick="switchCommentTab('sistema')">
+                        <i class="fas fa-comment-dots"></i> Sistema (<span id="commentCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- Comentários do Facebook -->
+                <div id="facebook-comments" class="comment-tab-content active">
+                    <div class="fb-comments" 
+                         data-href="<%= `${process.env.SITE_URL || 'http://localhost:3000'}/noticia/${article.urlAmigavel}` %>" 
+                         data-width="100%" 
+                         data-numposts="10"
+                         data-order-by="reverse_time"
+                         data-colorscheme="light">
+                    </div>
+                </div>
+
+                <!-- Comentários do Sistema -->
+                <div id="sistema-comments" class="comment-tab-content">
+                    <!-- Formulário de Novo Comentário -->
+                    <div class="comment-form-container">
+                        <h3>Deixe seu comentário</h3>
+                        <form id="commentForm" onsubmit="submitComment(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="commentNome">
+                                        <i class="fas fa-user"></i> Nome *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="commentNome" 
+                                        name="nome" 
+                                        required 
+                                        minlength="2"
+                                        placeholder="Seu nome completo"
+                                        class="form-input"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="commentEmail">
+                                        <i class="fas fa-envelope"></i> Email *
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        id="commentEmail" 
+                                        name="email" 
+                                        required
+                                        placeholder="seu@email.com"
+                                        class="form-input"
+                                    >
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="commentTexto">
+                                    <i class="fas fa-comment"></i> Comentário *
+                                </label>
+                                <textarea 
+                                    id="commentTexto" 
+                                    name="comentario" 
+                                    required 
+                                    minlength="10"
+                                    rows="4"
+                                    placeholder="Escreva seu comentário aqui..."
+                                    class="form-textarea"
+                                ></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="commentCaptcha">
+                                        <i class="fas fa-shield-alt"></i> Digite "obuxixo" para confirmar *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="commentCaptcha" 
+                                        name="captcha" 
+                                        required
+                                        placeholder="obuxixo"
+                                        class="form-input"
+                                    >
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-submit-comment" id="btnSubmitComment">
+                                <i class="fas fa-paper-plane"></i> Enviar Comentário
+                            </button>
+                            <p class="form-note">
+                                <i class="fas fa-info-circle"></i> 
+                                Seu comentário será analisado antes de ser publicado.
+                            </p>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Comentários -->
+                    <div class="comments-list" id="commentsList">
+                        <div class="loading-comments">
+                            <i class="fas fa-spinner fa-spin"></i> Carregando comentários...
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- Notícias Relacionadas -->
             <% if (related && related.length > 0) { %>
@@ -109,5 +236,150 @@
         </div>
     </div>
 </main>
+
+<!-- Facebook SDK -->
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v18.0" nonce="YOUR_NONCE"></script>
+
+<script>
+    const articleId = <%= article.id %>;
+
+    // Trocar tab de comentários
+    function switchCommentTab(tab) {
+        // Remover active de todos
+        document.querySelectorAll('.comment-tab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.comment-tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Adicionar active no selecionado
+        event.target.classList.add('active');
+        document.getElementById(tab + '-comments').classList.add('active');
+        
+        // Se for Facebook, processar plugin
+        if (tab === 'facebook' && typeof FB !== 'undefined') {
+            FB.XFBML.parse();
+        }
+    }
+
+    // Carregar comentários do sistema
+    async function loadComments() {
+        try {
+            const response = await fetch(`/api/comments/${articleId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                displayComments(data.comments);
+                document.getElementById('commentCount').textContent = data.comments.length;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar comentários:', error);
+            document.getElementById('commentsList').innerHTML = 
+                '<p class="error-message"><i class="fas fa-exclamation-circle"></i> Erro ao carregar comentários</p>';
+        }
+    }
+
+    // Exibir comentários
+    function displayComments(comments) {
+        const container = document.getElementById('commentsList');
+        
+        if (comments.length === 0) {
+            container.innerHTML = '<p class="no-comments"><i class="fas fa-info-circle"></i> Nenhum comentário ainda. Seja o primeiro a comentar!</p>';
+            return;
+        }
+        
+        container.innerHTML = comments.map(comment => `
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="comment-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="comment-info">
+                        <strong class="comment-author">${escapeHtml(comment.nome)}</strong>
+                        <span class="comment-date">
+                            <i class="fas fa-clock"></i> 
+                            ${formatDate(comment.created_at)}
+                        </span>
+                    </div>
+                </div>
+                <div class="comment-body">
+                    ${escapeHtml(comment.comentario)}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Enviar comentário
+    async function submitComment(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const btn = document.getElementById('btnSubmitComment');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        
+        try {
+            const formData = {
+                nome: form.nome.value,
+                email: form.email.value,
+                comentario: form.comentario.value,
+                captcha: form.captcha.value
+            };
+            
+            const response = await fetch(`/api/comments/${articleId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ ' + data.message);
+                form.reset();
+                await loadComments();
+            } else {
+                alert('❌ ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar comentário:', error);
+            alert('❌ Erro ao enviar comentário. Tente novamente.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    // Utilitários
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000); // diferença em segundos
+        
+        if (diff < 60) return 'Agora mesmo';
+        if (diff < 3600) return Math.floor(diff / 60) + ' minutos atrás';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' horas atrás';
+        if (diff < 604800) return Math.floor(diff / 86400) + ' dias atrás';
+        
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    }
+
+    // Carregar comentários ao iniciar
+    document.addEventListener('DOMContentLoaded', function() {
+        loadComments();
+    });
+</script>
 
 <%- include('partials/footer') %>

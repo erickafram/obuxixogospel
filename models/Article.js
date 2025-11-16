@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         strict: true,
         locale: 'pt',
         remove: /[*+~.()'"!:@]/g
-      }) + '-' + Date.now();
+      });
     }
   }
 
@@ -99,6 +99,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'data_publicacao'
+    },
+    instagramPostId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'instagram_post_id'
     }
   }, {
     sequelize,

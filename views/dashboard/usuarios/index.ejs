@@ -1,33 +1,25 @@
-<%- include('../partials/header', { title: 'Posts', user: user }) %>
+<%- include('../partials/header', { title: 'Usuários', user: user }) %>
 
 <div class="dashboard-content">
     <div class="content-header">
         <div>
-            <h1>Posts</h1>
-            <p>Gerencie todos os artigos do portal</p>
+            <h1>Usuários</h1>
+            <p>Gerencie os usuários do sistema</p>
         </div>
-        <a href="/dashboard/posts/novo" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Novo Post
+        <a href="/dashboard/usuarios/novo" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Usuário
         </a>
     </div>
-
-    <% if (typeof success !== 'undefined' && success) { %>
-    <div class="alert alert-success">
-        <%= success %>
-    </div>
-    <% } %>
 
     <div class="card">
         <div class="card-header">
             <div class="search-filter">
-                <input type="text" id="searchPosts" placeholder="Buscar posts..." class="search-input">
-                <select id="filterCategoria" class="filter-select">
-                    <option value="">Todas as categorias</option>
-                    <option value="g1">Notícias</option>
-                    <option value="ge">Música</option>
-                    <option value="gshow">Eventos</option>
-                    <option value="quem">Ministérios</option>
-                    <option value="valor">Estudos</option>
+                <input type="text" id="searchUsuarios" placeholder="Buscar usuários..." class="search-input">
+                <select id="filterPerfil" class="filter-select">
+                    <option value="">Todos os perfis</option>
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="autor">Autor</option>
                 </select>
             </div>
         </div>
@@ -36,56 +28,51 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Título</th>
-                        <th>Categoria</th>
-                        <th>Autor</th>
-                        <th>Visualizações</th>
-                        <th>Data</th>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
                         <th>Status</th>
+                        <th>Último Login</th>
+                        <th>Cadastro</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <% if (articles && articles.length > 0) { %>
-                        <% 
-                        const categoryNames = {
-                            'g1': 'Notícias',
-                            'ge': 'Música', 
-                            'gshow': 'Eventos',
-                            'quem': 'Ministérios',
-                            'valor': 'Estudos'
-                        };
-                        %>
-                        <% articles.forEach(article => { %>
+                    <% if (usuarios && usuarios.length > 0) { %>
+                        <% usuarios.forEach(usuario => { %>
                         <tr>
+                            <td><%= usuario.nome %></td>
+                            <td><%= usuario.email %></td>
                             <td>
-                                <div class="post-title">
-                                    <% if (article.destaque) { %>
-                                    <span class="badge badge-warning">Destaque</span>
-                                    <% } %>
-                                    <%= article.titulo %>
-                                </div>
-                            </td>
-                            <td><span class="badge badge-<%= article.categoria %>"><%= categoryNames[article.categoria] || article.categoria %></span></td>
-                            <td><%= article.autor %></td>
-                            <td><i class="fas fa-eye"></i> <%= article.visualizacoes %></td>
-                            <td><%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %></td>
-                            <td>
-                                <% if (article.publicado) { %>
-                                <span class="badge badge-success">Publicado</span>
+                                <% if (usuario.role === 'admin') { %>
+                                <span class="badge badge-danger">Admin</span>
+                                <% } else if (usuario.role === 'editor') { %>
+                                <span class="badge badge-warning">Editor</span>
                                 <% } else { %>
-                                <span class="badge badge-secondary">Rascunho</span>
+                                <span class="badge badge-info">Autor</span>
                                 <% } %>
                             </td>
                             <td>
+                                <% if (usuario.ativo) { %>
+                                <span class="badge badge-success">Ativo</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Inativo</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (usuario.ultimoLogin) { %>
+                                <%= new Date(usuario.ultimoLogin).toLocaleDateString('pt-BR') %>
+                                <% } else { %>
+                                Nunca
+                                <% } %>
+                            </td>
+                            <td><%= new Date(usuario.createdAt).toLocaleDateString('pt-BR') %></td>
+                            <td>
                                 <div class="action-buttons">
-                                    <a href="/noticia/<%= article.urlAmigavel %>" target="_blank" class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon" title="Editar">
+                                    <a href="/dashboard/usuarios/<%= usuario.id %>/editar" class="btn-icon" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button onclick="deletePost(<%= article.id %>)" class="btn-icon btn-danger" title="Deletar">
+                                    <button onclick="deletarUsuario(<%= usuario.id %>, '<%= usuario.nome %>')" class="btn-icon btn-danger" title="Deletar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -94,7 +81,7 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="7" class="text-center">Nenhum post encontrado</td>
+                            <td colspan="7" class="text-center">Nenhum usuário encontrado</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -227,13 +214,6 @@
         background: #F7FAFC;
     }
 
-    .post-title {
-        font-weight: 500;
-        font-size: 13px;
-        color: #1A202C;
-        line-height: 1.4;
-    }
-
     .badge {
         padding: 3px 8px;
         border-radius: 5px;
@@ -246,12 +226,9 @@
 
     .badge-success { background: #D4EDDA; color: #155724; }
     .badge-secondary { background: #E2E3E5; color: #383D41; }
-    .badge-warning { background: #FFF3CD; color: #856404; margin-right: 8px; }
-    .badge-g1 { background: #FFE5E5; color: #C1121F; }
-    .badge-ge { background: #D4EDDA; color: #28A745; }
-    .badge-gshow { background: #FFE8D6; color: #FF8C42; }
-    .badge-quem { background: #F3E5F5; color: #8B3A62; }
-    .badge-valor { background: #E3F2FD; color: #1F4788; }
+    .badge-warning { background: #FFF3CD; color: #856404; }
+    .badge-danger { background: #FFE5E5; color: #C1121F; }
+    .badge-info { background: #E3F2FD; color: #1F4788; }
 
     .action-buttons {
         display: flex;
@@ -285,19 +262,6 @@
         color: #DC2626;
     }
 
-    .alert {
-        padding: 12px 14px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        font-size: 13px;
-    }
-
-    .alert-success {
-        background: #D1FAE5;
-        color: #065F46;
-        border: 1px solid #A7F3D0;
-    }
-
     .text-center {
         text-align: center;
         padding: 32px !important;
@@ -320,9 +284,35 @@
 </style>
 
 <script>
-    function deletePost(id) {
-        if (confirm('Tem certeza que deseja deletar este post?')) {
-            fetch(`/dashboard/posts/deletar/${id}`, {
+    // Filtros
+    document.getElementById('searchUsuarios').addEventListener('input', filtrarUsuarios);
+    document.getElementById('filterPerfil').addEventListener('change', filtrarUsuarios);
+
+    function filtrarUsuarios() {
+        const searchTerm = document.getElementById('searchUsuarios').value.toLowerCase();
+        const filterPerfil = document.getElementById('filterPerfil').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        
+        rows.forEach(row => {
+            const nome = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
+            const email = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+            const perfil = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+            
+            const matchSearch = nome.includes(searchTerm) || email.includes(searchTerm);
+            const matchPerfil = !filterPerfil || perfil.includes(filterPerfil);
+            
+            if (matchSearch && matchPerfil) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function deletarUsuario(id, nome) {
+        if (confirm(`Tem certeza que deseja deletar o usuário "${nome}"?`)) {
+            fetch(`/dashboard/usuarios/${id}`, {
                 method: 'DELETE'
             })
             .then(response => response.json())
@@ -330,7 +320,7 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Erro ao deletar post');
+                    alert('Erro ao deletar usuário');
                 }
             });
         }

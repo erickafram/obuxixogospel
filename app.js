@@ -9,7 +9,7 @@ const multer = require('multer');
 require('dotenv').config();
 
 // Sequelize MySQL
-const { sequelize, Article, User, Media, SystemConfig } = require('./models');
+const { sequelize, Article, User, Media, SystemConfig, Page } = require('./models');
 const AIService = require('./services/AIService');
 
 // Configurar Multer para upload
@@ -78,6 +78,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Helper function para gerar URLs de artigos
+app.locals.getArticleUrl = function(article) {
+  const categoryRoutes = {
+    'g1': 'noticia',
+    'ge': 'musica',
+    'gshow': 'evento',
+    'quem': 'ministerio',
+    'valor': 'estudo'
+  };
+  const routeName = categoryRoutes[article.categoria] || 'noticia';
+  return `/${routeName}/${article.urlAmigavel}`;
+};
+
 // Rotas API
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/categorias', require('./routes/categories'));
@@ -129,6 +142,14 @@ app.get('/logout', (req, res) => {
 
 // Rotas do Dashboard (protegidas)
 const { isAuthenticated, isAdmin } = require('./middleware/auth');
+
+// Rotas de comentários
+const commentController = require('./controllers/commentController');
+app.get('/api/comments/:articleId', commentController.getComments);
+app.post('/api/comments/:articleId', commentController.createComment);
+app.get('/api/admin/comments', isAuthenticated, commentController.getAllComments);
+app.put('/api/admin/comments/:id/approve', isAuthenticated, commentController.approveComment);
+app.delete('/api/admin/comments/:id', isAuthenticated, commentController.deleteComment);
 
 app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
@@ -299,6 +320,57 @@ app.delete('/dashboard/posts/deletar/:id', isAuthenticated, async (req, res) => 
   }
 });
 
+// CATEGORIAS
+app.get('/dashboard/categorias', isAuthenticated, async (req, res) => {
+  try {
+    const [categories] = await sequelize.query('SELECT * FROM categories ORDER BY nome ASC');
+    
+    res.render('dashboard/categorias/index', {
+      user: {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      },
+      categories,
+      success: req.query.success
+    });
+  } catch (error) {
+    console.error('Erro ao carregar categorias:', error);
+    res.status(500).send('Erro ao carregar categorias');
+  }
+});
+
+// USUÁRIOS
+const userController = require('./controllers/userController');
+app.get('/dashboard/usuarios', isAuthenticated, userController.listarUsuarios);
+app.get('/dashboard/usuarios/novo', isAuthenticated, userController.novoUsuarioForm);
+app.post('/dashboard/usuarios', isAuthenticated, userController.criarUsuario);
+app.get('/dashboard/usuarios/:id/editar', isAuthenticated, userController.editarUsuarioForm);
+app.put('/dashboard/usuarios/:id', isAuthenticated, userController.atualizarUsuario);
+app.delete('/dashboard/usuarios/:id', isAuthenticated, userController.deletarUsuario);
+app.post('/dashboard/usuarios/:id/toggle-status', isAuthenticated, userController.toggleStatus);
+
+// CONFIGURAÇÕES
+const configController = require('./controllers/configController');
+app.get('/dashboard/configuracoes', isAuthenticated, configController.getAllConfigs);
+app.post('/dashboard/configuracoes', isAuthenticated, configController.updateConfigs);
+
+// API de configurações
+app.get('/api/config/:chave', configController.getConfig);
+app.post('/api/config/:chave', isAuthenticated, configController.setConfig);
+
+// PÁGINAS ESTÁTICAS
+const pageController = require('./controllers/pageController');
+app.get('/dashboard/paginas', isAuthenticated, pageController.index);
+app.get('/dashboard/paginas/novo', isAuthenticated, pageController.novo);
+app.get('/dashboard/paginas/:id/editar', isAuthenticated, pageController.editar);
+app.post('/dashboard/paginas/criar', isAuthenticated, pageController.criar);
+app.post('/dashboard/paginas/:id/atualizar', isAuthenticated, pageController.atualizar);
+app.delete('/dashboard/paginas/:id', isAuthenticated, pageController.deletar);
+
+// Rota pública para exibir páginas
+app.get('/pagina/:slug', pageController.exibir);
+
 // BIBLIOTECA DE MÍDIA
 app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), async (req, res) => {
   try {
@@ -338,6 +410,63 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
   } catch (error) {
     console.error('Erro ao fazer upload:', error);
     res.status(500).json({ success: false, message: 'Erro ao fazer upload' });
+  }
+});
+
+// Upload de imagem via URL (Bing)
+app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
+  try {
+    const { url, descricao } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ success: false, error: 'URL é obrigatória' });
+    }
+
+    // Baixar a imagem
+    const axios = require('axios');
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    // Gerar nome único
+    const ext = url.split('.').pop().split('?')[0] || 'jpg';
+    const filename = `bing-${Date.now()}-${Math.round(Math.random() * 1E9)}.${ext}`;
+    const filepath = path.join(__dirname, 'public', 'uploads', filename);
+
+    // Salvar arquivo
+    const fs = require('fs');
+    fs.writeFileSync(filepath, response.data);
+
+    const fileUrl = `/uploads/${filename}`;
+    const fileSize = response.data.length;
+
+    // Salvar no banco
+    const media = await Media.create({
+      nome: filename,
+      nomeOriginal: descricao || 'Imagem do Bing',
+      tipo: 'imagem',
+      mimeType: response.headers['content-type'] || 'image/jpeg',
+      tamanho: fileSize,
+      url: fileUrl,
+      userId: req.session.userId
+    });
+
+    res.json({ 
+      success: true, 
+      media: {
+        id: media.id,
+        url: fileUrl,
+        tipo: 'imagem',
+        nome: descricao || 'Imagem do Bing'
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao fazer upload via URL:', error);
+    res.status(500).json({ success: false, error: 'Erro ao fazer upload da imagem' });
   }
 });
 
@@ -382,6 +511,11 @@ app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
     res.json({ success: false, message: 'Erro ao deletar mídia' });
   }
 });
+
+// Sitemap e Robots.txt
+const sitemapController = require('./controllers/sitemapController');
+app.get('/sitemap.xml', sitemapController.generateSitemap);
+app.get('/robots.txt', sitemapController.generateRobotsTxt);
 
 // Rotas de páginas públicas
 app.get('/', async (req, res) => {
@@ -435,6 +569,55 @@ app.get('/', async (req, res) => {
   }
 });
 
+// Rotas dinâmicas por categoria (noticia, musica, evento, ministerio, estudo)
+const categoryRoutes = {
+  'g1': 'noticia',
+  'ge': 'musica',
+  'gshow': 'evento',
+  'quem': 'ministerio',
+  'valor': 'estudo'
+};
+
+// Criar rotas para cada categoria
+Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
+  app.get(`/${routeName}/:slug`, async (req, res) => {
+    try {
+      const article = await Article.findOne({ 
+        where: { urlAmigavel: req.params.slug, publicado: true }
+      });
+      
+      if (!article) {
+        return res.status(404).send('Conteúdo não encontrado');
+      }
+
+      // Incrementar visualizações
+      await article.increment('visualizacoes');
+
+      // Conteúdos relacionados
+      const { Op } = require('sequelize');
+      const related = await Article.findAll({ 
+        where: { 
+          categoria: article.categoria,
+          id: { [Op.ne]: article.id },
+          publicado: true
+        },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 4
+      });
+
+      res.render('article', { 
+        article, 
+        related,
+        user: req.user || null
+      });
+    } catch (error) {
+      console.error('Erro ao carregar conteúdo:', error);
+      res.status(500).send('Erro ao carregar conteúdo');
+    }
+  });
+});
+
+// Rota legada /noticia/ (redireciona para categoria apropriada)
 app.get('/noticia/:slug', async (req, res) => {
   try {
     const article = await Article.findOne({ 
@@ -443,6 +626,26 @@ app.get('/noticia/:slug', async (req, res) => {
     
     if (!article) {
       return res.status(404).send('Notícia não encontrada');
+    }
+
+    // Redirecionar para a categoria correta
+    const categoryRoute = categoryRoutes[article.categoria] || 'noticia';
+    return res.redirect(301, `/${categoryRoute}/${article.urlAmigavel}`);
+  } catch (error) {
+    console.error('Erro ao carregar notícia:', error);
+    res.status(500).send('Erro ao carregar notícia');
+  }
+});
+
+// Rota alternativa mantida para compatibilidade
+app.get('/artigo/:slug', async (req, res) => {
+  try {
+    const article = await Article.findOne({ 
+      where: { urlAmigavel: req.params.slug, publicado: true }
+    });
+    
+    if (!article) {
+      return res.status(404).send('Conteúdo não encontrado');
     }
 
     // Incrementar visualizações
@@ -460,7 +663,15 @@ app.get('/noticia/:slug', async (req, res) => {
       limit: 4
     });
 
-    res.render('article', { article, related });
+    res.render('article', { 
+      article, 
+      related,
+      user: req.session.userId ? {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      } : null
+    });
   } catch (error) {
     console.error('Erro ao carregar notícia:', error);
     res.status(500).send('Erro ao carregar notícia');
@@ -572,6 +783,86 @@ app.post('/api/ia/criar-por-texto', async (req, res) => {
   }
 });
 
+// Criar matéria por conteúdo/informações fornecidas
+app.post('/api/ia/criar-por-conteudo', async (req, res) => {
+  try {
+    const { 
+      tituloSugerido, 
+      informacoes, 
+      categoria, 
+      palavrasChave, 
+      modoAutomatico,
+      // Suporte para formato antigo (link + textoManual)
+      link, 
+      textoManual 
+    } = req.body;
+
+    // Determinar o conteúdo a ser usado
+    let conteudo = informacoes || textoManual || '';
+    
+    // Se tem link, extrair conteúdo
+    if (link) {
+      console.log('Extraindo conteúdo do link:', link);
+      const conteudoExtraido = await AIService.extrairConteudoURL(link);
+      
+      // Se não conseguiu extrair e não tem texto manual, retornar erro
+      if (!conteudoExtraido || conteudoExtraido.includes('Não foi possível extrair')) {
+        if (!conteudo) {
+          return res.status(400).json({ 
+            error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, cole o texto manualmente no campo opcional.' 
+          });
+        }
+      } else {
+        // Usar conteúdo extraído (ou combinar com manual se houver)
+        conteudo = conteudo ? `${conteudoExtraido}\n\n${conteudo}` : conteudoExtraido;
+      }
+    }
+
+    if (!conteudo || conteudo.trim().length < 50) {
+      return res.status(400).json({ error: 'Conteúdo insuficiente para gerar matéria (mínimo 50 caracteres)' });
+    }
+
+    // Construir o tema baseado no título sugerido ou nas informações
+    let tema = tituloSugerido || conteudo.substring(0, 200);
+    
+    // Se tem título sugerido, adicionar as informações como contexto adicional
+    if (tituloSugerido && informacoes) {
+      tema = `${tituloSugerido}\n\nCONTEXTO E INFORMAÇÕES:\n${informacoes}`;
+    }
+
+    // Usar o método criarMateria (igual ao "Por Tema") para gerar conteúdo mais humanizado
+    const materia = await AIService.criarMateria(
+      tema,
+      categoria || 'Notícias',
+      palavrasChave || '',
+      false, // pesquisarInternet = false (já temos as informações)
+      link ? [link] : [] // links para referência
+    );
+    
+    res.json({ success: true, materia });
+  } catch (error) {
+    console.error('❌ Erro ao criar matéria:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Buscar imagens no Bing
+app.post('/api/ia/buscar-imagens-bing', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Query é obrigatória' });
+    }
+
+    const imagens = await AIService.buscarImagensPexels(query);
+    res.json({ success: true, imagens });
+  } catch (error) {
+    console.error('Erro ao buscar imagens no Bing:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Corrigir texto com IA
 app.post('/api/ia/corrigir-texto', async (req, res) => {
   try {
@@ -650,6 +941,37 @@ app.get('/dashboard/ia/configuracoes', async (req, res) => {
   }
 });
 
+// IA em Lote - Geração automática de matérias
+const iaLoteController = require('./controllers/iaLoteController');
+app.get('/dashboard/ia/lote', isAuthenticated, iaLoteController.renderPage);
+app.post('/api/ia/extrair-posts', isAuthenticated, iaLoteController.extrairPosts);
+app.post('/api/ia/gerar-materias-lote', isAuthenticated, iaLoteController.gerarMaterias);
+app.post('/api/ia/salvar-materia', isAuthenticated, iaLoteController.salvarMateria);
+app.post('/api/ia/baixar-imagem-instagram', isAuthenticated, iaLoteController.baixarImagemInstagram);
+
+// Rotas para perfis do Instagram
+app.get('/api/ia/perfis', isAuthenticated, iaLoteController.listarPerfis);
+app.post('/api/ia/perfis', isAuthenticated, iaLoteController.salvarPerfil);
+app.delete('/api/ia/perfis/:id', isAuthenticated, iaLoteController.removerPerfil);
+
+// Verificar posts publicados
+app.post('/api/ia/verificar-posts-publicados', isAuthenticated, iaLoteController.verificarPostsPublicados);
+
+// Postagem automática
+app.put('/api/ia/perfis/:id/auto-post', isAuthenticated, iaLoteController.atualizarAutoPost);
+app.post('/api/ia/perfis/:id/processar-manual', isAuthenticated, iaLoteController.processarPerfilManual);
+app.get('/api/ia/auto-post/status', isAuthenticated, iaLoteController.getAutoPostStatus);
+
+// Notificações
+const notificationController = require('./controllers/notificationController');
+app.get('/api/notifications/unread', isAuthenticated, notificationController.getUnreadNotifications);
+app.get('/api/notifications/count', isAuthenticated, notificationController.getUnreadCount);
+app.get('/api/notifications', isAuthenticated, notificationController.getAllNotifications);
+app.put('/api/notifications/:id/read', isAuthenticated, notificationController.markAsRead);
+app.put('/api/notifications/read-all', isAuthenticated, notificationController.markAllAsRead);
+app.delete('/api/notifications/:id', isAuthenticated, notificationController.deleteNotification);
+app.delete('/api/notifications/clean-old', isAuthenticated, notificationController.cleanOldNotifications);
+
 // Atualizar configurações da IA
 app.post('/dashboard/ia/configuracoes', async (req, res) => {
   try {
@@ -676,6 +998,14 @@ app.use((req, res) => {
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  
+  // Iniciar serviço de postagem automática
+  try {
+    const autoPostService = require('./services/AutoPostService');
+    await autoPostService.start();
+  } catch (error) {
+    console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
+  }
 });
