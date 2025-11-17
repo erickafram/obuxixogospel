@@ -11,7 +11,7 @@ const fs = require('fs').promises;
 require('dotenv').config();
 
 // Sequelize MySQL
-const { sequelize, Article, User, Media, SystemConfig, Page } = require('./models');
+const { sequelize, Article, User, Media, SystemConfig, Page, Category } = require('./models');
 const AIService = require('./services/AIService');
 
 // Configurar Multer para upload
