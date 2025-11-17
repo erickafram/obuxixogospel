@@ -569,58 +569,59 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']]
     });
     
-    // ID do destaque para excluir das listas
+    // ID do destaque para excluir das listas (apenas o que está sendo exibido)
     const destaqueId = destaque ? destaque.id : null;
     
-    // Buscar artigos por categoria, excluindo o destaque principal
+    // Buscar TODOS os artigos publicados, excluindo apenas o destaque que está sendo exibido
+    // Buscar por 'g1' OU 'noticias' (compatibilidade)
     const g1Articles = await Article.findAll({ 
       where: { 
-        categoria: 'g1', 
+        categoria: { [sequelize.Sequelize.Op.in]: ['g1', 'noticias'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 6
+      limit: 20
     });
     
     const geArticles = await Article.findAll({ 
       where: { 
-        categoria: 'ge', 
+        categoria: { [sequelize.Sequelize.Op.in]: ['ge', 'musica'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 6
+      limit: 20
     });
     
     const gshowArticles = await Article.findAll({ 
       where: { 
-        categoria: 'gshow', 
+        categoria: { [sequelize.Sequelize.Op.in]: ['gshow', 'eventos'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 6
+      limit: 20
     });
     
     const quemArticles = await Article.findAll({ 
       where: { 
-        categoria: 'quem', 
+        categoria: { [sequelize.Sequelize.Op.in]: ['quem', 'ministerios'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 4
+      limit: 20
     });
     
     const valorArticles = await Article.findAll({ 
       where: { 
-        categoria: 'valor', 
+        categoria: { [sequelize.Sequelize.Op.in]: ['valor', 'estudos'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 4
+      limit: 20
     });
 
     res.render('index', {

@@ -37,35 +37,35 @@
                         <% 
                         // Combinar todos os artigos
                         let allArticles = [];
-                        if (g1Articles) {
+                        if (g1Articles && g1Articles.length > 0) {
                             g1Articles.forEach(a => {
                                 a.categoryName = 'Notícias';
                                 a.categoryClass = 'obuxixo';
                                 allArticles.push(a);
                             });
                         }
-                        if (geArticles) {
+                        if (geArticles && geArticles.length > 0) {
                             geArticles.forEach(a => {
                                 a.categoryName = 'Música';
                                 a.categoryClass = 'musica';
                                 allArticles.push(a);
                             });
                         }
-                        if (gshowArticles) {
+                        if (gshowArticles && gshowArticles.length > 0) {
                             gshowArticles.forEach(a => {
                                 a.categoryName = 'Eventos';
                                 a.categoryClass = 'eventos';
                                 allArticles.push(a);
                             });
                         }
-                        if (quemArticles) {
+                        if (quemArticles && quemArticles.length > 0) {
                             quemArticles.forEach(a => {
                                 a.categoryName = 'Ministérios';
                                 a.categoryClass = 'ministerios';
                                 allArticles.push(a);
                             });
                         }
-                        if (valorArticles) {
+                        if (valorArticles && valorArticles.length > 0) {
                             valorArticles.forEach(a => {
                                 a.categoryName = 'Estudos';
                                 a.categoryClass = 'estudos';
@@ -84,7 +84,14 @@
                         // Mostrar apenas os primeiros 10
                         const displayArticles = allArticles.slice(0, 10);
                         
-                        displayArticles.forEach(article => { %>
+                        if (displayArticles.length === 0) { %>
+                            <div style="padding: 40px; text-align: center; color: #666;">
+                                <i class="fas fa-newspaper" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
+                                <p style="font-size: 18px;">Nenhuma notícia disponível no momento.</p>
+                                <p style="font-size: 14px; margin-top: 10px;">Em breve teremos novidades!</p>
+                            </div>
+                        <% } else {
+                            displayArticles.forEach(article => { %>
                         <article class="news-item-horizontal">
                             <a href="/noticia/<%= article.urlAmigavel %>">
                                 <div class="news-item-image">
@@ -100,7 +107,8 @@
                                 </div>
                             </a>
                         </article>
-                        <% }); %>
+                        <% }); 
+                        } %>
                     </div>
                     <div id="loadingIndicator" style="display: none; text-align: center; padding: 20px;">
                         <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--color-primary);"></i>
