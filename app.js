@@ -84,17 +84,12 @@ app.set('views', path.join(__dirname, 'views'));
 const loadCategories = require('./middlewares/categoriesMiddleware');
 app.use(loadCategories);
 
-// Helper function para gerar URLs de artigos
+// Helper function para gerar URLs de artigos - USA O SLUG DA CATEGORIA DO BANCO
 app.locals.getArticleUrl = function(article) {
-  const categoryRoutes = {
-    'g1': 'noticia',
-    'ge': 'musica',
-    'gshow': 'evento',
-    'quem': 'ministerio',
-    'valor': 'estudo'
-  };
-  const routeName = categoryRoutes[article.categoria] || 'noticia';
-  return `/${routeName}/${article.urlAmigavel}`;
+  // Usa o slug da categoria diretamente do banco
+  // Se a categoria não existir, usa 'noticias' como fallback
+  const categorySlug = article.categoria || 'noticias';
+  return `/${categorySlug}/${article.urlAmigavel}`;
 };
 
 // Rotas API
@@ -708,18 +703,94 @@ app.get('/', async (req, res) => {
       valorArticles
     });
   } catch (error) {
-    console.error('Erro ao carregar homepage:', error);
-    res.status(500).send('Erro ao carregar página');
+    console.error('Erro ao carregar artigo:', error);
+    res.status(500).send('Erro ao carregar artigo');
+  }
+});
+
+// Rota AMP do artigo
+app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
+  try {
+    // Verificar se AMP está habilitado
+    const { ConfiguracaoSistema } = require('./models');
+    const ampConfig = await ConfiguracaoSistema.findOne({ 
+      where: { chave: 'amp_habilitado' } 
+    });
+    
+    if (!ampConfig || ampConfig.valor !== 'true') {
+      // Se AMP não está habilitado, redirecionar para versão normal
+      return res.redirect(`/${req.params.categorySlug}/${req.params.articleSlug}`);
+    }
+
+    const article = await Article.findOne({ 
+      where: { urlAmigavel: req.params.articleSlug, publicado: true }
+    });
+    
+    if (!article) {
+      return res.status(404).send('Conteúdo não encontrado');
+    }
+
+    // Buscar artigos relacionados
+    const { Op } = require('sequelize');
+    const related = await Article.findAll({ 
+      where: { 
+        categoria: article.categoria,
+        id: { [Op.ne]: article.id },
+        publicado: true
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 4
+    });
+
+    // Buscar configurações AMP
+    const analyticsConfig = await ConfiguracaoSistema.findOne({ 
+      where: { chave: 'amp_analytics_id' } 
+    });
+
+    // Mapear categoria para nome legível
+    const categoryNames = {
+      'g1': 'Notícias',
+      'noticias': 'Notícias',
+      'ge': 'Música',
+      'musica': 'Música',
+      'gshow': 'Eventos',
+      'eventos': 'Eventos',
+      'quem': 'Ministérios',
+      'ministerios': 'Ministérios',
+      'valor': 'Estudos',
+      'estudos': 'Estudos'
+    };
+
+    res.render('article-amp', { 
+      article,
+      related,
+      categoryRoute: req.params.categorySlug,
+      categoryName: categoryNames[article.categoria] || 'Notícias',
+      siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
+      ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
+    });
+  } catch (error) {
+    console.error('Erro ao carregar versão AMP:', error);
+    res.status(500).send('Erro ao carregar versão AMP');
   }
 });
 
 // Rotas dinâmicas por categoria (noticia, musica, evento, ministerio, estudo)
 const categoryRoutes = {
+  // Categorias antigas (compatibilidade)
   'g1': 'noticia',
   'ge': 'musica',
   'gshow': 'evento',
   'quem': 'ministerio',
-  'valor': 'estudo'
+  'valor': 'estudo',
+  // Categorias novas do banco
+  'noticias': 'noticia',
+  'musica': 'musica',
+  'eventos': 'evento',
+  'ministerios': 'ministerio',
+  'estudos': 'estudo',
+  'politicia': 'noticia',
+  'tecnologia': 'noticia'
 };
 
 // Criar rotas para cada categoria
@@ -747,37 +818,8 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
         });
       }
 
-      // Incrementar visualizações
-      await article.increment('visualizacoes');
-
-      // Conteúdos relacionados
-      const { Op } = require('sequelize');
-      const related = await Article.findAll({ 
-        where: { 
-          categoria: article.categoria,
-          id: { [Op.ne]: article.id },
-          publicado: true
-        },
-        order: [['dataPublicacao', 'DESC']],
-        limit: 4
-      });
-
-      // Verificar se AMP está habilitado
-      const { SystemConfig } = require('./models');
-      const ampConfig = await SystemConfig.findOne({ 
-        where: { chave: 'amp_habilitado' } 
-      });
-
-      res.render('article', { 
-        article, 
-        related,
-        ampEnabled: ampConfig && ampConfig.valor === 'true',
-        user: req.session.userId ? {
-          nome: req.session.userName,
-          email: req.session.userEmail,
-          role: req.session.userRole
-        } : null
-      });
+      // Redirecionar para a rota dinâmica universal
+      return res.redirect(301, `/${categoryCode}/${article.urlAmigavel}`);
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error);
       res.status(500).send('Erro ao carregar conteúdo');
@@ -787,8 +829,8 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
   // Rota AMP do artigo
   app.get(`/${routeName}/:slug/amp`, async (req, res) => {
     try {
-      // Verificar se AMP está habilitado
-      const { SystemConfig } = require('./models');
+      // Redirecionar para a rota dinâmica universal
+      return res.redirect(301, `/${categoryCode}/${req.params.slug}/amp`);
       const ampConfig = await SystemConfig.findOne({ 
         where: { chave: 'amp_habilitado' } 
       });
@@ -1223,6 +1265,84 @@ app.post('/dashboard/ia/configuracoes', async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar configurações:', error);
     res.status(500).send('Erro ao atualizar configurações');
+  }
+});
+
+// Rota dinâmica universal - captura QUALQUER categoria/:slug
+// DEVE VIR ANTES DO 404 para capturar novas categorias do banco
+app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
+  try {
+    const { categorySlug, articleSlug } = req.params;
+    
+    // Verificar se a categoria existe no banco
+    const category = await Category.findOne({
+      where: { slug: categorySlug }
+    });
+    
+    // Se a categoria não existir, passa para o próximo middleware (404)
+    if (!category) {
+      return next();
+    }
+    
+    // Buscar o artigo
+    const article = await Article.findOne({ 
+      where: { 
+        urlAmigavel: articleSlug, 
+        categoria: categorySlug,
+        publicado: true 
+      }
+    });
+    
+    if (!article) {
+      const recentArticles = await Article.findAll({
+        where: { publicado: true },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 3
+      });
+      return res.status(404).render('404', { 
+        recentArticles,
+        user: req.session.userId ? {
+          nome: req.session.userName,
+          email: req.session.userEmail,
+          role: req.session.userRole
+        } : null
+      });
+    }
+
+    // Incrementar visualizações
+    await article.increment('visualizacoes');
+
+    // Conteúdos relacionados
+    const { Op } = require('sequelize');
+    const related = await Article.findAll({ 
+      where: { 
+        categoria: article.categoria,
+        id: { [Op.ne]: article.id },
+        publicado: true
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 4
+    });
+
+    // Verificar se AMP está habilitado
+    const { ConfiguracaoSistema } = require('./models');
+    const ampConfig = await ConfiguracaoSistema.findOne({ 
+      where: { chave: 'amp_habilitado' } 
+    });
+
+    res.render('article', { 
+      article, 
+      related,
+      ampEnabled: ampConfig && ampConfig.valor === 'true',
+      user: req.session.userId ? {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      } : null
+    });
+  } catch (error) {
+    console.error('Erro ao carregar artigo:', error);
+    next(error);
   }
 });
 

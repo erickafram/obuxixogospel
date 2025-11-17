@@ -65,31 +65,16 @@ exports.generateSitemap = async (req, res) => {
       xml += '  </url>\n';
     });
 
-    // Artigos - usar rota correta baseada na categoria
-    const categoryRoutes = {
-      'g1': 'noticia',
-      'noticias': 'noticia',
-      'ge': 'musica',
-      'musica': 'musica',
-      'gshow': 'evento',
-      'eventos': 'evento',
-      'quem': 'ministerio',
-      'ministerios': 'ministerio',
-      'valor': 'estudo',
-      'estudos': 'estudo',
-      'politicia': 'noticia',
-      'tecnologia': 'noticia'
-    };
-
+    // Artigos - usar slug da categoria diretamente do banco
     articles.forEach(article => {
-      if (article.urlAmigavel) {
+      if (article.urlAmigavel && article.categoria) {
         const lastmod = article.updatedAt || article.dataPublicacao || new Date();
         
-        // Determinar a rota correta baseada na categoria
-        const routeName = categoryRoutes[article.categoria] || 'noticia';
+        // Usa o slug da categoria diretamente (já vem do banco)
+        const categorySlug = article.categoria;
         
         xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/${routeName}/${article.urlAmigavel}</loc>\n`;
+        xml += `    <loc>${baseUrl}/${categorySlug}/${article.urlAmigavel}</loc>\n`;
         xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.7</priority>\n';
