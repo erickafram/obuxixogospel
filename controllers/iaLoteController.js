@@ -118,20 +118,18 @@ exports.salvarMateria = async (req, res) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    const { Article } = require('../models');
+    const { Article, Category } = require('../models');
 
-    // Mapear categoria legível para slug do banco
-    const categoriaMap = {
-      'Notícias': 'noticias',
-      'Música': 'musica',
-      'Eventos': 'eventos',
-      'Ministérios': 'ministerio',
-      'Estudos': 'estudo-biblico',
-      'Política': 'politicia',
-      'Tecnologia': 'tecnologia'
-    };
-
-    const categoriaCodigo = categoriaMap[categoria] || 'noticias';
+    // Buscar categoria do banco pelo nome ou usar padrão
+    let categoriaCodigo = 'noticias';
+    if (categoria) {
+      const categoriaEncontrada = await Category.findOne({
+        where: { nome: categoria }
+      });
+      if (categoriaEncontrada) {
+        categoriaCodigo = categoriaEncontrada.slug;
+      }
+    }
 
     const article = await Article.create({
       titulo,

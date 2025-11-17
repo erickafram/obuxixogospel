@@ -21,7 +21,7 @@
         <div class="news-grid">
             <% articles.forEach(article => { %>
             <article class="news-card">
-                <a href="/noticia/<%= article.urlAmigavel %>">
+                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                     <div class="news-image">
                         <img src="<%= article.imagem %>" alt="<%= article.titulo %>">
                         <span class="news-category <%= article.categoria %>">

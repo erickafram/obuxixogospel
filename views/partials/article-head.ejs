@@ -1,11 +1,11 @@
 <% 
-const categoryNames = {
-    'g1': 'Notícias',
-    'ge': 'Música', 
-    'gshow': 'Eventos',
-    'quem': 'Ministérios',
-    'valor': 'Estudos'
-};
+// Criar mapa de nomes de categorias a partir das categorias carregadas
+const categoryNames = {};
+if (typeof categories !== 'undefined' && categories) {
+    categories.forEach(cat => {
+        categoryNames[cat.slug] = cat.nome;
+    });
+}
 %>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -22,16 +22,16 @@ const categoryNames = {
     <meta name="googlebot" content="index, follow">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>">
+    <link rel="canonical" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
     
     <!-- AMP HTML Link (se AMP estiver habilitado) -->
     <% if (typeof ampEnabled !== 'undefined' && ampEnabled) { %>
-    <link rel="amphtml" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>/amp">
+    <link rel="amphtml" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>/amp">
     <% } %>
     
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="article">
-    <meta property="og:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>">
+    <meta property="og:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
     <meta property="og:title" content="<%= article.titulo %>">
     <meta property="og:description" content="<%= article.descricao %>">
     <meta property="og:image" content="<%= article.imagem %>">
@@ -46,7 +46,7 @@ const categoryNames = {
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>">
+    <meta name="twitter:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
     <meta name="twitter:title" content="<%= article.titulo %>">
     <meta name="twitter:description" content="<%= article.descricao %>">
     <meta name="twitter:image" content="<%= article.imagem %>">
@@ -101,7 +101,7 @@ const categoryNames = {
         },
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": "<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>"
+            "@id": "<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>"
         },
         "articleSection": "<%= categoryNames[article.categoria] || article.categoria %>",
         "inLanguage": "pt-BR"

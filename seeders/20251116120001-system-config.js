@@ -3,36 +3,9 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    // Inserir configurações iniciais do sistema
+    // Inserir configurações adicionais do sistema
+    // (as configurações de IA já são inseridas pela migration 20251116060000-create-system-config)
     await queryInterface.bulkInsert('configuracoes_sistema', [
-      {
-        chave: 'ia_ativa',
-        valor: 'true',
-        descricao: 'Ativa ou desativa o assistente de IA',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        chave: 'ia_api_key',
-        valor: '',
-        descricao: 'Chave da API Together AI (configure no painel)',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        chave: 'ia_api_url',
-        valor: 'https://api.together.xyz/v1/chat/completions',
-        descricao: 'URL da API Together AI',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        chave: 'ia_model',
-        valor: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-        descricao: 'Modelo de IA a ser utilizado',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
       {
         chave: 'site_nome',
         valor: 'O Buxixo Gospel',
@@ -117,7 +90,7 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date()
       }
-    ], {});
+    ], {}); 
   },
 
   async down (queryInterface, Sequelize) {

@@ -109,9 +109,16 @@ Disallow: /login
 Disallow: /api/
 
 # Allow important pages
-Allow: /noticia/
 Allow: /categoria/
 Allow: /busca
+Allow: /noticias/
+Allow: /musica/
+Allow: /eventos/
+Allow: /ministerio/
+Allow: /testemunhos/
+Allow: /estudo-biblico/
+Allow: /familia/
+Allow: /jovens/
 `;
 
   res.header('Content-Type', 'text/plain');

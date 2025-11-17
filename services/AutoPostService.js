@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { InstagramProfile, Article, Notification } = require('../models');
+const { InstagramProfile, Article, Notification, Category } = require('../models');
 const InstagramService = require('./InstagramService');
 const AIService = require('./AIService');
 
@@ -182,12 +182,17 @@ class AutoPostService {
             ? materia.imagensSugeridas[0].url
             : '';
 
+          // Buscar categoria padrão (Notícias) do banco
+          const categoriaDefault = await Category.findOne({
+            where: { slug: 'noticias' }
+          });
+
           await Article.create({
             titulo: materia.titulo,
             descricao: materia.descricao,
             conteudo: materia.conteudo,
             imagem: imagem,
-            categoria: 'g1', // Notícias
+            categoria: categoriaDefault ? categoriaDefault.slug : 'noticias',
             subcategoria: null,
             autor: `Redação Obuxixo Gospel (via @${perfil.username})`,
             publicado: false, // Salvar como rascunho

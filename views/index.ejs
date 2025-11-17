@@ -5,7 +5,7 @@
         <!-- Hero Section - Notícia em Destaque -->
         <% if (destaque) { %>
         <section class="hero-section">
-            <a href="/noticia/<%= destaque.urlAmigavel %>" class="hero-card">
+            <a href="/<%= destaque.categoria %>/<%= destaque.urlAmigavel %>" class="hero-card">
                 <div class="hero-image">
                     <img src="<%= destaque.imagem %>" 
                          alt="<%= destaque.titulo %>" 
@@ -14,13 +14,13 @@
                          height="630">
                     <div class="hero-overlay">
                         <% 
-                        const categoryNames = {
-                            'g1': 'Notícias',
-                            'ge': 'Música', 
-                            'gshow': 'Eventos',
-                            'quem': 'Ministérios',
-                            'valor': 'Estudos'
-                        };
+                        // Criar mapa de nomes de categorias a partir das categorias carregadas
+                        const categoryNames = {};
+                        if (typeof categories !== 'undefined' && categories) {
+                            categories.forEach(cat => {
+                                categoryNames[cat.slug] = cat.nome;
+                            });
+                        }
                         %>
                         <span class="hero-category <%= destaque.categoria %>"><%= categoryNames[destaque.categoria] || destaque.categoria %></span>
                         <h1 class="hero-title"><%= destaque.titulo %></h1>
@@ -97,7 +97,7 @@
                         <% } else {
                             displayArticles.forEach(article => { %>
                         <article class="news-item-horizontal">
-                            <a href="/noticia/<%= article.urlAmigavel %>">
+                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                 <div class="news-item-image">
                                     <img src="<%= article.imagem %>" 
                                          alt="<%= article.titulo %>" 
@@ -147,7 +147,7 @@
                                 nextArticles.forEach(article => {
                                     const articleHTML = `
                                         <article class="news-item-horizontal">
-                                            <a href="/noticia/${article.urlAmigavel}">
+                                            <a href="/${article.categoria}/${article.urlAmigavel}">
                                                 <div class="news-item-image">
                                                     <img src="${article.imagem}" alt="${article.titulo}">
                                                 </div>
@@ -200,19 +200,19 @@
                         
                         mostRead.forEach((article, index) => { %>
                         <article class="most-read-item">
-                            <a href="/noticia/<%= article.urlAmigavel %>">
+                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                 <span class="most-read-number"><%= index + 1 %></span>
                                 <div class="most-read-content">
                                     <h3 class="most-read-title"><%= article.titulo %></h3>
                                     <div class="most-read-meta">
                                         <% 
-                                    const catNames = {
-                                        'g1': 'Notícias',
-                                        'ge': 'Música', 
-                                        'gshow': 'Eventos',
-                                        'quem': 'Ministérios',
-                                        'valor': 'Estudos'
-                                    };
+                                    // Criar mapa de nomes de categorias a partir das categorias carregadas
+                                    const catNames = {};
+                                    if (typeof categories !== 'undefined' && categories) {
+                                        categories.forEach(cat => {
+                                            catNames[cat.slug] = cat.nome;
+                                        });
+                                    }
                                     %>
                                     <span class="most-read-category <%= article.categoria %>"><%= catNames[article.categoria] || article.categoria %></span>
                                         <span class="most-read-views">

@@ -36,7 +36,7 @@
             <div class="recent-articles-grid">
                 <% recentArticles.slice(0, 3).forEach(article => { %>
                 <article class="recent-article-card">
-                    <a href="/<%= article.categoria === 'noticias' || article.categoria === 'g1' ? 'noticia' : article.categoria === 'musica' || article.categoria === 'ge' ? 'musica' : article.categoria === 'eventos' || article.categoria === 'gshow' ? 'evento' : article.categoria === 'ministerios' || article.categoria === 'quem' ? 'ministerio' : 'estudo' %>/<%= article.urlAmigavel %>">
+                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                         <% if (article.imagem) { %>
                         <div class="recent-article-image">
                             <img src="<%= article.imagem %>" alt="<%= article.titulo %>">

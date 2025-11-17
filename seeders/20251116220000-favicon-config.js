@@ -4,13 +4,14 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Verificar se já existe a configuração de favicon
     const [configs] = await queryInterface.sequelize.query(
-      "SELECT * FROM system_configs WHERE config_key = 'favicon' LIMIT 1"
+      "SELECT * FROM configuracoes_sistema WHERE chave = 'favicon' LIMIT 1"
     );
 
     if (configs.length === 0) {
-      await queryInterface.bulkInsert('system_configs', [{
-        config_key: 'favicon',
-        config_value: '/images/favicon.svg',
+      await queryInterface.bulkInsert('configuracoes_sistema', [{
+        chave: 'favicon',
+        valor: '/images/favicon.svg',
+        descricao: 'Caminho do favicon do site',
         created_at: new Date(),
         updated_at: new Date()
       }]);
@@ -18,8 +19,8 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkDelete('system_configs', {
-      config_key: 'favicon'
+    await queryInterface.bulkDelete('configuracoes_sistema', {
+      chave: 'favicon'
     });
   }
 };

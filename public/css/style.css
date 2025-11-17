@@ -695,42 +695,37 @@ body:not(:has(.admin-bar)) .hero-section {
 }
 
 /* Categorias específicas com melhor contraste */
-.hero-category.noticias,
-.hero-category.g1 {
+.hero-category.noticias {
     background-color: #c41e3a; /* Vermelho escuro - contraste 4.5:1 */
 }
 
-.hero-category.musica,
-.hero-category.ge {
+.hero-category.musica {
     background-color: #1c1c1c; /* Preto */
 }
 
-.hero-category.eventos,
-.hero-category.gshow {
+.hero-category.eventos {
     background-color: #1c1c1c; /* Preto */
 }
 
-.hero-category.ministerios,
-.hero-category.quem {
+.hero-category.ministerio {
     background-color: #1c1c1c; /* Preto */
 }
 
-.hero-category.estudos,
-.hero-category.valor {
+.hero-category.estudo-biblico,
+.hero-category.testemunhos,
+.hero-category.familia,
+.hero-category.jovens {
     background-color: #1c1c1c; /* Preto */
 }
 
-.most-read-category.g1,
-.most-read-category.obuxixo { background-color: var(--color-obuxixo); }
-.most-read-category.ge,
+.most-read-category.noticias { background-color: var(--color-obuxixo); }
 .most-read-category.musica { background-color: var(--color-musica); }
-.most-read-category.gshow,
 .most-read-category.eventos { background-color: var(--color-eventos); }
-.most-read-category.quem,
-.most-read-category.ministerios { background-color: var(--color-ministerios); }
-.most-read-category.valor,
-.most-read-category.estudos { background-color: var(--color-estudos); }
-.hero-category.globoplay { background-color: var(--color-globoplay); }
+.most-read-category.ministerio { background-color: var(--color-ministerios); }
+.most-read-category.estudo-biblico { background-color: var(--color-estudos); }
+.most-read-category.testemunhos { background-color: #EF4444; }
+.most-read-category.familia { background-color: #EC4899; }
+.most-read-category.jovens { background-color: #14B8A6; }
 
 .hero-title {
     font-size: 36px;
@@ -1101,12 +1096,14 @@ body:not(:has(.admin-bar)) .hero-section {
     text-transform: uppercase;
 }
 
-.news-category.g1 { background-color: var(--color-g1); }
-.news-category.ge { background-color: var(--color-ge); }
-.news-category.gshow { background-color: var(--color-gshow); }
-.news-category.quem { background-color: var(--color-quem); }
-.news-category.valor { background-color: var(--color-valor); }
-.news-category.globoplay { background-color: var(--color-globoplay); }
+.news-category.noticias { background-color: var(--color-g1); }
+.news-category.musica { background-color: var(--color-ge); }
+.news-category.eventos { background-color: var(--color-gshow); }
+.news-category.ministerio { background-color: var(--color-quem); }
+.news-category.estudo-biblico { background-color: var(--color-valor); }
+.news-category.testemunhos { background-color: #EF4444; }
+.news-category.familia { background-color: #EC4899; }
+.news-category.jovens { background-color: #14B8A6; }
 
 .news-content {
     padding: 20px;
@@ -1235,12 +1232,14 @@ body:not(:has(.admin-bar)) .hero-section {
     display: none;
 }
 
-.article-category.g1 { background-color: var(--color-g1); }
-.article-category.ge { background-color: var(--color-ge); }
-.article-category.gshow { background-color: var(--color-gshow); }
-.article-category.quem { background-color: var(--color-quem); }
-.article-category.valor { background-color: var(--color-valor); }
-.article-category.globoplay { background-color: var(--color-globoplay); }
+.article-category.noticias { background-color: var(--color-g1); }
+.article-category.musica { background-color: var(--color-ge); }
+.article-category.eventos { background-color: var(--color-gshow); }
+.article-category.ministerio { background-color: var(--color-quem); }
+.article-category.estudo-biblico { background-color: var(--color-valor); }
+.article-category.testemunhos { background-color: #EF4444; }
+.article-category.familia { background-color: #EC4899; }
+.article-category.jovens { background-color: #14B8A6; }
 
 .article-title {
     font-size: 42px;
@@ -1745,12 +1744,14 @@ body:not(:has(.admin-bar)) .hero-section {
     font-weight: bold;
 }
 
-.category-title.g1-title { color: var(--color-g1); }
-.category-title.ge-title { color: var(--color-ge); }
-.category-title.gshow-title { color: var(--color-gshow); }
-.category-title.quem-title { color: var(--color-quem); }
-.category-title.valor-title { color: var(--color-valor); }
-.category-title.globoplay-title { color: var(--color-globoplay); }
+.category-title.noticias-title { color: var(--color-g1); }
+.category-title.musica-title { color: var(--color-ge); }
+.category-title.eventos-title { color: var(--color-gshow); }
+.category-title.ministerio-title { color: var(--color-quem); }
+.category-title.estudo-biblico-title { color: var(--color-valor); }
+.category-title.testemunhos-title { color: #EF4444; }
+.category-title.familia-title { color: #EC4899; }
+.category-title.jovens-title { color: #14B8A6; }
 
 /* Search Page */
 .search-header {

@@ -23,11 +23,11 @@
                 <input type="text" id="searchPosts" placeholder="Buscar posts..." class="search-input">
                 <select id="filterCategoria" class="filter-select">
                     <option value="">Todas as categorias</option>
-                    <option value="g1">Notícias</option>
-                    <option value="ge">Música</option>
-                    <option value="gshow">Eventos</option>
-                    <option value="quem">Ministérios</option>
-                    <option value="valor">Estudos</option>
+                    <% if (typeof categories !== 'undefined' && categories) { %>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat.slug %>"><%= cat.nome %></option>
+                        <% }); %>
+                    <% } %>
                 </select>
             </div>
         </div>
@@ -48,13 +48,13 @@
                 <tbody>
                     <% if (articles && articles.length > 0) { %>
                         <% 
-                        const categoryNames = {
-                            'g1': 'Notícias',
-                            'ge': 'Música', 
-                            'gshow': 'Eventos',
-                            'quem': 'Ministérios',
-                            'valor': 'Estudos'
-                        };
+                        // Criar mapa de nomes de categorias a partir das categorias carregadas
+                        const categoryNames = {};
+                        if (typeof categories !== 'undefined' && categories) {
+                            categories.forEach(cat => {
+                                categoryNames[cat.slug] = cat.nome;
+                            });
+                        }
                         %>
                         <% articles.forEach(article => { %>
                         <tr>
@@ -79,7 +79,7 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="/noticia/<%= article.urlAmigavel %>" target="_blank" class="btn-icon" title="Ver">
+                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>" target="_blank" class="btn-icon" title="Ver">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon" title="Editar">
@@ -247,11 +247,14 @@
     .badge-success { background: #D4EDDA; color: #155724; }
     .badge-secondary { background: #E2E3E5; color: #383D41; }
     .badge-warning { background: #FFF3CD; color: #856404; margin-right: 8px; }
-    .badge-g1 { background: #FFE5E5; color: #C1121F; }
-    .badge-ge { background: #D4EDDA; color: #28A745; }
-    .badge-gshow { background: #FFE8D6; color: #FF8C42; }
-    .badge-quem { background: #F3E5F5; color: #8B3A62; }
-    .badge-valor { background: #E3F2FD; color: #1F4788; }
+    .badge-noticias { background: #FFE5E5; color: #C1121F; }
+    .badge-musica { background: #D4EDDA; color: #28A745; }
+    .badge-eventos { background: #FFE8D6; color: #FF8C42; }
+    .badge-ministerio { background: #F3E5F5; color: #8B3A62; }
+    .badge-estudo-biblico { background: #E3F2FD; color: #1F4788; }
+    .badge-testemunhos { background: #FFF0F0; color: #DC2626; }
+    .badge-familia { background: #FCE7F3; color: #BE185D; }
+    .badge-jovens { background: #CCFBF1; color: #0F766E; }
 
     .action-buttons {
         display: flex;
