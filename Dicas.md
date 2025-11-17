@@ -60,7 +60,14 @@ pm2 status
 
 
 
+SEM MIGRATION
+# Push para o GitHub
+git push origin main
 
+# No servidor
+cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+git pull origin main
+pm2 restart obuxixogospel
 
 
 
