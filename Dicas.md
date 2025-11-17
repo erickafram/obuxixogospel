@@ -73,7 +73,13 @@ git push origin main
 # No servidor
 cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
 git pull origin main
+npm install --production
 pm2 restart obuxixogospel
+
+# IMPORTANTE: Verificar se o arquivo .env existe no servidor
+# Se não existir, criar com as credenciais corretas:
+nano .env
+# Copiar o conteúdo do .env local e ajustar as credenciais do banco
 
 
 

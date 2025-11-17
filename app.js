@@ -629,6 +629,7 @@ app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
 app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
+app.get('/news_sitemap.xml', sitemapController.generateNewsSitemap); // Rota alternativa com underline
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
 
 // Rotas de páginas públicas
