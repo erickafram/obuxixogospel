@@ -103,3 +103,29 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Reordenar categorias
+exports.reorderCategories = async (req, res) => {
+  try {
+    const { categories } = req.body;
+    
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({ success: false, message: 'Dados inválidos' });
+    }
+
+    // Atualizar ordem de cada categoria
+    for (let i = 0; i < categories.length; i++) {
+      await sequelize.query(
+        'UPDATE categories SET ordem = ? WHERE id = ?',
+        {
+          replacements: [i + 1, categories[i].id]
+        }
+      );
+    }
+
+    res.json({ success: true, message: 'Ordem atualizada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao reordenar categorias:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

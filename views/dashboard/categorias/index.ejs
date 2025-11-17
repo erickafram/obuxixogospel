@@ -28,6 +28,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th style="width: 40px;"><i class="fas fa-grip-vertical" title="Arraste para reordenar"></i></th>
                         <th>ID</th>
                         <th>Nome</th>
                         <th>Slug</th>
@@ -40,7 +41,10 @@
                 <tbody id="categoriesTable">
                     <% if (categories && categories.length > 0) { %>
                         <% categories.forEach(category => { %>
-                        <tr data-category-id="<%= category.id %>">
+                        <tr data-category-id="<%= category.id %>" class="sortable-row">
+                            <td class="drag-handle" style="cursor: move;">
+                                <i class="fas fa-grip-vertical" style="color: #CBD5E0;"></i>
+                            </td>
                             <td><%= category.id %></td>
                             <td>
                                 <div class="category-name">
@@ -77,7 +81,7 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="7" class="text-center">Nenhuma categoria encontrada</td>
+                            <td colspan="8" class="text-center">Nenhuma categoria encontrada</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -262,6 +266,29 @@
 
     .data-table tr:hover {
         background: #F7FAFC;
+    }
+
+    .sortable-row {
+        transition: background-color 0.2s;
+    }
+
+    .sortable-row.sortable-ghost {
+        opacity: 0.4;
+        background: #EDF2F7;
+    }
+
+    .sortable-row.sortable-drag {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .drag-handle {
+        cursor: move !important;
+        user-select: none;
+    }
+
+    .drag-handle:hover i {
+        color: #FF6B00 !important;
     }
 
     .category-name {
@@ -660,6 +687,64 @@
             alert('Erro ao deletar categoria');
         }
     }
+    // Inicializar SortableJS para drag and drop
+    document.addEventListener('DOMContentLoaded', function() {
+        const tbody = document.getElementById('categoriesTable');
+        
+        if (tbody && typeof Sortable !== 'undefined') {
+            new Sortable(tbody, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: async function(evt) {
+                    // Coletar nova ordem
+                    const rows = tbody.querySelectorAll('tr[data-category-id]');
+                    const categories = Array.from(rows).map(row => ({
+                        id: parseInt(row.dataset.categoryId)
+                    }));
+                    
+                    try {
+                        const response = await fetch('/api/categorias/reorder', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ categories })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            // Mostrar feedback visual
+                            const alert = document.createElement('div');
+                            alert.className = 'alert alert-success';
+                            alert.style.position = 'fixed';
+                            alert.style.top = '20px';
+                            alert.style.right = '20px';
+                            alert.style.zIndex = '9999';
+                            alert.textContent = '✓ Ordem atualizada com sucesso!';
+                            document.body.appendChild(alert);
+                            
+                            setTimeout(() => {
+                                alert.remove();
+                            }, 3000);
+                        } else {
+                            alert('Erro ao atualizar ordem: ' + result.message);
+                            location.reload();
+                        }
+                    } catch (error) {
+                        console.error('Erro ao reordenar:', error);
+                        alert('Erro ao atualizar ordem');
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
 </script>
+
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <%- include('../partials/footer') %>

@@ -2,20 +2,28 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Verificar se a coluna já existe antes de adicionar
-    const tableDescription = await queryInterface.describeTable('system_configs');
+    // A tabela se chama configuracoes_sistema, não system_configs
+    // Não precisamos adicionar coluna, vamos apenas inserir a configuração
     
-    if (!tableDescription.favicon) {
-      await queryInterface.addColumn('system_configs', 'favicon', {
-        type: Sequelize.STRING(500),
-        allowNull: true,
-        defaultValue: '/images/favicon.svg',
-        comment: 'Caminho do favicon do site'
-      });
+    // Verificar se já existe a configuração de favicon
+    const [configs] = await queryInterface.sequelize.query(
+      "SELECT * FROM configuracoes_sistema WHERE chave = 'favicon' LIMIT 1"
+    );
+
+    if (configs.length === 0) {
+      await queryInterface.bulkInsert('configuracoes_sistema', [{
+        chave: 'favicon',
+        valor: '/images/favicon.svg',
+        descricao: 'Caminho do favicon do site',
+        created_at: new Date(),
+        updated_at: new Date()
+      }]);
     }
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('system_configs', 'favicon');
+    await queryInterface.bulkDelete('configuracoes_sistema', {
+      chave: 'favicon'
+    });
   }
 };

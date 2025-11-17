@@ -66,10 +66,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     categoria: {
       type: DataTypes.STRING(50),
-      allowNull: false,
-      validate: {
-        isIn: [['g1', 'ge', 'gshow', 'quem', 'valor']]
-      }
+      allowNull: false
+      // Validação removida para aceitar qualquer slug de categoria do banco
     },
     subcategoria: {
       type: DataTypes.STRING(100),

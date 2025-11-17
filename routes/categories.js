@@ -10,5 +10,6 @@ router.get('/:slug', categoryController.getCategoryBySlug);
 router.post('/', categoryController.createCategory);
 router.put('/:id', categoryController.updateCategory);
 router.delete('/:id', categoryController.deleteCategory);
+router.post('/reorder', categoryController.reorderCategories);
 
 module.exports = router;

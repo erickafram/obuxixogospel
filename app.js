@@ -353,7 +353,20 @@ app.delete('/dashboard/posts/deletar/:id', isAuthenticated, async (req, res) => 
 // CATEGORIAS
 app.get('/dashboard/categorias', isAuthenticated, async (req, res) => {
   try {
-    const [categories] = await sequelize.query('SELECT * FROM categories ORDER BY nome ASC');
+    const { Category } = require('./models');
+    
+    // Tentar ordenar por ordem, se falhar, ordenar por nome
+    let categories;
+    try {
+      categories = await Category.findAll({
+        order: [['ordem', 'ASC'], ['nome', 'ASC']]
+      });
+    } catch (orderError) {
+      console.log('Campo ordem não existe ainda, ordenando por nome');
+      categories = await Category.findAll({
+        order: [['nome', 'ASC']]
+      });
+    }
     
     res.render('dashboard/categorias/index', {
       user: {

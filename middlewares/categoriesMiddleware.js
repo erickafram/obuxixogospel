@@ -3,10 +3,18 @@ const { Category } = require('../models');
 // Middleware para carregar categorias e disponibilizar em todas as views
 const loadCategories = async (req, res, next) => {
   try {
-    // Buscar todas as categorias ordenadas por nome
-    const categories = await Category.findAll({
-      order: [['nome', 'ASC']]
-    });
+    // Tentar ordenar por ordem, se falhar, ordenar por nome
+    let categories;
+    try {
+      categories = await Category.findAll({
+        order: [['ordem', 'ASC'], ['nome', 'ASC']]
+      });
+    } catch (orderError) {
+      // Campo ordem não existe ainda, ordenar apenas por nome
+      categories = await Category.findAll({
+        order: [['nome', 'ASC']]
+      });
+    }
     
     // Disponibilizar para todas as views
     res.locals.categories = categories;

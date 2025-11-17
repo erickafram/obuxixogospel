@@ -37,6 +37,11 @@ module.exports = (sequelize, DataTypes) => {
     descricao: {
       type: DataTypes.STRING(500),
       allowNull: true
+    },
+    ordem: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     }
   }, {
     sequelize,

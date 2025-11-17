@@ -25,24 +25,25 @@ git push -u origin main
 
 
 # SUBIR PARA DO GIT SERVIDOR
-# 1. Navegar para o diretório do projeto
-cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+# 1. Corrigir ownership do Git
+git config --global --add safe.directory /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
 
-# 2. Puxar atualizações do GitHub
+# 2. Puxar atualizações
 git pull origin main
 
-# 3. Instalar novas dependências (caso tenha adicionado pacotes novos)
-npm install
+# 3. Verificar status das migrations
+npx sequelize-cli db:migrate:status
 
-# 4. Executar migrations (criar tabelas/campos novos)
+# 4. Executar apenas migrations pendentes
 npx sequelize-cli db:migrate
 
-# 5. (Opcional) Executar seeds apenas se necessário
-# npx sequelize-cli db:seed:all
+# 5. (Opcional) Executar seed do favicon se necessário
+npx sequelize-cli db:seed --seed 20251116220000-favicon-config.js
 
-# 6. Reiniciar o servidor Node.js
+# 6. Reiniciar PM2 (já foi feito, mas pode repetir)
 pm2 restart obuxixogospel
-# OU se usar outro gerenciador:
-# systemctl restart obuxixogospel
+
+# 7. Ver logs para verificar se está tudo OK
+pm2 logs obuxixogospel --lines 50
 
 
