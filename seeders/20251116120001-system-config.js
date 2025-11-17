@@ -5,7 +5,8 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     // Inserir configurações adicionais do sistema
     // (as configurações de IA já são inseridas pela migration 20251116060000-create-system-config)
-    await queryInterface.bulkInsert('configuracoes_sistema', [
+    
+    const configs = [
       {
         chave: 'site_nome',
         valor: 'O Buxixo Gospel',
@@ -90,7 +91,19 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date()
       }
-    ], {}); 
+    ];
+    
+    // Insert only configs that don't already exist
+    for (const config of configs) {
+      const [existing] = await queryInterface.sequelize.query(
+        "SELECT id FROM configuracoes_sistema WHERE chave = ?",
+        { replacements: [config.chave] }
+      );
+      
+      if (existing.length === 0) {
+        await queryInterface.bulkInsert('configuracoes_sistema', [config], {});
+      }
+    }
   },
 
   async down (queryInterface, Sequelize) {

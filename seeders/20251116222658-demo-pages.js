@@ -3,6 +3,16 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
+    // Check if pages already exist
+    const [results] = await queryInterface.sequelize.query(
+      "SELECT COUNT(*) as count FROM pages"
+    );
+    
+    if (results[0].count > 0) {
+      console.log('Pages already exist, skipping...');
+      return;
+    }
+    
     const now = new Date();
     
     await queryInterface.bulkInsert('pages', [
