@@ -194,7 +194,7 @@ body {
 body:has(.admin-bar) .main-content,
 body:has(.admin-bar) main,
 body:has(.admin-bar) .hero-section {
-    margin-top: 120px;
+    margin-top: 50px;
 }
 
 body:not(:has(.admin-bar)) .main-content,
