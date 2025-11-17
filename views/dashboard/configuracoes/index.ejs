@@ -32,6 +32,9 @@
             <button type="button" class="tab-button" onclick="switchTab('redes')">
                 <i class="fas fa-share-alt"></i> Redes Sociais
             </button>
+            <button type="button" class="tab-button" onclick="switchTab('amp')">
+                <i class="fas fa-bolt"></i> AMP
+            </button>
         </div>
 
         <!-- Tab Content: Site -->
@@ -350,6 +353,81 @@
             </div>
         </div>
 
+        <!-- Tab Content: AMP -->
+        <div id="tab-amp" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> AMP (Accelerated Mobile Pages)</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" style="background: #E7F3FF; color: #014361; border: 1px solid #B8DAFF;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>O que é AMP?</strong><br>
+                            AMP (Accelerated Mobile Pages) são páginas otimizadas para carregamento ultra-rápido em dispositivos móveis. 
+                            Quando habilitado, o Google pode exibir suas páginas AMP nos resultados de busca, melhorando a experiência do usuário e o SEO.
+                        </div>
+                    </div>
+
+                    <% if (configs.amp && configs.amp.length > 0) { %>
+                        <% configs.amp.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <% if (config.chave === 'amp_habilitado') { %>
+                                    <i class="fas fa-toggle-on"></i>
+                                <% } else if (config.chave === 'amp_analytics_id') { %>
+                                    <i class="fas fa-chart-line"></i>
+                                <% } else if (config.chave === 'amp_adsense_id') { %>
+                                    <i class="fas fa-dollar-sign"></i>
+                                <% } %>
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            
+                            <% if (config.chave === 'amp_habilitado') { %>
+                                <select 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    class="form-control"
+                                >
+                                    <option value="true" <%= config.valor === 'true' ? 'selected' : '' %>>Habilitado</option>
+                                    <option value="false" <%= config.valor === 'false' ? 'selected' : '' %>>Desabilitado</option>
+                                </select>
+                                <small>
+                                    Quando habilitado, todas as páginas de artigos terão uma versão AMP disponível em <code>/amp</code>
+                                </small>
+                            <% } else { %>
+                                <input 
+                                    type="text" 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    value="<%= config.valor || '' %>" 
+                                    class="form-control"
+                                    placeholder="<%= config.descricao || '' %>"
+                                >
+                                <% if (config.chave === 'amp_analytics_id') { %>
+                                    <small>Ex: UA-XXXXXXXXX-X ou G-XXXXXXXXXX (deixe vazio se não usar)</small>
+                                <% } else if (config.chave === 'amp_adsense_id') { %>
+                                    <small>Ex: ca-pub-XXXXXXXXXXXXXXXX (deixe vazio se não usar)</small>
+                                <% } %>
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração AMP encontrada.</p>
+                    <% } %>
+
+                    <div class="alert alert-info" style="background: #FFF3CD; color: #856404; border: 1px solid #FFEAA7; margin-top: 20px;">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Como testar?</strong><br>
+                            Após habilitar, acesse qualquer artigo e adicione <code>/amp</code> no final da URL. 
+                            Exemplo: <code>/noticia/titulo-do-artigo/amp</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Botão de Salvar (fixo no rodapé) -->
         <div class="form-footer">
             <button type="submit" class="btn btn-primary btn-lg">
@@ -602,7 +680,7 @@
         document.querySelector('.tab-content.active').classList.remove('active');
         
         const tabButtons = document.querySelectorAll('.tab-button');
-        const tabIndex = ['site', 'seo', 'ia', 'analytics', 'redes'].indexOf(activeTab);
+        const tabIndex = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'].indexOf(activeTab);
         if (tabIndex >= 0 && tabButtons[tabIndex]) {
             tabButtons[tabIndex].classList.add('active');
             document.getElementById('tab-' + activeTab).classList.add('active');
@@ -612,7 +690,7 @@
     // Salvar aba ativa ao trocar
     document.querySelectorAll('.tab-button').forEach((btn, index) => {
         btn.addEventListener('click', function() {
-            const tabs = ['site', 'seo', 'ia', 'analytics', 'redes'];
+            const tabs = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'];
             localStorage.setItem('activeConfigTab', tabs[index]);
         });
     });

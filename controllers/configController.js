@@ -13,7 +13,8 @@ exports.getAllConfigs = async (req, res) => {
       seo: [],
       ia: [],
       analytics: [],
-      redes_sociais: []
+      redes_sociais: [],
+      amp: []
     };
 
     configs.forEach(config => {
@@ -27,6 +28,8 @@ exports.getAllConfigs = async (req, res) => {
         grouped.analytics.push(config);
       } else if (config.chave.startsWith('redes_sociais_')) {
         grouped.redes_sociais.push(config);
+      } else if (config.chave.startsWith('amp_')) {
+        grouped.amp.push(config);
       }
     });
 

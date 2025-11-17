@@ -58,6 +58,12 @@ pm2 status
 # 10. (Opcional) Limpar logs antigos
 # pm2 flush obuxixogospel
 
+# 11. Verificar se há novas migrations
+npx sequelize-cli db:migrate:status
+
+# 12. Se houver migrations pendentes, executá-las
+npx sequelize-cli db:migrate
+
 
 
 SEM MIGRATION

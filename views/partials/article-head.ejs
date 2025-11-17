@@ -24,6 +24,11 @@ const categoryNames = {
     <!-- Canonical URL -->
     <link rel="canonical" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>">
     
+    <!-- AMP HTML Link (se AMP estiver habilitado) -->
+    <% if (typeof ampEnabled !== 'undefined' && ampEnabled) { %>
+    <link rel="amphtml" href="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>/amp">
+    <% } %>
+    
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="article">
     <meta property="og:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/noticia/<%= article.urlAmigavel %>">

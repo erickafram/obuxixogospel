@@ -31,23 +31,29 @@ body {
     background-color: var(--color-bg-gray);
 }
 
-/* Barra Administrativa */
+/* Barra Administrativa - SEMPRE NO TOPO */
 .admin-bar {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
-    padding: 8px 0;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 1001;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 10000;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border-bottom: 2px solid #3b82f6;
+    height: 35px;
+}
+
+.admin-bar .container {
+    height: 100%;
 }
 
 .admin-bar-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    height: 100%;
 }
 
 .admin-bar-left {
@@ -56,90 +62,92 @@ body {
 }
 
 .admin-bar-user {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #e2e8f0;
+    color: #fff;
 }
 
 .admin-bar-user i {
-    font-size: 16px;
-    color: #3b82f6;
+    font-size: 13px;
 }
 
 .admin-bar-right {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .admin-bar-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .admin-bar-link:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .admin-bar-link i {
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .admin-bar-edit {
-    background: #3b82f6;
+    background: rgba(59, 130, 246, 0.4);
 }
 
 .admin-bar-edit:hover {
-    background: #2563eb;
+    background: rgba(59, 130, 246, 0.6);
 }
 
 .admin-bar-logout {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.4);
 }
 
 .admin-bar-logout:hover {
-    background: #ef4444;
+    background: rgba(239, 68, 68, 0.6);
 }
 
 /* Responsivo */
 @media (max-width: 768px) {
     .admin-bar {
-        padding: 6px 0;
+        height: auto;
+        min-height: 32px;
     }
     
     .admin-bar-content {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        gap: 5px;
+        padding: 4px 0;
     }
     
     .admin-bar-right {
-        width: 100%;
-        justify-content: center;
-        gap: 6px;
+        gap: 2px;
+        flex-wrap: wrap;
     }
     
     .admin-bar-link {
-        padding: 5px 10px;
-        font-size: 11px;
+        padding: 0 8px;
+        font-size: 9px;
     }
     
     .admin-bar-user {
-        font-size: 12px;
+        font-size: 9px;
+        padding: 0 8px;
+    }
+    
+    .admin-bar-user i {
+        font-size: 10px;
     }
 }
 
@@ -161,22 +169,43 @@ img {
     padding: 0 20px;
 }
 
-/* Header */
+/* Header - ABAIXO DA ADMIN-BAR */
 .header {
     background-color: var(--color-bg);
-    position: sticky;
-    top: 0;
-    z-index: 999;
+    position: fixed;
+    top: 35px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 9999;
 }
 
-/* Quando há admin-bar, ajustar posição do header */
-body:has(.admin-bar) .header {
-    top: 42px;
+/* Quando NÃO há admin-bar, header fica no topo */
+body:not(:has(.admin-bar)) .header {
+    top: 0;
+}
+
+/* Espaçamento do body para compensar elementos fixos */
+body {
+    padding-top: 0;
+}
+
+/* Margem do conteúdo principal */
+body:has(.admin-bar) .main-content,
+body:has(.admin-bar) main,
+body:has(.admin-bar) .hero-section {
+    margin-top: 120px;
+}
+
+body:not(:has(.admin-bar)) .main-content,
+body:not(:has(.admin-bar)) main,
+body:not(:has(.admin-bar)) .hero-section {
+    margin-top: 40px;
 }
 
 .header-top {
     border-bottom: 1px solid var(--color-border);
-    padding: 28px 0;
+    padding: 15px 0;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%);
     transition: all 0.3s ease;
@@ -660,9 +689,35 @@ body:has(.admin-bar) .header {
     font-weight: bold;
     margin-bottom: 10px;
     text-transform: uppercase;
-    background-color: red;
-    color: white;
+    background-color: #c41e3a; /* Vermelho mais escuro para melhor contraste */
+    color: #ffffff;
     border: none;
+}
+
+/* Categorias específicas com melhor contraste */
+.hero-category.noticias,
+.hero-category.g1 {
+    background-color: #c41e3a; /* Vermelho escuro - contraste 4.5:1 */
+}
+
+.hero-category.musica,
+.hero-category.ge {
+    background-color: #1c1c1c; /* Preto */
+}
+
+.hero-category.eventos,
+.hero-category.gshow {
+    background-color: #1c1c1c; /* Preto */
+}
+
+.hero-category.ministerios,
+.hero-category.quem {
+    background-color: #1c1c1c; /* Preto */
+}
+
+.hero-category.estudos,
+.hero-category.valor {
+    background-color: #1c1c1c; /* Preto */
 }
 
 .most-read-category.g1,

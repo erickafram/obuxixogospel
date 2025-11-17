@@ -724,6 +724,7 @@ const categoryRoutes = {
 
 // Criar rotas para cada categoria
 Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
+  // Rota normal do artigo
   app.get(`/${routeName}/:slug`, async (req, res) => {
     try {
       const article = await Article.findOne({ 
@@ -761,9 +762,16 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
         limit: 4
       });
 
+      // Verificar se AMP está habilitado
+      const { SystemConfig } = require('./models');
+      const ampConfig = await SystemConfig.findOne({ 
+        where: { chave: 'amp_habilitado' } 
+      });
+
       res.render('article', { 
         article, 
         related,
+        ampEnabled: ampConfig && ampConfig.valor === 'true',
         user: req.session.userId ? {
           nome: req.session.userName,
           email: req.session.userEmail,
@@ -773,6 +781,73 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error);
       res.status(500).send('Erro ao carregar conteúdo');
+    }
+  });
+
+  // Rota AMP do artigo
+  app.get(`/${routeName}/:slug/amp`, async (req, res) => {
+    try {
+      // Verificar se AMP está habilitado
+      const { SystemConfig } = require('./models');
+      const ampConfig = await SystemConfig.findOne({ 
+        where: { chave: 'amp_habilitado' } 
+      });
+      
+      if (!ampConfig || ampConfig.valor !== 'true') {
+        // Se AMP não está habilitado, redirecionar para versão normal
+        return res.redirect(`/${routeName}/${req.params.slug}`);
+      }
+
+      const article = await Article.findOne({ 
+        where: { urlAmigavel: req.params.slug, publicado: true }
+      });
+      
+      if (!article) {
+        return res.status(404).send('Conteúdo não encontrado');
+      }
+
+      // Buscar artigos relacionados
+      const { Op } = require('sequelize');
+      const related = await Article.findAll({ 
+        where: { 
+          categoria: article.categoria,
+          id: { [Op.ne]: article.id },
+          publicado: true
+        },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 4
+      });
+
+      // Buscar configurações AMP
+      const analyticsConfig = await SystemConfig.findOne({ 
+        where: { chave: 'amp_analytics_id' } 
+      });
+
+      // Mapear categoria para nome legível
+      const categoryNames = {
+        'g1': 'Notícias',
+        'noticias': 'Notícias',
+        'ge': 'Música',
+        'musica': 'Música',
+        'gshow': 'Eventos',
+        'eventos': 'Eventos',
+        'quem': 'Ministérios',
+        'ministerios': 'Ministérios',
+        'valor': 'Estudos',
+        'estudos': 'Estudos'
+      };
+
+      res.render('article-amp', { 
+        article,
+        related,
+        categoryRoute: routeName,
+        categoryName: categoryNames[article.categoria] || 'Notícias',
+        siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
+        ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
+      });
+    } catch (error) {
+      console.error('Erro ao carregar versão AMP:', error);
+      res.status(500).send('Erro ao carregar versão AMP');
     }
   });
 });
