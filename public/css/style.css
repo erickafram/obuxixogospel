@@ -31,6 +31,118 @@ body {
     background-color: var(--color-bg-gray);
 }
 
+/* Barra Administrativa */
+.admin-bar {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff;
+    padding: 8px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-bottom: 2px solid #3b82f6;
+}
+
+.admin-bar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.admin-bar-left {
+    display: flex;
+    align-items: center;
+}
+
+.admin-bar-user {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #e2e8f0;
+}
+
+.admin-bar-user i {
+    font-size: 16px;
+    color: #3b82f6;
+}
+
+.admin-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-bar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.admin-bar-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.admin-bar-link i {
+    font-size: 13px;
+}
+
+.admin-bar-edit {
+    background: #3b82f6;
+}
+
+.admin-bar-edit:hover {
+    background: #2563eb;
+}
+
+.admin-bar-logout {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.admin-bar-logout:hover {
+    background: #ef4444;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .admin-bar {
+        padding: 6px 0;
+    }
+    
+    .admin-bar-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .admin-bar-right {
+        width: 100%;
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .admin-bar-link {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+    
+    .admin-bar-user {
+        font-size: 12px;
+    }
+}
+
 a {
     text-decoration: none;
     color: inherit;

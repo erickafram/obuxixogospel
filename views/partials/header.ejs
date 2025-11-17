@@ -68,6 +68,50 @@
     </script>
 </head>
 <body>
+    <!-- Barra Administrativa (apenas para usuários logados) -->
+    <% if (typeof user !== 'undefined' && user) { %>
+    <div class="admin-bar">
+        <div class="container">
+            <div class="admin-bar-content">
+                <div class="admin-bar-left">
+                    <span class="admin-bar-user">
+                        <i class="fas fa-user-circle"></i>
+                        Olá, <%= user.nome || user.userName %>
+                    </span>
+                </div>
+                <div class="admin-bar-right">
+                    <a href="/dashboard" class="admin-bar-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                    <a href="/dashboard/posts/novo" class="admin-bar-link">
+                        <i class="fas fa-plus-circle"></i>
+                        Novo Post
+                    </a>
+                    <% if (typeof article !== 'undefined' && article && article.id) { %>
+                    <a href="/dashboard/posts/editar/<%= article.id %>" class="admin-bar-link admin-bar-edit">
+                        <i class="fas fa-edit"></i>
+                        Editar Post
+                    </a>
+                    <% } %>
+                    <a href="/dashboard/posts" class="admin-bar-link">
+                        <i class="fas fa-newspaper"></i>
+                        Posts
+                    </a>
+                    <a href="/dashboard/categorias" class="admin-bar-link">
+                        <i class="fas fa-folder"></i>
+                        Categorias
+                    </a>
+                    <a href="/logout" class="admin-bar-link admin-bar-logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+    
     <header class="header">
         <div class="header-top">
             <div class="container">

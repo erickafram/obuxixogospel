@@ -563,37 +563,62 @@ app.get('/robots.txt', sitemapController.generateRobotsTxt);
 // Rotas de páginas públicas
 app.get('/', async (req, res) => {
   try {
+    // Buscar o destaque mais recente (apenas 1)
     const destaque = await Article.findOne({ 
       where: { destaque: true, publicado: true },
       order: [['dataPublicacao', 'DESC']]
     });
     
+    // ID do destaque para excluir das listas
+    const destaqueId = destaque ? destaque.id : null;
+    
+    // Buscar artigos por categoria, excluindo o destaque principal
     const g1Articles = await Article.findAll({ 
-      where: { categoria: 'g1', publicado: true },
+      where: { 
+        categoria: 'g1', 
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
       order: [['dataPublicacao', 'DESC']],
       limit: 6
     });
     
     const geArticles = await Article.findAll({ 
-      where: { categoria: 'ge', publicado: true },
+      where: { 
+        categoria: 'ge', 
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
       order: [['dataPublicacao', 'DESC']],
       limit: 6
     });
     
     const gshowArticles = await Article.findAll({ 
-      where: { categoria: 'gshow', publicado: true },
+      where: { 
+        categoria: 'gshow', 
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
       order: [['dataPublicacao', 'DESC']],
       limit: 6
     });
     
     const quemArticles = await Article.findAll({ 
-      where: { categoria: 'quem', publicado: true },
+      where: { 
+        categoria: 'quem', 
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
       order: [['dataPublicacao', 'DESC']],
       limit: 4
     });
     
     const valorArticles = await Article.findAll({ 
-      where: { categoria: 'valor', publicado: true },
+      where: { 
+        categoria: 'valor', 
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
       order: [['dataPublicacao', 'DESC']],
       limit: 4
     });
@@ -651,7 +676,11 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
       res.render('article', { 
         article, 
         related,
-        user: req.user || null
+        user: req.session.userId ? {
+          nome: req.session.userName,
+          email: req.session.userEmail,
+          role: req.session.userRole
+        } : null
       });
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error);
