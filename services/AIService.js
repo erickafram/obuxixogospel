@@ -594,7 +594,7 @@ class AIService {
 ⚠️ IMPORTANTE: Crie uma matéria jornalística baseada EXCLUSIVAMENTE no texto fornecido abaixo.
 NÃO invente informações. Use APENAS os fatos, declarações e detalhes presentes no texto.
 
-INSTRUÇÕES:
+ESTILO JORNALÍSTICO G1 - NEUTRALIDADE:
 - Reescreva o texto em formato de matéria jornalística profissional
 - Mantenha TODOS os fatos, nomes, declarações e detalhes do texto original
 - Use estilo editorial do G1: objetivo, claro e informativo
@@ -602,6 +602,19 @@ INSTRUÇÕES:
 - Organize em introdução, desenvolvimento e conclusão
 - NÃO adicione informações que não estejam no texto fornecido
 - Use apenas uma quebra de linha entre parágrafos (<br>)
+
+⚠️ EVITE ABSOLUTAMENTE:
+- Termos subjetivos ou avaliações diretas ("essa mensagem é um chamado à reflexão para todos nós")
+- Posicionamento emocional do autor usando "nós" ou "hora de repensar"
+- Chamadas pessoais como "Que tal compartilhar suas opiniões?"
+- Interpretações diretas - deixe o leitor tirar suas próprias conclusões
+
+✅ PREFIRA:
+- Apresentar fatos e depoimentos de forma neutra
+- "A fala provocou debates nas redes sociais"
+- "A repercussão foi intensa, com milhares de comentários"
+- Encerrar reforçando ações do personagem ou impacto social
+- Incluir dados ou especialistas quando possível: "Segundo psicólogos, o impacto das redes sociais..."
 
 CATEGORIA: ${categoria}
 ${linkReferencia ? `LINK DE REFERÊNCIA: ${linkReferencia}` : ''}
@@ -814,15 +827,34 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 ⚠️ IMPORTANTE: Crie uma matéria jornalística baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo. 
 NÃO invente informações. Use APENAS os fatos, declarações e detalhes presentes no conteúdo extraído.
 
-INSTRUÇÕES:
+ESTILO JORNALÍSTICO G1 - NEUTRALIDADE:
 - Reescreva o conteúdo em formato de matéria jornalística profissional
 - Mantenha TODOS os fatos, nomes, declarações e detalhes do conteúdo original
 - Use estilo editorial do G1: objetivo, claro e informativo
 - Inclua citações diretas quando houver no conteúdo
 - Organize em introdução, desenvolvimento e conclusão
-- NÃO adicione informações que não estejam no conteúdo fornecido`;
+- NÃO adicione informações que não estejam no conteúdo fornecido
+
+⚠️ EVITE ABSOLUTAMENTE:
+- Termos subjetivos ou avaliações diretas ("essa mensagem é um chamado à reflexão")
+- Posicionamento emocional usando "nós" ou "hora de repensar"
+- Chamadas pessoais como "Que tal compartilhar suas opiniões?"
+- Interpretações diretas - apresente fatos, deixe o leitor interpretar
+
+✅ PREFIRA:
+- Neutralidade narrativa: "A fala provocou debates nas redes"
+- "A repercussão foi intensa, com milhares de comentários"
+- Encerrar com ações do personagem ou impacto social observável
+- Incluir dados/especialistas: "Segundo especialistas, o tema tem sido debatido..."`;
     } else {
-      promptInstrucao = `Você é um jornalista gospel profissional. Crie uma matéria jornalística sobre o tema abaixo, seguindo o estilo editorial do portal G1, mas sem copiar trechos.`;
+      promptInstrucao = `Você é um jornalista gospel profissional. Crie uma matéria jornalística sobre o tema abaixo, seguindo o estilo editorial do portal G1.
+
+⚠️ NEUTRALIDADE JORNALÍSTICA:
+- Evite termos subjetivos ou avaliações diretas
+- Não use "nós" ou posicionamento emocional do autor
+- Apresente fatos e depoimentos, deixe a interpretação ao leitor
+- Encerre com ações do personagem ou impacto social
+- Inclua dados ou especialistas quando relevante`;
     }
 
     const prompt = `${promptInstrucao}
@@ -871,10 +903,12 @@ ESTRUTURA OBRIGATÓRIA:
       - Use linguagem cotidiana ("busca por respostas" ao invés de "busca por espiritualidade e significado")
       - Tom conversacional mas profissional
    
-   f) IMPACTO PESSOAL E FECHAMENTO:
-      - Como isso afeta as pessoas comuns
-      - Tom acolhedor e próximo
-      - Finalize com perspectiva ou reflexão
+   f) IMPACTO SOCIAL E FECHAMENTO (NEUTRO):
+      - Como isso afeta as pessoas comuns (apresente fatos observáveis)
+      - Repercussão nas redes sociais ou comunidade
+      - Finalize reforçando ações do personagem ou impacto social
+      - EVITE: "hora de repensar", "chamado à reflexão para todos nós"
+      - PREFIRA: "A fala gerou debates", "milhares comentaram sobre o tema"
 
 DIRETRIZES DE NATURALIDADE:
 - VARIE o tamanho das frases (curtas, médias, longas)
