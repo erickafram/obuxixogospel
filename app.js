@@ -283,7 +283,19 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
     const article = await Article.findByPk(req.params.id);
     
     if (!article) {
-      return res.status(404).send('Post não encontrado');
+      const recentArticles = await Article.findAll({
+        where: { publicado: true },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 3
+      });
+      return res.status(404).render('404', { 
+        recentArticles,
+        user: req.session.userId ? {
+          nome: req.session.userName,
+          email: req.session.userEmail,
+          role: req.session.userRole
+        } : null
+      });
     }
     
     const categories = await Category.findAll({
@@ -719,7 +731,19 @@ Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
       });
       
       if (!article) {
-        return res.status(404).send('Conteúdo não encontrado');
+        const recentArticles = await Article.findAll({
+          where: { publicado: true },
+          order: [['dataPublicacao', 'DESC']],
+          limit: 3
+        });
+        return res.status(404).render('404', { 
+          recentArticles,
+          user: req.session.userId ? {
+            nome: req.session.userName,
+            email: req.session.userEmail,
+            role: req.session.userRole
+          } : null
+        });
       }
 
       // Incrementar visualizações
@@ -1128,8 +1152,27 @@ app.post('/dashboard/ia/configuracoes', async (req, res) => {
 });
 
 // Tratamento de erros 404
-app.use((req, res) => {
-  res.status(404).send('Página não encontrada');
+app.use(async (req, res) => {
+  try {
+    // Buscar artigos recentes para sugerir
+    const recentArticles = await Article.findAll({
+      where: { publicado: true },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 3
+    });
+    
+    res.status(404).render('404', { 
+      recentArticles,
+      user: req.session.userId ? {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      } : null
+    });
+  } catch (error) {
+    console.error('Erro ao carregar página 404:', error);
+    res.status(404).send('Página não encontrada');
+  }
 });
 
 // Iniciar servidor
