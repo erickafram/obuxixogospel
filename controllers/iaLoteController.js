@@ -120,16 +120,18 @@ exports.salvarMateria = async (req, res) => {
 
     const { Article } = require('../models');
 
-    // Mapear categoria legível para código do banco
+    // Mapear categoria legível para slug do banco
     const categoriaMap = {
-      'Notícias': 'g1',
-      'Música': 'ge',
-      'Eventos': 'gshow',
-      'Ministérios': 'quem',
-      'Estudos': 'valor'
+      'Notícias': 'noticias',
+      'Música': 'musica',
+      'Eventos': 'eventos',
+      'Ministérios': 'ministerio',
+      'Estudos': 'estudo-biblico',
+      'Política': 'politicia',
+      'Tecnologia': 'tecnologia'
     };
 
-    const categoriaCodigo = categoriaMap[categoria] || 'g1';
+    const categoriaCodigo = categoriaMap[categoria] || 'noticias';
 
     const article = await Article.create({
       titulo,

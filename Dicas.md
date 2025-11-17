@@ -24,26 +24,56 @@ git commit -m "Implementação de questionários dinâmicos e override de compet
 git push -u origin main
 
 
-# SUBIR PARA DO GIT SERVIDOR
-# 1. Corrigir ownership do Git
+# SUBIR PARA O SERVIDOR (PRODUÇÃO)
+# Execute estes comandos no servidor via SSH
+
+# 1. Navegar para o diretório do projeto
+cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+
+# 2. (Primeira vez apenas) Corrigir ownership do Git
 git config --global --add safe.directory /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
 
-# 2. Puxar atualizações
+# 3. Puxar atualizações do GitHub
 git pull origin main
 
-# 3. Verificar status das migrations
+# 4. Instalar novas dependências (se houver)
+npm install --production
+
+# 5. Verificar status das migrations
 npx sequelize-cli db:migrate:status
 
-# 4. Executar apenas migrations pendentes
+# 6. Executar apenas migrations pendentes
 npx sequelize-cli db:migrate
 
-# 5. (Opcional) Executar seed do favicon se necessário
-npx sequelize-cli db:seed --seed 20251116220000-favicon-config.js
-
-# 6. Reiniciar PM2 (já foi feito, mas pode repetir)
+# 7. Reiniciar o servidor Node.js
 pm2 restart obuxixogospel
 
-# 7. Ver logs para verificar se está tudo OK
+# 8. Ver logs para verificar se está tudo OK
+pm2 logs obuxixogospel --lines 30
+
+# 9. Verificar status do PM2
+pm2 status
+
+# 10. (Opcional) Limpar logs antigos
+# pm2 flush obuxixogospel
+
+
+
+
+
+
+
+
+
+## Se o PM2 não reiniciar:
+pm2 stop obuxixogospel
+pm2 start obuxixogospel
+pm2 save
+
+## Ver logs em tempo real:
 pm2 logs obuxixogospel --lines 50
+
+## Verificar uso de memória/CPU:
+pm2 monit
 
 
