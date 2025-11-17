@@ -95,6 +95,84 @@ exports.generateSitemap = async (req, res) => {
   }
 };
 
+// Gerar sitemap específico para Google News (últimas 48h)
+exports.generateNewsSitemap = async (req, res) => {
+  try {
+    const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+    
+    console.log('📰 Gerando Google News Sitemap...');
+    
+    // Buscar artigos publicados nas últimas 48 horas
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+    
+    const recentArticles = await Article.findAll({
+      where: { 
+        publicado: true,
+        dataPublicacao: {
+          [require('sequelize').Op.gte]: twoDaysAgo
+        }
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 1000 // Google News aceita até 1000 artigos
+    });
+
+    console.log(`📄 Encontrados ${recentArticles.length} artigos recentes para Google News`);
+
+    // Gerar XML do Google News Sitemap
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n';
+
+    // Artigos recentes
+    recentArticles.forEach(article => {
+      if (article.urlAmigavel && article.categoria) {
+        const pubDate = new Date(article.dataPublicacao);
+        
+        xml += '  <url>\n';
+        xml += `    <loc>${baseUrl}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
+        xml += '    <news:news>\n';
+        xml += '      <news:publication>\n';
+        xml += '        <news:name>Obuxixo Gospel</news:name>\n';
+        xml += '        <news:language>pt</news:language>\n';
+        xml += '      </news:publication>\n';
+        xml += `      <news:publication_date>${pubDate.toISOString()}</news:publication_date>\n`;
+        xml += `      <news:title>${escapeXml(article.titulo)}</news:title>\n`;
+        
+        // Adicionar keywords se houver
+        if (article.tags) {
+          xml += `      <news:keywords>${escapeXml(article.tags)}</news:keywords>\n`;
+        }
+        
+        xml += '    </news:news>\n';
+        xml += '  </url>\n';
+      }
+    });
+
+    xml += '</urlset>';
+
+    console.log('✅ Google News Sitemap gerado com sucesso');
+
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Google News Sitemap:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).send(`Erro ao gerar Google News Sitemap: ${error.message}`);
+  }
+};
+
+// Função auxiliar para escapar caracteres XML
+function escapeXml(unsafe) {
+  if (!unsafe) return '';
+  return unsafe.toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 exports.generateRobotsTxt = (req, res) => {
   const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
   
@@ -102,23 +180,12 @@ exports.generateRobotsTxt = (req, res) => {
 Allow: /
 
 Sitemap: ${baseUrl}/sitemap.xml
+Sitemap: ${baseUrl}/news-sitemap.xml
 
 # Disallow admin areas
 Disallow: /dashboard/
 Disallow: /login
 Disallow: /api/
-
-# Allow important pages
-Allow: /categoria/
-Allow: /busca
-Allow: /noticias/
-Allow: /musica/
-Allow: /eventos/
-Allow: /ministerio/
-Allow: /testemunhos/
-Allow: /estudo-biblico/
-Allow: /familia/
-Allow: /jovens/
 `;
 
   res.header('Content-Type', 'text/plain');

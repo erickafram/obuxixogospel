@@ -628,6 +628,7 @@ app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
 // Sitemap e Robots.txt
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
+app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
 
 // Rotas de páginas públicas

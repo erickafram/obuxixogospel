@@ -44,6 +44,12 @@ if (typeof categories !== 'undefined' && categories) {
     <meta property="article:author" content="<%= article.autor %>">
     <meta property="article:section" content="<%= categoryNames[article.categoria] || article.categoria %>">
     
+    <!-- Google News Meta Tags -->
+    <meta name="news_keywords" content="gospel, <%= categoryNames[article.categoria] || article.categoria %>, <%= article.titulo %>">
+    <meta name="syndication-source" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
+    <meta name="original-source" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
+    <meta name="date" content="<%= new Date(article.dataPublicacao).toISOString() %>">
+    
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="<%= process.env.SITE_URL || 'http://localhost:3000' %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
