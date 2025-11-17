@@ -747,25 +747,16 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
       where: { chave: 'amp_analytics_id' } 
     });
 
-    // Mapear categoria para nome legível
-    const categoryNames = {
-      'g1': 'Notícias',
-      'noticias': 'Notícias',
-      'ge': 'Música',
-      'musica': 'Música',
-      'gshow': 'Eventos',
-      'eventos': 'Eventos',
-      'quem': 'Ministérios',
-      'ministerios': 'Ministérios',
-      'valor': 'Estudos',
-      'estudos': 'Estudos'
-    };
+    // Buscar nome da categoria do banco
+    const category = await Category.findOne({
+      where: { slug: article.categoria }
+    });
 
     res.render('article-amp', { 
       article,
       related,
       categoryRoute: req.params.categorySlug,
-      categoryName: categoryNames[article.categoria] || 'Notícias',
+      categoryName: category ? category.nome : 'Notícias',
       siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
       ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
     });
@@ -775,126 +766,8 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
   }
 });
 
-// Rotas dinâmicas por categoria (noticia, musica, evento, ministerio, estudo)
-const categoryRoutes = {
-  // Categorias antigas (compatibilidade)
-  'g1': 'noticia',
-  'ge': 'musica',
-  'gshow': 'evento',
-  'quem': 'ministerio',
-  'valor': 'estudo',
-  // Categorias novas do banco
-  'noticias': 'noticia',
-  'musica': 'musica',
-  'eventos': 'evento',
-  'ministerios': 'ministerio',
-  'estudos': 'estudo',
-  'politicia': 'noticia',
-  'tecnologia': 'noticia'
-};
-
-// Criar rotas para cada categoria
-Object.entries(categoryRoutes).forEach(([categoryCode, routeName]) => {
-  // Rota normal do artigo
-  app.get(`/${routeName}/:slug`, async (req, res) => {
-    try {
-      const article = await Article.findOne({ 
-        where: { urlAmigavel: req.params.slug, publicado: true }
-      });
-      
-      if (!article) {
-        const recentArticles = await Article.findAll({
-          where: { publicado: true },
-          order: [['dataPublicacao', 'DESC']],
-          limit: 3
-        });
-        return res.status(404).render('404', { 
-          recentArticles,
-          user: req.session.userId ? {
-            nome: req.session.userName,
-            email: req.session.userEmail,
-            role: req.session.userRole
-          } : null
-        });
-      }
-
-      // Redirecionar para a rota dinâmica universal
-      return res.redirect(301, `/${categoryCode}/${article.urlAmigavel}`);
-    } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error);
-      res.status(500).send('Erro ao carregar conteúdo');
-    }
-  });
-
-  // Rota AMP do artigo
-  app.get(`/${routeName}/:slug/amp`, async (req, res) => {
-    try {
-      // Redirecionar para a rota dinâmica universal
-      return res.redirect(301, `/${categoryCode}/${req.params.slug}/amp`);
-      const ampConfig = await SystemConfig.findOne({ 
-        where: { chave: 'amp_habilitado' } 
-      });
-      
-      if (!ampConfig || ampConfig.valor !== 'true') {
-        // Se AMP não está habilitado, redirecionar para versão normal
-        return res.redirect(`/${routeName}/${req.params.slug}`);
-      }
-
-      const article = await Article.findOne({ 
-        where: { urlAmigavel: req.params.slug, publicado: true }
-      });
-      
-      if (!article) {
-        return res.status(404).send('Conteúdo não encontrado');
-      }
-
-      // Buscar artigos relacionados
-      const { Op } = require('sequelize');
-      const related = await Article.findAll({ 
-        where: { 
-          categoria: article.categoria,
-          id: { [Op.ne]: article.id },
-          publicado: true
-        },
-        order: [['dataPublicacao', 'DESC']],
-        limit: 4
-      });
-
-      // Buscar configurações AMP
-      const analyticsConfig = await SystemConfig.findOne({ 
-        where: { chave: 'amp_analytics_id' } 
-      });
-
-      // Mapear categoria para nome legível
-      const categoryNames = {
-        'g1': 'Notícias',
-        'noticias': 'Notícias',
-        'ge': 'Música',
-        'musica': 'Música',
-        'gshow': 'Eventos',
-        'eventos': 'Eventos',
-        'quem': 'Ministérios',
-        'ministerios': 'Ministérios',
-        'valor': 'Estudos',
-        'estudos': 'Estudos'
-      };
-
-      res.render('article-amp', { 
-        article,
-        related,
-        categoryRoute: routeName,
-        categoryName: categoryNames[article.categoria] || 'Notícias',
-        siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
-        ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
-      });
-    } catch (error) {
-      console.error('Erro ao carregar versão AMP:', error);
-      res.status(500).send('Erro ao carregar versão AMP');
-    }
-  });
-});
-
-// Rota legada /noticia/ (redireciona para categoria apropriada)
+// Rotas legadas para compatibilidade - redirecionam para a categoria correta do banco
+// /noticia/:slug → /:categoria/:slug
 app.get('/noticia/:slug', async (req, res) => {
   try {
     const article = await Article.findOne({ 
@@ -905,9 +778,8 @@ app.get('/noticia/:slug', async (req, res) => {
       return res.status(404).send('Notícia não encontrada');
     }
 
-    // Redirecionar para a categoria correta
-    const categoryRoute = categoryRoutes[article.categoria] || 'noticia';
-    return res.redirect(301, `/${categoryRoute}/${article.urlAmigavel}`);
+    // Redirecionar para a URL correta com a categoria do banco
+    return res.redirect(301, `/${article.categoria}/${article.urlAmigavel}`);
   } catch (error) {
     console.error('Erro ao carregar notícia:', error);
     res.status(500).send('Erro ao carregar notícia');
