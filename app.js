@@ -712,8 +712,7 @@ app.get('/', async (req, res) => {
 app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
   try {
     // Verificar se AMP está habilitado
-    const { ConfiguracaoSistema } = require('./models');
-    const ampConfig = await ConfiguracaoSistema.findOne({ 
+    const ampConfig = await SystemConfig.findOne({ 
       where: { chave: 'amp_habilitado' } 
     });
     
@@ -1197,8 +1196,7 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
     });
 
     // Verificar se AMP está habilitado
-    const { ConfiguracaoSistema } = require('./models');
-    const ampConfig = await ConfiguracaoSistema.findOne({ 
+    const ampConfig = await SystemConfig.findOne({ 
       where: { chave: 'amp_habilitado' } 
     });
 
