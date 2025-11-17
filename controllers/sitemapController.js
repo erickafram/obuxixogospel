@@ -65,12 +65,31 @@ exports.generateSitemap = async (req, res) => {
       xml += '  </url>\n';
     });
 
-    // Artigos
+    // Artigos - usar rota correta baseada na categoria
+    const categoryRoutes = {
+      'g1': 'noticia',
+      'noticias': 'noticia',
+      'ge': 'musica',
+      'musica': 'musica',
+      'gshow': 'evento',
+      'eventos': 'evento',
+      'quem': 'ministerio',
+      'ministerios': 'ministerio',
+      'valor': 'estudo',
+      'estudos': 'estudo',
+      'politicia': 'noticia',
+      'tecnologia': 'noticia'
+    };
+
     articles.forEach(article => {
       if (article.urlAmigavel) {
         const lastmod = article.updatedAt || article.dataPublicacao || new Date();
+        
+        // Determinar a rota correta baseada na categoria
+        const routeName = categoryRoutes[article.categoria] || 'noticia';
+        
         xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/noticia/${article.urlAmigavel}</loc>\n`;
+        xml += `    <loc>${baseUrl}/${routeName}/${article.urlAmigavel}</loc>\n`;
         xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.7</priority>\n';
