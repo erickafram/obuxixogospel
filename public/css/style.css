@@ -38,7 +38,7 @@ body {
     padding: 8px 0;
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 1001;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     border-bottom: 2px solid #3b82f6;
 }
@@ -166,7 +166,12 @@ img {
     background-color: var(--color-bg);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 999;
+}
+
+/* Quando há admin-bar, ajustar posição do header */
+body:has(.admin-bar) .header {
+    top: 42px;
 }
 
 .header-top {
