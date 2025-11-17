@@ -98,9 +98,15 @@ async function main() {
   console.log('📊 RESUMO DA CONVERSÃO');
   console.log('='.repeat(60));
   console.log(`✅ Imagens convertidas: ${converted}/${imageFiles.length}`);
-  console.log(`📦 Tamanho original: ${(totalOriginal / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`📦 Tamanho WebP: ${(totalNew / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`💾 Economia total: ${(totalOriginal - totalNew) / 1024 / 1024).toFixed(2)} MB (${((totalOriginal - totalNew) / totalOriginal * 100).toFixed(1)}%)`);
+  
+  const originalMB = (totalOriginal / 1024 / 1024).toFixed(2);
+  const newMB = (totalNew / 1024 / 1024).toFixed(2);
+  const savingsMB = ((totalOriginal - totalNew) / 1024 / 1024).toFixed(2);
+  const savingsPercent = ((totalOriginal - totalNew) / totalOriginal * 100).toFixed(1);
+  
+  console.log(`📦 Tamanho original: ${originalMB} MB`);
+  console.log(`📦 Tamanho WebP: ${newMB} MB`);
+  console.log(`💾 Economia total: ${savingsMB} MB (${savingsPercent}%)`);
   console.log('='.repeat(60));
   
   console.log('\n💡 PRÓXIMOS PASSOS:');
