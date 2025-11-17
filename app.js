@@ -6,6 +6,8 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs').promises;
 require('dotenv').config();
 
 // Sequelize MySQL
@@ -27,14 +29,14 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
-    const allowedTypes = /jpeg|jpg|png|gif|mp4|mp3|pdf/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mp3|pdf/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb('Erro: Apenas imagens, vídeos, áudios e PDFs são permitidos!');
+      cb('Erro: Apenas imagens (JPG, PNG, GIF, WebP), vídeos, áudios e PDFs são permitidos!');
     }
   }
 });
@@ -422,7 +424,10 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
     }
 
     const file = req.file;
-    const url = `/uploads/${file.filename}`;
+    let finalFilename = file.filename;
+    let finalUrl = `/uploads/${file.filename}`;
+    let finalSize = file.size;
+    let finalMimeType = file.mimetype;
     
     // Determinar tipo
     let tipo = 'documento';
@@ -430,14 +435,46 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
     else if (file.mimetype.startsWith('video/')) tipo = 'video';
     else if (file.mimetype.startsWith('audio/')) tipo = 'audio';
 
+    // Se for imagem (exceto GIF), converter para WebP
+    if (tipo === 'imagem' && !file.mimetype.includes('gif')) {
+      try {
+        const originalPath = path.join('public/uploads', file.filename);
+        const webpFilename = file.filename.replace(/\.(jpg|jpeg|png|webp)$/i, '.webp');
+        const webpPath = path.join('public/uploads', webpFilename);
+        
+        // Converter para WebP com qualidade 85%
+        await sharp(originalPath)
+          .webp({ quality: 85 })
+          .toFile(webpPath);
+        
+        // Pegar tamanho do arquivo WebP
+        const stats = await fs.stat(webpPath);
+        finalSize = stats.size;
+        
+        // Se não for WebP original, deletar arquivo original
+        if (!file.mimetype.includes('webp')) {
+          await fs.unlink(originalPath);
+        }
+        
+        finalFilename = webpFilename;
+        finalUrl = `/uploads/${webpFilename}`;
+        finalMimeType = 'image/webp';
+        
+        console.log(`✅ Imagem convertida para WebP: ${file.originalname} -> ${webpFilename}`);
+      } catch (conversionError) {
+        console.error('⚠️ Erro ao converter para WebP, usando original:', conversionError);
+        // Se falhar, usa o arquivo original
+      }
+    }
+
     // Salvar no banco
     const media = await Media.create({
-      nome: file.filename,
+      nome: finalFilename,
       nomeOriginal: file.originalname,
       tipo: tipo,
-      mimeType: file.mimetype,
-      tamanho: file.size,
-      url: url,
+      mimeType: finalMimeType,
+      tamanho: finalSize,
+      url: finalUrl,
       userId: req.session.userId
     });
 
@@ -445,9 +482,10 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
       success: true, 
       media: {
         id: media.id,
-        url: url,
+        url: finalUrl,
         tipo: tipo,
-        nome: file.originalname
+        nome: file.originalname,
+        convertedToWebP: finalMimeType === 'image/webp' && !file.mimetype.includes('webp')
       }
     });
   } catch (error) {
@@ -475,26 +513,50 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       }
     });
 
-    // Gerar nome único
-    const ext = url.split('.').pop().split('?')[0] || 'jpg';
-    const filename = `bing-${Date.now()}-${Math.round(Math.random() * 1E9)}.${ext}`;
-    const filepath = path.join(__dirname, 'public', 'uploads', filename);
+    // Gerar nome único (sempre WebP)
+    const tempFilename = `bing-${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
+    const webpFilename = tempFilename.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+    const tempPath = path.join(__dirname, 'public', 'uploads', tempFilename);
+    const webpPath = path.join(__dirname, 'public', 'uploads', webpFilename);
 
-    // Salvar arquivo
-    const fs = require('fs');
-    fs.writeFileSync(filepath, response.data);
+    // Salvar arquivo temporário
+    await fs.writeFile(tempPath, response.data);
 
-    const fileUrl = `/uploads/${filename}`;
-    const fileSize = response.data.length;
+    let finalFilename = webpFilename;
+    let finalUrl = `/uploads/${webpFilename}`;
+    let finalSize = response.data.length;
+    let finalMimeType = 'image/webp';
+
+    // Converter para WebP
+    try {
+      await sharp(tempPath)
+        .webp({ quality: 85 })
+        .toFile(webpPath);
+      
+      // Pegar tamanho do arquivo WebP
+      const stats = await fs.stat(webpPath);
+      finalSize = stats.size;
+      
+      // Deletar arquivo temporário
+      await fs.unlink(tempPath);
+      
+      console.log(`✅ Imagem do Bing convertida para WebP: ${webpFilename}`);
+    } catch (conversionError) {
+      console.error('⚠️ Erro ao converter imagem do Bing para WebP:', conversionError);
+      // Se falhar, usa o arquivo original
+      finalFilename = tempFilename;
+      finalUrl = `/uploads/${tempFilename}`;
+      finalMimeType = response.headers['content-type'] || 'image/jpeg';
+    }
 
     // Salvar no banco
     const media = await Media.create({
-      nome: filename,
+      nome: finalFilename,
       nomeOriginal: descricao || 'Imagem do Bing',
       tipo: 'imagem',
-      mimeType: response.headers['content-type'] || 'image/jpeg',
-      tamanho: fileSize,
-      url: fileUrl,
+      mimeType: finalMimeType,
+      tamanho: finalSize,
+      url: finalUrl,
       userId: req.session.userId
     });
 
@@ -502,9 +564,10 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       success: true, 
       media: {
         id: media.id,
-        url: fileUrl,
+        url: finalUrl,
         tipo: 'imagem',
-        nome: descricao || 'Imagem do Bing'
+        nome: descricao || 'Imagem do Bing',
+        convertedToWebP: finalMimeType === 'image/webp'
       }
     });
   } catch (error) {

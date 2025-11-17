@@ -9,7 +9,7 @@
     "seed": "node config/seed.js"
   },
   "keywords": [
-    "globo",
+    "obuxixogospel",
     "news",
     "portal",
     "nodejs"
@@ -37,6 +37,7 @@
     "rss-parser": "^3.13.0",
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
+    "sharp": "^0.33.0",
     "slugify": "^1.6.6"
   },
   "devDependencies": {

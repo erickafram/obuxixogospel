@@ -37,6 +37,7 @@ git config --global --add safe.directory /home/obuxixogospel/htdocs/www.obuxixog
 git pull origin main
 
 # 4. Instalar novas dependências (se houver)
+# IMPORTANTE: Sempre rodar após git pull para pegar novas bibliotecas
 npm install --production
 
 # 5. Verificar status das migrations
