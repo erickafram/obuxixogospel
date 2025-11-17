@@ -742,7 +742,7 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
     });
 
     // Buscar configurações AMP
-    const analyticsConfig = await ConfiguracaoSistema.findOne({ 
+    const analyticsConfig = await SystemConfig.findOne({ 
       where: { chave: 'amp_analytics_id' } 
     });
 
@@ -1219,7 +1219,50 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
 // Tratamento de erros 404
 app.use(async (req, res) => {
   try {
-    // Buscar artigos recentes para sugerir
+    // Verificar configuração de redirecionamento 404
+    const redirectEnabled = await SystemConfig.findOne({
+      where: { chave: '404_redirect_enabled' }
+    });
+    
+    const redirectType = await SystemConfig.findOne({
+      where: { chave: '404_redirect_type' }
+    });
+    
+    // Se redirecionamento está ativado
+    if (redirectEnabled && redirectEnabled.valor === 'true') {
+      const type = redirectType ? redirectType.valor : '301';
+      
+      if (type === '410') {
+        // 410 Gone - Conteúdo removido permanentemente
+        return res.status(410).send(`
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Conteúdo Removido - Obuxixo Gospel</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+              h1 { color: #e74c3c; }
+              p { color: #666; margin: 20px 0; }
+              a { color: #3498db; text-decoration: none; font-weight: bold; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <h1>⚠️ Conteúdo Removido</h1>
+            <p>Esta página foi permanentemente removida do nosso site.</p>
+            <p><a href="/">← Voltar para a página inicial</a></p>
+          </body>
+          </html>
+        `);
+      } else {
+        // 301 Redirect - Redirecionar para home
+        return res.redirect(301, '/');
+      }
+    }
+    
+    // Se redirecionamento está desativado, mostrar página 404 normal
     const recentArticles = await Article.findAll({
       where: { publicado: true },
       order: [['dataPublicacao', 'DESC']],
