@@ -41,3 +41,8 @@ build/
 .cache/
 .temp/
 .tmp/
+
+# Google Service Account (NUNCA COMMITAR!)
+config/google-service-account.json
+config/*.json
+!config/config.json
