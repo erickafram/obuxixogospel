@@ -168,14 +168,21 @@ class AutoPostService {
       let salvas = 0;
       for (const materia of resultado.materias) {
         try {
-          // Gerar URL amigável
-          const urlAmigavel = materia.titulo
+          // Gerar URL amigável base
+          let urlAmigavelBase = materia.titulo
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-            + '-' + Date.now();
+            .replace(/(^-|-$)/g, '');
+          
+          // Verificar se já existe e adicionar sufixo apenas se necessário
+          let urlAmigavel = urlAmigavelBase;
+          let contador = 1;
+          while (await Article.findOne({ where: { urlAmigavel } })) {
+            urlAmigavel = `${urlAmigavelBase}-${contador}`;
+            contador++;
+          }
 
           // Pegar primeira imagem sugerida
           const imagem = materia.imagensSugeridas && materia.imagensSugeridas.length > 0

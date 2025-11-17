@@ -110,15 +110,23 @@ exports.salvarMateria = async (req, res) => {
       });
     }
 
-    // Gerar URL amigável
-    const urlAmigavel = titulo
+    const { Article, Category } = require('../models');
+
+    // Gerar URL amigável base
+    let urlAmigavelBase = titulo
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-
-    const { Article, Category } = require('../models');
+    
+    // Verificar se já existe e adicionar sufixo apenas se necessário
+    let urlAmigavel = urlAmigavelBase;
+    let contador = 1;
+    while (await Article.findOne({ where: { urlAmigavel } })) {
+      urlAmigavel = `${urlAmigavelBase}-${contador}`;
+      contador++;
+    }
 
     // Buscar categoria do banco pelo nome ou usar padrão
     let categoriaCodigo = 'noticias';
