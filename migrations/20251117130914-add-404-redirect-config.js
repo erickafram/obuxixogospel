@@ -4,7 +4,7 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     // Adicionar configuração para redirecionamento de 404
-    await queryInterface.bulkInsert('system_configs', [
+    await queryInterface.bulkInsert('configuracoes_sistema', [
       {
         chave: '404_redirect_enabled',
         valor: 'true',
@@ -24,7 +24,7 @@ module.exports = {
 
   async down (queryInterface, Sequelize) {
     // Remover configurações de redirecionamento 404
-    await queryInterface.bulkDelete('system_configs', {
+    await queryInterface.bulkDelete('configuracoes_sistema', {
       chave: ['404_redirect_enabled', '404_redirect_type']
     });
   }
