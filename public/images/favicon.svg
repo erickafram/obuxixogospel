@@ -1,0 +1,18 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo com gradiente laranja -->
+  <rect width="64" height="64" rx="12" fill="url(#gradient)"/>
+  
+  <!-- Gradiente laranja -->
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF8533"/>
+      <stop offset="100%" stop-color="#FF6B00"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Letra O centralizada -->
+  <path d="M 12 32 C 12 23 17 16 26 16 C 35 16 40 23 40 32 C 40 41 35 48 26 48 C 17 48 12 41 12 32 Z M 18 32 C 18 38 21 43 26 43 C 31 43 34 38 34 32 C 34 26 31 21 26 21 C 21 21 18 26 18 32 Z" fill="white" opacity="0.95"/>
+  
+  <!-- Letra B centralizada -->
+  <path d="M 38 16 L 38 48 L 48 48 C 54 48 58 44.5 58 39 C 58 36 56.5 33.5 54 32 C 56 30.5 57 28 57 25 C 57 19.5 53 16 48 16 Z M 44 20 L 48 20 C 50.5 20 52 21.5 52 24 C 52 26.5 50.5 28 48 28 L 44 28 Z M 44 32 L 48 32 C 51 32 53 33.5 53 37 C 53 40.5 51 44 48 44 L 44 44 Z" fill="white" opacity="0.95"/>
+</svg>

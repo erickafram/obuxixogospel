@@ -60,6 +60,42 @@
                     <% } else { %>
                         <p class="text-muted">Nenhuma configuração de site encontrada.</p>
                     <% } %>
+                    
+                    <!-- Favicon -->
+                    <div class="form-group">
+                        <label for="favicon">
+                            <i class="fas fa-image"></i> Favicon (Ícone do Site)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="favicon" 
+                            name="favicon" 
+                            value="<%= configs.site.find(c => c.chave === 'favicon')?.valor || '/images/favicon.svg' %>" 
+                            class="form-control"
+                            placeholder="/images/favicon.svg"
+                        >
+                        <small>
+                            Caminho do ícone que aparece na aba do navegador. 
+                            <a href="/images/favicon.svg" target="_blank">Ver favicon atual</a>
+                        </small>
+                        <div style="margin-top: 12px; padding: 16px; background: #F7FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <strong style="display: block; margin-bottom: 8px; color: #2D3748;">
+                                <i class="fas fa-eye"></i> Preview do Favicon:
+                            </strong>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img 
+                                    id="faviconPreview" 
+                                    src="<%= configs.site.find(c => c.chave === 'favicon')?.valor || '/images/favicon.svg' %>" 
+                                    alt="Favicon" 
+                                    style="width: 32px; height: 32px; border: 1px solid #CBD5E0; border-radius: 4px; background: white;"
+                                    onerror="this.src='/images/favicon.svg'"
+                                >
+                                <span style="color: #718096; font-size: 13px;">
+                                    Este ícone aparecerá na aba do navegador
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -580,6 +616,19 @@
             localStorage.setItem('activeConfigTab', tabs[index]);
         });
     });
+    
+    // Atualizar preview do favicon em tempo real
+    const faviconInput = document.getElementById('favicon');
+    const faviconPreview = document.getElementById('faviconPreview');
+    
+    if (faviconInput && faviconPreview) {
+        faviconInput.addEventListener('input', function() {
+            const newPath = this.value.trim();
+            if (newPath) {
+                faviconPreview.src = newPath;
+            }
+        });
+    }
 </script>
 
 <%- include('../partials/footer') %>

@@ -1,4 +1,4 @@
-const { Article } = require('../models');
+const { Article, Category, Page } = require('../models');
 
 exports.generateSitemap = async (req, res) => {
   try {
@@ -12,7 +12,18 @@ exports.generateSitemap = async (req, res) => {
       order: [['dataPublicacao', 'DESC']]
     });
 
-    console.log(`📄 Encontrados ${articles.length} artigos publicados`);
+    // Buscar todas as categorias
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
+
+    // Buscar todas as páginas ativas
+    const pages = await Page.findAll({
+      where: { ativo: true },
+      order: [['ordem', 'ASC']]
+    });
+
+    console.log(`📄 Encontrados ${articles.length} artigos, ${categories.length} categorias e ${pages.length} páginas`);
 
     // Gerar XML do sitemap
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -26,14 +37,31 @@ exports.generateSitemap = async (req, res) => {
     xml += '    <priority>1.0</priority>\n';
     xml += '  </url>\n';
 
-    // Categorias
-    const categories = ['g1', 'ge', 'gshow', 'quem', 'valor', 'globoplay'];
+    // Página de busca
+    xml += '  <url>\n';
+    xml += `    <loc>${baseUrl}/busca</loc>\n`;
+    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+    xml += '    <changefreq>weekly</changefreq>\n';
+    xml += '    <priority>0.7</priority>\n';
+    xml += '  </url>\n';
+
+    // Categorias do banco de dados
     categories.forEach(cat => {
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/categoria/${cat}</loc>\n`;
-      xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+      xml += `    <loc>${baseUrl}/categoria/${cat.slug}</loc>\n`;
+      xml += `    <lastmod>${new Date(cat.updatedAt || cat.createdAt).toISOString()}</lastmod>\n`;
       xml += '    <changefreq>daily</changefreq>\n';
       xml += '    <priority>0.8</priority>\n';
+      xml += '  </url>\n';
+    });
+
+    // Páginas do banco de dados
+    pages.forEach(page => {
+      xml += '  <url>\n';
+      xml += `    <loc>${baseUrl}/pagina/${page.slug}</loc>\n`;
+      xml += `    <lastmod>${new Date(page.updatedAt || page.createdAt).toISOString()}</lastmod>\n`;
+      xml += '    <changefreq>monthly</changefreq>\n';
+      xml += '    <priority>0.6</priority>\n';
       xml += '  </url>\n';
     });
 

@@ -140,11 +140,13 @@
                             <label for="categoria">Categoria *</label>
                             <select id="categoria" name="categoria" class="form-control" required>
                                 <option value="">Selecione uma categoria...</option>
-                                <option value="g1" <%= isEdit && article.categoria === 'g1' ? 'selected' : '' %>>Notícias</option>
-                                <option value="ge" <%= isEdit && article.categoria === 'ge' ? 'selected' : '' %>>Música</option>
-                                <option value="gshow" <%= isEdit && article.categoria === 'gshow' ? 'selected' : '' %>>Eventos</option>
-                                <option value="quem" <%= isEdit && article.categoria === 'quem' ? 'selected' : '' %>>Ministérios</option>
-                                <option value="valor" <%= isEdit && article.categoria === 'valor' ? 'selected' : '' %>>Estudos</option>
+                                <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                                    <% categories.forEach(cat => { %>
+                                        <option value="<%= cat.slug %>" <%= isEdit && article.categoria === cat.slug ? 'selected' : '' %>>
+                                            <%= cat.nome %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
                             </select>
                         </div>
 

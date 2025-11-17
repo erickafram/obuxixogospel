@@ -78,6 +78,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Middleware para carregar categorias em todas as views
+const loadCategories = require('./middlewares/categoriesMiddleware');
+app.use(loadCategories);
+
 // Helper function para gerar URLs de artigos
 app.locals.getArticleUrl = function(article) {
   const categoryRoutes = {
@@ -195,16 +199,36 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/dashboard/posts/novo', isAuthenticated, (req, res) => {
-  res.render('dashboard/posts/form', {
-    user: {
-      nome: req.session.userName,
-      email: req.session.userEmail,
-      role: req.session.userRole
-    },
-    isEdit: false,
-    article: {}
-  });
+app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
+  try {
+    const { Category } = require('./models');
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
+    
+    res.render('dashboard/posts/form', {
+      user: {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      },
+      isEdit: false,
+      article: {},
+      categories: categories
+    });
+  } catch (error) {
+    console.error('Erro ao carregar categorias:', error);
+    res.render('dashboard/posts/form', {
+      user: {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      },
+      isEdit: false,
+      article: {},
+      categories: []
+    });
+  }
 });
 
 app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
@@ -253,11 +277,16 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
 
 app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   try {
+    const { Category } = require('./models');
     const article = await Article.findByPk(req.params.id);
     
     if (!article) {
       return res.status(404).send('Post não encontrado');
     }
+    
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
     
     res.render('dashboard/posts/form', {
       user: {
@@ -266,7 +295,8 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
         role: req.session.userRole
       },
       isEdit: true,
-      article
+      article,
+      categories: categories
     });
   } catch (error) {
     console.error('Erro ao carregar post:', error);

@@ -5,7 +5,14 @@ const slugify = require('slugify');
 module.exports = (sequelize, DataTypes) => {
   class Article extends Model {
     static associate(models) {
-      // Definir associações aqui se necessário
+      // Associação com Comment
+      Article.hasMany(models.Comment, {
+        foreignKey: 'articleId',
+        as: 'comments'
+      });
+      
+      // Nota: categoria é uma string, não foreign key
+      // Para associar com Category, seria necessário migração
     }
 
     // Método para incrementar visualizações

@@ -2,15 +2,15 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>Obuxixo Gospel</h4>
+                    <h4>Categorias</h4>
                     <ul>
-                        <li><a href="/categoria/g1">Notícias</a></li>
-                        <li><a href="/categoria/ge">Música</a></li>
-                        <li><a href="/categoria/gshow">Eventos</a></li>
-                        <li><a href="/categoria/quem">Ministérios</a></li>
-                        <li><a href="/categoria/valor">Estudos</a></li>
-                        <li><a href="#">Vídeos</a></li>
-                        <li><a href="#">Podcasts</a></li>
+                        <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                            <% categories.slice(0, 6).forEach(cat => { %>
+                                <li><a href="/categoria/<%= cat.slug %>"><%= cat.nome %></a></li>
+                            <% }); %>
+                        <% } else { %>
+                            <li><a href="/">Início</a></li>
+                        <% } %>
                     </ul>
                 </div>
                 

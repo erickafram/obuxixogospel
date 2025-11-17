@@ -187,5 +187,5 @@ const createBackToTop = () => {
 createBackToTop();
 
 // Console Log
-console.log('%c🌐 Globo.com Clone', 'color: #0066CC; font-size: 20px; font-weight: bold;');
-console.log('%cDesenvolvido com Node.js + Express + MongoDB', 'color: #666; font-size: 12px;');
+console.log('%c🌐 Obuxixo Gospel', 'color: #0066CC; font-size: 20px; font-weight: bold;');
+console.log('%cDesenvolvido com Node.js + Express + Mysql / Erick Vinciius', 'color: #666; font-size: 12px;');

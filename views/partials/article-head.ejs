@@ -197,16 +197,18 @@ const categoryNames = {
             </button>
         </div>
         <ul class="mobile-menu-links">
-            <li><a href="/categoria/g1"><i class="fas fa-newspaper"></i> notícias</a></li>
-            <li><a href="/categoria/ge"><i class="fas fa-music"></i> música</a></li>
-            <li><a href="/categoria/gshow"><i class="fas fa-calendar-alt"></i> eventos</a></li>
-            <li><a href="/categoria/quem"><i class="fas fa-church"></i> ministérios</a></li>
-            <li><a href="/categoria/valor"><i class="fas fa-book"></i> estudos</a></li>
-            <li><a href="#"><i class="fas fa-video"></i> vídeos</a></li>
-            <li><a href="#"><i class="fas fa-podcast"></i> podcasts</a></li>
-            <li><a href="#"><i class="fas fa-hands-praying"></i> testemunhos</a></li>
-            <li><a href="#"><i class="fas fa-globe-americas"></i> missões</a></li>
-            <li><a href="#"><i class="fas fa-users"></i> juventude</a></li>
+            <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                <% categories.forEach(cat => { %>
+                    <li>
+                        <a href="/categoria/<%= cat.slug %>">
+                            <i class="fas fa-<%= cat.icone || 'newspaper' %>"></i> 
+                            <%= cat.nome %>
+                        </a>
+                    </li>
+                <% }); %>
+            <% } else { %>
+                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+            <% } %>
         </ul>
     </div>
     <div class="mobile-menu-overlay" id="menuOverlay"></div>

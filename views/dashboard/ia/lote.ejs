@@ -877,22 +877,24 @@
         
         // Processar embeds do Instagram após adicionar as matérias ao DOM
         setTimeout(() => {
-            if (window.instgrm) {
+            if (window.instgrm && window.instgrm.Embeds) {
                 console.log('📱 Processando embeds do Instagram...');
                 window.instgrm.Embeds.process();
             } else {
-                console.log('⚠️ Script do Instagram ainda não carregado, tentando carregar...');
-                // Carregar script do Instagram se ainda não estiver carregado
-                const script = document.createElement('script');
-                script.src = '//www.instagram.com/embed.js';
-                script.async = true;
-                script.onload = () => {
-                    console.log('✅ Script do Instagram carregado!');
-                    if (window.instgrm) {
+                console.log('⚠️ Aguardando carregamento do Instagram...');
+                // Aguardar o script carregar (já está no header)
+                let attempts = 0;
+                const checkInstagram = setInterval(() => {
+                    attempts++;
+                    if (window.instgrm && window.instgrm.Embeds) {
+                        console.log('✅ Instagram carregado, processando embeds...');
+                        clearInterval(checkInstagram);
                         window.instgrm.Embeds.process();
+                    } else if (attempts > 20) {
+                        console.log('❌ Timeout ao aguardar Instagram');
+                        clearInterval(checkInstagram);
                     }
-                };
-                document.body.appendChild(script);
+                }, 200);
             }
         }, 500);
     }
@@ -1323,8 +1325,5 @@
         mostrarPerfisSalvos();
     });
 </script>
-
-<!-- Instagram Embed Script -->
-<script async src="//www.instagram.com/embed.js"></script>
 
 <%- include('../partials/footer') %>

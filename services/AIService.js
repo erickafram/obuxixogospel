@@ -943,13 +943,19 @@ Retorne APENAS um objeto JSON válido:
             // Adicionar embed do Instagram se houver link de referência
             let conteudoFinal = parsed.conteudo;
             console.log('🔗 Links recebidos:', links);
-            if (links && links.length > 0 && links[0].includes('instagram.com')) {
+            
+            // Verificar se o conteúdo já contém um embed do Instagram
+            const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
+            
+            if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
               console.log('📱 Adicionando embed do Instagram:', links[0]);
               const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
               
               // Adicionar embed no final do conteúdo
               conteudoFinal += embedCode;
               console.log('✅ Embed adicionado ao conteúdo');
+            } else if (jaTemEmbed) {
+              console.log('ℹ️ Conteúdo já contém embed do Instagram, pulando adição');
             } else {
               console.log('⚠️ Nenhum link do Instagram encontrado');
             }
@@ -994,13 +1000,19 @@ Retorne APENAS um objeto JSON válido:
               // Adicionar embed do Instagram se houver link de referência
               let conteudoFinal = parsed.conteudo;
               console.log('🔗 Links recebidos (2ª tentativa):', links);
-              if (links && links.length > 0 && links[0].includes('instagram.com')) {
+              
+              // Verificar se o conteúdo já contém um embed do Instagram
+              const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
+              
+              if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
                 console.log('📱 Adicionando embed do Instagram (2ª tentativa):', links[0]);
                 const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
                 
                 // Adicionar embed no final do conteúdo
                 conteudoFinal += embedCode;
                 console.log('✅ Embed adicionado ao conteúdo (2ª tentativa)');
+              } else if (jaTemEmbed) {
+                console.log('ℹ️ Conteúdo já contém embed do Instagram (2ª tentativa), pulando adição');
               } else {
                 console.log('⚠️ Nenhum link do Instagram encontrado (2ª tentativa)');
               }

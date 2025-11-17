@@ -1,30 +1,50 @@
-const mongoose = require('mongoose');
+'use strict';
+const { Model } = require('sequelize');
 
-const categorySchema = new mongoose.Schema({
-  nome: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  slug: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  cor: {
-    type: String,
-    required: true
-  },
-  icone: {
-    type: String,
-    default: ''
-  },
-  descricao: {
-    type: String,
-    default: ''
+module.exports = (sequelize, DataTypes) => {
+  class Category extends Model {
+    static associate(models) {
+      // Nota: Article usa campo 'categoria' como string
+      // Não há foreign key direta no momento
+    }
   }
-}, {
-  timestamps: true
-});
 
-module.exports = mongoose.model('Category', categorySchema);
+  Category.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    nome: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true
+    },
+    slug: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true
+    },
+    cor: {
+      type: DataTypes.STRING(7),
+      allowNull: false,
+      defaultValue: '#3B82F6'
+    },
+    icone: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    descricao: {
+      type: DataTypes.STRING(500),
+      allowNull: true
+    }
+  }, {
+    sequelize,
+    modelName: 'Category',
+    tableName: 'categories',
+    underscored: true,
+    timestamps: true
+  });
+
+  return Category;
+};
