@@ -137,6 +137,10 @@ app.use(loadCategories);
 const redirectMiddleware = require('./middleware/redirectMiddleware');
 app.use(redirectMiddleware);
 
+// Middleware para redirecionar URLs antigas/quebradas (301)
+const legacyRedirectMiddleware = require('./middleware/legacyRedirectMiddleware');
+app.use(legacyRedirectMiddleware);
+
 // Helper function para gerar URLs de artigos - USA O SLUG DA CATEGORIA DO BANCO
 app.locals.getArticleUrl = function(article) {
   // Usa o slug da categoria diretamente do banco
