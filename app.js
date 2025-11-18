@@ -86,12 +86,12 @@ app.use((req, res, next) => {
   // Content Security Policy básica
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com; " +
-    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://fonts.googleapis.com; " +
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https: blob:; " +
     "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
-    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com"
+    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com https://cdn.ampproject.org"
   );
   
   // Permissions Policy
