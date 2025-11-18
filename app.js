@@ -1000,12 +1000,19 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
     }
 
     const article = await Article.findOne({ 
-      where: { urlAmigavel: req.params.articleSlug, publicado: true }
+      where: { 
+        urlAmigavel: req.params.articleSlug,
+        categoria: req.params.categorySlug,
+        publicado: true 
+      }
     });
     
     if (!article) {
+      console.log(`❌ AMP: Artigo não encontrado - categoria: ${req.params.categorySlug}, slug: ${req.params.articleSlug}`);
       return res.status(404).send('Conteúdo não encontrado');
     }
+    
+    console.log(`✅ AMP: Artigo encontrado - ${article.titulo}`);
 
     // Converter conteúdo para AMP
     const ampArticle = {
