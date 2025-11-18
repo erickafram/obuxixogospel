@@ -278,14 +278,22 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       }
     }
     
-    // Gerar URL amigável
-    const urlAmigavel = titulo
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      + '-' + Date.now();
+    // Gerar URL amigável base usando slugify
+    const slugify = require('slugify');
+    let urlAmigavelBase = slugify(titulo, {
+      lower: true,
+      strict: true,
+      locale: 'pt',
+      remove: /[*+~.()'"!:@]/g
+    });
+    
+    // Verificar se já existe e adicionar sufixo apenas se necessário
+    let urlAmigavel = urlAmigavelBase;
+    let contador = 1;
+    while (await Article.findOne({ where: { urlAmigavel } })) {
+      urlAmigavel = `${urlAmigavelBase}-${contador}`;
+      contador++;
+    }
     
     const article = await Article.create({
       titulo,
