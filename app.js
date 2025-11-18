@@ -870,9 +870,15 @@ function convertToAMP(html) {
   
   let ampHtml = html;
   
-  // Converter <img> para <amp-img>
-  ampHtml = ampHtml.replace(/<img([^>]*)src="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
-    return `<amp-img${before}src="${src}"${after} layout="responsive" width="680" height="400"></amp-img>`;
+  // Remover scripts primeiro (incluindo Instagram embed scripts)
+  ampHtml = ampHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remover blockquotes do Instagram (ficam duplicados com iframe)
+  ampHtml = ampHtml.replace(/<blockquote[^>]*class="instagram-media"[^>]*>.*?<\/blockquote>/gi, '');
+  
+  // Converter Instagram iframes para amp-instagram
+  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?instagram\.com\/p\/([^/]+)\/embed[^"]*"[^>]*><\/iframe>/gi, (match, postId) => {
+    return `<amp-instagram data-shortcode="${postId}" layout="responsive" width="400" height="500"></amp-instagram>`;
   });
   
   // Converter YouTube iframes para amp-youtube
@@ -880,7 +886,18 @@ function convertToAMP(html) {
     return `<amp-youtube data-videoid="${videoId}" layout="responsive" width="680" height="400"></amp-youtube>`;
   });
   
-  // Converter outros iframes para amp-iframe
+  // Converter <img> para <amp-img>
+  ampHtml = ampHtml.replace(/<img([^>]*)src="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+    // Extrair width e height se existirem
+    const widthMatch = match.match(/width="?(\d+)"?/i);
+    const heightMatch = match.match(/height="?(\d+)"?/i);
+    const width = widthMatch ? widthMatch[1] : '680';
+    const height = heightMatch ? heightMatch[1] : '400';
+    
+    return `<amp-img${before}src="${src}"${after} layout="responsive" width="${width}" height="${height}"></amp-img>`;
+  });
+  
+  // Converter outros iframes para amp-iframe (genérico)
   ampHtml = ampHtml.replace(/<iframe([^>]*)src="([^"]*)"([^>]*)><\/iframe>/gi, (match, before, src, after) => {
     // Extrair width e height se existirem
     const widthMatch = match.match(/width="?(\d+)"?/i);
@@ -888,14 +905,18 @@ function convertToAMP(html) {
     const width = widthMatch ? widthMatch[1] : '680';
     const height = heightMatch ? heightMatch[1] : '400';
     
-    return `<amp-iframe${before}src="${src}"${after} layout="responsive" width="${width}" height="${height}" sandbox="allow-scripts allow-same-origin" frameborder="0"><amp-img layout="fill" src="/images/placeholder.png" placeholder></amp-img></amp-iframe>`;
+    return `<amp-iframe src="${src}" layout="responsive" width="${width}" height="${height}" sandbox="allow-scripts allow-same-origin" frameborder="0"><amp-img layout="fill" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" placeholder></amp-img></amp-iframe>`;
   });
   
-  // Remover scripts
-  ampHtml = ampHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
   // Remover estilos inline
-  ampHtml = ampHtml.replace(/style="[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*style="[^"]*"/gi, '');
+  
+  // Remover atributos não permitidos em AMP
+  ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*data-instgrm-[^=]*="[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*allowtransparency="[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*allowfullscreen="[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*scrolling="[^"]*"/gi, '');
   
   return ampHtml;
 }
