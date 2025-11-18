@@ -147,12 +147,17 @@
                                 value="<%= 
                                     (() => {
                                         const data = isEdit && article.dataPublicacao ? new Date(article.dataPublicacao) : new Date();
-                                        // Converter para horário de Brasília (UTC-3)
-                                        const brasiliaOffset = -3 * 60; // -3 horas em minutos
-                                        const localOffset = data.getTimezoneOffset(); // offset do servidor
-                                        const diff = brasiliaOffset - localOffset;
-                                        const dataBrasilia = new Date(data.getTime() + diff * 60000);
-                                        return dataBrasilia.toISOString().slice(0, 16);
+                                        // Ajustar para horário de Brasília (UTC-3)
+                                        // Subtrair 3 horas do UTC para obter horário de Brasília
+                                        const offsetBrasilia = -3 * 60 * 60 * 1000; // -3 horas em milissegundos
+                                        const dataBrasilia = new Date(data.getTime() + offsetBrasilia);
+                                        // Formatar para datetime-local (YYYY-MM-DDTHH:mm)
+                                        const year = dataBrasilia.getUTCFullYear();
+                                        const month = String(dataBrasilia.getUTCMonth() + 1).padStart(2, '0');
+                                        const day = String(dataBrasilia.getUTCDate()).padStart(2, '0');
+                                        const hours = String(dataBrasilia.getUTCHours()).padStart(2, '0');
+                                        const minutes = String(dataBrasilia.getUTCMinutes()).padStart(2, '0');
+                                        return `${year}-${month}-${day}T${hours}:${minutes}`;
                                     })()
                                 %>"
                             >
