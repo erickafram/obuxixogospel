@@ -20,7 +20,7 @@ npx sequelize-cli seed:generate --name nome
 SUBIR PROJETO
 -- SUBIR PARA GIT
 git add .
-git commit -m "Fix: Corrigir rota AMP para verificar categoria e slug, remover timestamp das URLs e melhorar SEO"
+git commit -m "Fix: Corrigir middleware legacyRedirect para não bloquear URLs AMP válidas"
 git push -u origin main
 
 

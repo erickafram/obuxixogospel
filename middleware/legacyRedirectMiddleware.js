@@ -33,9 +33,6 @@ module.exports = function(req, res, next) {
     /^\/category\/.+\/amp\/?$/,
     /^\/category\/.+\/feed\/?$/,
     
-    // URLs com /amp/ no final (formato antigo)
-    /\/amp\/?$/,
-    
     // Outros padrões problemáticos
     /^\/show-da-fe-.+/,
     /^\/cantor-.+\/amp\/?$/,
