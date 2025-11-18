@@ -6,9 +6,14 @@
             <h1>Posts</h1>
             <p>Gerencie todos os artigos do portal</p>
         </div>
-        <a href="/dashboard/posts/novo" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Novo Post
-        </a>
+        <div class="header-actions">
+            <button id="btnDeleteSelected" class="btn btn-danger" style="display: none;" onclick="deleteSelected()">
+                <i class="fas fa-trash"></i> Excluir Selecionados
+            </button>
+            <a href="/dashboard/posts/novo" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Post
+            </a>
+        </div>
     </div>
 
     <% if (typeof success !== 'undefined' && success) { %>
@@ -36,6 +41,9 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th width="40">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                        </th>
                         <th>Título</th>
                         <th>Categoria</th>
                         <th>Autor</th>
@@ -59,6 +67,9 @@
                         <% articles.forEach(article => { %>
                         <tr>
                             <td>
+                                <input type="checkbox" class="post-checkbox" value="<%= article.id %>" onchange="updateDeleteButton()">
+                            </td>
+                            <td>
                                 <div class="post-title">
                                     <% if (article.destaque) { %>
                                     <span class="badge badge-warning">Destaque</span>
@@ -79,9 +90,11 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
+                                    <% if (article.publicado) { %>
                                     <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>" target="_blank" class="btn-icon" title="Ver">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    <% } %>
                                     <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -94,7 +107,7 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="7" class="text-center">Nenhum post encontrado</td>
+                            <td colspan="8" class="text-center">Nenhum post encontrado</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -151,6 +164,29 @@
     .btn-primary:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .post-checkbox, #selectAll {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
     }
 
     .card {
@@ -323,17 +359,97 @@
 </style>
 
 <script>
+    // Deletar post individual
     function deletePost(id) {
-        if (confirm('Tem certeza que deseja deletar este post?')) {
+        if (confirm('⚠️ ATENÇÃO!\n\nTem certeza que deseja EXCLUIR este post?\n\nEsta ação não pode ser desfeita!')) {
             fetch(`/dashboard/posts/deletar/${id}`, {
                 method: 'DELETE'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    alert('✅ Post excluído com sucesso!');
                     location.reload();
                 } else {
-                    alert('Erro ao deletar post');
+                    alert('❌ Erro ao deletar post: ' + (data.message || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                alert('❌ Erro ao deletar post: ' + error.message);
+            });
+        }
+    }
+
+    // Selecionar/desselecionar todos
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.post-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        updateDeleteButton();
+    }
+
+    // Atualizar visibilidade do botão de excluir
+    function updateDeleteButton() {
+        const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+        const btnDelete = document.getElementById('btnDeleteSelected');
+        
+        if (checkboxes.length > 0) {
+            btnDelete.style.display = 'inline-flex';
+            btnDelete.innerHTML = `<i class="fas fa-trash"></i> Excluir Selecionados (${checkboxes.length})`;
+        } else {
+            btnDelete.style.display = 'none';
+        }
+
+        // Atualizar checkbox "selecionar todos"
+        const allCheckboxes = document.querySelectorAll('.post-checkbox');
+        const selectAll = document.getElementById('selectAll');
+        selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+    }
+
+    // Deletar posts selecionados
+    function deleteSelected() {
+        const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (ids.length === 0) {
+            alert('⚠️ Nenhum post selecionado!');
+            return;
+        }
+
+        const confirmMsg = `⚠️ ATENÇÃO!\n\nVocê está prestes a EXCLUIR ${ids.length} post(s)!\n\nEsta ação não pode ser desfeita!\n\nDeseja continuar?`;
+        
+        if (confirm(confirmMsg)) {
+            // Mostrar loading
+            const btnDelete = document.getElementById('btnDeleteSelected');
+            const originalText = btnDelete.innerHTML;
+            btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+            btnDelete.disabled = true;
+
+            // Deletar cada post
+            let deletedCount = 0;
+            let errorCount = 0;
+
+            Promise.all(ids.map(id => 
+                fetch(`/dashboard/posts/deletar/${id}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            deletedCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    })
+                    .catch(() => errorCount++)
+            ))
+            .then(() => {
+                if (deletedCount > 0) {
+                    alert(`✅ ${deletedCount} post(s) excluído(s) com sucesso!${errorCount > 0 ? `\n⚠️ ${errorCount} erro(s) encontrado(s).` : ''}`);
+                    location.reload();
+                } else {
+                    alert('❌ Erro ao excluir posts!');
+                    btnDelete.innerHTML = originalText;
+                    btnDelete.disabled = false;
                 }
             });
         }
