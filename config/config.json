@@ -23,7 +23,6 @@
     "timezone": "-03:00"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL",
     "username": "obuxixogospel",
     "password": "@@2025@@Ekb",
     "database": "obuxixogospel",

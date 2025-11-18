@@ -40,14 +40,16 @@ git pull origin main
 # IMPORTANTE: Sempre rodar após git pull para pegar novas bibliotecas
 npm install --production
 
-# 5. Verificar status das migrations
-npx sequelize-cli db:migrate:status
+# 5. Verificar status das migrations (com NODE_ENV=production)
+NODE_ENV=production npx sequelize-cli db:migrate:status
 
-# 6. Executar apenas migrations pendentes
-npx sequelize-cli db:migrate
+# 6. Executar apenas migrations pendentes (com NODE_ENV=production)
+NODE_ENV=production npx sequelize-cli db:migrate
 
 # 7. Reiniciar o servidor Node.js
 pm2 restart obuxixogospel
+
+# IMPORTANTE: Sempre usar NODE_ENV=production nos comandos do Sequelize no servidor!
 
 # 8. Ver logs para verificar se está tudo OK
 pm2 logs obuxixogospel --lines 30
