@@ -21,7 +21,7 @@
             <article class="news-card">
                 <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                     <div class="news-image">
-                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>">
+                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>" loading="lazy" width="680" height="400">
                         <span class="news-category <%= article.categoria %>">
                             <%= categoryNames[article.categoria] || article.categoria %>
                         </span>

@@ -2,19 +2,13 @@
 
 <main class="main-content category-page">
     <div class="container">
-        <% 
-        const categoryNames = {
-            'g1': 'Notícias',
-            'ge': 'Música', 
-            'gshow': 'Eventos',
-            'quem': 'Ministérios',
-            'valor': 'Estudos'
-        };
-        %>
         <div class="category-header">
             <h1 class="category-title <%= categoria %>-title">
-                <%= categoryNames[categoria] || categoria %>
+                <%= typeof categoryName !== 'undefined' ? categoryName : categoria %>
             </h1>
+            <% if (typeof categoryDescription !== 'undefined' && categoryDescription) { %>
+            <p class="category-description"><%= categoryDescription %></p>
+            <% } %>
         </div>
 
         <% if (articles && articles.length > 0) { %>
@@ -23,9 +17,9 @@
             <article class="news-card">
                 <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                     <div class="news-image">
-                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>">
+                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>" loading="lazy" width="680" height="400">
                         <span class="news-category <%= article.categoria %>">
-                            <%= article.subcategoria || categoryNames[article.categoria] || article.categoria %>
+                            <%= article.subcategoria || (typeof categoryName !== 'undefined' ? categoryName : article.categoria) %>
                         </span>
                     </div>
                     <div class="news-content">

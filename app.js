@@ -75,6 +75,31 @@ app.use(morgan('dev'));
 app.use(bodyParser.json({ limit: '50mb' })); // Aumentar limite para imagens grandes
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
+// Headers de segurança
+app.use((req, res, next) => {
+  // Segurança básica
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Content Security Policy básica
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
+    "img-src 'self' data: https: blob:; " +
+    "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
+    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com"
+  );
+  
+  // Permissions Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  next();
+});
+
 // Static files com cache otimizado
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
   maxAge: '365d', // 1 ano para imagens
@@ -797,6 +822,20 @@ app.get('/robots.txt', sitemapController.generateRobotsTxt);
 // Rotas de páginas públicas
 app.get('/', async (req, res) => {
   try {
+    // Buscar configurações SEO do banco
+    const seoConfig = await SystemConfig.findAll({
+      where: {
+        chave: {
+          [sequelize.Sequelize.Op.in]: ['site_title', 'site_description', 'site_keywords']
+        }
+      }
+    });
+    
+    const seoData = {};
+    seoConfig.forEach(config => {
+      seoData[config.chave] = config.valor;
+    });
+    
     // Buscar o destaque mais recente (apenas 1)
     const destaque = await Article.findOne({ 
       where: { destaque: true, publicado: true },
@@ -864,7 +903,8 @@ app.get('/', async (req, res) => {
       geArticles,
       gshowArticles,
       quemArticles,
-      valorArticles
+      valorArticles,
+      seo: seoData
     });
   } catch (error) {
     console.error('Erro ao carregar artigo:', error);
@@ -1059,6 +1099,15 @@ app.get('/categoria/:categoria', async (req, res) => {
     const limit = 12;
     const offset = (page - 1) * limit;
 
+    // Buscar categoria do banco para obter nome e descrição
+    const category = await Category.findOne({
+      where: { slug: req.params.categoria }
+    });
+
+    if (!category) {
+      return res.status(404).send('Categoria não encontrada');
+    }
+
     const { count, rows: articles } = await Article.findAndCountAll({ 
       where: { 
         categoria: req.params.categoria,
@@ -1069,11 +1118,39 @@ app.get('/categoria/:categoria', async (req, res) => {
       limit: limit
     });
 
+    // Buscar configurações SEO do sistema
+    const seoConfig = await SystemConfig.findAll({
+      where: {
+        chave: {
+          [sequelize.Sequelize.Op.in]: ['site_title', 'site_description', 'site_keywords']
+        }
+      }
+    });
+
+    const seoData = {};
+    seoConfig.forEach(config => {
+      seoData[config.chave] = config.valor;
+    });
+
+    // Criar SEO específico para categoria
+    const categorySeo = {
+      title: `${category.nome} - ${seoData.site_title || 'Obuxixo Gospel'}`,
+      description: category.descricao || `Últimas notícias e artigos sobre ${category.nome} no portal Obuxixo Gospel`,
+      keywords: `${category.nome}, notícias ${category.nome}, ${seoData.site_keywords || 'gospel, evangélico'}`,
+      url: `${process.env.SITE_URL || 'https://www.obuxixogospel.com.br'}/categoria/${category.slug}`,
+      type: 'website',
+      image: '/images/og-image.jpg'
+    };
+
     res.render('category', {
       categoria: req.params.categoria,
+      categoryName: category.nome,
+      categoryDescription: category.descricao,
       articles,
       currentPage: page,
-      totalPages: Math.ceil(count / limit)
+      totalPages: Math.ceil(count / limit),
+      seo: categorySeo,
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br'
     });
   } catch (error) {
     console.error('Erro ao carregar categoria:', error);
@@ -1108,11 +1185,37 @@ app.get('/busca', async (req, res) => {
       limit: limit
     });
 
+    // Buscar configurações SEO do sistema
+    const seoConfig = await SystemConfig.findAll({
+      where: {
+        chave: {
+          [sequelize.Sequelize.Op.in]: ['site_title', 'site_description', 'site_keywords']
+        }
+      }
+    });
+
+    const seoData = {};
+    seoConfig.forEach(config => {
+      seoData[config.chave] = config.valor;
+    });
+
+    // Criar SEO específico para busca
+    const searchSeo = {
+      title: query ? `Resultados para "${query}" - ${seoData.site_title || 'Obuxixo Gospel'}` : `Buscar - ${seoData.site_title || 'Obuxixo Gospel'}`,
+      description: query ? `Encontramos ${count} resultados para sua busca por "${query}" no portal Obuxixo Gospel` : 'Busque por notícias, artigos e conteúdo gospel no Obuxixo Gospel',
+      keywords: query ? `${query}, busca ${query}, ${seoData.site_keywords || 'gospel, evangélico'}` : seoData.site_keywords || 'busca, pesquisa, gospel, evangélico',
+      url: `${process.env.SITE_URL || 'https://www.obuxixogospel.com.br'}/busca${query ? `?q=${encodeURIComponent(query)}` : ''}`,
+      type: 'website',
+      image: '/images/og-image.jpg'
+    };
+
     res.render('search', {
       query,
       articles,
       currentPage: page,
-      totalPages: Math.ceil(count / limit)
+      totalPages: Math.ceil(count / limit),
+      seo: searchSeo,
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br'
     });
   } catch (error) {
     console.error('Erro ao buscar:', error);
