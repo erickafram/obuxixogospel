@@ -283,7 +283,7 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
     
     console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
     
@@ -320,6 +320,12 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       contador++;
     }
     
+    // Processar data de publicação
+    let dataPublicacaoFinal = new Date();
+    if (dataPublicacao) {
+      dataPublicacaoFinal = new Date(dataPublicacao);
+    }
+
     const article = await Article.create({
       titulo,
       descricao: descricao || 'Rascunho',
@@ -330,7 +336,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       autor: autor || 'Redação Obuxixo Gospel',
       publicado: rascunho === 'true' ? false : (publicado === 'true' || publicado === true),
       destaque: destaque === 'true' || destaque === true,
-      dataPublicacao: new Date(),
+      dataPublicacao: dataPublicacaoFinal,
       visualizacoes: 0,
       urlAmigavel
     });
@@ -403,7 +409,7 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
     
     const article = await Article.findByPk(req.params.id);
     
@@ -415,6 +421,12 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       return res.status(404).send(errorMsg);
     }
     
+    // Processar data de publicação
+    let dataPublicacaoFinal = article.dataPublicacao;
+    if (dataPublicacao) {
+      dataPublicacaoFinal = new Date(dataPublicacao);
+    }
+
     await article.update({
       titulo,
       descricao: descricao || article.descricao,
@@ -424,7 +436,8 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       subcategoria: subcategoria || null,
       autor: autor || 'Redação Obuxixo Gospel',
       publicado: rascunho === 'true' ? false : (publicado === 'true'),
-      destaque: destaque === 'true'
+      destaque: destaque === 'true',
+      dataPublicacao: dataPublicacaoFinal
     });
     
     // Se for requisição AJAX (rascunho), retornar JSON

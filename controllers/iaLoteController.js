@@ -118,19 +118,37 @@ exports.salvarMateria = async (req, res) => {
 
     // Baixar e salvar imagem na biblioteca de mídia se houver
     let imagemFinal = imagem || '';
+    let mediaId = null;
     
     if (imagem && imagem.startsWith('http')) {
       try {
         console.log('📥 Baixando imagem do Instagram para biblioteca:', imagem.substring(0, 80) + '...');
         
-        // Baixar a imagem
-        const response = await axios.get(imagem, {
-          responseType: 'arraybuffer',
-          timeout: 15000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        // Baixar a imagem com retry
+        let response;
+        let tentativas = 0;
+        const maxTentativas = 3;
+        
+        while (tentativas < maxTentativas) {
+          try {
+            response = await axios.get(imagem, {
+              responseType: 'arraybuffer',
+              timeout: 20000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                'Referer': 'https://www.instagram.com/',
+                'Origin': 'https://www.instagram.com'
+              }
+            });
+            break; // Sucesso, sai do loop
+          } catch (downloadError) {
+            tentativas++;
+            if (tentativas >= maxTentativas) throw downloadError;
+            console.log(`⚠️ Tentativa ${tentativas} falhou, tentando novamente...`);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Espera 2s antes de tentar novamente
           }
-        });
+        }
 
         // Gerar nome único
         const timestamp = Date.now();
@@ -141,6 +159,7 @@ exports.salvarMateria = async (req, res) => {
         // Converter para WebP e salvar
         await sharp(response.data)
           .webp({ quality: 85 })
+          .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
           .toFile(webpPath);
 
         // Pegar tamanho do arquivo
@@ -159,11 +178,14 @@ exports.salvarMateria = async (req, res) => {
         });
 
         imagemFinal = `/uploads/${webpFilename}`;
-        console.log('✅ Imagem salva na biblioteca de mídia:', media.id);
+        mediaId = media.id;
+        console.log('✅ Imagem salva na biblioteca de mídia ID:', media.id, '- URL:', imagemFinal);
         
       } catch (imageError) {
-        console.error('⚠️ Erro ao baixar/salvar imagem, usando URL original:', imageError.message);
-        // Se falhar, usa a URL original do Instagram
+        console.error('❌ ERRO ao baixar/salvar imagem na biblioteca:', imageError.message);
+        console.error('Stack:', imageError.stack);
+        // Se falhar após todas as tentativas, usa a URL original do Instagram
+        console.log('⚠️ Usando URL original do Instagram como fallback');
       }
     }
 
