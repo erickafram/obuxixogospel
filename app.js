@@ -11,7 +11,7 @@ const fs = require('fs').promises;
 require('dotenv').config();
 
 // Sequelize MySQL
-const { sequelize, Article, User, Media, SystemConfig, Page, Category } = require('./models');
+const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect } = require('./models');
 const AIService = require('./services/AIService');
 
 // Configurar Multer para upload
@@ -107,6 +107,10 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware para carregar categorias em todas as views
 const loadCategories = require('./middlewares/categoriesMiddleware');
 app.use(loadCategories);
+
+// Middleware de redirecionamentos SEO (ANTES das rotas principais)
+const redirectMiddleware = require('./middleware/redirectMiddleware');
+app.use(redirectMiddleware);
 
 // Helper function para gerar URLs de artigos - USA O SLUG DA CATEGORIA DO BANCO
 app.locals.getArticleUrl = function(article) {
@@ -434,6 +438,27 @@ app.post('/dashboard/configuracoes', isAuthenticated, configController.updateCon
 // API de configurações
 app.get('/api/config/:chave', configController.getConfig);
 app.post('/api/config/:chave', isAuthenticated, configController.setConfig);
+
+// REDIRECIONAMENTOS SEO
+const redirectController = require('./controllers/redirectController');
+app.get('/dashboard/configuracoes/redirects', isAuthenticated, redirectController.listar);
+app.get('/api/redirects/stats', isAuthenticated, redirectController.estatisticas);
+app.post('/api/redirects', isAuthenticated, redirectController.criar);
+app.post('/api/redirects/import', isAuthenticated, redirectController.importarCSV);
+app.get('/api/redirects/:id', isAuthenticated, async (req, res) => {
+  try {
+    const redirect = await Redirect.findByPk(req.params.id);
+    if (!redirect) {
+      return res.status(404).json({ success: false, message: 'Não encontrado' });
+    }
+    res.json({ success: true, redirect });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+app.put('/api/redirects/:id', isAuthenticated, redirectController.atualizar);
+app.delete('/api/redirects/:id', isAuthenticated, redirectController.deletar);
+app.post('/api/redirects/:id/toggle', isAuthenticated, redirectController.toggleAtivo);
 
 // PÁGINAS ESTÁTICAS
 const pageController = require('./controllers/pageController');

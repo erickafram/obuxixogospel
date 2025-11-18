@@ -23,6 +23,9 @@
             <button type="button" class="tab-button" onclick="switchTab('seo')">
                 <i class="fas fa-search"></i> SEO
             </button>
+            <button type="button" class="tab-button" onclick="switchTab('redirects')">
+                <i class="fas fa-directions"></i> Redirecionamentos
+            </button>
             <button type="button" class="tab-button" onclick="switchTab('ia')">
                 <i class="fas fa-robot"></i> Inteligência Artificial
             </button>
@@ -353,6 +356,85 @@
             </div>
         </div>
 
+        <!-- Tab Content: Redirecionamentos -->
+        <div id="tab-redirects" class="tab-content">
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-directions"></i> Redirecionamentos SEO</h3>
+                    <button type="button" class="btn btn-primary" onclick="abrirModalNovoRedirect()">
+                        <i class="fas fa-plus"></i> Novo Redirecionamento
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" style="background: #E7F3FF; color: #014361; border: 1px solid #B8DAFF;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>O que são Redirecionamentos?</strong><br>
+                            Redirecionamentos 301/302 permitem que você redirecione URLs antigas ou quebradas para novas URLs. 
+                            Isso é essencial para SEO quando você muda a estrutura de URLs do site.
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                            <div style="font-size: 24px; font-weight: 700; color: #4CAF50;" id="totalRedirectsTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Total de Redirecionamentos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                            <div style="font-size: 24px; font-weight: 700; color: #2196F3;" id="redirectsAtivosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Ativos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #FF9800;">
+                            <div style="font-size: 24px; font-weight: 700; color: #FF9800;" id="redirectsInativosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Inativos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #9C27B0;">
+                            <div style="font-size: 24px; font-weight: 700; color: #9C27B0;" id="totalAcessosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Total de Acessos</div>
+                        </div>
+                    </div>
+
+                    <!-- Busca -->
+                    <div class="form-group">
+                        <input type="text" id="searchRedirectsTab" placeholder="Buscar redirecionamentos..." class="form-control">
+                    </div>
+
+                    <!-- Tabela de Redirecionamentos -->
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table" id="redirectsTable">
+                            <thead>
+                                <tr>
+                                    <th>URL Antiga</th>
+                                    <th>URL Nova</th>
+                                    <th>Tipo</th>
+                                    <th>Acessos</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="redirectsTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i><br>
+                                        Carregando redirecionamentos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info" style="background: #FFF3CD; color: #856404; border: 1px solid #FFEAA7; margin-top: 20px;">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Dica:</strong> Use redirecionamentos 301 (permanentes) para mudanças definitivas de URL. 
+                            Isso transfere a autoridade SEO da URL antiga para a nova.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tab Content: AMP -->
         <div id="tab-amp" class="tab-content">
             <div class="card">
@@ -435,6 +517,61 @@
             </button>
         </div>
     </form>
+    
+    <!-- Modal Novo/Editar Redirecionamento -->
+    <div id="modalRedirect" class="modal-redirect" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; align-items: center; justify-content: center;">
+        <div style="background-color: white; margin: 5% auto; padding: 0; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee;">
+                <h2 id="modalRedirectTitle" style="margin: 0; font-size: 20px;">Novo Redirecionamento</h2>
+                <button onclick="fecharModalRedirect()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            <form id="formRedirect" onsubmit="salvarRedirectTab(event)" style="padding: 20px;">
+                <input type="hidden" id="redirectIdTab">
+                
+                <div class="form-group">
+                    <label for="urlAntigaTab">URL Antiga (quebrada) *</label>
+                    <input type="text" id="urlAntigaTab" class="form-control" placeholder="/noticia-antiga" required>
+                    <small style="color: #666; font-size: 12px;">Exemplo: /noticia-antiga ou /categoria/post-antigo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="urlNovaTab">URL Nova (destino) *</label>
+                    <input type="text" id="urlNovaTab" class="form-control" placeholder="/noticia-nova" required>
+                    <small style="color: #666; font-size: 12px;">Pode ser relativa (/nova-url) ou absoluta (https://site.com/url)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tipoRedirecionamentoTab">Tipo de Redirecionamento *</label>
+                    <select id="tipoRedirecionamentoTab" class="form-control" required>
+                        <option value="301">301 - Permanente (Recomendado para SEO)</option>
+                        <option value="302">302 - Temporário</option>
+                        <option value="307">307 - Temporário (mantém método POST)</option>
+                    </select>
+                    <small style="color: #666; font-size: 12px;">
+                        <strong>301:</strong> Use quando a mudança é permanente (melhor para SEO)<br>
+                        <strong>302:</strong> Use quando a mudança é temporária
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricaoTab">Descrição (opcional)</label>
+                    <textarea id="descricaoTab" class="form-control" rows="3" placeholder="Motivo do redirecionamento..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="ativoTab" checked style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Redirecionamento ativo</span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <button type="button" class="btn btn-outline" onclick="fecharModalRedirect()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -663,6 +800,154 @@
         // Adicionar active ao botão e conteúdo selecionado
         event.target.closest('.tab-button').classList.add('active');
         document.getElementById('tab-' + tabName).classList.add('active');
+        
+        // Carregar redirecionamentos se for a aba redirects
+        if (tabName === 'redirects') {
+            carregarRedirecionamentos();
+        }
+    }
+    
+    // Carregar redirecionamentos
+    async function carregarRedirecionamentos() {
+        try {
+            const response = await fetch('/api/redirects/stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                const stats = data.estatisticas;
+                document.getElementById('totalRedirectsTab').textContent = stats.total;
+                document.getElementById('redirectsAtivosTab').textContent = stats.ativos;
+                document.getElementById('redirectsInativosTab').textContent = stats.inativos;
+                document.getElementById('totalAcessosTab').textContent = stats.maisUsados.reduce((sum, r) => sum + r.contadorAcessos, 0);
+                
+                // Renderizar tabela
+                const tbody = document.getElementById('redirectsTableBody');
+                if (stats.total === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Nenhum redirecionamento cadastrado</td></tr>';
+                } else {
+                    tbody.innerHTML = stats.maisUsados.map(r => `
+                        <tr>
+                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlAntiga}</code></td>
+                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlNova}</code></td>
+                            <td><span style="background: ${r.tipoRedirecionamento === '301' ? '#4CAF50' : '#FF9800'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${r.tipoRedirecionamento}</span></td>
+                            <td><strong>${r.contadorAcessos}</strong></td>
+                            <td>
+                                <label style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                                    <input type="checkbox" ${r.ativo ? 'checked' : ''} onchange="toggleRedirectStatus(${r.id})" style="opacity: 0; width: 0; height: 0;">
+                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${r.ativo ? '#4CAF50' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <button type="button" onclick="editarRedirectTab(${r.id})" style="background: none; border: none; color: #FF6B00; cursor: pointer;" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" onclick="deletarRedirectTab(${r.id})" style="background: none; border: none; color: #dc3545; cursor: pointer;" title="Deletar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao carregar redirecionamentos:', error);
+        }
+    }
+    
+    function abrirModalNovoRedirect() {
+        document.getElementById('modalRedirectTitle').textContent = 'Novo Redirecionamento';
+        document.getElementById('formRedirect').reset();
+        document.getElementById('redirectIdTab').value = '';
+        document.getElementById('ativoTab').checked = true;
+        document.getElementById('modalRedirect').style.display = 'flex';
+    }
+    
+    function fecharModalRedirect() {
+        document.getElementById('modalRedirect').style.display = 'none';
+    }
+    
+    async function toggleRedirectStatus(id) {
+        try {
+            const response = await fetch(`/api/redirects/${id}/toggle`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                carregarRedirecionamentos();
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+        }
+    }
+    
+    async function editarRedirectTab(id) {
+        try {
+            const response = await fetch(`/api/redirects/${id}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const redirect = data.redirect;
+                document.getElementById('modalRedirectTitle').textContent = 'Editar Redirecionamento';
+                document.getElementById('redirectIdTab').value = redirect.id;
+                document.getElementById('urlAntigaTab').value = redirect.urlAntiga;
+                document.getElementById('urlNovaTab').value = redirect.urlNova;
+                document.getElementById('tipoRedirecionamentoTab').value = redirect.tipoRedirecionamento;
+                document.getElementById('descricaoTab').value = redirect.descricao || '';
+                document.getElementById('ativoTab').checked = redirect.ativo;
+                document.getElementById('modalRedirect').style.display = 'flex';
+            }
+        } catch (error) {
+            alert('Erro ao carregar redirecionamento');
+        }
+    }
+    
+    async function salvarRedirectTab(event) {
+        event.preventDefault();
+        
+        const id = document.getElementById('redirectIdTab').value;
+        const data = {
+            urlAntiga: document.getElementById('urlAntigaTab').value,
+            urlNova: document.getElementById('urlNovaTab').value,
+            tipoRedirecionamento: document.getElementById('tipoRedirecionamentoTab').value,
+            descricao: document.getElementById('descricaoTab').value,
+            ativo: document.getElementById('ativoTab').checked
+        };
+        
+        try {
+            const url = id ? `/api/redirects/${id}` : '/api/redirects';
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                fecharModalRedirect();
+                carregarRedirecionamentos();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            alert('Erro ao salvar redirecionamento');
+        }
+    }
+    
+    async function deletarRedirectTab(id) {
+        if (!confirm('Tem certeza que deseja deletar este redirecionamento?')) return;
+        
+        try {
+            const response = await fetch(`/api/redirects/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                carregarRedirecionamentos();
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+        }
     }
 
     // Confirmação antes de salvar
