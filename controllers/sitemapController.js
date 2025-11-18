@@ -2,7 +2,7 @@ const { Article, Category, Page } = require('../models');
 
 exports.generateSitemap = async (req, res) => {
   try {
-    const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
     
     console.log('🗺️ Gerando sitemap...');
     
@@ -98,7 +98,7 @@ exports.generateSitemap = async (req, res) => {
 // Gerar sitemap específico para Google News (últimas 48h)
 exports.generateNewsSitemap = async (req, res) => {
   try {
-    const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
     
     console.log('📰 Gerando Google News Sitemap...');
     
