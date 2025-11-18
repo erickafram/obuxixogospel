@@ -174,7 +174,7 @@ function escapeXml(unsafe) {
 }
 
 exports.generateRobotsTxt = (req, res) => {
-  const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
   
   const robotsTxt = `User-agent: *
 Allow: /
