@@ -110,7 +110,62 @@ exports.salvarMateria = async (req, res) => {
       });
     }
 
-    const { Article, Category } = require('../models');
+    const { Article, Category, Media } = require('../models');
+    const axios = require('axios');
+    const fs = require('fs').promises;
+    const path = require('path');
+    const sharp = require('sharp');
+
+    // Baixar e salvar imagem na biblioteca de mídia se houver
+    let imagemFinal = imagem || '';
+    
+    if (imagem && imagem.startsWith('http')) {
+      try {
+        console.log('📥 Baixando imagem do Instagram para biblioteca:', imagem.substring(0, 80) + '...');
+        
+        // Baixar a imagem
+        const response = await axios.get(imagem, {
+          responseType: 'arraybuffer',
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        // Gerar nome único
+        const timestamp = Date.now();
+        const randomStr = Math.round(Math.random() * 1E9);
+        const webpFilename = `instagram-${timestamp}-${randomStr}.webp`;
+        const webpPath = path.join(__dirname, '..', 'public', 'uploads', webpFilename);
+
+        // Converter para WebP e salvar
+        await sharp(response.data)
+          .webp({ quality: 85 })
+          .toFile(webpPath);
+
+        // Pegar tamanho do arquivo
+        const stats = await fs.stat(webpPath);
+        const fileSize = stats.size;
+
+        // Salvar na biblioteca de mídia
+        const media = await Media.create({
+          nome: webpFilename,
+          nomeOriginal: `Instagram - ${titulo.substring(0, 50)}`,
+          tipo: 'imagem',
+          mimeType: 'image/webp',
+          tamanho: fileSize,
+          url: `/uploads/${webpFilename}`,
+          userId: req.session.userId
+        });
+
+        imagemFinal = `/uploads/${webpFilename}`;
+        console.log('✅ Imagem salva na biblioteca de mídia:', media.id);
+        
+      } catch (imageError) {
+        console.error('⚠️ Erro ao baixar/salvar imagem, usando URL original:', imageError.message);
+        // Se falhar, usa a URL original do Instagram
+      }
+    }
 
     // Gerar URL amigável base
     let urlAmigavelBase = titulo
@@ -143,7 +198,7 @@ exports.salvarMateria = async (req, res) => {
       titulo,
       descricao,
       conteudo,
-      imagem: imagem || '',
+      imagem: imagemFinal,
       categoria: categoriaCodigo,
       subcategoria: null,
       autor: 'Redação Obuxixo Gospel',

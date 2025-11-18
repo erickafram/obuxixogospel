@@ -74,6 +74,30 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Static files com cache otimizado
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
+  maxAge: '365d', // 1 ano para imagens
+  immutable: true,
+  etag: true
+}));
+
+app.use('/css', express.static(path.join(__dirname, 'public/css'), {
+  maxAge: '30d', // 30 dias para CSS
+  etag: true
+}));
+
+app.use('/js', express.static(path.join(__dirname, 'public/js'), {
+  maxAge: '30d', // 30 dias para JS
+  etag: true
+}));
+
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  maxAge: '30d', // 30 dias para imagens estáticas
+  etag: true
+}));
+
+// Outros arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // View engine

@@ -631,6 +631,11 @@
                         </button>
                     </div>
                     <div class="toolbar-group">
+                        <button type="button" id="eraserBtn" class="btn-editor-tool" onclick="toggleEraserMode()" title="Remover Objeto (Borracha Mágica)">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
                         <button type="button" class="btn-editor-tool" onclick="resetCrop()" title="Resetar">
                             <i class="fas fa-sync"></i>
                         </button>
@@ -844,16 +849,18 @@
     .ql-editor iframe.instagram-media-rendered,
     iframe.instagram-media,
     iframe.instagram-media-rendered {
-        position: relative !important;
-        z-index: 1 !important;
+        position: static !important;
+        z-index: auto !important;
         margin: 20px auto !important;
         display: block !important;
+        max-width: 540px !important;
     }
     
     .ql-editor blockquote.instagram-media {
-        position: relative !important;
-        z-index: 1 !important;
+        position: static !important;
+        z-index: auto !important;
         margin: 20px auto !important;
+        max-width: 540px !important;
     }
     
     /* Modal */
@@ -1365,6 +1372,21 @@
         transform: translateY(0);
     }
 
+    .btn-editor-tool.active {
+        background: #FF6B00;
+        border-color: #FF6B00;
+        color: white;
+    }
+
+    .editor-canvas-container.eraser-mode {
+        cursor: crosshair !important;
+    }
+
+    .editor-canvas-container.eraser-mode .cropper-crop-box,
+    .editor-canvas-container.eraser-mode .cropper-view-box {
+        cursor: crosshair !important;
+    }
+
     .aspect-ratio-label {
         font-size: 12px;
         font-weight: 500;
@@ -1383,6 +1405,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
     }
 
     .editor-canvas-container img {
@@ -1465,13 +1488,14 @@
     // Extrair e guardar o embed do Instagram (se existir)
     let embedInstagram = '';
     
-    // Primeiro, remover iframes renderizados do Instagram (evitar duplicação)
-    const iframeRegex = /<iframe[^>]*instagram-media[^>]*>[\s\S]*?<\/iframe>/gi;
-    conteudoCarregado = conteudoCarregado.replace(iframeRegex, '');
-    console.log('🧹 Iframes do Instagram removidos para evitar duplicação');
+    // Primeiro, remover TODOS os iframes renderizados do Instagram (evitar duplicação)
+    // Regex mais agressiva para pegar qualquer iframe do Instagram
+    conteudoCarregado = conteudoCarregado.replace(/<iframe[^>]*instagram[^>]*>.*?<\/iframe>/gis, '');
+    conteudoCarregado = conteudoCarregado.replace(/<iframe[^>]*class="instagram-media[^"]*"[^>]*>.*?<\/iframe>/gis, '');
+    console.log('🧹 Todos os iframes do Instagram removidos para evitar duplicação');
     
     // Regex para capturar o blockquote do Instagram (novo formato sem div wrapper)
-    const embedRegex = /<blockquote class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>/g;
+    const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>/gi;
     const embedMatch = conteudoCarregado.match(embedRegex);
     if (embedMatch) {
         embedInstagram = embedMatch[0];
@@ -2632,6 +2656,226 @@
             closeImageEditor();
         }
     });
+
+    // ==================== MODO BORRACHA MÁGICA ====================
+    let eraserMode = false;
+    let eraserCanvas = null;
+    let eraserContext = null;
+    let isDrawing = false;
+
+    function toggleEraserMode() {
+        eraserMode = !eraserMode;
+        const btn = document.getElementById('eraserBtn');
+        const container = document.querySelector('.editor-canvas-container');
+        
+        console.log('🧹 Modo borracha:', eraserMode ? 'ATIVADO' : 'DESATIVADO');
+        
+        if (eraserMode) {
+            btn.classList.add('active');
+            container.classList.add('eraser-mode');
+            
+            // Desabilitar cropper temporariamente
+            if (cropper) {
+                cropper.disable();
+                console.log('✅ Cropper desabilitado');
+            }
+            
+            // Criar canvas de borracha sobre a imagem
+            setupEraserCanvas();
+            
+            alert('✅ Modo Borracha Ativado!\n\nDesenhe sobre a área que deseja remover.');
+        } else {
+            btn.classList.remove('active');
+            container.classList.remove('eraser-mode');
+            
+            // Reabilitar cropper
+            if (cropper) {
+                cropper.enable();
+                console.log('✅ Cropper reabilitado');
+            }
+            
+            // Remover canvas de borracha
+            if (eraserCanvas) {
+                eraserCanvas.remove();
+                eraserCanvas = null;
+                eraserContext = null;
+                console.log('✅ Canvas de borracha removido');
+            }
+        }
+    }
+
+    function setupEraserCanvas() {
+        const container = document.querySelector('.editor-canvas-container');
+        
+        // Remover canvas anterior se existir
+        if (eraserCanvas) {
+            eraserCanvas.remove();
+        }
+        
+        // Criar canvas overlay
+        eraserCanvas = document.createElement('canvas');
+        eraserCanvas.style.position = 'absolute';
+        eraserCanvas.style.top = '0';
+        eraserCanvas.style.left = '0';
+        eraserCanvas.style.cursor = 'crosshair';
+        eraserCanvas.style.zIndex = '1000';
+        eraserCanvas.style.pointerEvents = 'auto';
+        
+        // Ajustar tamanho do canvas para cobrir todo o container
+        const rect = container.getBoundingClientRect();
+        eraserCanvas.width = rect.width;
+        eraserCanvas.height = rect.height;
+        eraserCanvas.style.width = '100%';
+        eraserCanvas.style.height = '100%';
+        
+        container.appendChild(eraserCanvas);
+        eraserContext = eraserCanvas.getContext('2d');
+        
+        // Configurar contexto para desenho de máscara
+        eraserContext.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+        eraserContext.lineWidth = 30;
+        eraserContext.lineCap = 'round';
+        eraserContext.lineJoin = 'round';
+        
+        console.log('✅ Canvas de borracha criado:', eraserCanvas.width, 'x', eraserCanvas.height);
+        
+        // Event listeners para desenho
+        eraserCanvas.addEventListener('mousedown', startErasing);
+        eraserCanvas.addEventListener('mousemove', erase);
+        eraserCanvas.addEventListener('mouseup', stopErasing);
+        eraserCanvas.addEventListener('mouseleave', stopErasing);
+        
+        // Touch events para mobile
+        eraserCanvas.addEventListener('touchstart', handleTouchStart);
+        eraserCanvas.addEventListener('touchmove', handleTouchMove);
+        eraserCanvas.addEventListener('touchend', stopErasing);
+    }
+
+    function startErasing(e) {
+        isDrawing = true;
+        const rect = eraserCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        eraserContext.beginPath();
+        eraserContext.moveTo(x, y);
+    }
+
+    function erase(e) {
+        if (!isDrawing) return;
+        
+        const rect = eraserCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        eraserContext.lineTo(x, y);
+        eraserContext.stroke();
+    }
+
+    function stopErasing() {
+        if (!isDrawing) return;
+        isDrawing = false;
+        eraserContext.closePath();
+        
+        // Aplicar remoção de objeto
+        applyObjectRemoval();
+    }
+
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        eraserCanvas.dispatchEvent(mouseEvent);
+    }
+
+    function handleTouchMove(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        eraserCanvas.dispatchEvent(mouseEvent);
+    }
+
+    function applyObjectRemoval() {
+        if (!eraserCanvas || !eraserContext) return;
+        
+        // Pegar dados da máscara desenhada
+        const maskData = eraserContext.getImageData(0, 0, eraserCanvas.width, eraserCanvas.height);
+        
+        // Pegar imagem original do cropper
+        const canvas = cropper.getCroppedCanvas();
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Aplicar inpainting simples (preenchimento com cor de fundo ou blur)
+        const scaleX = canvas.width / eraserCanvas.width;
+        const scaleY = canvas.height / eraserCanvas.height;
+        
+        for (let y = 0; y < eraserCanvas.height; y++) {
+            for (let x = 0; x < eraserCanvas.width; x++) {
+                const maskIdx = (y * eraserCanvas.width + x) * 4;
+                
+                // Se a máscara tem cor vermelha (área marcada para remoção)
+                if (maskData.data[maskIdx] > 0) {
+                    const imgX = Math.floor(x * scaleX);
+                    const imgY = Math.floor(y * scaleY);
+                    const imgIdx = (imgY * canvas.width + imgX) * 4;
+                    
+                    // Aplicar blur/transparência ou cor de preenchimento
+                    // Aqui vamos fazer transparente
+                    imageData.data[imgIdx + 3] = 0; // Alpha = 0 (transparente)
+                }
+            }
+        }
+        
+        // Aplicar de volta na imagem
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Atualizar cropper com nova imagem
+        const newImageUrl = canvas.toDataURL('image/png');
+        document.getElementById('imageEditorCanvas').src = newImageUrl;
+        
+        // Limpar canvas de borracha
+        eraserContext.clearRect(0, 0, eraserCanvas.width, eraserCanvas.height);
+        
+        // Reinicializar cropper
+        if (cropper) {
+            cropper.destroy();
+        }
+        
+        const image = document.getElementById('imageEditorCanvas');
+        image.onload = function() {
+            cropper = new Cropper(image, {
+                viewMode: 1,
+                dragMode: 'move',
+                aspectRatio: NaN,
+                autoCropArea: 1,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                background: false,
+                responsive: true,
+                checkOrientation: true,
+                modal: true,
+                minContainerWidth: 200,
+                minContainerHeight: 200
+            });
+            
+            // Desabilitar se ainda em modo borracha
+            if (eraserMode) {
+                cropper.disable();
+            }
+        };
+    }
 </script>
 
 <%- include('../partials/footer') %>

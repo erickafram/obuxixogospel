@@ -1332,10 +1332,15 @@ body:not(:has(.admin-bar)) .hero-section {
 
 /* Instagram Embed */
 .article-body .instagram-media,
-.article-body blockquote.instagram-media {
+.article-body blockquote.instagram-media,
+.article-body iframe.instagram-media,
+.article-body iframe.instagram-media-rendered {
     margin: 30px auto !important;
     max-width: 540px !important;
     min-width: 326px !important;
+    position: static !important;
+    z-index: auto !important;
+    display: block !important;
 }
 
 /* Esconder wrapper antigo do embed do Instagram (posts antigos) */

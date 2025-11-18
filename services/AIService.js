@@ -1216,6 +1216,7 @@ Retorne APENAS a descrição, sem explicações.`;
     }
 
     console.log(`🚀 Processando ${posts.length} posts em lote...`);
+    console.log('📊 Posts recebidos:', JSON.stringify(posts, null, 2));
     const materias = [];
     const erros = [];
 
@@ -1223,11 +1224,13 @@ Retorne APENAS a descrição, sem explicações.`;
       const post = posts[i];
       
       try {
-        console.log(`\n📝 Processando post ${i + 1}/${posts.length}: ${post.shortcode}`);
+        const postId = post.shortcode || post.id || post.url || `post-${i}`;
+        console.log(`\n📝 Processando post ${i + 1}/${posts.length}: ${postId}`);
+        console.log('📄 Dados do post:', JSON.stringify(post, null, 2));
         
         // Verificar se o post tem conteúdo suficiente
         if (!post.caption || post.caption.trim().length < 50) {
-          console.log(`⚠️ Post ${post.shortcode} ignorado: texto muito curto`);
+          console.log(`⚠️ Post ${postId} ignorado: texto muito curto (${post.caption?.length || 0} caracteres)`);
           erros.push({
             post: post,
             erro: 'Texto da postagem muito curto (mínimo 50 caracteres)'
@@ -1256,6 +1259,8 @@ Retorne APENAS a descrição, sem explicações.`;
             const axios = require('axios');
             const fs = require('fs');
             const path = require('path');
+            const sharp = require('sharp');
+            const { Media } = require('../models');
             
             // Baixar a imagem
             const response = await axios.get(post.thumbnail, {
@@ -1271,20 +1276,43 @@ Retorne APENAS a descrição, sem explicações.`;
 
             // Gerar nome único para o arquivo
             const timestamp = Date.now();
-            const filename = `instagram-${post.shortcode || timestamp}.jpg`;
+            const randomStr = Math.round(Math.random() * 1E9);
+            const webpFilename = `instagram-${timestamp}-${randomStr}.webp`;
             const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-            const filepath = path.join(uploadDir, filename);
+            const webpPath = path.join(uploadDir, webpFilename);
 
             // Criar diretório se não existir
             if (!fs.existsSync(uploadDir)) {
               fs.mkdirSync(uploadDir, { recursive: true });
             }
 
-            // Salvar arquivo
-            fs.writeFileSync(filepath, response.data);
+            // Converter para WebP e salvar
+            await sharp(response.data)
+              .webp({ quality: 85 })
+              .toFile(webpPath);
 
-            const publicUrl = `/uploads/${filename}`;
+            // Pegar tamanho do arquivo
+            const stats = fs.statSync(webpPath);
+            const fileSize = stats.size;
+
+            const publicUrl = `/uploads/${webpFilename}`;
             console.log(`✅ Imagem baixada e salva: ${publicUrl}`);
+
+            // Salvar na biblioteca de mídia
+            try {
+              const media = await Media.create({
+                nome: webpFilename,
+                nomeOriginal: `Instagram - ${materia.titulo.substring(0, 50)}`,
+                tipo: 'imagem',
+                mimeType: 'image/webp',
+                tamanho: fileSize,
+                url: publicUrl,
+                userId: 1 // ID padrão, será atualizado no controller se necessário
+              });
+              console.log(`✅ Imagem salva na biblioteca de mídia: ID ${media.id}`);
+            } catch (dbError) {
+              console.error('⚠️ Erro ao salvar na biblioteca, mas arquivo foi salvo:', dbError.message);
+            }
             
             imagensSugeridas.unshift({
               url: publicUrl,
@@ -1328,7 +1356,9 @@ Retorne APENAS a descrição, sem explicações.`;
         }
 
       } catch (error) {
-        console.error(`❌ Erro ao processar post ${post.shortcode}:`, error.message);
+        const postId = post.shortcode || post.id || post.url || `post-${i}`;
+        console.error(`❌ Erro ao processar post ${postId}:`, error.message);
+        console.error('Stack trace:', error.stack);
         erros.push({
           post: post,
           erro: error.message

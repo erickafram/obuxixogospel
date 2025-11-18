@@ -122,6 +122,9 @@
                 <div id="materiasGeradas" class="materias-list"></div>
                 
                 <div class="action-buttons-container">
+                    <button onclick="voltarPasso2()" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar para Posts
+                    </button>
                     <button onclick="voltarPasso1()" class="btn btn-secondary">
                         <i class="fas fa-home"></i> Nova Extração
                     </button>
@@ -927,7 +930,12 @@
                         <div class="materia-description">${materia.descricao}</div>
                     </div>
                     <div class="materia-actions">
-                        <button onclick="salvarMateria(${index})" class="btn btn-success" id="btnSalvar-${index}">
+                        ${materia.articleId ? `
+                            <a href="/dashboard/posts/editar/${materia.articleId}" target="_blank" class="btn btn-primary" title="Editar matéria">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        ` : ''}
+                        <button onclick="salvarMateria(${index})" class="btn btn-success" id="btnSalvar-${index}" ${materia.articleId ? 'style="display:none;"' : ''}>
                             <i class="fas fa-save"></i> Salvar
                         </button>
                     </div>
@@ -1031,14 +1039,29 @@
             const data = await response.json();
             
             if (data.success) {
-                card.classList.add('saved');
-                btn.innerHTML = '<i class="fas fa-check"></i> Salvo!';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-secondary');
+                // Salvar articleId na matéria
+                materia.articleId = data.articleId;
                 
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="fas fa-check"></i> Salvo como Rascunho';
-                }, 2000);
+                card.classList.add('saved');
+                
+                // Esconder botão Salvar e mostrar botão Editar
+                btn.style.display = 'none';
+                
+                // Adicionar botão Editar
+                const actionsDiv = card.querySelector('.materia-actions');
+                const editBtn = document.createElement('a');
+                editBtn.href = `/dashboard/posts/editar/${data.articleId}`;
+                editBtn.target = '_blank';
+                editBtn.className = 'btn btn-primary';
+                editBtn.title = 'Editar matéria';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Editar';
+                actionsDiv.insertBefore(editBtn, btn);
+                
+                // Mostrar mensagem de sucesso
+                const successMsg = document.createElement('div');
+                successMsg.style.cssText = 'color: #10B981; font-size: 12px; margin-top: 8px;';
+                successMsg.innerHTML = '<i class="fas fa-check-circle"></i> Salvo como Rascunho';
+                card.querySelector('.materia-header').appendChild(successMsg);
             } else {
                 alert('Erro ao salvar: ' + data.error);
                 btn.disabled = false;
@@ -1082,6 +1105,10 @@
         mudarPasso(1);
         postsExtraidos = [];
         materiasGeradas = [];
+    }
+
+    function voltarPasso2() {
+        mudarPasso(2);
     }
 
     // Loading
