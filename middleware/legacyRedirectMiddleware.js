@@ -50,9 +50,17 @@ module.exports = function(req, res, next) {
     // Log para monitoramento (opcional - remover em produção se gerar muito log)
     console.log(`🔄 Redirecionando URL antiga: ${url} -> /`);
     
-    // Redirecionar para a home com status 301 (permanente)
-    // Isso informa aos motores de busca que a página foi movida permanentemente
-    return res.redirect(301, '/');
+    // ESTRATÉGIA MELHOR: Retornar 410 (Gone) em vez de 301 para conteúdo deletado
+    // 410 informa ao Google que o conteúdo foi PERMANENTEMENTE removido
+    // Isso é MELHOR que 301→home para conteúdo que não existe mais
+    // Google remove da indexação mais rápido e não penaliza
+    
+    // Renderizar página 404 personalizada com status 410
+    return res.status(410).render('404', {
+      title: 'Conteúdo Removido - Obuxixo Gospel',
+      recentArticles: [], // Pode adicionar artigos recentes aqui se quiser
+      categories: res.locals.categories || []
+    });
   }
   
   // Se não for URL antiga, continuar normalmente
