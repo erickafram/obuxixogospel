@@ -72,8 +72,8 @@ sessionStore.sync();
 // Middlewares
 app.use(cors());
 app.use(morgan('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' })); // Aumentar limite para imagens grandes
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // Static files com cache otimizado
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
@@ -258,13 +258,24 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho } = req.body;
     
-    console.log('Dados recebidos:', { titulo, descricao, categoria, imagem });
+    console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
     
-    // Validar campos obrigatórios
-    if (!titulo || !descricao || !conteudo || !imagem || !categoria) {
-      return res.status(400).send('Campos obrigatórios faltando');
+    // Se for rascunho, validar apenas título e conteúdo
+    if (rascunho === 'true') {
+      if (!titulo || !conteudo) {
+        const errorMsg = 'Título e conteúdo são obrigatórios para rascunho';
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+          return res.status(400).json({ success: false, message: errorMsg });
+        }
+        return res.status(400).send(errorMsg);
+      }
+    } else {
+      // Validar campos obrigatórios para publicação
+      if (!titulo || !descricao || !conteudo || !imagem || !categoria) {
+        return res.status(400).send('Campos obrigatórios faltando');
+      }
     }
     
     // Gerar URL amigável
@@ -278,13 +289,13 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     
     const article = await Article.create({
       titulo,
-      descricao,
+      descricao: descricao || 'Rascunho',
       conteudo,
-      imagem,
-      categoria,
+      imagem: imagem || '/images/default-post.jpg',
+      categoria: categoria || 'noticias',
       subcategoria: subcategoria || null,
       autor: autor || 'Redação Obuxixo Gospel',
-      publicado: publicado === 'true' || publicado === true,
+      publicado: rascunho === 'true' ? false : (publicado === 'true' || publicado === true),
       destaque: destaque === 'true' || destaque === true,
       dataPublicacao: new Date(),
       visualizacoes: 0,
@@ -292,10 +303,26 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     });
     
     console.log('Post criado com sucesso:', article.id);
+    
+    // Se for requisição AJAX (rascunho), retornar JSON
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({ 
+        success: true, 
+        message: rascunho === 'true' ? 'Rascunho salvo com sucesso!' : 'Post criado com sucesso!',
+        articleId: article.id 
+      });
+    }
+    
     res.redirect('/dashboard/posts?success=Post criado com sucesso!');
   } catch (error) {
     console.error('Erro ao criar post:', error);
     console.error('Stack:', error.stack);
+    
+    // Se for requisição AJAX, retornar JSON
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    
     res.status(500).send(`Erro ao criar post: ${error.message}`);
   }
 });
@@ -343,29 +370,48 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho } = req.body;
     
     const article = await Article.findByPk(req.params.id);
     
     if (!article) {
-      return res.status(404).send('Post não encontrado');
+      const errorMsg = 'Post não encontrado';
+      if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(404).json({ success: false, message: errorMsg });
+      }
+      return res.status(404).send(errorMsg);
     }
     
     await article.update({
       titulo,
-      descricao,
+      descricao: descricao || article.descricao,
       conteudo,
-      imagem,
-      categoria,
+      imagem: imagem || article.imagem,
+      categoria: categoria || article.categoria,
       subcategoria: subcategoria || null,
       autor: autor || 'Redação Obuxixo Gospel',
-      publicado: publicado === 'true',
+      publicado: rascunho === 'true' ? false : (publicado === 'true'),
       destaque: destaque === 'true'
     });
+    
+    // Se for requisição AJAX (rascunho), retornar JSON
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({ 
+        success: true, 
+        message: rascunho === 'true' ? 'Rascunho atualizado com sucesso!' : 'Post atualizado com sucesso!',
+        articleId: article.id 
+      });
+    }
     
     res.redirect('/dashboard/posts?success=Post atualizado com sucesso!');
   } catch (error) {
     console.error('Erro ao atualizar post:', error);
+    
+    // Se for requisição AJAX, retornar JSON
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    
     res.status(500).send('Erro ao atualizar post');
   }
 });
