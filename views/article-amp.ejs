@@ -11,6 +11,9 @@
     <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
     <script async custom-element="amp-social-share" src="https://cdn.ampproject.org/v0/amp-social-share-0.1.js"></script>
     <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>
+    <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
+    <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
+    <script async custom-element="amp-youtube" src="https://cdn.ampproject.org/v0/amp-youtube-0.1.js"></script>
     
     <!-- SEO -->
     <title><%= article.titulo %> - Obuxixo Gospel</title>
@@ -266,6 +269,12 @@
         }
         .article-content li {
             margin-bottom: 10px;
+        }
+        .article-content amp-iframe,
+        .article-content amp-youtube {
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
         }
         .social-share {
             background: #fff;

@@ -864,6 +864,42 @@ app.get('/', async (req, res) => {
   }
 });
 
+// Função para converter HTML para AMP
+function convertToAMP(html) {
+  if (!html) return '';
+  
+  let ampHtml = html;
+  
+  // Converter <img> para <amp-img>
+  ampHtml = ampHtml.replace(/<img([^>]*)src="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+    return `<amp-img${before}src="${src}"${after} layout="responsive" width="680" height="400"></amp-img>`;
+  });
+  
+  // Converter YouTube iframes para amp-youtube
+  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?youtube\.com\/embed\/([^"?]+)[^"]*"[^>]*><\/iframe>/gi, (match, videoId) => {
+    return `<amp-youtube data-videoid="${videoId}" layout="responsive" width="680" height="400"></amp-youtube>`;
+  });
+  
+  // Converter outros iframes para amp-iframe
+  ampHtml = ampHtml.replace(/<iframe([^>]*)src="([^"]*)"([^>]*)><\/iframe>/gi, (match, before, src, after) => {
+    // Extrair width e height se existirem
+    const widthMatch = match.match(/width="?(\d+)"?/i);
+    const heightMatch = match.match(/height="?(\d+)"?/i);
+    const width = widthMatch ? widthMatch[1] : '680';
+    const height = heightMatch ? heightMatch[1] : '400';
+    
+    return `<amp-iframe${before}src="${src}"${after} layout="responsive" width="${width}" height="${height}" sandbox="allow-scripts allow-same-origin" frameborder="0"><amp-img layout="fill" src="/images/placeholder.png" placeholder></amp-img></amp-iframe>`;
+  });
+  
+  // Remover scripts
+  ampHtml = ampHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remover estilos inline
+  ampHtml = ampHtml.replace(/style="[^"]*"/gi, '');
+  
+  return ampHtml;
+}
+
 // Rota AMP do artigo
 app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
   try {
@@ -884,6 +920,12 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
     if (!article) {
       return res.status(404).send('Conteúdo não encontrado');
     }
+
+    // Converter conteúdo para AMP
+    const ampArticle = {
+      ...article.toJSON(),
+      conteudo: convertToAMP(article.conteudo)
+    };
 
     // Buscar artigos relacionados
     const { Op } = require('sequelize');
@@ -908,7 +950,7 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
     });
 
     res.render('article-amp', { 
-      article,
+      article: ampArticle,
       related,
       categoryRoute: req.params.categorySlug,
       categoryName: category ? category.nome : 'Notícias',

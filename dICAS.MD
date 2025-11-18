@@ -20,7 +20,7 @@ npx sequelize-cli seed:generate --name nome
 SUBIR PROJETO
 -- SUBIR PARA GIT
 git add .
-git commit -m "Implementação de questionários dinâmicos e override de competência"
+git commit -m "Fix: Corrigir AMP - converter iframe para amp-iframe e adicionar componentes necessários"
 git push -u origin main
 
 
