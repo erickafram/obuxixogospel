@@ -24,12 +24,11 @@
 }
 
 body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     line-height: 1.6;
     color: var(--color-text);
     background-color: var(--color-bg-gray);
-    font-display: swap; /* Evitar FOIT (Flash of Invisible Text) */
 }
 
 /* Barra Administrativa - SEMPRE NO TOPO */
