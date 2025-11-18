@@ -1,4 +1,10 @@
-# 🚀 Otimizações de Performance - Lighthouse Score 68 → 90+
+# 🚀 Otimizações de Performance - Lighthouse Score 68 → 81 → 90+
+
+## 📈 Progresso
+
+- **Inicial:** 68 (Desktop) / 68 (Mobile)
+- **Após Cache:** 81 (Mobile) ✅
+- **Meta:** 90+ (Mobile)
 
 ## 📊 Problemas Identificados
 
