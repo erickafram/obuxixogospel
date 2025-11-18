@@ -138,6 +138,21 @@
             <p id="loadingSubtext"></p>
         </div>
     </div>
+
+    <!-- Modal Visualizar Post -->
+    <div id="postModal" class="post-modal" style="display: none;" onclick="closePostModal(event)">
+        <div class="post-modal-content" onclick="event.stopPropagation()">
+            <div class="post-modal-header">
+                <h3><i class="fab fa-instagram"></i> Post do Instagram</h3>
+                <button type="button" class="post-modal-close" onclick="closePostModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="post-modal-body">
+                <iframe id="postIframe" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -327,23 +342,25 @@
     }
 
     .posts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         margin-bottom: 20px;
     }
 
     .post-card {
         border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 12px;
+        border-radius: 8px;
+        padding: 12px 14px;
         background: white;
         transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .post-card:hover {
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         border-color: #CBD5E0;
     }
 
@@ -353,48 +370,48 @@
     }
 
     .badge-publicado {
-        position: absolute;
-        top: 10px;
-        right: 10px;
         background: #10B981;
         color: white;
-        padding: 4px 10px;
+        padding: 4px 8px;
         border-radius: 6px;
         font-size: 10px;
         font-weight: 600;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 4px;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-        z-index: 10;
+        white-space: nowrap;
     }
 
-    .post-image {
-        width: 100%;
-        height: 160px;
-        object-fit: cover;
-        border-radius: 8px;
-        margin-bottom: 10px;
+    .post-checkbox-wrapper {
+        flex-shrink: 0;
+    }
+
+    .post-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #FF6B00;
+    }
+
+    .post-content {
+        flex: 1;
+        min-width: 0;
     }
 
     .post-caption {
-        font-size: 12px;
+        font-size: 13px;
         color: #2D3748;
-        line-height: 1.5;
-        max-height: 72px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        -webkit-box-orient: vertical;
-        margin-bottom: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+        word-wrap: break-word;
     }
 
     .post-stats {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         font-size: 11px;
         color: #718096;
+        flex-wrap: wrap;
     }
 
     .post-stat {
@@ -582,6 +599,85 @@
         background: #DBEAFE;
         color: #1E40AF;
     }
+
+    /* Modal Post */
+    .post-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    }
+
+    .post-modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .post-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .post-modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #2D3748;
+    }
+
+    .post-modal-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #F7FAFC;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        color: #4A5568;
+    }
+
+    .post-modal-close:hover {
+        background: #EDF2F7;
+        color: #1A202C;
+    }
+
+    .post-modal-body {
+        padding: 0;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F7FAFC;
+    }
+
+    .post-modal-body iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+    }
 </style>
 
 <script>
@@ -681,31 +777,26 @@
             const imageUrl = post.thumbnail || post.imageUrl || '';
             console.log(`🖼️ Imagem do post ${index + 1}:`, imageUrl);
             
-            // Badge de publicado
-            const badgePublicado = isPublicado ? `
-                <div class="badge-publicado" title="Publicado: ${isPublicado.titulo}">
-                    <i class="fas fa-check-circle"></i> Publicado
-                </div>
-            ` : '';
-            
-            // Placeholder para imagem (Instagram bloqueia CORS)
-            const imagePlaceholder = `
-                <div style="height:160px;background:linear-gradient(135deg, #833AB4 0%, #FD1D1D 50%, #F77737 100%);display:flex;align-items:center;justify-content:center;border-radius:8px;flex-direction:column;gap:8px;position:relative;">
-                    <input type="checkbox" class="post-checkbox" data-index="${index}" ${isPublicado ? '' : 'checked'} style="position:absolute;top:10px;left:10px;width:20px;height:20px;cursor:pointer;z-index:10;">
-                    ${badgePublicado}
-                    <i class="fab fa-instagram" style="font-size:48px;color:white;"></i>
-                    <a href="${post.url}" target="_blank" style="color:white;font-size:11px;text-decoration:none;">Ver no Instagram</a>
-                </div>
-            `;
-            
             card.innerHTML = `
-                ${imagePlaceholder}
-                <div class="post-caption">${post.caption || 'Sem legenda'}</div>
-                <div class="post-stats">
-                    <span class="post-stat"><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
-                    <span class="post-stat"><i class="fas fa-comment"></i> ${formatNumber(post.comments || 0)}</span>
-                    <span class="post-stat"><a href="${post.url}" target="_blank" style="color:#FF6B00;text-decoration:none;"><i class="fas fa-external-link-alt"></i> Ver</a></span>
-                    ${isPublicado ? `<span class="post-stat" style="color:#10B981;"><i class="fas fa-check"></i> No site</span>` : ''}
+                <div class="post-checkbox-wrapper">
+                    <input type="checkbox" class="post-checkbox" data-index="${index}" ${isPublicado ? '' : 'checked'}>
+                </div>
+                <div class="post-content">
+                    <div class="post-caption">${post.caption || 'Sem legenda'}</div>
+                    <div class="post-stats">
+                        <span class="post-stat"><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
+                        <span class="post-stat"><i class="fas fa-comment"></i> ${formatNumber(post.comments || 0)}</span>
+                        <span class="post-stat">
+                            <a href="javascript:void(0)" onclick="openPostModal('${post.url}')" style="color:#FF6B00;text-decoration:none;cursor:pointer;" title="Ver no Instagram">
+                                <i class="fab fa-instagram"></i> Ver
+                            </a>
+                        </span>
+                        ${isPublicado ? `
+                            <span class="badge-publicado" title="Publicado: ${isPublicado.titulo}">
+                                <i class="fas fa-check-circle"></i> Publicado
+                            </span>
+                        ` : ''}
+                    </div>
                 </div>
             `;
             container.appendChild(card);
@@ -1323,6 +1414,45 @@
     // Carregar perfis ao iniciar a página
     document.addEventListener('DOMContentLoaded', function() {
         mostrarPerfisSalvos();
+    });
+
+    // ========== MODAL DE VISUALIZAÇÃO DE POST ==========
+    
+    function openPostModal(postUrl) {
+        const modal = document.getElementById('postModal');
+        const iframe = document.getElementById('postIframe');
+        
+        // Converter URL do post para embed
+        const embedUrl = postUrl.replace(/\/$/, '') + '/embed';
+        
+        iframe.src = embedUrl;
+        modal.style.display = 'flex';
+        
+        // Prevenir scroll do body
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePostModal(event) {
+        // Se event existe e não é o backdrop, não fechar
+        if (event && event.target.id !== 'postModal') {
+            return;
+        }
+        
+        const modal = document.getElementById('postModal');
+        const iframe = document.getElementById('postIframe');
+        
+        modal.style.display = 'none';
+        iframe.src = '';
+        
+        // Restaurar scroll do body
+        document.body.style.overflow = '';
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePostModal();
+        }
     });
 </script>
 

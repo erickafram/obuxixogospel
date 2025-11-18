@@ -625,6 +625,65 @@ app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Editar imagem
+app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
+  try {
+    const { imageData } = req.body;
+    const media = await Media.findByPk(req.params.id);
+    
+    if (!media) {
+      return res.status(404).json({ success: false, message: 'Mídia não encontrada' });
+    }
+
+    if (media.tipo !== 'imagem') {
+      return res.status(400).json({ success: false, message: 'Apenas imagens podem ser editadas' });
+    }
+
+    // Converter base64 para buffer
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Gerar novo nome de arquivo
+    const timestamp = Date.now();
+    const originalName = media.nome.replace(/\.(jpg|jpeg|png|webp)$/i, '');
+    const newFilename = `${originalName}-edited-${timestamp}.webp`;
+    const newPath = path.join(__dirname, 'public', 'uploads', newFilename);
+
+    // Processar com Sharp e salvar como WebP
+    await sharp(buffer)
+      .webp({ quality: 85 })
+      .toFile(newPath);
+
+    // Pegar tamanho do novo arquivo
+    const stats = await fs.stat(newPath);
+    const newSize = stats.size;
+
+    // Criar nova entrada no banco (mantém a original)
+    const newMedia = await Media.create({
+      nome: newFilename,
+      nomeOriginal: `${media.nomeOriginal} (editada)`,
+      tipo: 'imagem',
+      mimeType: 'image/webp',
+      tamanho: newSize,
+      url: `/uploads/${newFilename}`,
+      userId: req.session.userId
+    });
+
+    res.json({ 
+      success: true, 
+      media: {
+        id: newMedia.id,
+        url: newMedia.url,
+        tipo: newMedia.tipo,
+        nome: newMedia.nomeOriginal
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao editar imagem:', error);
+    res.status(500).json({ success: false, message: 'Erro ao editar imagem' });
+  }
+});
+
 // Sitemap e Robots.txt
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
@@ -1030,6 +1089,23 @@ app.post('/api/ia/corrigir-texto', async (req, res) => {
   }
 });
 
+// Reescrever matéria estilo G1
+app.post('/api/ia/reescrever-materia', async (req, res) => {
+  try {
+    const { conteudo } = req.body;
+
+    if (!conteudo) {
+      return res.status(400).json({ error: 'Conteúdo é obrigatório' });
+    }
+
+    const conteudoReescrito = await AIService.reescreverMateriaG1(conteudo);
+    res.json({ success: true, conteudo: conteudoReescrito });
+  } catch (error) {
+    console.error('Erro ao reescrever matéria com IA:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Sugerir títulos com IA
 app.post('/api/ia/sugerir-titulos', async (req, res) => {
   try {
@@ -1157,14 +1233,21 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
       return next();
     }
     
+    // Verificar se é modo preview (permite visualizar rascunhos)
+    const isPreview = req.query.preview === 'true';
+    
     // Buscar o artigo
-    const article = await Article.findOne({ 
-      where: { 
-        urlAmigavel: articleSlug, 
-        categoria: categorySlug,
-        publicado: true 
-      }
-    });
+    const whereClause = { 
+      urlAmigavel: articleSlug, 
+      categoria: categorySlug
+    };
+    
+    // Se não for preview, exigir que esteja publicado
+    if (!isPreview) {
+      whereClause.publicado = true;
+    }
+    
+    const article = await Article.findOne({ where: whereClause });
     
     if (!article) {
       const recentArticles = await Article.findAll({
@@ -1206,6 +1289,7 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
       article, 
       related,
       ampEnabled: ampConfig && ampConfig.valor === 'true',
+      isPreview: isPreview, // Passar flag de preview para o template
       user: req.session.userId ? {
         nome: req.session.userName,
         email: req.session.userEmail,

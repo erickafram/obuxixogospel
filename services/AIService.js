@@ -1346,6 +1346,101 @@ Retorne APENAS a descrição, sem explicações.`;
       falhas: erros.length
     };
   }
+
+  /**
+   * Reescrever matéria no estilo jornalístico G1
+   */
+  static async reescreverMateriaG1(conteudoHTML) {
+    console.log('📝 Reescrevendo matéria no estilo G1...');
+
+    // Extrair texto do HTML
+    const textoLimpo = conteudoHTML
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!textoLimpo || textoLimpo.length < 50) {
+      throw new Error('Conteúdo muito curto para reescrever');
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um jornalista gospel profissional especializado em reescrever matérias no estilo editorial do G1.'
+      },
+      {
+        role: 'user',
+        content: `⚠️ IMPORTANTE: Reescreva a matéria abaixo EXCLUSIVAMENTE com base no conteúdo fornecido.
+NÃO invente informações. Use APENAS os fatos, declarações e detalhes presentes no texto.
+
+ESTILO JORNALÍSTICO G1 - NEUTRALIDADE:
+- Reescreva em formato de matéria jornalística profissional
+- Mantenha TODOS os fatos, nomes, declarações e detalhes do texto original
+- Use estilo editorial do G1: objetivo, claro e informativo
+- Inclua citações diretas quando houver no texto
+- Organize em introdução, desenvolvimento e conclusão
+- NÃO adicione informações que não estejam no texto fornecido
+- Use apenas uma quebra de linha entre parágrafos (<br>)
+
+⚠️ EVITE ABSOLUTAMENTE:
+- Termos subjetivos ou avaliações diretas
+- Posicionamento emocional do autor usando "nós" ou "hora de repensar"
+- Chamadas pessoais como "Que tal compartilhar suas opiniões?"
+- Interpretações diretas - deixe o leitor tirar suas próprias conclusões
+
+✅ PREFIRA:
+- Apresentar fatos e depoimentos de forma neutra
+- "A fala provocou debates nas redes sociais"
+- "A repercussão foi intensa, com milhares de comentários"
+- Encerrar reforçando ações do personagem ou impacto social
+
+TEXTO ORIGINAL:
+${textoLimpo}
+
+RETORNE APENAS O CONTEÚDO REESCRITO EM HTML:
+- Use tags: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>
+- Introdução com contexto
+- Desenvolvimento com todos os detalhes do texto
+- Citações diretas se houver
+- Conclusão
+- Use <br> para quebras de linha (apenas uma vez)
+
+NÃO inclua título ou descrição, apenas o conteúdo HTML.`
+      }
+    ];
+
+    try {
+      const response = await this.makeRequest(messages, 0.7, 3000);
+      
+      if (!response || response.trim().length === 0) {
+        throw new Error('IA retornou resposta vazia');
+      }
+
+      // Limpar espaços extras e tags vazias
+      let conteudoLimpo = response.trim()
+        // Remover <p> vazios (com ou sem espaços)
+        .replace(/<p>\s*<\/p>/gi, '')
+        .replace(/<p>[\s\n\r]*<\/p>/gi, '')
+        // Remover <p> que só tem quebra de linha
+        .replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '')
+        // Remover espaços/quebras entre </p> e próxima tag
+        .replace(/<\/p>\s+</g, '</p><')
+        // Remover espaços/quebras entre > e <p>
+        .replace(/>\s+<p>/g, '><p>')
+        // Remover espaços/quebras entre > e <h
+        .replace(/>\s+<h/g, '><h')
+        // Remover <br> múltiplos
+        .replace(/(<br\s*\/?>){2,}/gi, '<br>')
+        // Remover espaços antes de tags de fechamento
+        .replace(/\s+<\//g, '</');
+
+      console.log('✅ Matéria reescrita com sucesso');
+      return conteudoLimpo;
+    } catch (error) {
+      console.error('❌ Erro ao reescrever matéria:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = AIService;

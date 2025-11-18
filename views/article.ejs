@@ -10,6 +10,12 @@ const categoryNames = {
 <%- include('partials/article-head') %>
 <%- include('partials/admin-bar') %>
 
+<% if (typeof isPreview !== 'undefined' && isPreview && !article.publicado) { %>
+<div style="background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%); color: white; padding: 15px 20px; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(255, 107, 0, 0.3); position: sticky; top: 0; z-index: 9998;">
+    <i class="fas fa-eye"></i> MODO PREVIEW - Este post está em rascunho e não está visível publicamente
+</div>
+<% } %>
+
 <main class="main-content article-page">
     <div class="container">
         <nav class="breadcrumb">
