@@ -134,52 +134,52 @@ class AIService {
   static async extrairConteudoInstagram(url) {
     try {
       console.log('Extraindo conteúdo do Instagram:', url);
-      
+
       // Método 1: Usar API pública do Instagram através de embed
       const postId = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[1] || url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[2];
-      
+
       if (postId) {
         // Método 1A: Tentar oEmbed API
         try {
           console.log('Tentando oEmbed API para post:', postId);
           const cleanUrl = `https://www.instagram.com/p/${postId}/`;
           const oembedUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}&omitscript=true`;
-          const oembedResponse = await axios.get(oembedUrl, { 
+          const oembedResponse = await axios.get(oembedUrl, {
             timeout: 10000,
             headers: {
               'User-Agent': 'Mozilla/5.0 (compatible; bot/1.0)'
             }
           });
-          
+
           if (oembedResponse.data && oembedResponse.data.title) {
             let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
             conteudo += `TEXTO DA POSTAGEM:\n${oembedResponse.data.title}\n\n`;
-            
+
             if (oembedResponse.data.author_name) {
               conteudo += `AUTOR: ${oembedResponse.data.author_name}\n\n`;
             }
-            
+
             console.log('✅ Conteúdo extraído via oEmbed:', conteudo.length, 'caracteres');
             return conteudo;
           }
         } catch (oembedError) {
           console.log('❌ oEmbed falhou:', oembedError.message);
         }
-        
+
         // Método 1B: Tentar através de proxy público (allorigins.win)
         try {
           console.log('Tentando através de proxy AllOrigins');
           const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
           const proxyResponse = await axios.get(proxyUrl, { timeout: 15000 });
-          
+
           if (proxyResponse.data && proxyResponse.data.contents) {
             const $ = cheerio.load(proxyResponse.data.contents);
             let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-            
+
             // Procurar por meta tags
-            const description = $('meta[property="og:description"]').attr('content') || 
-                               $('meta[name="description"]').attr('content');
-            
+            const description = $('meta[property="og:description"]').attr('content') ||
+              $('meta[name="description"]').attr('content');
+
             if (description && description.length > 50) {
               conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
               console.log('✅ Conteúdo extraído via proxy:', conteudo.length, 'caracteres');
@@ -189,21 +189,21 @@ class AIService {
         } catch (proxyError) {
           console.log('❌ Proxy falhou:', proxyError.message);
         }
-        
+
         // Método 1C: Tentar através de outro proxy (corsproxy.io)
         try {
           console.log('Tentando através de proxy CORS');
           const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-          const corsResponse = await axios.get(corsProxyUrl, { 
+          const corsResponse = await axios.get(corsProxyUrl, {
             timeout: 15000,
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
           });
-          
+
           const $ = cheerio.load(corsResponse.data);
           let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-          
+
           // Procurar por JSON embutido
           const scripts = $('script').toArray();
           for (const script of scripts) {
@@ -214,14 +214,14 @@ class AIService {
                 if (jsonMatch) {
                   const sharedData = JSON.parse(jsonMatch[1]);
                   const post = sharedData.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-                  
+
                   if (post && post.edge_media_to_caption?.edges?.[0]?.node?.text) {
                     conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
-                    
+
                     if (post.owner?.username) {
                       conteudo += `AUTOR: @${post.owner.username}\n\n`;
                     }
-                    
+
                     console.log('✅ Conteúdo extraído via CORS proxy:', conteudo.length, 'caracteres');
                     return conteudo.substring(0, 3000);
                   }
@@ -231,7 +231,7 @@ class AIService {
               }
             }
           }
-          
+
           // Tentar meta tags como fallback
           const description = $('meta[property="og:description"]').attr('content');
           if (description && description.length > 50) {
@@ -243,12 +243,12 @@ class AIService {
           console.log('❌ CORS proxy falhou:', corsError.message);
         }
       }
-      
+
       // Método 2: Tentar adicionar ?__a=1 ao URL para obter JSON
       try {
         console.log('Tentando obter JSON direto do Instagram');
         const jsonUrl = url.includes('?') ? `${url}&__a=1` : `${url}?__a=1`;
-        
+
         const jsonResponse = await axios.get(jsonUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
@@ -257,26 +257,26 @@ class AIService {
           },
           timeout: 15000
         });
-        
+
         if (jsonResponse.data && jsonResponse.data.graphql) {
           const post = jsonResponse.data.graphql.shortcode_media;
           let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-          
+
           if (post.edge_media_to_caption?.edges?.[0]?.node?.text) {
             conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
           }
-          
+
           if (post.owner?.username) {
             conteudo += `AUTOR: @${post.owner.username}\n\n`;
           }
-          
+
           console.log('✅ Conteúdo extraído via JSON:', conteudo.length, 'caracteres');
           return conteudo.substring(0, 3000);
         }
       } catch (jsonError) {
         console.log('❌ Método JSON falhou:', jsonError.message);
       }
-      
+
       // Método 3: Scraping HTML tradicional
       const response = await axios.get(url, {
         headers: {
@@ -290,7 +290,7 @@ class AIService {
 
       const $ = cheerio.load(response.data);
       let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-      
+
       // Procurar por JSON embutido no HTML
       const scripts = $('script').toArray();
       for (const script of scripts) {
@@ -301,16 +301,16 @@ class AIService {
             if (jsonMatch) {
               const sharedData = JSON.parse(jsonMatch[1]);
               const post = sharedData.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-              
+
               if (post) {
                 if (post.edge_media_to_caption?.edges?.[0]?.node?.text) {
                   conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
                 }
-                
+
                 if (post.owner?.username) {
                   conteudo += `AUTOR: @${post.owner.username}\n\n`;
                 }
-                
+
                 console.log('Conteúdo extraído via _sharedData:', conteudo.length, 'caracteres');
                 return conteudo.substring(0, 3000);
               }
@@ -320,19 +320,19 @@ class AIService {
           }
         }
       }
-      
+
       // Método 4: Extrair de meta tags
-      const description = $('meta[property="og:description"]').attr('content') || 
-                         $('meta[name="description"]').attr('content');
+      const description = $('meta[property="og:description"]').attr('content') ||
+        $('meta[name="description"]').attr('content');
       if (description && description.length > 50) {
         conteudo += `DESCRIÇÃO:\n${description}\n\n`;
         console.log('Conteúdo extraído via meta tags:', conteudo.length, 'caracteres');
         return conteudo;
       }
-      
+
       console.log('Nenhum método funcionou, retornando mensagem de erro');
       return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
-      
+
     } catch (error) {
       console.error('Erro ao extrair Instagram:', error.message);
       return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
@@ -346,7 +346,7 @@ class AIService {
     try {
       const parser = new Parser();
       const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
-      
+
       const feed = await parser.parseURL(url);
       const noticias = feed.items.slice(0, 5).map(item => ({
         titulo: item.title,
@@ -354,7 +354,7 @@ class AIService {
         link: item.link,
         data: item.pubDate
       }));
-      
+
       return noticias;
     } catch (error) {
       console.error('Erro ao buscar notícias:', error.message);
@@ -373,10 +373,10 @@ class AIService {
         `https://source.unsplash.com/1200x630/?${encodeURIComponent(query)},gospel,church,christian`,
         { redirect: 'manual' }
       );
-      
+
       // A URL de redirecionamento é a imagem
       const imageUrl = response.headers.get('location');
-      
+
       if (imageUrl) {
         return [{
           url: imageUrl,
@@ -384,7 +384,7 @@ class AIService {
           fonte: 'Unsplash'
         }];
       }
-      
+
       // Fallback: buscar usando Pexels API (gratuita, mas precisa de key)
       // Por enquanto, retornar array vazio se Unsplash falhar
       return [];
@@ -400,10 +400,10 @@ class AIService {
   static async buscarImagensPexels(query) {
     try {
       console.log('Buscando imagens no Bing para:', query);
-      
+
       // Bing Image Search - mais permissivo que Google
       const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=1&count=10`;
-      
+
       const response = await axios.get(searchUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -416,11 +416,11 @@ class AIService {
 
       const $ = cheerio.load(response.data);
       const imagens = [];
-      
+
       // Método 1: Extrair de atributo m (metadata JSON do Bing)
       $('a.iusc').each((i, elem) => {
         if (imagens.length >= 5) return false;
-        
+
         const m = $(elem).attr('m');
         if (m) {
           try {
@@ -438,17 +438,17 @@ class AIService {
           }
         }
       });
-      
+
       console.log('Imagens do Bing encontradas:', imagens.length);
-      
+
       if (imagens.length > 0) {
         return imagens;
       }
-      
+
       // Método 2: Fallback - extrair de tags img
       $('img.mimg').each((i, elem) => {
         if (imagens.length >= 5) return false;
-        
+
         const src = $(elem).attr('src');
         if (src && src.startsWith('http')) {
           imagens.push({
@@ -459,16 +459,16 @@ class AIService {
           });
         }
       });
-      
+
       console.log('Total de imagens encontradas:', imagens.length);
-      
+
       if (imagens.length > 0) {
         return imagens;
       }
-      
+
       // Se não encontrou imagens do Google, usar fallback
       console.log('Nenhuma imagem encontrada no Google, usando fallback...');
-      
+
       // Fallback: usar Picsum
       const imagensFallback = [];
       for (let i = 0; i < 5; i++) {
@@ -481,15 +481,15 @@ class AIService {
         });
       }
       return imagensFallback;
-      
+
     } catch (error) {
       console.error('Erro ao buscar imagens do Google:', error.message);
-      
+
       // Fallback: retornar imagens do Picsum
       try {
         console.log('Usando imagens genéricas de fallback (Picsum)');
         const imagens = [];
-        
+
         for (let i = 0; i < 5; i++) {
           const randomId = 200 + Math.floor(Math.random() * 800);
           imagens.push({
@@ -499,7 +499,7 @@ class AIService {
             fonte: 'Picsum'
           });
         }
-        
+
         console.log('Imagens fallback geradas:', imagens.length);
         return imagens;
       } catch (fallbackError) {
@@ -526,39 +526,39 @@ class AIService {
       'este', 'esta', 'estes', 'estas', 'aquele', 'aquela', 'aqueles', 'aquelas', 'isto', 'isso', 'aquilo',
       'jovem', 'nova', 'novo', 'novas', 'novos', 'brasil', 'brasileira', 'brasileiro', 'brasileiras', 'brasileiros'
     ];
-    
+
     // Remover pontuação e converter para minúsculas
     let palavras = titulo
       .toLowerCase()
       .replace(/[:\-–—,;.!?()[\]{}'"]/g, ' ')
       .split(/\s+/)
       .filter(p => p.length > 2 && !stopWords.includes(p));
-    
+
     // Priorizar nomes próprios (começam com maiúscula no título original)
     const palavrasOriginais = titulo.split(/\s+/);
     const nomeProprio = [];
-    
+
     for (let i = 0; i < palavrasOriginais.length; i++) {
       const palavra = palavrasOriginais[i];
       // Se começa com maiúscula e não é a primeira palavra (que sempre é maiúscula)
       if (i > 0 && palavra.length > 2 && palavra[0] === palavra[0].toUpperCase()) {
         nomeProprio.push(palavra);
         // Se próxima palavra também é maiúscula, adicionar (nome composto)
-        if (i + 1 < palavrasOriginais.length && 
-            palavrasOriginais[i + 1][0] === palavrasOriginais[i + 1][0].toUpperCase()) {
+        if (i + 1 < palavrasOriginais.length &&
+          palavrasOriginais[i + 1][0] === palavrasOriginais[i + 1][0].toUpperCase()) {
           nomeProprio.push(palavrasOriginais[i + 1]);
           i++; // Pular próxima
         }
       }
     }
-    
+
     // Se encontrou nome próprio, usar ele + primeiras palavras relevantes
     if (nomeProprio.length > 0) {
       const nomeCompleto = nomeProprio.join(' ');
       const palavrasExtras = palavras.slice(0, 2).join(' ');
       return `${nomeCompleto} ${palavrasExtras}`.trim().substring(0, 100);
     }
-    
+
     // Caso contrário, pegar as 3-4 primeiras palavras relevantes
     return palavras.slice(0, 4).join(' ').substring(0, 100);
   }
@@ -573,7 +573,7 @@ class AIService {
 
     // Buscar imagens baseadas no texto
     console.log('Buscando imagens baseadas no texto fornecido');
-    
+
     // Limpar o texto de metadados e ruído
     let textoLimpo = texto
       .replace(/\d+,?\d* likes,/g, '') // Remove "5,044 likes,"
@@ -583,10 +583,10 @@ class AIService {
       .replace(/https?:\/\/[^\s]+/g, '') // Remove URLs
       .replace(/\s+/g, ' ') // Normaliza espaços
       .trim();
-    
+
     const palavrasParaImagem = textoLimpo.substring(0, 300);
     console.log('Palavras-chave para busca de imagens:', palavrasParaImagem.substring(0, 100) + '...');
-    
+
     const imagensSugeridas = await this.buscarImagensPexels(palavrasParaImagem);
 
     const prompt = `Você é um jornalista gospel profissional.
@@ -658,50 +658,50 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     ];
 
     const response = await this.makeRequest(messages, 0.7, 3000);
-    
+
     // Parse da resposta
     try {
       let jsonStr = response.trim();
-      
+
       // Remover blocos de código markdown se houver
       if (jsonStr.includes('```')) {
         jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       }
-      
+
       // Remover quebras de linha dentro do JSON
       jsonStr = jsonStr.replace(/\n/g, ' ');
-      
+
       // Tentar parsear
       const resultado = JSON.parse(jsonStr);
-      
+
       // Extrair palavras-chave do título e buscar imagens
       const palavrasChave = this.extrairPalavrasChave(resultado.titulo);
       console.log('🔍 Título completo:', resultado.titulo);
       console.log('🔑 Palavras-chave extraídas:', palavrasChave);
       console.log('📸 Buscando imagens no Bing...');
-      
+
       const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-      
+
       // Adicionar imagens sugeridas (prioriza as baseadas no título)
       resultado.imagensSugeridas = imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas;
-      
+
       return resultado;
     } catch (error) {
       console.error('Erro ao parsear JSON:', error);
       console.log('Resposta da IA:', response);
-      
+
       // Tentar extrair manualmente
       const tituloMatch = response.match(/"titulo":\s*"([^"]+)"/);
       const descricaoMatch = response.match(/"descricao":\s*"([^"]+)"/);
       const conteudoMatch = response.match(/"conteudo":\s*"([\s\S]+?)"\s*}/);
-      
+
       if (tituloMatch && descricaoMatch && conteudoMatch) {
         // Extrair palavras-chave e buscar imagens
         const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
         console.log('🔍 Título extraído:', tituloMatch[1]);
         console.log('🔑 Palavras-chave:', palavrasChave);
         const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-        
+
         return {
           titulo: tituloMatch[1],
           descricao: descricaoMatch[1],
@@ -709,7 +709,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
           imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
         };
       }
-      
+
       throw new Error('Não foi possível processar a resposta da IA');
     }
   }
@@ -725,11 +725,11 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     // Coletar informações adicionais
     let informacoesAdicionais = '';
     let imagensSugeridas = [];
-    
+
     // Pesquisar na internet se solicitado
     if (pesquisarInternet) {
       console.log('Pesquisando notícias atuais:', tema);
-      
+
       // Buscar notícias atuais do Google News
       const noticias = await this.buscarNoticiasAtuais(tema + ' gospel evangélico');
       if (noticias.length > 0) {
@@ -740,7 +740,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
           informacoesAdicionais += `   Data: ${n.data}\n\n`;
         });
       }
-      
+
       // Buscar também no DuckDuckGo como fallback
       const resultados = await this.pesquisarInternet(tema + ' gospel evangélico');
       if (resultados.length > 0) {
@@ -749,7 +749,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
           informacoesAdicionais += `${i + 1}. ${r.titulo}\n${r.snippet}\n\n`;
         });
       }
-      
+
       // Buscar imagens sugeridas
       console.log('Buscando imagens sugeridas:', tema);
       const imagensPixabay = await this.buscarImagensPexels(tema);
@@ -763,33 +763,33 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
         }
       }
     }
-    
+
     // Extrair conteúdo dos links fornecidos
     let conteudoExtraido = '';
     if (links && links.length > 0) {
       console.log('Extraindo conteúdo de', links.length, 'links');
-      
+
       for (const link of links) {
         const conteudo = await this.extrairConteudoURL(link);
         if (conteudo) {
           conteudoExtraido += `\n${conteudo}\n\n`;
         }
       }
-      
+
       // Verificar se a extração falhou (retornou mensagem de erro)
       if (conteudoExtraido.includes('Não foi possível extrair o conteúdo automaticamente')) {
         throw new Error('Não foi possível extrair o conteúdo do link automaticamente. Por favor, use a aba "Por Link" e cole o texto manualmente no campo opcional.');
       }
-      
+
       // Se tem conteúdo extraído, adicionar com destaque
       if (conteudoExtraido && conteudoExtraido.length > 100) {
         informacoesAdicionais += '\n\n⚠️ IMPORTANTE - USE ESTE CONTEÚDO COMO BASE PRINCIPAL:\n';
         informacoesAdicionais += `Fonte: ${links[0]}\n${conteudoExtraido}`;
-        
+
         // Buscar imagens baseadas no conteúdo extraído
         if (!pesquisarInternet) {
           console.log('Buscando imagens baseadas no conteúdo extraído');
-          
+
           // Extrair palavras-chave mais relevantes do conteúdo
           let textoLimpo = conteudoExtraido
             .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
@@ -802,12 +802,12 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
             .replace(/\d{4}-\d{2}-\d{2}/g, '') // Remove datas
             .replace(/\s+/g, ' ') // Normaliza espaços
             .trim();
-          
+
           // Pegar as primeiras palavras significativas (após limpeza)
           const palavrasParaImagem = textoLimpo.substring(0, 300);
-          
+
           console.log('Palavras-chave para busca de imagens:', palavrasParaImagem.substring(0, 100) + '...');
-          
+
           const imagensBing = await this.buscarImagensPexels(palavrasParaImagem);
           if (imagensBing.length > 0) {
             imagensSugeridas = imagensBing;
@@ -947,23 +947,23 @@ Retorne APENAS um objeto JSON válido:
     ];
 
     const response = await this.makeRequest(messages, 0.7, 3000);
-    
+
     try {
       // Limpar a resposta removendo markdown code blocks se existirem
       let cleanResponse = response.trim();
-      
+
       // Remover ```json e ``` se existirem
       cleanResponse = cleanResponse.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-      
+
       // Tentar extrair JSON da resposta
       const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         let jsonStr = jsonMatch[0];
-        
+
         // Tentar parsear diretamente primeiro
         try {
           const parsed = JSON.parse(jsonStr);
-          
+
           // Validar se tem os campos necessários
           if (parsed.titulo && parsed.descricao && parsed.conteudo) {
             // Extrair palavras-chave do título e buscar imagens
@@ -971,20 +971,20 @@ Retorne APENAS um objeto JSON válido:
             console.log('🔍 Título completo:', parsed.titulo);
             console.log('🔑 Palavras-chave extraídas:', palavrasChave);
             console.log('📸 Buscando imagens no Bing...');
-            
+
             const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-            
+
             // Adicionar embed do Instagram se houver link de referência
             let conteudoFinal = parsed.conteudo;
             console.log('🔗 Links recebidos:', links);
-            
+
             // Verificar se o conteúdo já contém um embed do Instagram
             const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
-            
+
             if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
               console.log('📱 Adicionando embed do Instagram:', links[0]);
               const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
-              
+
               // Adicionar embed no final do conteúdo
               conteudoFinal += embedCode;
               console.log('✅ Embed adicionado ao conteúdo');
@@ -993,34 +993,34 @@ Retorne APENAS um objeto JSON válido:
             } else {
               console.log('⚠️ Nenhum link do Instagram encontrado');
             }
-            
+
             // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
             const resultado = {
               ...parsed,
               conteudo: conteudoFinal,
               imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
             };
-            
+
             // Log para debug
             console.log('📝 Conteúdo final contém embed?', conteudoFinal.includes('instagram-media'));
             console.log('📏 Tamanho do conteúdo:', conteudoFinal.length);
-            
+
             return resultado;
           }
         } catch (parseError) {
           // Se falhar, tentar limpar quebras de linha dentro das strings
           console.log('Primeira tentativa de parse falhou, tentando limpar...');
-          
+
           // Remover TODAS as quebras de linha do JSON
           jsonStr = jsonStr.replace(/\n/g, ' ').replace(/\r/g, '');
-          
+
           // Limpar múltiplos espaços
           jsonStr = jsonStr.replace(/\s+/g, ' ');
-          
+
           // Tentar parsear novamente
           try {
             const parsed = JSON.parse(jsonStr);
-            
+
             // Validar se tem os campos necessários
             if (parsed.titulo && parsed.descricao && parsed.conteudo) {
               // Extrair palavras-chave do título e buscar imagens
@@ -1028,20 +1028,20 @@ Retorne APENAS um objeto JSON válido:
               console.log('🔍 Título completo (2ª tentativa):', parsed.titulo);
               console.log('🔑 Palavras-chave extraídas:', palavrasChave);
               console.log('📸 Buscando imagens no Bing...');
-              
+
               const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-              
+
               // Adicionar embed do Instagram se houver link de referência
               let conteudoFinal = parsed.conteudo;
               console.log('🔗 Links recebidos (2ª tentativa):', links);
-              
+
               // Verificar se o conteúdo já contém um embed do Instagram
               const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
-              
+
               if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
                 console.log('📱 Adicionando embed do Instagram (2ª tentativa):', links[0]);
                 const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
-                
+
                 // Adicionar embed no final do conteúdo
                 conteudoFinal += embedCode;
                 console.log('✅ Embed adicionado ao conteúdo (2ª tentativa)');
@@ -1050,38 +1050,38 @@ Retorne APENAS um objeto JSON válido:
               } else {
                 console.log('⚠️ Nenhum link do Instagram encontrado (2ª tentativa)');
               }
-              
+
               // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
               const resultado = {
                 ...parsed,
                 conteudo: conteudoFinal,
                 imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
               };
-              
+
               // Log para debug
               console.log('📝 Conteúdo final contém embed? (2ª tentativa)', conteudoFinal.includes('instagram-media'));
               console.log('📏 Tamanho do conteúdo: (2ª tentativa)', conteudoFinal.length);
-              
+
               return resultado;
             }
           } catch (secondError) {
             console.error('Segunda tentativa falhou:', secondError.message);
-            
+
             // Última tentativa: extrair manualmente
             try {
               const tituloMatch = jsonStr.match(/"titulo"\s*:\s*"([^"]+)"/);
               const descricaoMatch = jsonStr.match(/"descricao"\s*:\s*"([^"]+)"/);
               const conteudoMatch = jsonStr.match(/"conteudo"\s*:\s*"(.+)"\s*\}/);
-              
+
               if (tituloMatch && descricaoMatch && conteudoMatch) {
                 // Extrair palavras-chave e buscar imagens
                 const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
                 console.log('🔍 Título extraído manualmente:', tituloMatch[1]);
                 console.log('🔑 Palavras-chave:', palavrasChave);
                 console.log('📸 Buscando imagens no Bing...');
-                
+
                 const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-                
+
                 return {
                   titulo: tituloMatch[1],
                   descricao: descricaoMatch[1],
@@ -1095,7 +1095,7 @@ Retorne APENAS um objeto JSON válido:
           }
         }
       }
-      
+
       throw new Error('Resposta da IA não está no formato esperado');
     } catch (error) {
       console.error('Erro ao parsear resposta da IA:', error.message);
@@ -1222,12 +1222,12 @@ Retorne APENAS a descrição, sem explicações.`;
 
     for (let i = 0; i < posts.length; i++) {
       const post = posts[i];
-      
+
       try {
         const postId = post.shortcode || post.id || post.url || `post-${i}`;
         console.log(`\n📝 Processando post ${i + 1}/${posts.length}: ${postId}`);
         console.log('📄 Dados do post:', JSON.stringify(post, null, 2));
-        
+
         // Verificar se o post tem conteúdo suficiente
         if (!post.caption || post.caption.trim().length < 50) {
           console.log(`⚠️ Post ${postId} ignorado: texto muito curto (${post.caption?.length || 0} caracteres)`);
@@ -1249,11 +1249,11 @@ Retorne APENAS a descrição, sem explicações.`;
 
         // Priorizar imagem do Instagram se disponível
         let imagensSugeridas = materia.imagensSugeridas || [];
-        
+
         // Se o post tem thumbnail, tentar baixar e adicionar como primeira opção
         if (post.thumbnail) {
           console.log(`📸 Baixando imagem do Instagram: ${post.thumbnail.substring(0, 80)}...`);
-          
+
           try {
             // Baixar imagem diretamente no serviço ao invés de chamar API
             const axios = require('axios');
@@ -1261,7 +1261,7 @@ Retorne APENAS a descrição, sem explicações.`;
             const path = require('path');
             const sharp = require('sharp');
             const { Media } = require('../models');
-            
+
             // Baixar a imagem
             const response = await axios.get(post.thumbnail, {
               responseType: 'arraybuffer',
@@ -1307,13 +1307,13 @@ Retorne APENAS a descrição, sem explicações.`;
                 mimeType: 'image/webp',
                 tamanho: fileSize,
                 url: publicUrl,
-                userId: 1 // ID padrão, será atualizado no controller se necessário
+                userId: 3 // ID do admin (atualizado para 3 pois 1 não existe mais)
               });
               console.log(`✅ Imagem salva na biblioteca de mídia: ID ${media.id}`);
             } catch (dbError) {
               console.error('⚠️ Erro ao salvar na biblioteca, mas arquivo foi salvo:', dbError.message);
             }
-            
+
             imagensSugeridas.unshift({
               url: publicUrl,
               descricao: 'Imagem original do post do Instagram',
@@ -1329,7 +1329,7 @@ Retorne APENAS a descrição, sem explicações.`;
             });
           }
         }
-        
+
         console.log(`🖼️ Total de imagens disponíveis: ${imagensSugeridas.length} (Instagram: ${post.thumbnail ? 'Sim' : 'Não'})`);
 
         // Adicionar informações do post original
@@ -1441,7 +1441,7 @@ NÃO inclua título ou descrição, apenas o conteúdo HTML.`
 
     try {
       const response = await this.makeRequest(messages, 0.7, 3000);
-      
+
       if (!response || response.trim().length === 0) {
         throw new Error('IA retornou resposta vazia');
       }
