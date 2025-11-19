@@ -27,16 +27,16 @@ exports.extrairPosts = async (req, res) => {
     const { profileUrl, limit } = req.body;
 
     if (!profileUrl) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'URL do perfil é obrigatória' 
+      return res.status(400).json({
+        success: false,
+        error: 'URL do perfil é obrigatória'
       });
     }
 
     console.log('📱 Extraindo posts do perfil:', profileUrl);
 
     const posts = await InstagramService.extrairPostsDoPerfil(
-      profileUrl, 
+      profileUrl,
       parseInt(limit) || 12
     );
 
@@ -57,8 +57,8 @@ exports.extrairPosts = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao extrair posts:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: error.message || 'Erro ao extrair posts do Instagram'
     });
   }
@@ -72,9 +72,9 @@ exports.gerarMaterias = async (req, res) => {
     const { posts, categoria } = req.body;
 
     if (!posts || !Array.isArray(posts) || posts.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Nenhum post fornecido' 
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum post fornecido'
       });
     }
 
@@ -89,8 +89,8 @@ exports.gerarMaterias = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao gerar matérias:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: error.message || 'Erro ao gerar matérias'
     });
   }
@@ -104,9 +104,9 @@ exports.salvarMateria = async (req, res) => {
     const { titulo, descricao, conteudo, imagem, categoria, instagramPostId } = req.body;
 
     if (!titulo || !descricao || !conteudo) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Campos obrigatórios faltando' 
+      return res.status(400).json({
+        success: false,
+        error: 'Campos obrigatórios faltando'
       });
     }
 
@@ -119,16 +119,16 @@ exports.salvarMateria = async (req, res) => {
     // Baixar e salvar imagem na biblioteca de mídia se houver
     let imagemFinal = imagem || '';
     let mediaId = null;
-    
+
     if (imagem && imagem.startsWith('http')) {
       try {
         console.log('📥 Baixando imagem do Instagram para biblioteca:', imagem.substring(0, 80) + '...');
-        
+
         // Baixar a imagem com retry
         let response;
         let tentativas = 0;
         const maxTentativas = 3;
-        
+
         while (tentativas < maxTentativas) {
           try {
             response = await axios.get(imagem, {
@@ -174,17 +174,34 @@ exports.salvarMateria = async (req, res) => {
           mimeType: 'image/webp',
           tamanho: fileSize,
           url: `/uploads/${webpFilename}`,
-          userId: req.session.userId
+          userId: req.session.userId || 3 // Usa ID da sessão ou 3 (admin) como fallback
         });
 
         imagemFinal = `/uploads/${webpFilename}`;
         mediaId = media.id;
         console.log('✅ Imagem salva na biblioteca de mídia ID:', media.id, '- URL:', imagemFinal);
-        
+
       } catch (imageError) {
         console.error('❌ ERRO ao baixar/salvar imagem na biblioteca:', imageError.message);
         console.error('Stack:', imageError.stack);
-        // Se falhar após todas as tentativas, usa a URL original do Instagram
+
+        // Fallback: Tentar salvar a URL remota na biblioteca de mídia mesmo sem baixar
+        try {
+          const media = await Media.create({
+            nome: `instagram-remote-${Date.now()}.jpg`,
+            nomeOriginal: `Instagram (Remoto) - ${titulo.substring(0, 50)}`,
+            tipo: 'imagem',
+            mimeType: 'image/jpeg', // Assumindo JPEG para remoto
+            tamanho: 0, // Desconhecido
+            url: imagem, // URL original
+            userId: req.session.userId || 3
+          });
+          mediaId = media.id;
+          console.log('⚠️ Imagem salva como URL remota na biblioteca ID:', media.id);
+        } catch (dbError) {
+          console.error('❌ Erro ao salvar fallback no banco:', dbError.message);
+        }
+
         console.log('⚠️ Usando URL original do Instagram como fallback');
       }
     }
@@ -196,7 +213,7 @@ exports.salvarMateria = async (req, res) => {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-    
+
     // Verificar se já existe e adicionar sufixo apenas se necessário
     let urlAmigavel = urlAmigavelBase;
     let contador = 1;
@@ -234,16 +251,16 @@ exports.salvarMateria = async (req, res) => {
 
     console.log('✅ Matéria salva como rascunho:', article.id);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Matéria salva como rascunho',
       articleId: article.id
     });
 
   } catch (error) {
     console.error('❌ Erro ao salvar matéria:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: error.message || 'Erro ao salvar matéria'
     });
   }
@@ -257,9 +274,9 @@ exports.baixarImagemInstagram = async (req, res) => {
     const { imageUrl, postShortcode } = req.body;
 
     if (!imageUrl) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'URL da imagem é obrigatória' 
+      return res.status(400).json({
+        success: false,
+        error: 'URL da imagem é obrigatória'
       });
     }
 
@@ -306,8 +323,8 @@ exports.baixarImagemInstagram = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao baixar imagem:', error.message);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Não foi possível baixar a imagem do Instagram'
     });
   }
@@ -320,7 +337,7 @@ exports.listarPerfis = async (req, res) => {
     const perfis = await InstagramProfile.findAll({
       order: [['created_at', 'DESC']]
     });
-    
+
     res.json({ success: true, perfis });
   } catch (error) {
     console.error('Erro ao listar perfis:', error);
@@ -332,27 +349,27 @@ exports.listarPerfis = async (req, res) => {
 exports.salvarPerfil = async (req, res) => {
   try {
     const { username, url } = req.body;
-    
+
     if (!username || !url) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Username e URL são obrigatórios' 
+      return res.status(400).json({
+        success: false,
+        error: 'Username e URL são obrigatórios'
       });
     }
-    
+
     const { InstagramProfile } = require('../models');
-    
+
     // Verificar se já existe
     const existente = await InstagramProfile.findOne({ where: { username } });
     if (existente) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Este perfil já está salvo' 
+      return res.status(400).json({
+        success: false,
+        error: 'Este perfil já está salvo'
       });
     }
-    
+
     const perfil = await InstagramProfile.create({ username, url });
-    
+
     res.json({ success: true, perfil });
   } catch (error) {
     console.error('Erro ao salvar perfil:', error);
@@ -364,19 +381,19 @@ exports.salvarPerfil = async (req, res) => {
 exports.removerPerfil = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const { InstagramProfile } = require('../models');
     const perfil = await InstagramProfile.findByPk(id);
-    
+
     if (!perfil) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Perfil não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Perfil não encontrado'
       });
     }
-    
+
     await perfil.destroy();
-    
+
     res.json({ success: true, message: 'Perfil removido com sucesso' });
   } catch (error) {
     console.error('Erro ao remover perfil:', error);
@@ -388,16 +405,16 @@ exports.removerPerfil = async (req, res) => {
 exports.verificarPostsPublicados = async (req, res) => {
   try {
     const { postIds } = req.body;
-    
+
     if (!postIds || !Array.isArray(postIds)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'postIds deve ser um array' 
+      return res.status(400).json({
+        success: false,
+        error: 'postIds deve ser um array'
       });
     }
-    
+
     const { Article } = require('../models');
-    
+
     // Buscar artigos que têm esses instagram_post_id
     const artigos = await Article.findAll({
       where: {
@@ -405,7 +422,7 @@ exports.verificarPostsPublicados = async (req, res) => {
       },
       attributes: ['instagramPostId', 'publicado', 'id', 'titulo']
     });
-    
+
     // Criar mapa de posts publicados
     const postsPublicados = {};
     artigos.forEach(artigo => {
@@ -415,10 +432,10 @@ exports.verificarPostsPublicados = async (req, res) => {
         titulo: artigo.titulo
       };
     });
-    
-    res.json({ 
-      success: true, 
-      postsPublicados 
+
+    res.json({
+      success: true,
+      postsPublicados
     });
   } catch (error) {
     console.error('Erro ao verificar posts publicados:', error);
@@ -431,27 +448,27 @@ exports.atualizarAutoPost = async (req, res) => {
   try {
     const { id } = req.params;
     const { autoPostEnabled, autoPostTime, postsPerExecution } = req.body;
-    
+
     const { InstagramProfile } = require('../models');
     const perfil = await InstagramProfile.findByPk(id);
-    
+
     if (!perfil) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Perfil não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Perfil não encontrado'
       });
     }
-    
+
     await perfil.update({
       autoPostEnabled: autoPostEnabled !== undefined ? autoPostEnabled : perfil.autoPostEnabled,
       autoPostTime: autoPostTime || perfil.autoPostTime,
       postsPerExecution: postsPerExecution || perfil.postsPerExecution
     });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Configurações atualizadas com sucesso',
-      perfil 
+      perfil
     });
   } catch (error) {
     console.error('Erro ao atualizar configurações:', error);
@@ -463,10 +480,10 @@ exports.atualizarAutoPost = async (req, res) => {
 exports.processarPerfilManual = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const autoPostService = require('../services/AutoPostService');
     const resultado = await autoPostService.processProfileManually(id);
-    
+
     res.json(resultado);
   } catch (error) {
     console.error('Erro ao processar perfil manualmente:', error);
@@ -479,10 +496,10 @@ exports.getAutoPostStatus = async (req, res) => {
   try {
     const autoPostService = require('../services/AutoPostService');
     const status = autoPostService.getStatus();
-    
-    res.json({ 
-      success: true, 
-      ...status 
+
+    res.json({
+      success: true,
+      ...status
     });
   } catch (error) {
     console.error('Erro ao obter status:', error);
