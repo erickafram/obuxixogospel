@@ -1,7 +1,7 @@
 {
-  "name": "globo-clone",
+  "name": "obuxixogospel",
   "version": "1.0.0",
-  "description": "Clone completo do portal Globo.com em Node.js",
+  "description": "Portal Notícias O Buxixo Gospel",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

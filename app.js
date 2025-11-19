@@ -86,12 +86,12 @@ app.use((req, res, next) => {
   // Content Security Policy básica
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://*.google-analytics.com https://*.googletagmanager.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://*.google.com https://*.doubleclick.net; " +
     "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://fonts.googleapis.com; " +
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
-    "img-src 'self' data: https: blob:; " +
+    "img-src 'self' data: https: blob: https://*.google-analytics.com https://*.googletagmanager.com; " +
     "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
-    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cdn.ampproject.org"
+    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.google.com https://*.doubleclick.net https://cdn.ampproject.org"
   );
 
   // Permissions Policy
