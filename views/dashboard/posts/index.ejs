@@ -1,534 +1,647 @@
-<%- include('../partials/header', { title: 'Posts', user: user }) %>
+<%- include('../partials/header', { title: 'Posts' , user: user }) %>
 
-<div class="dashboard-content">
-    <div class="content-header">
-        <div>
-            <h1>Posts</h1>
-            <p>Gerencie todos os artigos do portal</p>
-        </div>
-        <div class="header-actions">
-            <button id="btnDeleteSelected" class="btn btn-danger" style="display: none;" onclick="deleteSelected()">
-                <i class="fas fa-trash"></i> Excluir Selecionados
-            </button>
-            <a href="/dashboard/posts/novo" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Novo Post
-            </a>
-        </div>
-    </div>
-
-    <% if (typeof success !== 'undefined' && success) { %>
-    <div class="alert alert-success">
-        <%= success %>
-    </div>
-    <% } %>
-
-    <div class="card">
-        <div class="card-header">
-            <div class="search-filter">
-                <input type="text" id="searchPosts" placeholder="Buscar posts..." class="search-input">
-                <select id="filterCategoria" class="filter-select">
-                    <option value="">Todas as categorias</option>
-                    <% if (typeof categories !== 'undefined' && categories) { %>
-                        <% categories.forEach(cat => { %>
-                            <option value="<%= cat.slug %>"><%= cat.nome %></option>
-                        <% }); %>
-                    <% } %>
-                </select>
+    <div class="dashboard-content">
+        <div class="content-header">
+            <div>
+                <h1>Posts</h1>
+                <p>Gerencie todos os artigos do portal</p>
+            </div>
+            <div class="header-actions">
+                <button id="btnDeleteSelected" class="btn btn-danger" style="display: none;" onclick="deleteSelected()">
+                    <i class="fas fa-trash"></i> Excluir Selecionados
+                </button>
+                <a href="/dashboard/posts/novo" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Post
+                </a>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th width="40">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
-                        </th>
-                        <th>Título</th>
-                        <th>Categoria</th>
-                        <th>Autor</th>
-                        <th>Visualizações</th>
-                        <th>Data</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if (articles && articles.length > 0) { %>
-                        <% 
-                        // Criar mapa de nomes de categorias a partir das categorias carregadas
-                        const categoryNames = {};
-                        if (typeof categories !== 'undefined' && categories) {
-                            categories.forEach(cat => {
-                                categoryNames[cat.slug] = cat.nome;
-                            });
-                        }
-                        %>
-                        <% articles.forEach(article => { %>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="post-checkbox" value="<%= article.id %>" onchange="updateDeleteButton()">
-                            </td>
-                            <td>
-                                <div class="post-title">
-                                    <% if (article.destaque) { %>
-                                    <span class="badge badge-warning">Destaque</span>
-                                    <% } %>
-                                    <%= article.titulo %>
-                                </div>
-                            </td>
-                            <td><span class="badge badge-<%= article.categoria %>"><%= categoryNames[article.categoria] || article.categoria %></span></td>
-                            <td><%= article.autor %></td>
-                            <td><i class="fas fa-eye"></i> <%= article.visualizacoes %></td>
-                            <td><%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %></td>
-                            <td>
-                                <% if (article.publicado) { %>
-                                <span class="badge badge-success">Publicado</span>
-                                <% } else { %>
-                                <span class="badge badge-secondary">Rascunho</span>
-                                <% } %>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <% if (article.publicado) { %>
-                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>" target="_blank" class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <% } %>
-                                    <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button onclick="deletePost(<%= article.id %>)" class="btn-icon btn-danger" title="Deletar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <% }); %>
-                    <% } else { %>
-                        <tr>
-                            <td colspan="8" class="text-center">Nenhum post encontrado</td>
-                        </tr>
-                    <% } %>
-                </tbody>
-            </table>
-        </div>
+        <% if (typeof success !=='undefined' && success) { %>
+            <div class="alert alert-success">
+                <%= success %>
+            </div>
+            <% } %>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="search-filter">
+                            <input type="text" id="searchPosts" placeholder="Buscar posts..." class="search-input">
+                            <select id="filterCategoria" class="filter-select" onchange="applyFilters()">
+                                <option value="">Todas as categorias</option>
+                                <% if (typeof categories !=='undefined' && categories) { %>
+                                    <% categories.forEach(cat=> { %>
+                                        <option value="<%= cat.slug %>" <%=(typeof filters !=='undefined' &&
+                                            filters.categoria===cat.slug) ? 'selected' : '' %>><%= cat.nome %>
+                                        </option>
+                                        <% }); %>
+                                            <% } %>
+                            </select>
+                            <select id="filterStatus" class="filter-select" onchange="applyFilters()">
+                                <option value="">Todos os status</option>
+                                <option value="published" <%=(typeof filters !=='undefined' &&
+                                    filters.status==='published' ) ? 'selected' : '' %>>Publicados</option>
+                                <option value="draft" <%=(typeof filters !=='undefined' && filters.status==='draft' )
+                                    ? 'selected' : '' %>>Rascunhos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                                    </th>
+                                    <th>Título</th>
+                                    <th>Categoria</th>
+                                    <th>Autor</th>
+                                    <th>Visualizações</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (articles && articles.length> 0) { %>
+                                    <% // Criar mapa de nomes de categorias a partir das categorias carregadas const
+                                        categoryNames={}; if (typeof categories !=='undefined' && categories) {
+                                        categories.forEach(cat=> {
+                                        categoryNames[cat.slug] = cat.nome;
+                                        });
+                                        }
+                                        %>
+                                        <% articles.forEach(article=> { %>
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" class="post-checkbox"
+                                                        value="<%= article.id %>" onchange="updateDeleteButton()">
+                                                </td>
+                                                <td>
+                                                    <div class="post-title">
+                                                        <% if (article.destaque) { %>
+                                                            <span class="badge badge-warning">Destaque</span>
+                                                            <% } %>
+                                                                <%= article.titulo %>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge badge-<%= article.categoria %>">
+                                                        <%= categoryNames[article.categoria] || article.categoria %>
+                                                    </span></td>
+                                                <td>
+                                                    <%= article.autor %>
+                                                </td>
+                                                <td><i class="fas fa-eye"></i>
+                                                    <%= article.visualizacoes %>
+                                                </td>
+                                                <td>
+                                                    <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                                                </td>
+                                                <td>
+                                                    <% if (article.publicado) { %>
+                                                        <span class="badge badge-success">Publicado</span>
+                                                        <% } else { %>
+                                                            <span class="badge badge-secondary">Rascunho</span>
+                                                            <% } %>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <% if (article.publicado) { %>
+                                                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>"
+                                                                target="_blank" class="btn-icon" title="Ver">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <% } %>
+                                                                <a href="/dashboard/posts/editar/<%= article.id %>"
+                                                                    class="btn-icon" title="Editar">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <button onclick="deletePost(<%= article.id %>)"
+                                                                    class="btn-icon btn-danger" title="Deletar">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                                <% } else { %>
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">Nenhum post encontrado</td>
+                                                    </tr>
+                                                    <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
     </div>
-</div>
 
-<style>
-    .content-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-        padding-bottom: 18px;
-        border-bottom: 1px solid #E2E8F0;
-    }
-
-    .content-header h1 {
-        font-size: 22px;
-        font-weight: 600;
-        margin-bottom: 5px;
-        color: #1A202C;
-        letter-spacing: -0.5px;
-    }
-
-    .content-header p {
-        color: #718096;
-        font-size: 13px;
-        margin: 0;
-    }
-
-    .btn {
-        padding: 9px 16px;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 13px;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        transition: all 0.15s;
-        border: none;
-        cursor: pointer;
-        letter-spacing: 0.2px;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
-        color: white;
-        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
-    }
-
-    .btn-danger {
-        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
-        color: white;
-        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
-    }
-
-    .btn-danger:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .post-checkbox, #selectAll {
-        cursor: pointer;
-        width: 16px;
-        height: 16px;
-    }
-
-    .card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-        border: 1px solid #E8E8E8;
-        overflow: hidden;
-    }
-
-    .card-header {
-        padding: 16px 18px;
-        border-bottom: 1px solid #E2E8F0;
-        background: #FAFBFC;
-    }
-
-    .search-filter {
-        display: flex;
-        gap: 10px;
-    }
-
-    .search-input, .filter-select {
-        padding: 8px 12px;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        font-size: 13px;
-        transition: all 0.15s;
-        background: white;
-    }
-
-    .search-input:focus, .filter-select:focus {
-        outline: none;
-        border-color: #FF6B00;
-        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
-    }
-
-    .search-input {
-        flex: 1;
-    }
-
-    .filter-select {
-        min-width: 180px;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .data-table th {
-        padding: 12px 14px;
-        text-align: left;
-        font-weight: 500;
-        font-size: 11px;
-        color: #4A5568;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        background: #F7FAFC;
-        border-bottom: 1px solid #E2E8F0;
-    }
-
-    .data-table td {
-        padding: 12px 14px;
-        border-bottom: 1px solid #E2E8F0;
-        font-size: 13px;
-        color: #2D3748;
-    }
-
-    .data-table tr:hover {
-        background: #F7FAFC;
-    }
-
-    .post-title {
-        font-weight: 500;
-        font-size: 13px;
-        color: #1A202C;
-        line-height: 1.4;
-    }
-
-    .badge {
-        padding: 3px 8px;
-        border-radius: 5px;
-        font-size: 10px;
-        font-weight: 500;
-        text-transform: uppercase;
-        display: inline-block;
-        letter-spacing: 0.3px;
-    }
-
-    .badge-success { background: #D4EDDA; color: #155724; }
-    .badge-secondary { background: #E2E3E5; color: #383D41; }
-    .badge-warning { background: #FFF3CD; color: #856404; margin-right: 8px; }
-    .badge-noticias { background: #FFE5E5; color: #C1121F; }
-    .badge-musica { background: #D4EDDA; color: #28A745; }
-    .badge-eventos { background: #FFE8D6; color: #FF8C42; }
-    .badge-ministerio { background: #F3E5F5; color: #8B3A62; }
-    .badge-estudo-biblico { background: #E3F2FD; color: #1F4788; }
-    .badge-testemunhos { background: #FFF0F0; color: #DC2626; }
-    .badge-familia { background: #FCE7F3; color: #BE185D; }
-    .badge-jovens { background: #CCFBF1; color: #0F766E; }
-
-    .action-buttons {
-        display: flex;
-        gap: 6px;
-    }
-
-    .btn-icon {
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        background: #F7FAFC;
-        color: #718096;
-        border: none;
-        cursor: pointer;
-        transition: all 0.15s;
-        text-decoration: none;
-        font-size: 13px;
-    }
-
-    .btn-icon:hover {
-        background: #EDF2F7;
-        color: #2D3748;
-        transform: scale(1.05);
-    }
-
-    .btn-icon.btn-danger:hover {
-        background: #FEE2E2;
-        color: #DC2626;
-    }
-
-    .alert {
-        padding: 12px 14px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        font-size: 13px;
-    }
-
-    .alert-success {
-        background: #D1FAE5;
-        color: #065F46;
-        border: 1px solid #A7F3D0;
-    }
-
-    .text-center {
-        text-align: center;
-        padding: 32px !important;
-        color: #9CA3AF;
-        font-size: 13px;
-    }
-
-    @media (max-width: 1024px) {
+    <style>
         .content-header {
-            flex-direction: column;
-            gap: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #E2E8F0;
         }
-        .search-filter {
-            flex-direction: column;
-        }
-        .filter-select {
-            width: 100%;
-        }
-    }
 
-    @media (max-width: 768px) {
         .content-header h1 {
-            font-size: 18px;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1A202C;
+            letter-spacing: -0.5px;
         }
+
         .content-header p {
-            font-size: 12px;
+            color: #718096;
+            font-size: 13px;
+            margin: 0;
         }
-        .header-actions {
-            width: 100%;
-            flex-direction: column;
-        }
+
         .btn {
-            width: 100%;
-            justify-content: center;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.2px;
         }
-        .card-header {
-            padding: 12px;
-        }
-        .search-input, .filter-select {
-            font-size: 14px;
-        }
-        /* Mobile table - hide less important columns */
-        .data-table th:nth-child(4),
-        .data-table td:nth-child(4),
-        .data-table th:nth-child(5),
-        .data-table td:nth-child(5) {
-            display: none;
-        }
-        .data-table th,
-        .data-table td {
-            padding: 10px 8px;
-            font-size: 12px;
-        }
-        .post-title {
-            font-size: 12px;
-        }
-        .badge {
-            font-size: 9px;
-            padding: 2px 6px;
-        }
-        .action-buttons {
-            flex-direction: column;
-            gap: 4px;
-        }
-        .btn-icon {
-            width: 28px;
-            height: 28px;
-            font-size: 12px;
-        }
-    }
 
-    @media (max-width: 480px) {
-        .content-header h1 {
-            font-size: 16px;
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
         }
-        /* Mobile table - show only essential columns */
-        .data-table th:nth-child(3),
-        .data-table td:nth-child(3),
-        .data-table th:nth-child(6),
-        .data-table td:nth-child(6) {
-            display: none;
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
         }
-        .data-table th,
-        .data-table td {
-            padding: 8px 6px;
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
         }
-        .post-title {
-            font-size: 11px;
-            max-width: 150px;
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .post-checkbox,
+        #selectAll {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E8E8E8;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    }
-</style>
-
-<script>
-    // Deletar post individual
-    function deletePost(id) {
-        if (confirm('⚠️ ATENÇÃO!\n\nTem certeza que deseja EXCLUIR este post?\n\nEsta ação não pode ser desfeita!')) {
-            fetch(`/dashboard/posts/deletar/${id}`, {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('✅ Post excluído com sucesso!');
-                    location.reload();
-                } else {
-                    alert('❌ Erro ao deletar post: ' + (data.message || 'Erro desconhecido'));
-                }
-            })
-            .catch(error => {
-                alert('❌ Erro ao deletar post: ' + error.message);
-            });
-        }
-    }
-
-    // Selecionar/desselecionar todos
-    function toggleSelectAll(checkbox) {
-        const checkboxes = document.querySelectorAll('.post-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = checkbox.checked;
-        });
-        updateDeleteButton();
-    }
-
-    // Atualizar visibilidade do botão de excluir
-    function updateDeleteButton() {
-        const checkboxes = document.querySelectorAll('.post-checkbox:checked');
-        const btnDelete = document.getElementById('btnDeleteSelected');
-        
-        if (checkboxes.length > 0) {
-            btnDelete.style.display = 'inline-flex';
-            btnDelete.innerHTML = `<i class="fas fa-trash"></i> Excluir Selecionados (${checkboxes.length})`;
-        } else {
-            btnDelete.style.display = 'none';
         }
 
-        // Atualizar checkbox "selecionar todos"
-        const allCheckboxes = document.querySelectorAll('.post-checkbox');
-        const selectAll = document.getElementById('selectAll');
-        selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
-    }
-
-    // Deletar posts selecionados
-    function deleteSelected() {
-        const checkboxes = document.querySelectorAll('.post-checkbox:checked');
-        const ids = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (ids.length === 0) {
-            alert('⚠️ Nenhum post selecionado!');
-            return;
+        .card-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid #E2E8F0;
+            background: #FAFBFC;
         }
 
-        const confirmMsg = `⚠️ ATENÇÃO!\n\nVocê está prestes a EXCLUIR ${ids.length} post(s)!\n\nEsta ação não pode ser desfeita!\n\nDeseja continuar?`;
-        
-        if (confirm(confirmMsg)) {
-            // Mostrar loading
-            const btnDelete = document.getElementById('btnDeleteSelected');
-            const originalText = btnDelete.innerHTML;
-            btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
-            btnDelete.disabled = true;
+        .search-filter {
+            display: flex;
+            gap: 10px;
+        }
 
-            // Deletar cada post
-            let deletedCount = 0;
-            let errorCount = 0;
+        .search-input,
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.15s;
+            background: white;
+        }
 
-            Promise.all(ids.map(id => 
-                fetch(`/dashboard/posts/deletar/${id}`, { method: 'DELETE' })
+        .search-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+        }
+
+        .search-input {
+            flex: 1;
+        }
+
+        .filter-select {
+            min-width: 180px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 11px;
+            color: #4A5568;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            background: #F7FAFC;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #E2E8F0;
+            font-size: 13px;
+            color: #2D3748;
+        }
+
+        .data-table tr:hover {
+            background: #F7FAFC;
+        }
+
+        .post-title {
+            font-weight: 500;
+            font-size: 13px;
+            color: #1A202C;
+            line-height: 1.4;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-success {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .badge-secondary {
+            background: #E2E3E5;
+            color: #383D41;
+        }
+
+        .badge-warning {
+            background: #FFF3CD;
+            color: #856404;
+            margin-right: 8px;
+        }
+
+        .badge-noticias {
+            background: #FFE5E5;
+            color: #C1121F;
+        }
+
+        .badge-musica {
+            background: #D4EDDA;
+            color: #28A745;
+        }
+
+        .badge-eventos {
+            background: #FFE8D6;
+            color: #FF8C42;
+        }
+
+        .badge-ministerio {
+            background: #F3E5F5;
+            color: #8B3A62;
+        }
+
+        .badge-estudo-biblico {
+            background: #E3F2FD;
+            color: #1F4788;
+        }
+
+        .badge-testemunhos {
+            background: #FFF0F0;
+            color: #DC2626;
+        }
+
+        .badge-familia {
+            background: #FCE7F3;
+            color: #BE185D;
+        }
+
+        .badge-jovens {
+            background: #CCFBF1;
+            color: #0F766E;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: #F7FAFC;
+            color: #718096;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .btn-icon:hover {
+            background: #EDF2F7;
+            color: #2D3748;
+            transform: scale(1.05);
+        }
+
+        .btn-icon.btn-danger:hover {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .text-center {
+            text-align: center;
+            padding: 32px !important;
+            color: #9CA3AF;
+            font-size: 13px;
+        }
+
+        @media (max-width: 1024px) {
+            .content-header {
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .search-filter {
+                flex-direction: column;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-header h1 {
+                font-size: 18px;
+            }
+
+            .content-header p {
+                font-size: 12px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .card-header {
+                padding: 12px;
+            }
+
+            .search-input,
+            .filter-select {
+                font-size: 14px;
+            }
+
+            /* Mobile table - hide less important columns */
+            .data-table th:nth-child(4),
+            .data-table td:nth-child(4),
+            .data-table th:nth-child(5),
+            .data-table td:nth-child(5) {
+                display: none;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+
+            .post-title {
+                font-size: 12px;
+            }
+
+            .badge {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .btn-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-header h1 {
+                font-size: 16px;
+            }
+
+            /* Mobile table - show only essential columns */
+            .data-table th:nth-child(3),
+            .data-table td:nth-child(3),
+            .data-table th:nth-child(6),
+            .data-table td:nth-child(6) {
+                display: none;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+
+            .post-title {
+                font-size: 11px;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    </style>
+
+    <script>
+        // Deletar post individual
+        function deletePost(id) {
+            if (confirm('⚠️ ATENÇÃO!\n\nTem certeza que deseja EXCLUIR este post?\n\nEsta ação não pode ser desfeita!')) {
+                fetch(`/dashboard/posts/deletar/${id}`, {
+                    method: 'DELETE'
+                })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            deletedCount++;
+                            alert('✅ Post excluído com sucesso!');
+                            location.reload();
                         } else {
-                            errorCount++;
+                            alert('❌ Erro ao deletar post: ' + (data.message || 'Erro desconhecido'));
                         }
                     })
-                    .catch(() => errorCount++)
-            ))
-            .then(() => {
-                if (deletedCount > 0) {
-                    alert(`✅ ${deletedCount} post(s) excluído(s) com sucesso!${errorCount > 0 ? `\n⚠️ ${errorCount} erro(s) encontrado(s).` : ''}`);
-                    location.reload();
+                    .catch(error => {
+                        alert('❌ Erro ao deletar post: ' + error.message);
+                    });
+            }
+        }
+
+        // Selecionar/desselecionar todos
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.post-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateDeleteButton();
+        }
+
+        // Atualizar visibilidade do botão de excluir
+        function updateDeleteButton() {
+            const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+            const btnDelete = document.getElementById('btnDeleteSelected');
+
+            if (checkboxes.length > 0) {
+                btnDelete.style.display = 'inline-flex';
+                btnDelete.innerHTML = `<i class="fas fa-trash"></i> Excluir Selecionados (${checkboxes.length})`;
+            } else {
+                btnDelete.style.display = 'none';
+            }
+
+            // Atualizar checkbox "selecionar todos"
+            const allCheckboxes = document.querySelectorAll('.post-checkbox');
+            const selectAll = document.getElementById('selectAll');
+            selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+        }
+
+        // Deletar posts selecionados
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+
+            if (ids.length === 0) {
+                alert('⚠️ Nenhum post selecionado!');
+                return;
+            }
+
+            const confirmMsg = `⚠️ ATENÇÃO!\n\nVocê está prestes a EXCLUIR ${ids.length} post(s)!\n\nEsta ação não pode ser desfeita!\n\nDeseja continuar?`;
+
+            if (confirm(confirmMsg)) {
+                // Mostrar loading
+                const btnDelete = document.getElementById('btnDeleteSelected');
+                const originalText = btnDelete.innerHTML;
+                btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+                btnDelete.disabled = true;
+
+                // Deletar cada post
+                let deletedCount = 0;
+                let errorCount = 0;
+
+                Promise.all(ids.map(id =>
+                    fetch(`/dashboard/posts/deletar/${id}`, { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                deletedCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        })
+                        .catch(() => errorCount++)
+                ))
+                    .then(() => {
+                        if (deletedCount > 0) {
+                            alert(`✅ ${deletedCount} post(s) excluído(s) com sucesso!${errorCount > 0 ? `\n⚠️ ${errorCount} erro(s) encontrado(s).` : ''}`);
+                            location.reload();
+                        } else {
+                            alert('❌ Erro ao excluir posts!');
+                            btnDelete.innerHTML = originalText;
+                            btnDelete.disabled = false;
+                        }
+                    });
+            }
+        }
+        // Aplicar filtros
+        function applyFilters() {
+            const categoria = document.getElementById('filterCategoria').value;
+            const status = document.getElementById('filterStatus').value;
+
+            const params = new URLSearchParams(window.location.search);
+
+            if (categoria) params.set('categoria', categoria);
+            else params.delete('categoria');
+
+            if (status) params.set('status', status);
+            else params.delete('status');
+
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        // Search functionality (client-side for now, or could be server-side)
+        document.getElementById('searchPosts').addEventListener('keyup', function (e) {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.data-table tbody tr');
+
+            rows.forEach(row => {
+                const title = row.querySelector('.post-title').textContent.toLowerCase();
+                if (title.includes(term)) {
+                    row.style.display = '';
                 } else {
-                    alert('❌ Erro ao excluir posts!');
-                    btnDelete.innerHTML = originalText;
-                    btnDelete.disabled = false;
+                    row.style.display = 'none';
                 }
             });
-        }
-    }
-</script>
+        });
+    </script>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>

@@ -248,8 +248,27 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
 // POSTS
 app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
   try {
+    const { status, categoria } = req.query;
+    const where = {};
+
+    if (status === 'published') {
+      where.publicado = true;
+    } else if (status === 'draft') {
+      where.publicado = false;
+    }
+
+    if (categoria) {
+      where.categoria = categoria;
+    }
+
     const articles = await Article.findAll({
+      where,
       order: [['dataPublicacao', 'DESC']]
+    });
+
+    const { Category } = require('./models');
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
     });
 
     res.render('dashboard/posts/index', {
@@ -259,6 +278,8 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
         role: req.session.userRole
       },
       articles,
+      categories,
+      filters: { status, categoria },
       success: req.query.success
     });
   } catch (error) {
@@ -403,6 +424,11 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
           role: req.session.userRole
         } : null
       });
+    }
+
+    // Se for rascunho, atualizar data para agora
+    if (!article.publicado) {
+      article.dataPublicacao = new Date();
     }
 
     const categories = await Category.findAll({
