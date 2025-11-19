@@ -681,6 +681,206 @@
         height: 600px;
         border: none;
     }
+
+    /* Perfis Salvos */
+    .perfil-salvo {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background: #F7FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .perfil-salvo:hover {
+        background: #EDF2F7;
+        border-color: #CBD5E0;
+    }
+
+    .perfil-salvo .btn-remove {
+        background: none;
+        border: none;
+        color: #E53E3E;
+        cursor: pointer;
+        padding: 0;
+        font-size: 12px;
+        margin-left: 4px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .content-header h1 {
+            font-size: 18px;
+        }
+        .content-header p {
+            font-size: 12px;
+        }
+        .card-body {
+            padding: 16px;
+        }
+        .form-group label {
+            font-size: 11px;
+        }
+        .form-control {
+            font-size: 14px;
+            padding: 8px 10px;
+        }
+        .btn {
+            font-size: 12px;
+            padding: 8px 14px;
+        }
+        .btn-lg {
+            font-size: 13px;
+            padding: 10px 16px;
+        }
+        .post-card {
+            padding: 10px 12px;
+            gap: 10px;
+        }
+        .post-caption {
+            font-size: 12px;
+        }
+        .post-stats {
+            font-size: 10px;
+            gap: 10px;
+        }
+        .materia-card {
+            padding: 14px;
+        }
+        .materia-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .materia-title {
+            font-size: 14px;
+        }
+        .materia-description {
+            font-size: 12px;
+        }
+        .materia-content {
+            font-size: 11px;
+            padding: 12px;
+            max-height: 150px;
+        }
+        .materia-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+        }
+        .materia-image {
+            height: 60px;
+        }
+        .materia-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .action-buttons-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .action-buttons-container .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .post-modal-content {
+            max-width: 95%;
+        }
+        .post-modal-body iframe {
+            height: 400px;
+        }
+        .alert {
+            font-size: 12px;
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .content-header h1 {
+            font-size: 16px;
+        }
+        .card-body {
+            padding: 12px;
+        }
+        .form-control {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+        .btn {
+            font-size: 11px;
+            padding: 7px 12px;
+        }
+        .btn-lg {
+            font-size: 12px;
+            padding: 9px 14px;
+        }
+        .post-card {
+            padding: 8px 10px;
+            gap: 8px;
+        }
+        .post-checkbox {
+            width: 18px;
+            height: 18px;
+        }
+        .post-caption {
+            font-size: 11px;
+        }
+        .post-stats {
+            font-size: 9px;
+            gap: 8px;
+        }
+        .materia-card {
+            padding: 12px;
+        }
+        .materia-title {
+            font-size: 13px;
+        }
+        .materia-description {
+            font-size: 11px;
+        }
+        .materia-content {
+            font-size: 10px;
+            padding: 10px;
+            max-height: 120px;
+        }
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 4px;
+        }
+        .materia-image {
+            height: 50px;
+        }
+        .materia-meta {
+            font-size: 10px;
+        }
+        .post-modal-body iframe {
+            height: 300px;
+        }
+        #loadingText {
+            font-size: 16px;
+        }
+        #loadingSubtext {
+            font-size: 12px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+        }
+    }
 </style>
 
 <script>

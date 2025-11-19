@@ -86,12 +86,12 @@ app.use((req, res, next) => {
   // Content Security Policy básica
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com https://www.googletagmanager.com; " +
     "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://fonts.googleapis.com; " +
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https: blob:; " +
     "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
-    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com https://cdn.ampproject.org"
+    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com https://www.googletagmanager.com https://cdn.ampproject.org"
   );
   
   // Permissions Policy
@@ -132,6 +132,20 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware para carregar categorias em todas as views
 const loadCategories = require('./middlewares/categoriesMiddleware');
 app.use(loadCategories);
+
+// Middleware para carregar Google Analytics ID em todas as views
+app.use(async (req, res, next) => {
+  try {
+    const analyticsConfig = await SystemConfig.findOne({
+      where: { chave: 'analytics_google' }
+    });
+    res.locals.analyticsId = analyticsConfig && analyticsConfig.valor ? analyticsConfig.valor : null;
+  } catch (error) {
+    console.error('Erro ao carregar Analytics ID:', error);
+    res.locals.analyticsId = null;
+  }
+  next();
+});
 
 // Middleware de redirecionamentos SEO (ANTES das rotas principais)
 const redirectMiddleware = require('./middleware/redirectMiddleware');

@@ -2,6 +2,41 @@
     </div>
     
     <script>
+        // Mobile Menu Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+            
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    mobileOverlay.classList.toggle('active');
+                    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+                });
+            }
+            
+            if (mobileOverlay) {
+                mobileOverlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+            
+            // Fechar menu ao clicar em um link
+            const menuItems = document.querySelectorAll('.sidebar .menu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                        mobileOverlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
+        });
+        
         // Sistema de Notificações
         let notificationInterval;
         

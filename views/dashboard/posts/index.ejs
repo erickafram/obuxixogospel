@@ -356,6 +356,81 @@
             width: 100%;
         }
     }
+
+    @media (max-width: 768px) {
+        .content-header h1 {
+            font-size: 18px;
+        }
+        .content-header p {
+            font-size: 12px;
+        }
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .card-header {
+            padding: 12px;
+        }
+        .search-input, .filter-select {
+            font-size: 14px;
+        }
+        /* Mobile table - hide less important columns */
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4),
+        .data-table th:nth-child(5),
+        .data-table td:nth-child(5) {
+            display: none;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 10px 8px;
+            font-size: 12px;
+        }
+        .post-title {
+            font-size: 12px;
+        }
+        .badge {
+            font-size: 9px;
+            padding: 2px 6px;
+        }
+        .action-buttons {
+            flex-direction: column;
+            gap: 4px;
+        }
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .content-header h1 {
+            font-size: 16px;
+        }
+        /* Mobile table - show only essential columns */
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3),
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6) {
+            display: none;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 8px 6px;
+        }
+        .post-title {
+            font-size: 11px;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
 </style>
 
 <script>

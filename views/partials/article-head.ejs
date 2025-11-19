@@ -196,6 +196,18 @@ if (typeof categories !== 'undefined' && categories) {
         }
     }
     </script>
+    
+    <!-- Google Analytics -->
+    <% if (typeof analyticsId !== 'undefined' && analyticsId) { %>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '<%= analyticsId %>');
+    </script>
+    <% } %>
 </head>
 <body>
     <header class="header">
