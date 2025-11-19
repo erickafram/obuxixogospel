@@ -25,14 +25,14 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mp3|pdf/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -82,21 +82,21 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
+
   // Content Security Policy básica
-  res.setHeader('Content-Security-Policy', 
+  res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://www.google-analytics.com https://www.googletagmanager.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://www.instagram.com http://www.instagram.com https://connect.facebook.net https://*.google-analytics.com https://*.googletagmanager.com; " +
     "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.quilljs.com https://cdn.jsdelivr.net https://cdn.ampproject.org https://fonts.googleapis.com; " +
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https: blob:; " +
     "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
-    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://www.google-analytics.com https://www.googletagmanager.com https://cdn.ampproject.org"
+    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cdn.ampproject.org"
   );
-  
+
   // Permissions Policy
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  
+
   next();
 });
 
@@ -156,7 +156,7 @@ const legacyRedirectMiddleware = require('./middleware/legacyRedirectMiddleware'
 app.use(legacyRedirectMiddleware);
 
 // Helper function para gerar URLs de artigos - USA O SLUG DA CATEGORIA DO BANCO
-app.locals.getArticleUrl = function(article) {
+app.locals.getArticleUrl = function (article) {
   // Usa o slug da categoria diretamente do banco
   // Se a categoria não existir, usa 'noticias' como fallback
   const categorySlug = article.categoria || 'noticias';
@@ -178,28 +178,28 @@ app.get('/login', (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
-    
+
     const user = await User.findOne({ where: { email, ativo: true } });
-    
+
     if (!user) {
       return res.render('login', { error: 'E-mail ou senha inválidos', success: null });
     }
-    
+
     const senhaValida = await user.validarSenha(senha);
-    
+
     if (!senhaValida) {
       return res.render('login', { error: 'E-mail ou senha inválidos', success: null });
     }
-    
+
     // Criar sessão
     req.session.userId = user.id;
     req.session.userName = user.nome;
     req.session.userEmail = user.email;
     req.session.userRole = user.role;
-    
+
     // Atualizar último login
     await user.atualizarLogin();
-    
+
     res.redirect('/dashboard');
   } catch (error) {
     console.error('Erro no login:', error);
@@ -227,7 +227,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     const totalPosts = await Article.count();
     const totalViews = await Article.sum('visualizacoes');
-    
+
     res.render('dashboard/index', {
       user: {
         nome: req.session.userName,
@@ -251,7 +251,7 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
     const articles = await Article.findAll({
       order: [['dataPublicacao', 'DESC']]
     });
-    
+
     res.render('dashboard/posts/index', {
       user: {
         nome: req.session.userName,
@@ -273,7 +273,7 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
     const categories = await Category.findAll({
       order: [['nome', 'ASC']]
     });
-    
+
     res.render('dashboard/posts/form', {
       user: {
         nome: req.session.userName,
@@ -302,9 +302,9 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
-    
+
     console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
-    
+
     // Se for rascunho, validar apenas título e conteúdo
     if (rascunho === 'true') {
       if (!titulo || !conteudo) {
@@ -320,7 +320,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
         return res.status(400).send('Campos obrigatórios faltando');
       }
     }
-    
+
     // Gerar URL amigável base usando slugify
     const slugify = require('slugify');
     let urlAmigavelBase = slugify(titulo, {
@@ -329,7 +329,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       locale: 'pt',
       remove: /[*+~.()'"!:@]/g
     });
-    
+
     // Verificar se já existe e adicionar sufixo apenas se necessário
     let urlAmigavel = urlAmigavelBase;
     let contador = 1;
@@ -337,7 +337,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       urlAmigavel = `${urlAmigavelBase}-${contador}`;
       contador++;
     }
-    
+
     // Processar data de publicação
     let dataPublicacaoFinal = new Date();
     if (dataPublicacao) {
@@ -358,28 +358,28 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       visualizacoes: 0,
       urlAmigavel
     });
-    
+
     console.log('Post criado com sucesso:', article.id);
-    
+
     // Se for requisição AJAX (rascunho), retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: rascunho === 'true' ? 'Rascunho salvo com sucesso!' : 'Post criado com sucesso!',
-        articleId: article.id 
+        articleId: article.id
       });
     }
-    
+
     res.redirect('/dashboard/posts?success=Post criado com sucesso!');
   } catch (error) {
     console.error('Erro ao criar post:', error);
     console.error('Stack:', error.stack);
-    
+
     // Se for requisição AJAX, retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
       return res.status(500).json({ success: false, message: error.message });
     }
-    
+
     res.status(500).send(`Erro ao criar post: ${error.message}`);
   }
 });
@@ -388,14 +388,14 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   try {
     const { Category } = require('./models');
     const article = await Article.findByPk(req.params.id);
-    
+
     if (!article) {
       const recentArticles = await Article.findAll({
         where: { publicado: true },
         order: [['dataPublicacao', 'DESC']],
         limit: 3
       });
-      return res.status(404).render('404', { 
+      return res.status(404).render('404', {
         recentArticles,
         user: req.session.userId ? {
           nome: req.session.userName,
@@ -404,11 +404,11 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
         } : null
       });
     }
-    
+
     const categories = await Category.findAll({
       order: [['nome', 'ASC']]
     });
-    
+
     res.render('dashboard/posts/form', {
       user: {
         nome: req.session.userName,
@@ -428,9 +428,9 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
-    
+
     const article = await Article.findByPk(req.params.id);
-    
+
     if (!article) {
       const errorMsg = 'Post não encontrado';
       if (req.headers.accept && req.headers.accept.includes('application/json')) {
@@ -438,7 +438,7 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       }
       return res.status(404).send(errorMsg);
     }
-    
+
     // Processar data de publicação
     let dataPublicacaoFinal = article.dataPublicacao;
     if (dataPublicacao) {
@@ -457,25 +457,25 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       destaque: destaque === 'true',
       dataPublicacao: dataPublicacaoFinal
     });
-    
+
     // Se for requisição AJAX (rascunho), retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: rascunho === 'true' ? 'Rascunho atualizado com sucesso!' : 'Post atualizado com sucesso!',
-        articleId: article.id 
+        articleId: article.id
       });
     }
-    
+
     res.redirect('/dashboard/posts?success=Post atualizado com sucesso!');
   } catch (error) {
     console.error('Erro ao atualizar post:', error);
-    
+
     // Se for requisição AJAX, retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
       return res.status(500).json({ success: false, message: error.message });
     }
-    
+
     res.status(500).send('Erro ao atualizar post');
   }
 });
@@ -483,13 +483,13 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 app.delete('/dashboard/posts/deletar/:id', isAuthenticated, async (req, res) => {
   try {
     const article = await Article.findByPk(req.params.id);
-    
+
     if (!article) {
       return res.json({ success: false, message: 'Post não encontrado' });
     }
-    
+
     await article.destroy();
-    
+
     res.json({ success: true, message: 'Post deletado com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar post:', error);
@@ -501,7 +501,7 @@ app.delete('/dashboard/posts/deletar/:id', isAuthenticated, async (req, res) => 
 app.get('/dashboard/categorias', isAuthenticated, async (req, res) => {
   try {
     const { Category } = require('./models');
-    
+
     // Tentar ordenar por ordem, se falhar, ordenar por nome
     let categories;
     try {
@@ -514,7 +514,7 @@ app.get('/dashboard/categorias', isAuthenticated, async (req, res) => {
         order: [['nome', 'ASC']]
       });
     }
-    
+
     res.render('dashboard/categorias/index', {
       user: {
         nome: req.session.userName,
@@ -594,7 +594,7 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
     let finalUrl = `/uploads/${file.filename}`;
     let finalSize = file.size;
     let finalMimeType = file.mimetype;
-    
+
     // Determinar tipo
     let tipo = 'documento';
     if (file.mimetype.startsWith('image/')) tipo = 'imagem';
@@ -607,25 +607,25 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
         const originalPath = path.join('public/uploads', file.filename);
         const webpFilename = file.filename.replace(/\.(jpg|jpeg|png|webp)$/i, '.webp');
         const webpPath = path.join('public/uploads', webpFilename);
-        
+
         // Converter para WebP com qualidade 85%
         await sharp(originalPath)
           .webp({ quality: 85 })
           .toFile(webpPath);
-        
+
         // Pegar tamanho do arquivo WebP
         const stats = await fs.stat(webpPath);
         finalSize = stats.size;
-        
+
         // Se não for WebP original, deletar arquivo original
         if (!file.mimetype.includes('webp')) {
           await fs.unlink(originalPath);
         }
-        
+
         finalFilename = webpFilename;
         finalUrl = `/uploads/${webpFilename}`;
         finalMimeType = 'image/webp';
-        
+
         console.log(`✅ Imagem convertida para WebP: ${file.originalname} -> ${webpFilename}`);
       } catch (conversionError) {
         console.error('⚠️ Erro ao converter para WebP, usando original:', conversionError);
@@ -644,8 +644,8 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
       userId: req.session.userId
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       media: {
         id: media.id,
         url: finalUrl,
@@ -664,7 +664,7 @@ app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), asyn
 app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
   try {
     const { url, descricao } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ success: false, error: 'URL é obrigatória' });
     }
@@ -698,14 +698,14 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       await sharp(tempPath)
         .webp({ quality: 85 })
         .toFile(webpPath);
-      
+
       // Pegar tamanho do arquivo WebP
       const stats = await fs.stat(webpPath);
       finalSize = stats.size;
-      
+
       // Deletar arquivo temporário
       await fs.unlink(tempPath);
-      
+
       console.log(`✅ Imagem do Bing convertida para WebP: ${webpFilename}`);
     } catch (conversionError) {
       console.error('⚠️ Erro ao converter imagem do Bing para WebP:', conversionError);
@@ -726,8 +726,8 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       userId: req.session.userId
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       media: {
         id: media.id,
         url: finalUrl,
@@ -746,7 +746,7 @@ app.get('/dashboard/media', isAuthenticated, async (req, res) => {
   try {
     const tipo = req.query.tipo || null;
     const where = tipo ? { tipo } : {};
-    
+
     const media = await Media.findAll({
       where,
       order: [['createdAt', 'DESC']],
@@ -763,7 +763,7 @@ app.get('/dashboard/media', isAuthenticated, async (req, res) => {
 app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
   try {
     const media = await Media.findByPk(req.params.id);
-    
+
     if (!media) {
       return res.json({ success: false, message: 'Mídia não encontrada' });
     }
@@ -776,7 +776,7 @@ app.delete('/dashboard/media/:id', isAuthenticated, async (req, res) => {
     }
 
     await media.destroy();
-    
+
     res.json({ success: true, message: 'Mídia deletada com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar mídia:', error);
@@ -789,7 +789,7 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
   try {
     const { imageData } = req.body;
     const media = await Media.findByPk(req.params.id);
-    
+
     if (!media) {
       return res.status(404).json({ success: false, message: 'Mídia não encontrada' });
     }
@@ -828,8 +828,8 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
       userId: req.session.userId
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       media: {
         id: newMedia.id,
         url: newMedia.url,
@@ -861,25 +861,25 @@ app.get('/', async (req, res) => {
         }
       }
     });
-    
+
     const seoData = {};
     seoConfig.forEach(config => {
       seoData[config.chave] = config.valor;
     });
-    
+
     // Buscar o destaque mais recente (apenas 1)
-    const destaque = await Article.findOne({ 
+    const destaque = await Article.findOne({
       where: { destaque: true, publicado: true },
       order: [['dataPublicacao', 'DESC']]
     });
-    
+
     // ID do destaque para excluir das listas (apenas o que está sendo exibido)
     const destaqueId = destaque ? destaque.id : null;
-    
+
     // Buscar TODOS os artigos publicados, excluindo apenas o destaque que está sendo exibido
     // Buscar por 'g1' OU 'noticias' (compatibilidade)
-    const g1Articles = await Article.findAll({ 
-      where: { 
+    const g1Articles = await Article.findAll({
+      where: {
         categoria: { [sequelize.Sequelize.Op.in]: ['g1', 'noticias'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
@@ -887,9 +887,9 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']],
       limit: 20
     });
-    
-    const geArticles = await Article.findAll({ 
-      where: { 
+
+    const geArticles = await Article.findAll({
+      where: {
         categoria: { [sequelize.Sequelize.Op.in]: ['ge', 'musica'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
@@ -897,9 +897,9 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']],
       limit: 20
     });
-    
-    const gshowArticles = await Article.findAll({ 
-      where: { 
+
+    const gshowArticles = await Article.findAll({
+      where: {
         categoria: { [sequelize.Sequelize.Op.in]: ['gshow', 'eventos'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
@@ -907,9 +907,9 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']],
       limit: 20
     });
-    
-    const quemArticles = await Article.findAll({ 
-      where: { 
+
+    const quemArticles = await Article.findAll({
+      where: {
         categoria: { [sequelize.Sequelize.Op.in]: ['quem', 'ministerios'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
@@ -917,9 +917,9 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']],
       limit: 20
     });
-    
-    const valorArticles = await Article.findAll({ 
-      where: { 
+
+    const valorArticles = await Article.findAll({
+      where: {
         categoria: { [sequelize.Sequelize.Op.in]: ['valor', 'estudos'] },
         publicado: true,
         ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
@@ -946,25 +946,25 @@ app.get('/', async (req, res) => {
 // Função para converter HTML para AMP
 function convertToAMP(html) {
   if (!html) return '';
-  
+
   let ampHtml = html;
-  
+
   // Remover scripts primeiro (incluindo Instagram embed scripts)
   ampHtml = ampHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
+
   // Remover blockquotes do Instagram (ficam duplicados com iframe)
   ampHtml = ampHtml.replace(/<blockquote[^>]*class="instagram-media"[^>]*>.*?<\/blockquote>/gi, '');
-  
+
   // Converter Instagram iframes para amp-instagram
   ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?instagram\.com\/p\/([^/]+)\/embed[^"]*"[^>]*><\/iframe>/gi, (match, postId) => {
     return `<amp-instagram data-shortcode="${postId}" layout="responsive" width="400" height="500"></amp-instagram>`;
   });
-  
+
   // Converter YouTube iframes para amp-youtube
   ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?youtube\.com\/embed\/([^"?]+)[^"]*"[^>]*><\/iframe>/gi, (match, videoId) => {
     return `<amp-youtube data-videoid="${videoId}" layout="responsive" width="680" height="400"></amp-youtube>`;
   });
-  
+
   // Converter <img> para <amp-img>
   ampHtml = ampHtml.replace(/<img([^>]*)src="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
     // Extrair width e height se existirem
@@ -972,10 +972,10 @@ function convertToAMP(html) {
     const heightMatch = match.match(/height="?(\d+)"?/i);
     const width = widthMatch ? widthMatch[1] : '680';
     const height = heightMatch ? heightMatch[1] : '400';
-    
+
     return `<amp-img${before}src="${src}"${after} layout="responsive" width="${width}" height="${height}"></amp-img>`;
   });
-  
+
   // Converter outros iframes para amp-iframe (genérico)
   ampHtml = ampHtml.replace(/<iframe([^>]*)src="([^"]*)"([^>]*)><\/iframe>/gi, (match, before, src, after) => {
     // Extrair width e height se existirem
@@ -983,20 +983,20 @@ function convertToAMP(html) {
     const heightMatch = match.match(/height="?(\d+)"?/i);
     const width = widthMatch ? widthMatch[1] : '680';
     const height = heightMatch ? heightMatch[1] : '400';
-    
+
     return `<amp-iframe src="${src}" layout="responsive" width="${width}" height="${height}" sandbox="allow-scripts allow-same-origin" frameborder="0"><amp-img layout="fill" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" placeholder></amp-img></amp-iframe>`;
   });
-  
+
   // Remover estilos inline
   ampHtml = ampHtml.replace(/\s*style="[^"]*"/gi, '');
-  
+
   // Remover atributos não permitidos em AMP
   ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*data-instgrm-[^=]*="[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*allowtransparency="[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*allowfullscreen="[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*scrolling="[^"]*"/gi, '');
-  
+
   return ampHtml;
 }
 
@@ -1004,28 +1004,28 @@ function convertToAMP(html) {
 app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
   try {
     // Verificar se AMP está habilitado
-    const ampConfig = await SystemConfig.findOne({ 
-      where: { chave: 'amp_habilitado' } 
+    const ampConfig = await SystemConfig.findOne({
+      where: { chave: 'amp_habilitado' }
     });
-    
+
     if (!ampConfig || ampConfig.valor !== 'true') {
       // Se AMP não está habilitado, redirecionar para versão normal
       return res.redirect(`/${req.params.categorySlug}/${req.params.articleSlug}`);
     }
 
-    const article = await Article.findOne({ 
-      where: { 
+    const article = await Article.findOne({
+      where: {
         urlAmigavel: req.params.articleSlug,
         categoria: req.params.categorySlug,
-        publicado: true 
+        publicado: true
       }
     });
-    
+
     if (!article) {
       console.log(`❌ AMP: Artigo não encontrado - categoria: ${req.params.categorySlug}, slug: ${req.params.articleSlug}`);
       return res.status(404).send('Conteúdo não encontrado');
     }
-    
+
     console.log(`✅ AMP: Artigo encontrado - ${article.titulo}`);
 
     // Converter conteúdo para AMP
@@ -1036,8 +1036,8 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
 
     // Buscar artigos relacionados
     const { Op } = require('sequelize');
-    const related = await Article.findAll({ 
-      where: { 
+    const related = await Article.findAll({
+      where: {
         categoria: article.categoria,
         id: { [Op.ne]: article.id },
         publicado: true
@@ -1047,8 +1047,8 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
     });
 
     // Buscar configurações AMP
-    const analyticsConfig = await SystemConfig.findOne({ 
-      where: { chave: 'amp_analytics_id' } 
+    const analyticsConfig = await SystemConfig.findOne({
+      where: { chave: 'amp_analytics_id' }
     });
 
     // Buscar nome da categoria do banco
@@ -1056,7 +1056,7 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
       where: { slug: article.categoria }
     });
 
-    res.render('article-amp', { 
+    res.render('article-amp', {
       article: ampArticle,
       related,
       categoryRoute: req.params.categorySlug,
@@ -1074,10 +1074,10 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
 // /noticia/:slug → /:categoria/:slug
 app.get('/noticia/:slug', async (req, res) => {
   try {
-    const article = await Article.findOne({ 
+    const article = await Article.findOne({
       where: { urlAmigavel: req.params.slug, publicado: true }
     });
-    
+
     if (!article) {
       return res.status(404).send('Notícia não encontrada');
     }
@@ -1093,10 +1093,10 @@ app.get('/noticia/:slug', async (req, res) => {
 // Rota alternativa mantida para compatibilidade
 app.get('/artigo/:slug', async (req, res) => {
   try {
-    const article = await Article.findOne({ 
+    const article = await Article.findOne({
       where: { urlAmigavel: req.params.slug, publicado: true }
     });
-    
+
     if (!article) {
       return res.status(404).send('Conteúdo não encontrado');
     }
@@ -1106,8 +1106,8 @@ app.get('/artigo/:slug', async (req, res) => {
 
     // Notícias relacionadas
     const { Op } = require('sequelize');
-    const related = await Article.findAll({ 
-      where: { 
+    const related = await Article.findAll({
+      where: {
         categoria: article.categoria,
         id: { [Op.ne]: article.id },
         publicado: true
@@ -1116,8 +1116,8 @@ app.get('/artigo/:slug', async (req, res) => {
       limit: 4
     });
 
-    res.render('article', { 
-      article, 
+    res.render('article', {
+      article,
       related,
       user: req.session.userId ? {
         nome: req.session.userName,
@@ -1146,8 +1146,8 @@ app.get('/categoria/:categoria', async (req, res) => {
       return res.status(404).send('Categoria não encontrada');
     }
 
-    const { count, rows: articles } = await Article.findAndCountAll({ 
-      where: { 
+    const { count, rows: articles } = await Article.findAndCountAll({
+      where: {
         categoria: req.params.categoria,
         publicado: true
       },
@@ -1302,30 +1302,30 @@ app.post('/api/ia/criar-por-texto', async (req, res) => {
 // Criar matéria por conteúdo/informações fornecidas
 app.post('/api/ia/criar-por-conteudo', async (req, res) => {
   try {
-    const { 
-      tituloSugerido, 
-      informacoes, 
-      categoria, 
-      palavrasChave, 
+    const {
+      tituloSugerido,
+      informacoes,
+      categoria,
+      palavrasChave,
       modoAutomatico,
       // Suporte para formato antigo (link + textoManual)
-      link, 
-      textoManual 
+      link,
+      textoManual
     } = req.body;
 
     // Determinar o conteúdo a ser usado
     let conteudo = informacoes || textoManual || '';
-    
+
     // Se tem link, extrair conteúdo
     if (link) {
       console.log('Extraindo conteúdo do link:', link);
       const conteudoExtraido = await AIService.extrairConteudoURL(link);
-      
+
       // Se não conseguiu extrair e não tem texto manual, retornar erro
       if (!conteudoExtraido || conteudoExtraido.includes('Não foi possível extrair')) {
         if (!conteudo) {
-          return res.status(400).json({ 
-            error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, cole o texto manualmente no campo opcional.' 
+          return res.status(400).json({
+            error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, cole o texto manualmente no campo opcional.'
           });
         }
       } else {
@@ -1340,7 +1340,7 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
 
     // Construir o tema baseado no título sugerido ou nas informações
     let tema = tituloSugerido || conteudo.substring(0, 200);
-    
+
     // Se tem título sugerido, adicionar as informações como contexto adicional
     if (tituloSugerido && informacoes) {
       tema = `${tituloSugerido}\n\nCONTEXTO E INFORMAÇÕES:\n${informacoes}`;
@@ -1354,7 +1354,7 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
       false, // pesquisarInternet = false (já temos as informações)
       link ? [link] : [] // links para referência
     );
-    
+
     res.json({ success: true, materia });
   } catch (error) {
     console.error('❌ Erro ao criar matéria:', error);
@@ -1466,7 +1466,7 @@ app.get('/dashboard/ia/configuracoes', async (req, res) => {
         chave: ['ia_ativa', 'ia_api_key', 'ia_api_url', 'ia_model']
       }
     });
-    
+
     res.render('dashboard/ia/config', { configs });
   } catch (error) {
     console.error('Erro ao buscar configurações:', error);
@@ -1529,40 +1529,40 @@ app.post('/dashboard/ia/configuracoes', async (req, res) => {
 app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
   try {
     const { categorySlug, articleSlug } = req.params;
-    
+
     // Verificar se a categoria existe no banco
     const category = await Category.findOne({
       where: { slug: categorySlug }
     });
-    
+
     // Se a categoria não existir, passa para o próximo middleware (404)
     if (!category) {
       return next();
     }
-    
+
     // Verificar se é modo preview (permite visualizar rascunhos)
     const isPreview = req.query.preview === 'true';
-    
+
     // Buscar o artigo
-    const whereClause = { 
-      urlAmigavel: articleSlug, 
+    const whereClause = {
+      urlAmigavel: articleSlug,
       categoria: categorySlug
     };
-    
+
     // Se não for preview, exigir que esteja publicado
     if (!isPreview) {
       whereClause.publicado = true;
     }
-    
+
     const article = await Article.findOne({ where: whereClause });
-    
+
     if (!article) {
       const recentArticles = await Article.findAll({
         where: { publicado: true },
         order: [['dataPublicacao', 'DESC']],
         limit: 3
       });
-      return res.status(404).render('404', { 
+      return res.status(404).render('404', {
         recentArticles,
         user: req.session.userId ? {
           nome: req.session.userName,
@@ -1577,8 +1577,8 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
 
     // Conteúdos relacionados
     const { Op } = require('sequelize');
-    const related = await Article.findAll({ 
-      where: { 
+    const related = await Article.findAll({
+      where: {
         categoria: article.categoria,
         id: { [Op.ne]: article.id },
         publicado: true
@@ -1588,12 +1588,12 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
     });
 
     // Verificar se AMP está habilitado
-    const ampConfig = await SystemConfig.findOne({ 
-      where: { chave: 'amp_habilitado' } 
+    const ampConfig = await SystemConfig.findOne({
+      where: { chave: 'amp_habilitado' }
     });
 
-    res.render('article', { 
-      article, 
+    res.render('article', {
+      article,
       related,
       ampEnabled: ampConfig && ampConfig.valor === 'true',
       isPreview: isPreview, // Passar flag de preview para o template
@@ -1616,15 +1616,15 @@ app.use(async (req, res) => {
     const redirectEnabled = await SystemConfig.findOne({
       where: { chave: '404_redirect_enabled' }
     });
-    
+
     const redirectType = await SystemConfig.findOne({
       where: { chave: '404_redirect_type' }
     });
-    
+
     // Se redirecionamento está ativado
     if (redirectEnabled && redirectEnabled.valor === 'true') {
       const type = redirectType ? redirectType.valor : '301';
-      
+
       if (type === '410') {
         // 410 Gone - Conteúdo removido permanentemente
         return res.status(410).send(`
@@ -1654,15 +1654,15 @@ app.use(async (req, res) => {
         return res.redirect(301, '/');
       }
     }
-    
+
     // Se redirecionamento está desativado, mostrar página 404 normal
     const recentArticles = await Article.findAll({
       where: { publicado: true },
       order: [['dataPublicacao', 'DESC']],
       limit: 3
     });
-    
-    res.status(404).render('404', { 
+
+    res.status(404).render('404', {
       recentArticles,
       user: req.session.userId ? {
         nome: req.session.userName,
@@ -1680,7 +1680,7 @@ app.use(async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-  
+
   // Iniciar serviço de postagem automática
   try {
     const autoPostService = require('./services/AutoPostService');
