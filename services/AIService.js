@@ -595,7 +595,7 @@ class AIService {
 A matéria deve parecer 100% humana, fluida e natural, como se você tivesse apurado os fatos.
 
 ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente.
+- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
 - Use uma narrativa envolvente, com parágrafos bem conectados.
 - Mantenha a objetividade, mas com fluidez (evite frases robóticas).
 - Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
@@ -823,7 +823,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 A matéria deve parecer 100% humana, fluida e natural, como se você tivesse apurado os fatos.
 
 ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente.
+- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
 - Use uma narrativa envolvente, com parágrafos bem conectados.
 - Mantenha a objetividade, mas com fluidez (evite frases robóticas).
 - Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
@@ -847,21 +847,23 @@ ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
 A matéria deve parecer 100% humana, fluida e natural.
 
 ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente.
+- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
 - Use uma narrativa envolvente, com parágrafos bem conectados.
 - Mantenha a objetividade, mas com fluidez (evite frases robóticas).
 - Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
 
 🚫 PROIBIDO (CRITÉRIO DE ELIMINAÇÃO):
-- JAMAIS use termos subjetivos ("infelizmente", "felizmente", "surpreendentemente").
-- JAMAIS use "nós" ou posicionamento emocional.
-- JAMAIS termine com perguntas ou chamadas para ação.
-- JAMAIS use frases de transição robóticas ("Vale ressaltar que...", "É importante notar que...").
+- JAMAIS escreva frases como: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou...".
+- JAMAIS cite a fonte dessa maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, o pastor afirmou..."
+- JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva a cena diretamente: "No vídeo, o pastor aparece gesticulando..."
+- JAMAIS use meta-linguagem ("Segundo o texto fornecido...", "Baseado nas informações...").
+- JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?").
 
 ✅ OBRIGATÓRIO:
-- Apresente fatos e depoimentos de forma direta.
-- Encerre com ações do personagem ou impacto social.
-- Inclua dados ou especialistas quando relevante.`;
+- Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou".
+- Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais".
+- Use conectivos variados para dar fluidez ao texto.
+- Se houver citações, use-as organicamente no texto.`;
       }
 
       const prompt = `${promptInstrucao}
