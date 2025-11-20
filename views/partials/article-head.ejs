@@ -34,7 +34,8 @@ if (typeof categories !== 'undefined' && categories) {
     <meta property="og:url" content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
     <meta property="og:title" content="<%= article.titulo %>">
     <meta property="og:description" content="<%= article.descricao %>">
-    <meta property="og:image" content="<%= article.imagem %>">
+    <meta property="og:image" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+    <meta property="og:image:secure_url" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Obuxixo Gospel">
@@ -55,13 +56,19 @@ if (typeof categories !== 'undefined' && categories) {
     <meta name="twitter:url" content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
     <meta name="twitter:title" content="<%= article.titulo %>">
     <meta name="twitter:description" content="<%= article.descricao %>">
-    <meta name="twitter:image" content="<%= article.imagem %>">
+    <meta name="twitter:image" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
     <meta name="twitter:site" content="@obuxixogospel">
     <meta name="twitter:creator" content="@obuxixogospel">
     
     <!-- WhatsApp Optimization -->
     <meta property="og:image:alt" content="<%= article.titulo %>">
     <meta property="og:image:type" content="image/jpeg">
+    
+    <!-- Additional Social Media Meta Tags -->
+    <meta name="thumbnail" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+    <meta itemprop="image" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+    <meta itemprop="name" content="<%= article.titulo %>">
+    <meta itemprop="description" content="<%= article.descricao %>">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -87,10 +94,10 @@ if (typeof categories !== 'undefined' && categories) {
         "alternativeHeadline": "<%= article.descricao %>",
         "description": "<%= article.descricao %>",
         "image": [
-            "<%= article.imagem %>",
+            "<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>",
             {
                 "@type": "ImageObject",
-                "url": "<%= article.imagem %>",
+                "url": "<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>",
                 "width": 1200,
                 "height": 630,
                 "caption": "<%= article.titulo %>"

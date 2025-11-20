@@ -1383,10 +1383,21 @@ Retorne APENAS um objeto JSON válido:
           continue;
         }
 
+        // Validar qualidade do caption (evitar apenas hashtags/emojis)
+        const captionLimpo = post.caption.replace(/[#@\u{1F300}-\u{1F9FF}]/gu, '').trim();
+        if (captionLimpo.length < 50) {
+          console.log(`⚠️ Post ${postId} ignorado: caption sem conteúdo significativo (apenas hashtags/emojis)`);
+          erros.push({
+            post: post,
+            erro: 'Caption sem conteúdo textual suficiente (apenas hashtags/emojis)'
+          });
+          continue;
+        }
 
         // Log do conteúdo que será enviado para a IA
         console.log('📋 Caption do post (primeiros 300 chars):', post.caption.substring(0, 300));
         console.log('📏 Tamanho do caption:', post.caption.length, 'caracteres');
+        console.log('🧹 Caption limpo (sem hashtags/emojis):', captionLimpo.length, 'caracteres');
 
         // Criar matéria usando o prompt do estilo G1 (mesmo usado em "Reescrever Matéria")
         const materia = await this.gerarMateriaEstiloG1(
@@ -1636,6 +1647,7 @@ Agora reorganize o conteúdo fornecido acima:`
 - ❌ NÃO adicione informações sobre "velório", "sepultamento", "horários" se NÃO foram citados
 - ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
 - ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
+- ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
 
 ✅ O QUE VOCÊ DEVE FAZER:
 1. ✅ Use APENAS as informações que estão no texto original
@@ -1719,8 +1731,8 @@ Retorne APENAS um objeto JSON válido:
       console.log('📄 Conteúdo do post (primeiros 200 chars):', textoLimpo.substring(0, 200));
       console.log('📏 Tamanho total do conteúdo:', textoLimpo.length, 'caracteres');
 
-      // Temperatura 0.3 (mais baixa) para ser MUITO mais fiel ao original e evitar invenções
-      const response = await this.makeRequest(messages, 0.3, 3000);
+      // Temperatura 0.2 (MUITO baixa) para ser EXTREMAMENTE fiel ao original e evitar qualquer invenção
+      const response = await this.makeRequest(messages, 0.2, 3000);
 
       if (!response || response.trim().length === 0) {
         throw new Error('IA retornou resposta vazia');
