@@ -93,6 +93,7 @@ class AIService {
 
   /**
    * Extrai conteúdo de uma URL (incluindo Instagram)
+   * Retorna objeto { texto, imagem }
    */
   static async extrairConteudoURL(url) {
     try {
@@ -121,19 +122,38 @@ class AIService {
         .replace(/\s+/g, ' ')
         .substring(0, 2000); // Limitar a 2000 caracteres
 
-      return texto;
+      // Extrair imagem destaque
+      let imagem = $('meta[property="og:image"]').attr('content') ||
+        $('meta[name="twitter:image"]').attr('content') ||
+        $('link[rel="image_src"]').attr('href') ||
+        $('img').first().attr('src');
+
+      // Corrigir URL relativa da imagem se necessário
+      if (imagem && !imagem.startsWith('http')) {
+        const urlObj = new URL(url);
+        if (imagem.startsWith('//')) {
+          imagem = 'https:' + imagem;
+        } else if (imagem.startsWith('/')) {
+          imagem = urlObj.origin + imagem;
+        } else {
+          imagem = urlObj.origin + '/' + imagem;
+        }
+      }
+
+      return { texto, imagem };
     } catch (error) {
       console.error('Erro ao extrair conteúdo:', error.message);
-      return '';
+      return { texto: '', imagem: null };
     }
   }
 
   /**
-   * Extrai conteúdo do Instagram (texto da postagem + comentários)
+   * Extrai conteúdo do Instagram (texto da postagem + comentários + imagem)
    */
   static async extrairConteudoInstagram(url) {
     try {
       console.log('Extraindo conteúdo do Instagram:', url);
+      let imagem = null;
 
       // Método 1: Usar API pública do Instagram através de embed
       const postId = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[1] || url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[2];
@@ -159,8 +179,12 @@ class AIService {
               conteudo += `AUTOR: ${oembedResponse.data.author_name}\n\n`;
             }
 
+            if (oembedResponse.data.thumbnail_url) {
+              imagem = oembedResponse.data.thumbnail_url;
+            }
+
             console.log('✅ Conteúdo extraído via oEmbed:', conteudo.length, 'caracteres');
-            return conteudo;
+            return { texto: conteudo, imagem };
           }
         } catch (oembedError) {
           console.log('❌ oEmbed falhou:', oembedError.message);
@@ -180,10 +204,13 @@ class AIService {
             const description = $('meta[property="og:description"]').attr('content') ||
               $('meta[name="description"]').attr('content');
 
+            const img = $('meta[property="og:image"]').attr('content');
+            if (img) imagem = img;
+
             if (description && description.length > 50) {
               conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
               console.log('✅ Conteúdo extraído via proxy:', conteudo.length, 'caracteres');
-              return conteudo;
+              return { texto: conteudo, imagem };
             }
           }
         } catch (proxyError) {
@@ -222,8 +249,10 @@ class AIService {
                       conteudo += `AUTOR: @${post.owner.username}\n\n`;
                     }
 
+                    if (post.display_url) imagem = post.display_url;
+
                     console.log('✅ Conteúdo extraído via CORS proxy:', conteudo.length, 'caracteres');
-                    return conteudo.substring(0, 3000);
+                    return { texto: conteudo.substring(0, 3000), imagem };
                   }
                 }
               } catch (e) {
@@ -234,10 +263,13 @@ class AIService {
 
           // Tentar meta tags como fallback
           const description = $('meta[property="og:description"]').attr('content');
+          const img = $('meta[property="og:image"]').attr('content');
+          if (img) imagem = img;
+
           if (description && description.length > 50) {
             conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
             console.log('✅ Conteúdo extraído via meta tags (CORS):', conteudo.length, 'caracteres');
-            return conteudo;
+            return { texto: conteudo, imagem };
           }
         } catch (corsError) {
           console.log('❌ CORS proxy falhou:', corsError.message);
@@ -270,8 +302,10 @@ class AIService {
             conteudo += `AUTOR: @${post.owner.username}\n\n`;
           }
 
+          if (post.display_url) imagem = post.display_url;
+
           console.log('✅ Conteúdo extraído via JSON:', conteudo.length, 'caracteres');
-          return conteudo.substring(0, 3000);
+          return { texto: conteudo.substring(0, 3000), imagem };
         }
       } catch (jsonError) {
         console.log('❌ Método JSON falhou:', jsonError.message);
@@ -311,8 +345,10 @@ class AIService {
                   conteudo += `AUTOR: @${post.owner.username}\n\n`;
                 }
 
+                if (post.display_url) imagem = post.display_url;
+
                 console.log('Conteúdo extraído via _sharedData:', conteudo.length, 'caracteres');
-                return conteudo.substring(0, 3000);
+                return { texto: conteudo.substring(0, 3000), imagem };
               }
             }
           } catch (e) {
@@ -324,18 +360,28 @@ class AIService {
       // Método 4: Extrair de meta tags
       const description = $('meta[property="og:description"]').attr('content') ||
         $('meta[name="description"]').attr('content');
+
+      const img = $('meta[property="og:image"]').attr('content');
+      if (img) imagem = img;
+
       if (description && description.length > 50) {
         conteudo += `DESCRIÇÃO:\n${description}\n\n`;
         console.log('Conteúdo extraído via meta tags:', conteudo.length, 'caracteres');
-        return conteudo;
+        return { texto: conteudo, imagem };
       }
 
       console.log('Nenhum método funcionou, retornando mensagem de erro');
-      return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
+      return {
+        texto: '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n',
+        imagem: null
+      };
 
     } catch (error) {
       console.error('Erro ao extrair Instagram:', error.message);
-      return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
+      return {
+        texto: '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n',
+        imagem: null
+      };
     }
   }
 
@@ -767,9 +813,18 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
       console.log('Extraindo conteúdo de', links.length, 'links');
 
       for (const link of links) {
-        const conteudo = await this.extrairConteudoURL(link);
-        if (conteudo) {
-          conteudoExtraido += `\n${conteudo}\n\n`;
+        const { texto, imagem } = await this.extrairConteudoURL(link);
+        if (texto) {
+          conteudoExtraido += `\n${texto}\n\n`;
+        }
+
+        if (imagem) {
+          console.log('📸 Imagem extraída do link:', imagem);
+          imagensSugeridas.unshift({
+            url: imagem,
+            descricao: 'Imagem extraída do link',
+            fonte: 'Link Original'
+          });
         }
       }
 
@@ -1122,6 +1177,38 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
       throw new Error('O assistente de IA está desativado');
     }
 
+    // Se for para organizar informações (anotações para matéria)
+    if (tipo === 'aiConteudoInformacoes') {
+      const prompt = `Você é um assistente editorial experiente.
+
+        Organize e melhore as seguintes informações/anotações que servirão de base para uma matéria jornalística:
+
+        ${texto}
+
+        REGRAS:
+        - Corrija erros de ortografia e gramática
+        - Organize as ideias de forma lógica e coerente
+        - Agrupe informações relacionadas
+        - Mantenha TODAS as informações fatuais importantes (nomes, datas, locais)
+        - Torne o texto mais claro e fluido
+        - Retorne APENAS o texto organizado, sem introduções ou explicações
+
+        TEXTO ORGANIZADO:`;
+
+      const messages = [
+        {
+          role: 'system',
+          content: 'Você é um assistente editorial especializado em organizar informações.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ];
+
+      return await this.makeRequest(messages, 0.5, 2000);
+    }
+
     const tipoTexto = {
       'titulo': 'título',
       'descricao': 'descrição',
@@ -1130,19 +1217,19 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
 
     const prompt = `Você é um revisor de textos especializado em português brasileiro.
 
-          Corrija o seguinte ${tipoTexto}, mantendo o sentido original:
+        Corrija o seguinte ${tipoTexto}, mantendo o sentido original:
 
-          ${texto}
+        ${texto}
 
-          REGRAS:
-          - Corrija erros de ortografia, gramática e pontuação
-          - Melhore a clareza e fluidez do texto
-          - Mantenha o tom e estilo original
-          - Se for HTML, preserve todas as tags
-          - Não adicione informações novas
-          - Retorne APENAS o texto corrigido, sem explicações
+        REGRAS:
+        - Corrija erros de ortografia, gramática e pontuação
+        - Melhore a clareza e fluidez do texto
+        - Mantenha o tom e estilo original
+        - Se for HTML, preserve todas as tags
+        - Não adicione informações novas
+        - Retorne APENAS o texto corrigido, sem explicações
 
-          TEXTO CORRIGIDO:`;
+        TEXTO CORRIGIDO:`;
 
     const messages = [
       {
