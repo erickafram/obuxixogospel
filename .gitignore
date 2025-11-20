@@ -44,5 +44,6 @@ build/
 
 # Google Service Account (NUNCA COMMITAR!)
 config/google-service-account.json
+service-account.json
 config/*.json
 !config/config.json
