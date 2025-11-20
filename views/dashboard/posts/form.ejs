@@ -2576,14 +2576,29 @@
 
             if (media.length === 0) {
                 grid.innerHTML = '<div class="loading">Nenhuma mídia encontrada. Faça upload na aba "Fazer Upload".</div>';
-                ${ item.tipo === 'audio' ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><i class="fas fa-music" style="font-size:48px;color:#666;"></i></div>` : '' }
+                return;
+            }
+
+            grid.innerHTML = media.map(item => `
+            <div class="media-item" data-id="${item.id}" data-url="${item.url}" data-tipo="${item.tipo}" onclick="toggleMediaSelection(${item.id}, '${item.url}', '${item.tipo}')">
+                ${item.tipo === 'imagem' ? `
+                    <button type="button" class="media-item-edit-btn" onclick="event.stopPropagation(); openImageEditor(${item.id}, '${item.url}')" title="Editar imagem">
+                        <i class="fas fa-crop"></i>
+                    </button>
+                ` : ''}
+                <div class="media-item-checkbox">
+                    <i class="fas fa-check"></i>
+                </div>
+                ${item.tipo === 'imagem' ? `<img src="${item.url}" alt="${item.nomeOriginal}">` : ''}
+                ${item.tipo === 'video' ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><i class="fas fa-video" style="font-size:48px;color:#666;"></i></div>` : ''}
+                ${item.tipo === 'audio' ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><i class="fas fa-music" style="font-size:48px;color:#666;"></i></div>` : ''}
                 <div class="media-item-info">${item.nomeOriginal}</div>
-            </div >
-                    `).join('');
+            </div>
+        `).join('');
         }
 
         function toggleMediaSelection(id, url, tipo) {
-            const item = document.querySelector(`.media - item[data - id="${id}"]`);
+            const item = document.querySelector(`.media-item[data-id="${id}"]`);
             const index = selectedMedia.findIndex(m => m.id === id);
 
             if (index > -1) {
@@ -2676,7 +2691,7 @@
                     if (e.lengthComputable) {
                         const percent = (e.loaded / e.total) * 100;
                         progressFill.style.width = percent + '%';
-                        progressText.textContent = `Enviando... ${ Math.round(percent) }% `;
+                        progressText.textContent = `Enviando... ${Math.round(percent)}%`;
                     }
                 });
 
@@ -2735,39 +2750,39 @@
                     renderBingImages(data.imagens);
                 } else {
                     resultsDiv.innerHTML = `
-                    < div class="bing-placeholder" >
+                    <div class="bing-placeholder">
                         <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ff9800; margin-bottom: 16px;"></i>
                         <p style="color: #666;">Nenhuma imagem encontrada para "${query}"</p>
                         <p style="color: #999; font-size: 13px;">Tente usar outras palavras-chave</p>
-                    </div >
-                    `;
+                    </div>
+                `;
                 }
             } catch (error) {
                 console.error('Erro ao buscar imagens:', error);
                 loadingDiv.style.display = 'none';
                 resultsDiv.innerHTML = `
-                    < div class="bing-placeholder" >
+                <div class="bing-placeholder">
                     <i class="fas fa-times-circle" style="font-size: 48px; color: #f44336; margin-bottom: 16px;"></i>
                     <p style="color: #666;">Erro ao buscar imagens</p>
                     <p style="color: #999; font-size: 13px;">${error.message}</p>
-                </div >
-                    `;
+                </div>
+            `;
             }
         }
 
         function renderBingImages(imagens) {
             const resultsDiv = document.getElementById('bingSearchResults');
             resultsDiv.innerHTML = imagens.map((img, index) => `
-                    < div class="bing-image-item" >
-                        <img src="${img.thumbnail || img.url}" alt="${img.descricao}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Erro+ao+carregar'">
-                            <div class="bing-image-overlay">
-                                <span class="bing-image-info" title="${img.descricao}">${img.fonte || 'Bing'}</span>
-                                <button type="button" class="bing-image-select" onclick="selecionarImagemBing('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
-                                <i class="fas fa-check"></i> Usar
-                            </button>
-                        </div>
-            </div >
-                    `).join('');
+            <div class="bing-image-item">
+                <img src="${img.thumbnail || img.url}" alt="${img.descricao}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Erro+ao+carregar'">
+                <div class="bing-image-overlay">
+                    <span class="bing-image-info" title="${img.descricao}">${img.fonte || 'Bing'}</span>
+                    <button type="button" class="bing-image-select" onclick="selecionarImagemBing('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-check"></i> Usar
+                    </button>
+                </div>
+            </div>
+        `).join('');
         }
 
         async function selecionarImagemBing(url, descricao) {
@@ -2802,11 +2817,11 @@
         async function deleteSelectedMedia() {
             if (selectedMedia.length === 0) return;
 
-            if (!confirm(`Deseja realmente excluir ${ selectedMedia.length } arquivo(s) ? `)) return;
+            if (!confirm(`Deseja realmente excluir ${selectedMedia.length} arquivo(s)?`)) return;
 
             try {
                 for (const media of selectedMedia) {
-                    await fetch(`/ dashboard / media / ${ media.id } `, { method: 'DELETE' });
+                    await fetch(`/dashboard/media/${media.id}`, { method: 'DELETE' });
                 }
 
                 selectedMedia = [];
@@ -2861,7 +2876,7 @@
             });
 
             closeMediaLibrary();
-            alert(`${ selectedMedia.length } arquivo(s) inserido(s) no conteúdo!`);
+            alert(`${selectedMedia.length} arquivo(s) inserido(s) no conteúdo!`);
         }
 
         // Botão separado para inserir mídia no conteúdo
@@ -3267,13 +3282,13 @@
                             const imgDiv = document.createElement('div');
                             imgDiv.style.cssText = 'cursor: pointer; border: 3px solid #E0E0E0; border-radius: 8px; overflow: hidden; transition: all 0.2s;';
                             imgDiv.innerHTML = `
-                    < img src = "${img.thumbnail || img.url}" 
-                                 alt = "${img.descricao}"
-                style = "width: 100%; height: 150px; object-fit: cover;" >
-                    <div style="padding: 8px; font-size: 11px; text-align: center; background: #F5F5F5;">
-                        ${img.fonte}
-                    </div>
-                `;
+                            <img src="${img.thumbnail || img.url}" 
+                                 alt="${img.descricao}" 
+                                 style="width: 100%; height: 150px; object-fit: cover;">
+                            <div style="padding: 8px; font-size: 11px; text-align: center; background: #F5F5F5;">
+                                ${img.fonte}
+                            </div>
+                        `;
                             imgDiv.onclick = () => selecionarImagemSugeridaEFechar(img.url);
                             imgDiv.onmouseover = () => imgDiv.style.borderColor = '#FF6B00';
                             imgDiv.onmouseout = () => imgDiv.style.borderColor = '#E0E0E0';
@@ -3285,13 +3300,13 @@
                         // Mudar texto do botão para "Finalizar sem Imagem" ou "Fechar"
                         const modalFooter = document.querySelector('#aiModal .modal-footer');
                         modalFooter.innerHTML = `
-                    < p style = "color: #4CAF50; font-weight: bold; margin-right: auto;" >
-                        <i class="fas fa-check-circle"></i> Matéria gerada! Escolha uma imagem ou finalize.
-                        </p >
-                    <button type="button" class="btn btn-secondary" onclick="finalizarSemImagem()">
-                        Finalizar sem Imagem
-                    </button>
-                `;
+                        <p style="color: #4CAF50; font-weight: bold; margin-right: auto;">
+                            <i class="fas fa-check-circle"></i> Matéria gerada! Escolha uma imagem ou finalize.
+                        </p>
+                        <button type="button" class="btn btn-secondary" onclick="finalizarSemImagem()">
+                            Finalizar sem Imagem
+                        </button>
+                    `;
 
                         // NÃO fechar o modal - deixar aberto para escolher imagem
                     } else {
@@ -3582,36 +3597,36 @@
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
 
                 // Enviar para o servidor
-                const response = await fetch(`/ dashboard / media / ${ currentEditingMediaId }/edit`, {
-                method: 'POST',
+                const response = await fetch(`/dashboard/media/${currentEditingMediaId}/edit`, {
+                    method: 'POST',
                     headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ imageData })
-            });
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageData })
+                });
 
-            // Verificar se a resposta é JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Resposta inválida do servidor (não é JSON)');
+                // Verificar se a resposta é JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Resposta inválida do servidor (não é JSON)');
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Imagem editada e salva com sucesso!');
+                    closeImageEditor();
+                    loadMediaLibrary(); // Recarregar biblioteca
+                } else {
+                    alert('❌ Erro ao salvar imagem: ' + data.message);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            } catch (error) {
+                console.error('Erro ao salvar imagem:', error);
+                alert('❌ Erro ao salvar imagem: ' + error.message);
             }
-
-            const data = await response.json();
-
-            if (data.success) {
-                alert('✅ Imagem editada e salva com sucesso!');
-                closeImageEditor();
-                loadMediaLibrary(); // Recarregar biblioteca
-            } else {
-                alert('❌ Erro ao salvar imagem: ' + data.message);
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        } catch (error) {
-            console.error('Erro ao salvar imagem:', error);
-            alert('❌ Erro ao salvar imagem: ' + error.message);
-        }
         }
 
         // Fechar modal do editor ao clicar fora
