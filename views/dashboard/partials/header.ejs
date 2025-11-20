@@ -781,6 +781,7 @@
                     </a>
                 </div>
 
+                <% if (user.role === 'admin') { %>
                 <div class="menu-section">
                     <div class="menu-section-title">Sistema</div>
                     <a href="/dashboard/usuarios" class="menu-item">
@@ -796,6 +797,7 @@
                         <span>Configurações</span>
                     </a>
                 </div>
+                <% } %>
             </nav>
         </aside>
 

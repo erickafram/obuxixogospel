@@ -37,6 +37,7 @@
             </div>
         </div>
 
+        <% if (user.role === 'admin') { %>
         <div class="stat-card">
             <div class="stat-icon" style="background: #1F4788;">
                 <i class="fas fa-users"></i>
@@ -46,6 +47,7 @@
                 <p class="stat-number">1</p>
             </div>
         </div>
+        <% } %>
     </div>
 
     <div class="quick-actions">
@@ -63,10 +65,12 @@
                 <i class="fas fa-tags"></i>
                 <span>Categorias</span>
             </a>
+            <% if (user.role === 'admin') { %>
             <a href="/dashboard/configuracoes" class="action-card">
                 <i class="fas fa-cog"></i>
                 <span>Configurações</span>
             </a>
+            <% } %>
         </div>
     </div>
 </div>
