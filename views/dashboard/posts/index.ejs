@@ -16,10 +16,11 @@
             </div>
         </div>
 
-        <% if (typeof success !=='undefined' && success) { %>
+        <% if (typeof success !== 'undefined' && success) { %>
             <div class="alert alert-success">
                 <%= success %>
             </div>
+        <% } %>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -36,15 +37,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% if (articles && articles.length> 0) { %>
-                        <% // Criar mapa de nomes de categorias a partir das categorias carregadas const
-                            categoryNames={}; if (typeof categories !=='undefined' && categories) {
-                            categories.forEach(cat=> {
-                            categoryNames[cat.slug] = cat.nome;
+                    <% if (articles && articles.length > 0) { %>
+                        <% 
+                        // Criar mapa de nomes de categorias a partir das categorias carregadas 
+                        const categoryNames = {}; 
+                        if (typeof categories !== 'undefined' && categories) {
+                            categories.forEach(cat => {
+                                categoryNames[cat.slug] = cat.nome;
                             });
-                            }
-                            %>
-                            <% articles.forEach(article=> { %>
+                        }
+                    %>
+                    <% articles.forEach(article => { %>
                                 <tr>
                                     <td>
                                         <input type="checkbox" class="post-checkbox" value="<%= article.id %>"
