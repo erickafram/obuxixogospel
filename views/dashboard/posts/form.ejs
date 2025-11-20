@@ -2964,7 +2964,7 @@
 
                 const data = await response.json();
 
-                if (data.success) {
+                if (data.success && data.materia) {
                     // Preencher os campos
                     document.getElementById('titulo').value = data.materia.titulo;
                     document.getElementById('descricao').value = data.materia.descricao;
