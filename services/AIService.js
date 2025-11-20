@@ -142,12 +142,12 @@ class AIService {
 
       // Método 1: Open Graph image (mais confiável)
       imagemUrl = $('meta[property="og:image"]').attr('content') ||
-                  $('meta[property="og:image:secure_url"]').attr('content');
+        $('meta[property="og:image:secure_url"]').attr('content');
 
       // Método 2: Twitter Card image
       if (!imagemUrl) {
         imagemUrl = $('meta[name="twitter:image"]').attr('content') ||
-                    $('meta[name="twitter:image:src"]').attr('content');
+          $('meta[name="twitter:image:src"]').attr('content');
       }
 
       // Método 3: Schema.org image
@@ -666,32 +666,48 @@ class AIService {
 
     const prompt = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
     
-⚠️ IMPORTANTE: Crie uma matéria jornalística baseada EXCLUSIVAMENTE no texto fornecido abaixo.
-A matéria deve parecer 100% humana, fluida e natural, como se você tivesse apurado os fatos.
+⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no texto fornecido abaixo.
 
-ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
-- Use uma narrativa envolvente, com parágrafos bem conectados.
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas).
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
+🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
+- ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
+- ❌ NÃO adicione eventos, pessoas ou declarações que NÃO foram citados
+- ❌ NÃO especule quantidades ("500 pessoas", "milhares de fiéis", "centenas de comentários")
+- ❌ NÃO invente nomes de igrejas, cidades, bairros ou lugares
+- ❌ NÃO adicione citações ou falas que NÃO existem no texto original
+- ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
+- ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
+- ❌ JAMAIS cite a fonte de maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, afirmou..."
+- ❌ JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva diretamente: "No vídeo, o pastor aparece..."
+- ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
+- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
 
-🚫 PROIBIDO (CRITÉRIO DE ELIMINAÇÃO):
-- JAMAIS escreva frases como: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou...".
-- JAMAIS cite a fonte dessa maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, o pastor afirmou..."
-- JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva a cena diretamente: "No vídeo, o pastor aparece gesticulando..."
-- JAMAIS use meta-linguagem ("Segundo o texto fornecido...", "Baseado nas informações...").
-- JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?").
+✅ O QUE VOCÊ DEVE FAZER:
+1. ✅ Use APENAS as informações que estão no texto original fornecido
+2. ✅ Reorganize essas informações em estrutura jornalística profissional
+3. ✅ Melhore a fluidez e conectivos entre as frases
+4. ✅ Use sinônimos mantendo o sentido exato
+5. ✅ Torne o texto mais humanizado e próximo do leitor
+6. ✅ Se houver citações no original, mantenha-as exatamente como estão
+7. ✅ Se NÃO houver citações, NÃO invente nenhuma
+8. ✅ Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou"
 
-✅ OBRIGATÓRIO:
-- Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou".
-- Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais".
-- Use conectivos variados para dar fluidez ao texto.
-- Se houver citações, use-as organicamente no texto.
+📏 TAMANHO DO CONTEÚDO:
+- Escreva APENAS com base no que foi fornecido
+- Se o texto original é curto, a matéria será curta (200-400 palavras está OK)
+- Se o texto original é longo, a matéria será mais longa
+- NÃO force expansão artificial do conteúdo
+
+ESTILO JORNALÍSTICO G1 - HUMANIZADO:
+- Escreva como se você estivesse cobrindo o fato presencialmente
+- Use uma narrativa envolvente, com parágrafos bem conectados
+- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
+- Use conectivos variados para dar fluidez ao texto
+- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão
 
 CATEGORIA: ${categoria}
 ${linkReferencia ? `LINK DE REFERÊNCIA: ${linkReferencia}` : ''}
 
-TEXTO FORNECIDO:
+TEXTO FORNECIDO (USE APENAS ISSO):
 ${texto}
 
 ESTRUTURA OBRIGATÓRIA:
@@ -705,11 +721,12 @@ ESTRUTURA OBRIGATÓRIA:
 3. CONTEÚDO EM HTML:
    - Use tags: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>
    - Introdução impactante (Lide)
-   - Desenvolvimento fluido com todos os detalhes
-   - Citações diretas entre aspas ou em blockquote
+   - Desenvolvimento fluido com os detalhes disponíveis
+   - Citações diretas entre aspas ou em blockquote (SE HOUVER)
    - Conclusão jornalística (impacto ou desdobramento)
    - Use <br> para quebras de linha (apenas uma vez)
-   - Mínimo 300 palavras
+
+⚠️ LEMBRE-SE: É MELHOR uma matéria fiel ao texto fornecido do que uma matéria longa com informações inventadas!
 
 IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 {
@@ -721,7 +738,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     const messages = [
       {
         role: 'system',
-        content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade baseado em textos fornecidos.'
+        content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade baseado em textos fornecidos, sem inventar informações.'
       },
       {
         role: 'user',
@@ -729,7 +746,8 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
       }
     ];
 
-    const response = await this.makeRequest(messages, 0.7, 3000);
+    // Temperatura 0.3 (baixa) para ser mais fiel ao conteúdo e evitar invenções
+    const response = await this.makeRequest(messages, 0.3, 3000);
 
     // Parse da resposta
     try {
@@ -855,7 +873,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
         const resultado = await this.extrairConteudoURL(link);
         if (resultado && resultado.texto) {
           conteudoExtraido += `\n${resultado.texto}\n\n`;
-          
+
           // Se encontrou imagem e ainda não tem uma, guardar
           if (resultado.imagem && !imagemExtraida) {
             imagemExtraida = resultado.imagem;
@@ -900,7 +918,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
           if (imagensBing.length > 0) {
             imagensSugeridas = imagensBing;
           }
-          
+
           // Se extraiu imagem do artigo, adicionar como primeira sugestão
           if (imagemExtraida) {
             console.log('✅ Adicionando imagem extraída do artigo como primeira sugestão');
@@ -921,61 +939,89 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     console.log('📝 Conteúdo extraído:', conteudoExtraido.length, 'caracteres');
     console.log('🖼️ Imagem extraída:', imagemExtraida ? 'SIM' : 'NÃO');
     console.log('📸 Imagens sugeridas até agora:', imagensSugeridas.length);
-    
+
     // Ajustar prompt baseado se tem conteúdo extraído ou não
     let promptInstrucao = '';
     console.log('🔨 Construindo prompt...');
     if (conteudoExtraido) {
-        promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
+      promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
       
-⚠️ IMPORTANTE: Crie uma matéria jornalística baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
-A matéria deve parecer 100% humana, fluida e natural, como se você tivesse apurado os fatos.
+⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
 
-ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
-- Use uma narrativa envolvente, com parágrafos bem conectados.
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas).
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
+🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
+- ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
+- ❌ NÃO adicione eventos, pessoas ou declarações que NÃO foram citados
+- ❌ NÃO especule quantidades ("500 pessoas", "milhares de fiéis", "centenas de comentários")
+- ❌ NÃO invente nomes de igrejas, cidades, bairros ou lugares
+- ❌ NÃO adicione citações ou falas que NÃO existem no texto original
+- ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
+- ❌ NÃO adicione informações sobre "velório", "sepultamento", "horários" se NÃO foram citados
+- ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
+- ❌ JAMAIS cite a fonte de maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, afirmou..."
+- ❌ JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva diretamente: "No vídeo, o pastor aparece..."
+- ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
+- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
 
-🚫 PROIBIDO (CRITÉRIO DE ELIMINAÇÃO):
-- JAMAIS escreva frases como: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou...".
-- JAMAIS cite a fonte dessa maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, o pastor afirmou..."
-- JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva a cena diretamente: "No vídeo, o pastor aparece gesticulando..."
-- JAMAIS use meta-linguagem ("Segundo o texto fornecido...", "Baseado nas informações...").
-- JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?").
+✅ O QUE VOCÊ DEVE FAZER:
+1. ✅ Use APENAS as informações que estão no texto original fornecido
+2. ✅ Reorganize essas informações em estrutura jornalística profissional
+3. ✅ Melhore a fluidez e conectivos entre as frases
+4. ✅ Use sinônimos mantendo o sentido exato
+5. ✅ Torne o texto mais humanizado e próximo do leitor
+6. ✅ Se houver citações no original, mantenha-as exatamente como estão
+7. ✅ Se NÃO houver citações, NÃO invente nenhuma
+8. ✅ Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou"
+9. ✅ Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais"
 
-✅ OBRIGATÓRIO:
-- Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou".
-- Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais".
-- Use conectivos variados para dar fluidez ao texto.
-- Se houver citações, use-as organicamente no texto.`;
-      } else {
-        promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
+📏 TAMANHO DO CONTEÚDO:
+- Escreva APENAS com base no que foi fornecido
+- Se o texto original é curto, a matéria será curta (200-400 palavras está OK)
+- Se o texto original é longo, a matéria será mais longa
+- NÃO force expansão artificial do conteúdo
+
+ESTILO JORNALÍSTICO G1 - HUMANIZADO:
+- Escreva como se você estivesse cobrindo o fato presencialmente
+- Use uma narrativa envolvente, com parágrafos bem conectados
+- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
+- Use conectivos variados para dar fluidez ao texto
+- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão`;
+    } else {
+      promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
       
-⚠️ IMPORTANTE: Crie uma matéria jornalística completa sobre o tema abaixo.
-A matéria deve parecer 100% humana, fluida e natural.
+⚠️ IMPORTANTE: Crie uma matéria jornalística sobre o tema abaixo.
 
-ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-- Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
-- Use uma narrativa envolvente, com parágrafos bem conectados.
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas).
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
+🚨 REGRAS IMPORTANTES:
+- ✅ Use informações gerais e conhecimento público sobre o tema
+- ✅ Mantenha um tom jornalístico profissional e humanizado
+- ✅ Se você NÃO tem informações específicas sobre o tema, seja genérico mas factual
+- ❌ NÃO invente números específicos, datas ou eventos que você não tem certeza
+- ❌ NÃO invente declarações ou citações de pessoas específicas
+- ❌ NÃO especule sobre quantidades ("500 pessoas", "milhares de fiéis") sem base
+- ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas"
+- ❌ JAMAIS use meta-linguagem: "Segundo informações...", "Baseado em..."
+- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
 
-🚫 PROIBIDO (CRITÉRIO DE ELIMINAÇÃO):
-- JAMAIS escreva frases como: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou...".
-- JAMAIS cite a fonte dessa maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, o pastor afirmou..."
-- JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva a cena diretamente: "No vídeo, o pastor aparece gesticulando..."
-- JAMAIS use meta-linguagem ("Segundo o texto fornecido...", "Baseado nas informações...").
-- JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?").
+✅ O QUE VOCÊ PODE FAZER:
+1. ✅ Escrever sobre o tema de forma geral e contextual
+2. ✅ Usar conhecimento público sobre o assunto
+3. ✅ Manter tom jornalístico profissional
+4. ✅ Ser objetivo e direto
+5. ✅ Se mencionar pessoas, use apenas informações públicas conhecidas
 
-✅ OBRIGATÓRIO:
-- Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou".
-- Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais".
-- Use conectivos variados para dar fluidez ao texto.
-- Se houver citações, use-as organicamente no texto.`;
-      }
+📏 TAMANHO DO CONTEÚDO:
+- Matéria de tamanho médio (300-500 palavras)
+- Não force expansão artificial
+- Seja conciso e direto
 
-      const prompt = `${promptInstrucao}
+ESTILO JORNALÍSTICO G1 - HUMANIZADO:
+- Escreva como se você estivesse cobrindo o fato presencialmente
+- Use uma narrativa envolvente, com parágrafos bem conectados
+- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
+- Use conectivos variados para dar fluidez ao texto
+- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão`;
+    }
+
+    const prompt = `${promptInstrucao}
 
 TEMA: ${tema}
 CATEGORIA: ${categoria}
@@ -984,103 +1030,139 @@ ${informacoesAdicionais ? `\n${informacoesAdicionais}` : ''}
 
 ESTRUTURA OBRIGATÓRIA:
 
-      1. TÍTULO(máximo 80 caracteres):
-      - Impactante e claro que resume o tema principal
-        - Direto ao ponto
+1. TÍTULO (máximo 80 caracteres):
+   - Impactante, jornalístico e claro (estilo G1)
+   - Direto ao ponto
 
-      2. DESCRIÇÃO / RESUMO(máximo 160 caracteres):
-      - Breve introdução reforçando os principais fatos
-        - Linguagem simples e direta
+2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
+   - Breve introdução reforçando os principais fatos
+   - Linguagem simples e direta
 
-      3. CONTEÚDO HTML(mínimo 500 palavras):
-   
-   a) CONTEXTUALIZAÇÃO(2 - 3 parágrafos):
-      - Explique rapidamente o que aconteceu
-        - Quando, onde e quem são os envolvidos
-          - Use frases curtas e variadas
-            - Misture frases longas e curtas para ritmo natural
-   
-   b) CITAÇÕES DIRETAS E TESTEMUNHOS(obrigatório):
-      - Inclua pelo menos 2 - 3 citações diretas entre aspas
-        - Use < blockquote > para depoimentos mais longos
-          - Falas humanas e autênticas(ex: "Isso mudou minha vida", disse Maria)
-            - Aproxime o leitor com emoção e realidade
-   
-   c) DADOS + PERCEPÇÕES HUMANAS:
-      - Misture dados concretos com sensações coletivas
-        - Exemplo: "O número de participantes dobrou. 'A igreja está cheia', comenta João"
-          - Inclua exemplos cotidianos específicos(bairros, cidades, situações reais)
-   
-   d) CONSEQUÊNCIAS E PRÓXIMAS ETAPAS:
-      - Use < h3 > para subtítulos explicativos
-        - Use < strong > apenas para informações realmente importantes
-          - Varie os conectores(além disso, por outro lado, enquanto isso, etc.)
-   
-   e) EXPLICAÇÕES NATURAIS:
-      - Evite jargões técnicos ou explique de forma simples
-        - Use linguagem cotidiana("busca por respostas" ao invés de "busca por espiritualidade e significado")
-          - Tom conversacional mas profissional
-   
-   f) IMPACTO SOCIAL E FECHAMENTO(NEUTRO):
-      - Como isso afeta as pessoas comuns(apresente fatos observáveis)
-        - Repercussão nas redes sociais ou comunidade
-          - Finalize reforçando ações do personagem ou impacto social
-            - EVITE: "hora de repensar", "chamado à reflexão para todos nós"
-              - PREFIRA: "A fala gerou debates", "milhares comentaram sobre o tema"
+3. CONTEÚDO HTML:
 
-DIRETRIZES DE NATURALIDADE:
-      - VARIE o tamanho das frases(curtas, médias, longas)
-        - USE conectores variados(além disso, enquanto isso, por outro lado, no entanto)
-          - INCLUA exemplos cotidianos específicos("No bairro Jardim das Flores, por exemplo...")
-            - MISTURE dados objetivos com falas humanas
-              - EVITE tom excessivamente didático ou formal
-                - USE citações diretas frequentemente
-                  - QUEBRE parágrafos longos em menores(máximo 4 - 5 linhas cada)
-                    - TOM jornalístico mas acessível e humano
+   a) LIDE (1-2 parágrafos):
+      - Fato principal de forma clara e impactante
+      - O que, quem, quando, onde (baseado nas informações disponíveis)
 
-      FORMATAÇÃO:
-      - Use < p ></p > para CADA parágrafo
-        - Use < br > (UMA quebra apenas) entre parágrafos para espaçamento
-          - Máximo 3 - 4 frases por parágrafo
-            - Use < h3 > para subtítulos de seções
-              - Use < blockquote > para citações destacadas
-                - Use < strong > com moderação(só o essencial)
+   b) DESENVOLVIMENTO (conforme conteúdo disponível):
+      - Detalhes e contexto
+      - Use <h3> para subtítulos APENAS se fizer sentido
+      - Mantenha parágrafos curtos (3-4 linhas)
+
+   c) CITAÇÕES (SE HOUVER):
+      - Use <blockquote> para citações que existem no conteúdo
+      - NÃO invente citações se não houver
+
+   d) CONCLUSÃO (1 parágrafo):
+      - Encerramento jornalístico
+      - Impacto ou repercussão (se mencionado)
+      - EVITE: "hora de repensar", "chamado à reflexão"
+      - PREFIRA: "A notícia repercutiu", "O caso comoveu"
+
+FORMATAÇÃO HTML:
+- Use <p>texto</p> para CADA parágrafo
+- Use <br> (UMA quebra apenas) entre parágrafos para espaçamento
+- Use <h3>Subtítulo</h3> para subtítulos (se necessário)
+- Use <blockquote>citação</blockquote> para citações (se houver)
+- Use <strong> apenas para nomes importantes
+- Formato: <p>texto1</p><br><p>texto2</p><br><h3>título</h3><br><p>texto3</p>
+
+
+⚠️ LEMBRE-SE: É MELHOR uma matéria fiel ao conteúdo disponível do que uma matéria longa com informações inventadas!
 
 TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>, <br>
 
-        IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
+IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
 
-        Retorne APENAS um objeto JSON válido:
-        {"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha com <br> entre parágrafos"}`;
+Retorne APENAS um objeto JSON válido:
+{"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha com <br> entre parágrafos"}`;
 
-      const messages = [
-        {
-          role: 'system',
-          content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ];
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ];
 
-      console.log('🤖 Fazendo requisição para a IA...');
-      const response = await this.makeRequest(messages, 0.7, 3000);
-      console.log('✅ Resposta recebida da IA (primeiros 200 chars):', response.substring(0, 200));
+    console.log('🤖 Fazendo requisição para a IA...');
+    // Temperatura 0.3 (baixa) para ser mais fiel ao conteúdo e evitar invenções
+    const response = await this.makeRequest(messages, 0.3, 3000);
+    console.log('✅ Resposta recebida da IA (primeiros 200 chars):', response.substring(0, 200));
 
-      try {
-        // Limpar a resposta removendo markdown code blocks se existirem
-        let cleanResponse = response.trim();
+    try {
+      // Limpar a resposta removendo markdown code blocks se existirem
+      let cleanResponse = response.trim();
 
-        // Remover ```json e ``` se existirem
-        cleanResponse = cleanResponse.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+      // Remover ```json e ``` se existirem
+      cleanResponse = cleanResponse.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
 
-        // Tentar extrair JSON da resposta
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          let jsonStr = jsonMatch[0];
+      // Tentar extrair JSON da resposta
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        let jsonStr = jsonMatch[0];
 
-          // Tentar parsear diretamente primeiro
+        // Tentar parsear diretamente primeiro
+        try {
+          const parsed = JSON.parse(jsonStr);
+
+          // Validar se tem os campos necessários
+          if (parsed.titulo && parsed.descricao && parsed.conteudo) {
+            // Extrair palavras-chave do título e buscar imagens
+            const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
+            console.log('🔍 Título completo:', parsed.titulo);
+            console.log('🔑 Palavras-chave extraídas:', palavrasChave);
+            console.log('📸 Buscando imagens no Bing...');
+
+            const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+
+            // Adicionar embed do Instagram se houver link de referência
+            let conteudoFinal = parsed.conteudo;
+            console.log('🔗 Links recebidos:', links);
+
+            // Verificar se o conteúdo já contém um embed do Instagram
+            const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
+
+            if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
+              console.log('📱 Adicionando embed do Instagram:', links[0]);
+              const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
+
+              // Adicionar embed no final do conteúdo
+              conteudoFinal += embedCode;
+              console.log('✅ Embed adicionado ao conteúdo');
+            } else if (jaTemEmbed) {
+              console.log('ℹ️ Conteúdo já contém embed do Instagram, pulando adição');
+            } else {
+              console.log('⚠️ Nenhum link do Instagram encontrado');
+            }
+
+            // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
+            const resultado = {
+              ...parsed,
+              conteudo: conteudoFinal,
+              imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
+            };
+
+            // Log para debug
+            console.log('📝 Conteúdo final contém embed?', conteudoFinal.includes('instagram-media'));
+            console.log('📏 Tamanho do conteúdo:', conteudoFinal.length);
+
+            return resultado;
+          }
+        } catch (parseError) {
+          // Se falhar, tentar limpar quebras de linha dentro das strings
+          console.log('Primeira tentativa de parse falhou, tentando limpar...');
+
+          // Remover TODAS as quebras de linha do JSON
+          jsonStr = jsonStr.replace(/\n/g, ' ').replace(/\r/g, '');
+
+          // Limpar múltiplos espaços
+          jsonStr = jsonStr.replace(/\s+/g, ' ');
+
+          // Tentar parsear novamente
           try {
             const parsed = JSON.parse(jsonStr);
 
@@ -1088,7 +1170,7 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
             if (parsed.titulo && parsed.descricao && parsed.conteudo) {
               // Extrair palavras-chave do título e buscar imagens
               const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
-              console.log('🔍 Título completo:', parsed.titulo);
+              console.log('🔍 Título completo (2ª tentativa):', parsed.titulo);
               console.log('🔑 Palavras-chave extraídas:', palavrasChave);
               console.log('📸 Buscando imagens no Bing...');
 
@@ -1096,22 +1178,22 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
 
               // Adicionar embed do Instagram se houver link de referência
               let conteudoFinal = parsed.conteudo;
-              console.log('🔗 Links recebidos:', links);
+              console.log('🔗 Links recebidos (2ª tentativa):', links);
 
               // Verificar se o conteúdo já contém um embed do Instagram
               const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
 
               if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
-                console.log('📱 Adicionando embed do Instagram:', links[0]);
+                console.log('📱 Adicionando embed do Instagram (2ª tentativa):', links[0]);
                 const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
 
                 // Adicionar embed no final do conteúdo
                 conteudoFinal += embedCode;
-                console.log('✅ Embed adicionado ao conteúdo');
+                console.log('✅ Embed adicionado ao conteúdo (2ª tentativa)');
               } else if (jaTemEmbed) {
-                console.log('ℹ️ Conteúdo já contém embed do Instagram, pulando adição');
+                console.log('ℹ️ Conteúdo já contém embed do Instagram (2ª tentativa), pulando adição');
               } else {
-                console.log('⚠️ Nenhum link do Instagram encontrado');
+                console.log('⚠️ Nenhum link do Instagram encontrado (2ª tentativa)');
               }
 
               // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
@@ -1122,101 +1204,44 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
               };
 
               // Log para debug
-              console.log('📝 Conteúdo final contém embed?', conteudoFinal.includes('instagram-media'));
-              console.log('📏 Tamanho do conteúdo:', conteudoFinal.length);
+              console.log('📝 Conteúdo final contém embed? (2ª tentativa)', conteudoFinal.includes('instagram-media'));
+              console.log('📏 Tamanho do conteúdo: (2ª tentativa)', conteudoFinal.length);
 
               return resultado;
             }
-          } catch (parseError) {
-            // Se falhar, tentar limpar quebras de linha dentro das strings
-            console.log('Primeira tentativa de parse falhou, tentando limpar...');
+          } catch (secondError) {
+            console.error('Segunda tentativa falhou:', secondError.message);
 
-            // Remover TODAS as quebras de linha do JSON
-            jsonStr = jsonStr.replace(/\n/g, ' ').replace(/\r/g, '');
-
-            // Limpar múltiplos espaços
-            jsonStr = jsonStr.replace(/\s+/g, ' ');
-
-            // Tentar parsear novamente
+            // Última tentativa: extrair manualmente
             try {
-              const parsed = JSON.parse(jsonStr);
+              const tituloMatch = jsonStr.match(/"titulo"\s*:\s*"([^"]+)"/);
+              const descricaoMatch = jsonStr.match(/"descricao"\s*:\s*"([^"]+)"/);
+              const conteudoMatch = jsonStr.match(/"conteudo"\s*:\s*"(.+)"\s*\}/);
 
-              // Validar se tem os campos necessários
-              if (parsed.titulo && parsed.descricao && parsed.conteudo) {
-                // Extrair palavras-chave do título e buscar imagens
-                const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
-                console.log('🔍 Título completo (2ª tentativa):', parsed.titulo);
-                console.log('🔑 Palavras-chave extraídas:', palavrasChave);
+              if (tituloMatch && descricaoMatch && conteudoMatch) {
+                // Extrair palavras-chave e buscar imagens
+                const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
+                console.log('🔍 Título extraído manualmente:', tituloMatch[1]);
+                console.log('🔑 Palavras-chave:', palavrasChave);
                 console.log('📸 Buscando imagens no Bing...');
 
                 const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
 
-                // Adicionar embed do Instagram se houver link de referência
-                let conteudoFinal = parsed.conteudo;
-                console.log('🔗 Links recebidos (2ª tentativa):', links);
-
-                // Verificar se o conteúdo já contém um embed do Instagram
-                const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
-
-                if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
-                  console.log('📱 Adicionando embed do Instagram (2ª tentativa):', links[0]);
-                  const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${links[0]}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
-
-                  // Adicionar embed no final do conteúdo
-                  conteudoFinal += embedCode;
-                  console.log('✅ Embed adicionado ao conteúdo (2ª tentativa)');
-                } else if (jaTemEmbed) {
-                  console.log('ℹ️ Conteúdo já contém embed do Instagram (2ª tentativa), pulando adição');
-                } else {
-                  console.log('⚠️ Nenhum link do Instagram encontrado (2ª tentativa)');
-                }
-
-                // Adicionar imagens sugeridas ao resultado (prioriza as baseadas no título)
-                const resultado = {
-                  ...parsed,
-                  conteudo: conteudoFinal,
+                return {
+                  titulo: tituloMatch[1],
+                  descricao: descricaoMatch[1],
+                  conteudo: conteudoMatch[1],
                   imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
                 };
-
-                // Log para debug
-                console.log('📝 Conteúdo final contém embed? (2ª tentativa)', conteudoFinal.includes('instagram-media'));
-                console.log('📏 Tamanho do conteúdo: (2ª tentativa)', conteudoFinal.length);
-
-                return resultado;
               }
-            } catch (secondError) {
-              console.error('Segunda tentativa falhou:', secondError.message);
-
-              // Última tentativa: extrair manualmente
-              try {
-                const tituloMatch = jsonStr.match(/"titulo"\s*:\s*"([^"]+)"/);
-                const descricaoMatch = jsonStr.match(/"descricao"\s*:\s*"([^"]+)"/);
-                const conteudoMatch = jsonStr.match(/"conteudo"\s*:\s*"(.+)"\s*\}/);
-
-                if (tituloMatch && descricaoMatch && conteudoMatch) {
-                  // Extrair palavras-chave e buscar imagens
-                  const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
-                  console.log('🔍 Título extraído manualmente:', tituloMatch[1]);
-                  console.log('🔑 Palavras-chave:', palavrasChave);
-                  console.log('📸 Buscando imagens no Bing...');
-
-                  const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
-
-                  return {
-                    titulo: tituloMatch[1],
-                    descricao: descricaoMatch[1],
-                    conteudo: conteudoMatch[1],
-                    imagensSugeridas: imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas
-                  };
-                }
-              } catch (manualError) {
-                console.error('Extração manual falhou:', manualError.message);
-              }
+            } catch (manualError) {
+              console.error('Extração manual falhou:', manualError.message);
             }
           }
         }
+      }
 
-        throw new Error('Resposta da IA não está no formato esperado');
+      throw new Error('Resposta da IA não está no formato esperado');
     } catch (error) {
       console.error('Erro ao parsear resposta da IA:', error.message);
       console.error('Resposta recebida (primeiros 500 chars):', response.substring(0, 500));
@@ -1358,13 +1383,16 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
           continue;
         }
 
-        // Criar matéria usando o mesmo método do "Por Tema" para manter estrutura consistente
-        const materia = await this.criarMateria(
-          post.caption, // tema baseado no texto do post
+
+        // Log do conteúdo que será enviado para a IA
+        console.log('📋 Caption do post (primeiros 300 chars):', post.caption.substring(0, 300));
+        console.log('📏 Tamanho do caption:', post.caption.length, 'caracteres');
+
+        // Criar matéria usando o prompt do estilo G1 (mesmo usado em "Reescrever Matéria")
+        const materia = await this.gerarMateriaEstiloG1(
+          post.caption, // conteúdo do post
           categoria,
-          '', // palavras-chave vazias
-          false, // não pesquisar na internet (já temos o conteúdo)
-          [post.url] // link do post como referência
+          post.url // link do post como referência
         );
 
         // Priorizar imagem do Instagram se disponível
@@ -1568,6 +1596,231 @@ Agora reorganize o conteúdo fornecido acima:`
       return conteudoExpandido;
     } catch (error) {
       console.error('❌ Erro ao expandir conteúdo:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gera matéria no estilo jornalístico G1 a partir de conteúdo
+   * Usa o mesmo prompt do "Reescrever Matéria (Estilo G1)"
+   */
+  static async gerarMateriaEstiloG1(conteudoOriginal, categoria = 'Notícias', linkReferencia = null) {
+    console.log('📝 Gerando matéria no estilo G1...');
+
+    if (!conteudoOriginal || conteudoOriginal.trim().length < 50) {
+      throw new Error('Conteúdo muito curto para gerar matéria (mínimo 50 caracteres)');
+    }
+
+    // Extrair texto limpo se vier com HTML
+    const textoLimpo = conteudoOriginal
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um jornalista profissional do G1 que cria matérias mantendo TODOS os fatos originais, sem inventar informações, com linguagem humanizada e natural.'
+      },
+      {
+        role: 'user',
+        content: `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no conteúdo abaixo.
+
+🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
+- ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
+- ❌ NÃO adicione eventos, pessoas ou declarações que NÃO foram citados
+- ❌ NÃO especule quantidades ("500 pessoas", "milhares de fiéis", "centenas de comentários")
+- ❌ NÃO invente nomes de igrejas, cidades, bairros ou lugares
+- ❌ NÃO adicione citações ou falas que NÃO existem no texto original
+- ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
+- ❌ NÃO adicione informações sobre "velório", "sepultamento", "horários" se NÃO foram citados
+- ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
+- ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
+
+✅ O QUE VOCÊ DEVE FAZER:
+1. ✅ Use APENAS as informações que estão no texto original
+2. ✅ Reorganize essas informações em estrutura jornalística
+3. ✅ Melhore a fluidez e conectivos entre as frases
+4. ✅ Use sinônimos mantendo o sentido exato
+5. ✅ Torne o texto mais humanizado e próximo do leitor
+6. ✅ Se houver citações no original, mantenha-as exatamente como estão
+7. ✅ Se NÃO houver citações, NÃO invente nenhuma
+
+📏 TAMANHO DO CONTEÚDO:
+- Escreva APENAS com base no que foi fornecido
+- Se o texto original é curto, a matéria será curta (200-300 palavras está OK)
+- Se o texto original é longo, a matéria será mais longa
+- NÃO force expansão artificial do conteúdo
+
+ESTRUTURA OBRIGATÓRIA:
+
+1. TÍTULO (máximo 80 caracteres):
+   - Impactante, jornalístico e claro (estilo G1)
+   - Baseado APENAS no fato principal mencionado
+   - Use verbos emotivos quando apropriado: "comoveu", "abalou", "emocionou"
+
+2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
+   - Breve introdução reforçando os principais fatos DO TEXTO ORIGINAL
+   - Linguagem simples e direta
+
+3. CONTEÚDO HTML:
+
+   a) LIDE (1-2 parágrafos): Fato principal de forma HUMANA
+      - Escreva o QUE aconteceu baseado no texto
+      - Use narrativa envolvente MAS sem inventar detalhes
+
+   b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível):
+      - Use <h3> para subtítulos APENAS se fizer sentido
+      - Mantenha parágrafos curtos (3-4 linhas)
+      - Desenvolva APENAS os pontos mencionados no original
+
+   c) CITAÇÕES (SE HOUVER no texto original):
+      - Use <blockquote> para citações que já existem
+      - NÃO crie citações novas
+      - Se NÃO há citações no original, NÃO adicione nenhuma
+
+   d) CONCLUSÃO (1 parágrafo):
+      - Encerramento respeitoso baseado no contexto
+      - EVITE: "hora de repensar", "chamado à reflexão"
+      - PREFIRA: "A notícia repercutiu", "O caso comoveu"
+
+FORMATAÇÃO HTML - MUITO IMPORTANTE:
+- Use <p>texto aqui</p> para CADA parágrafo
+- NÃO adicione <p></p> vazios entre parágrafos
+- NÃO adicione <br> entre parágrafos
+- Use <h3>Subtítulo</h3> APENAS se necessário
+- Use <blockquote>citação</blockquote> APENAS para citações que JÁ EXISTEM
+- Use <strong> apenas para nomes importantes
+- Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
+
+LINGUAGEM HUMANIZADA (ESTILO G1):
+- ✅ Tom próximo, emotivo mas respeitoso
+- ✅ Parágrafos curtos e diretos
+- ✅ Use conectivos variados (além disso, enquanto isso, por outro lado)
+- ✅ Varie o tamanho das frases (curtas, médias, longas)
+- ❌ Evite jargões técnicos ou linguagem rebuscada
+
+CONTEÚDO ORIGINAL (USE APENAS ISSO):
+${textoLimpo}
+
+CATEGORIA: ${categoria}
+
+⚠️ LEMBRE-SE: É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!
+
+IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
+
+Retorne APENAS um objeto JSON válido:
+{"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha"}`
+      }
+    ];
+
+    try {
+      // Log do conteúdo que será enviado para a IA
+      console.log('📄 Conteúdo do post (primeiros 200 chars):', textoLimpo.substring(0, 200));
+      console.log('📏 Tamanho total do conteúdo:', textoLimpo.length, 'caracteres');
+
+      // Temperatura 0.3 (mais baixa) para ser MUITO mais fiel ao original e evitar invenções
+      const response = await this.makeRequest(messages, 0.3, 3000);
+
+      if (!response || response.trim().length === 0) {
+        throw new Error('IA retornou resposta vazia');
+      }
+
+      // Limpar a resposta removendo markdown code blocks se existirem
+      let cleanResponse = response.trim();
+      cleanResponse = cleanResponse.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+
+      // Tentar extrair JSON da resposta
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Resposta da IA não contém JSON válido');
+      }
+
+      let jsonStr = jsonMatch[0];
+
+      // Tentar parsear
+      try {
+        const parsed = JSON.parse(jsonStr);
+
+        // Validar se tem os campos necessários
+        if (!parsed.titulo || !parsed.descricao || !parsed.conteudo) {
+          throw new Error('JSON não contém todos os campos necessários (titulo, descricao, conteudo)');
+        }
+
+        // Limpar tags vazias e adicionar espaçamento moderado
+        let conteudoLimpo = parsed.conteudo.trim()
+          .replace(/>\s+</g, '><')
+          .replace(/<p>\s*<\/p>/gi, '')
+          .replace(/<p>[\s\n\r]*<\/p>/gi, '')
+          .replace(/<p><\/p>/gi, '')
+          .replace(/<\/p><p><\/p><p>/gi, '</p><p>')
+          .replace(/<\/p><p>\s*<\/p><p>/gi, '</p><p>')
+          .replace(/(<br\s*\/?>\s*){2,}/gi, '<br>')
+          .replace(/\s+<\//g, '</')
+          .replace(/<\/p><p>/gi, '</p><br><p>')
+          .replace(/<\/h3><p>/gi, '</h3><br><p>')
+          .replace(/<\/blockquote><p>/gi, '</blockquote><br><p>');
+
+        // Adicionar embed do Instagram se houver link de referência
+        if (linkReferencia && linkReferencia.includes('instagram.com')) {
+          const jaTemEmbed = conteudoLimpo.includes('instagram-media') || conteudoLimpo.includes('instagram.com/p/');
+
+          if (!jaTemEmbed) {
+            console.log('📱 Adicionando embed do Instagram:', linkReferencia);
+            const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${linkReferencia}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
+            conteudoLimpo += embedCode;
+          }
+        }
+
+        // Buscar imagens baseadas no título
+        const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
+        console.log('🔍 Título:', parsed.titulo);
+        console.log('🔑 Palavras-chave extraídas:', palavrasChave);
+        console.log('📸 Buscando imagens no Bing...');
+
+        const imagensSugeridas = await this.buscarImagensPexels(palavrasChave);
+
+        console.log('✅ Matéria gerada com sucesso no estilo G1');
+
+        return {
+          titulo: parsed.titulo,
+          descricao: parsed.descricao,
+          conteudo: conteudoLimpo,
+          imagensSugeridas: imagensSugeridas
+        };
+
+      } catch (parseError) {
+        console.error('Erro ao parsear JSON:', parseError.message);
+
+        // Tentar limpar e parsear novamente
+        jsonStr = jsonStr.replace(/\n/g, ' ').replace(/\r/g, '').replace(/\s+/g, ' ');
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+
+          if (!parsed.titulo || !parsed.descricao || !parsed.conteudo) {
+            throw new Error('JSON não contém todos os campos necessários');
+          }
+
+          // Buscar imagens
+          const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
+          const imagensSugeridas = await this.buscarImagensPexels(palavrasChave);
+
+          return {
+            titulo: parsed.titulo,
+            descricao: parsed.descricao,
+            conteudo: parsed.conteudo,
+            imagensSugeridas: imagensSugeridas
+          };
+
+        } catch (secondError) {
+          console.error('Segunda tentativa de parse falhou:', secondError.message);
+          throw new Error('Não foi possível processar a resposta da IA');
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao gerar matéria estilo G1:', error);
       throw error;
     }
   }
