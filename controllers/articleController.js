@@ -1,4 +1,5 @@
 const Article = require('../models/Article');
+const googleSitemapService = require('../services/GoogleSitemapService');
 
 // Listar todas as notícias com paginação
 exports.getAllArticles = async (req, res) => {
@@ -33,7 +34,7 @@ exports.getAllArticles = async (req, res) => {
 exports.getArticleBySlug = async (req, res) => {
   try {
     const article = await Article.findOne({ urlAmigavel: req.params.slug });
-    
+
     if (!article) {
       return res.status(404).json({ success: false, message: 'Notícia não encontrada' });
     }
@@ -142,6 +143,12 @@ exports.createArticle = async (req, res) => {
   try {
     const article = new Article(req.body);
     await article.save();
+
+    // Trigger Sitemap Refresh in background (don't wait for response)
+    googleSitemapService.refreshSitemaps().catch(err =>
+      console.error('Background Sitemap Refresh Error:', err)
+    );
+
     res.status(201).json({ success: true, data: article });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -159,6 +166,13 @@ exports.updateArticle = async (req, res) => {
 
     if (!article) {
       return res.status(404).json({ success: false, message: 'Notícia não encontrada' });
+    }
+
+    // Trigger Sitemap Refresh if published status changed or just generally on update
+    if (article.publicado) {
+      googleSitemapService.refreshSitemaps().catch(err =>
+        console.error('Background Sitemap Refresh Error:', err)
+      );
     }
 
     res.json({ success: true, data: article });

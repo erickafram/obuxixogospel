@@ -1,0 +1,109 @@
+const { google } = require('googleapis');
+const path = require('path');
+const fs = require('fs');
+
+/**
+ * Service to interact with Google Search Console API
+ * specifically for Sitemap management.
+ */
+class GoogleSitemapService {
+    constructor() {
+        this.auth = null;
+        this.webmasters = null;
+        this.enabled = false;
+        this.siteUrl = 'https://www.obuxixogospel.com.br/';
+        // Define sitemaps to manage
+        this.sitemaps = [
+            'https://www.obuxixogospel.com.br/sitemap.xml',
+            'https://www.obuxixogospel.com.br/news-sitemap.xml'
+        ];
+    }
+
+    /**
+     * Initialize the service with credentials
+     */
+    async initialize() {
+        try {
+            // User provided path: root directory
+            const keyPath = path.join(__dirname, '../service-account.json');
+
+            if (!fs.existsSync(keyPath)) {
+                console.log('⚠️ Google Sitemap Service: Credentials file not found at ' + keyPath);
+                this.enabled = false;
+                return false;
+            }
+
+            // Load credentials
+            const key = require(keyPath);
+
+            // Authenticate with Search Console scope
+            this.auth = new google.auth.GoogleAuth({
+                credentials: key,
+                scopes: ['https://www.googleapis.com/auth/webmasters']
+            });
+
+            this.webmasters = google.webmasters({
+                version: 'v3',
+                auth: this.auth
+            });
+
+            this.enabled = true;
+            console.log('✅ Google Sitemap Service initialized');
+            return true;
+        } catch (error) {
+            console.error('❌ Error initializing Google Sitemap Service:', error.message);
+            this.enabled = false;
+            return false;
+        }
+    }
+
+    /**
+     * Delete and Resubmit Sitemaps to force Google to refresh
+     */
+    async refreshSitemaps() {
+        if (!this.enabled) {
+            const initialized = await this.initialize();
+            if (!initialized) return { success: false, message: 'Service not enabled' };
+        }
+
+        const results = [];
+
+        for (const sitemapUrl of this.sitemaps) {
+            try {
+                console.log(`🔄 Refreshing sitemap: ${sitemapUrl}`);
+
+                // 1. Delete the sitemap (if it exists)
+                try {
+                    await this.webmasters.sitemaps.delete({
+                        siteUrl: this.siteUrl,
+                        feedpath: sitemapUrl
+                    });
+                    console.log(`   - Deleted: ${sitemapUrl}`);
+                } catch (deleteError) {
+                    // Ignore 404s (sitemap didn't exist yet)
+                    if (deleteError.code !== 404) {
+                        console.warn(`   - Warning deleting ${sitemapUrl}: ${deleteError.message}`);
+                    }
+                }
+
+                // 2. Submit the sitemap
+                await this.webmasters.sitemaps.submit({
+                    siteUrl: this.siteUrl,
+                    feedpath: sitemapUrl
+                });
+                console.log(`   - Submitted: ${sitemapUrl}`);
+
+                results.push({ sitemap: sitemapUrl, status: 'success' });
+
+            } catch (error) {
+                console.error(`❌ Error processing ${sitemapUrl}:`, error.message);
+                results.push({ sitemap: sitemapUrl, status: 'error', error: error.message });
+            }
+        }
+
+        return { success: true, results };
+    }
+}
+
+const googleSitemapService = new GoogleSitemapService();
+module.exports = googleSitemapService;
