@@ -26,7 +26,7 @@
                                 id="nome" 
                                 name="nome" 
                                 class="form-control" 
-                                value="<%= isEdit ? usuario.nome : '' %>"
+                                value="<%= usuario ? usuario.nome : '' %>"
                                 placeholder="Digite o nome completo..."
                                 required
                             >
@@ -39,7 +39,7 @@
                                 id="email" 
                                 name="email" 
                                 class="form-control" 
-                                value="<%= isEdit ? usuario.email : '' %>"
+                                value="<%= usuario ? usuario.email : '' %>"
                                 placeholder="usuario@exemplo.com"
                                 required
                             >
@@ -52,6 +52,7 @@
                                 id="senha" 
                                 name="senha" 
                                 class="form-control" 
+                                value="<%= !isEdit && usuario && usuario.senha ? usuario.senha : '' %>"
                                 placeholder="<%= isEdit ? 'Deixe em branco para manter a senha atual' : 'Digite uma senha segura' %>"
                                 <%= isEdit ? '' : 'required' %>
                                 minlength="6"
@@ -66,6 +67,7 @@
                                 id="confirmarSenha" 
                                 name="confirmarSenha" 
                                 class="form-control" 
+                                value="<%= !isEdit && usuario && usuario.confirmarSenha ? usuario.confirmarSenha : '' %>"
                                 placeholder="Digite a senha novamente"
                                 <%= isEdit ? '' : 'required' %>
                                 minlength="6"
@@ -85,14 +87,14 @@
                             <label for="role">Perfil *</label>
                             <select id="role" name="role" class="form-control" required>
                                 <option value="">Selecione...</option>
-                                <option value="admin" <%= isEdit && usuario.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                                <option value="editor" <%= isEdit && usuario.role === 'editor' ? 'selected' : '' %>>Editor</option>
-                                <option value="autor" <%= isEdit && usuario.role === 'autor' ? 'selected' : '' %>>Autor</option>
+                                <option value="admin" <%= usuario && usuario.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                                <option value="editor" <%= usuario && usuario.role === 'editor' ? 'selected' : '' %>>Editor</option>
+                                <option value="autor" <%= usuario && usuario.role === 'autor' ? 'selected' : '' %>>Autor</option>
                             </select>
                             <small class="form-text">
-                                <strong>Admin:</strong> Acesso total<br>
-                                <strong>Editor:</strong> Gerenciar posts<br>
-                                <strong>Autor:</strong> Criar posts
+                                <strong>Admin:</strong> Acesso total ao sistema<br>
+                                <strong>Editor:</strong> Criar e editar posts (não pode deletar)<br>
+                                <strong>Autor:</strong> Criar e editar posts (não pode deletar)
                             </small>
                         </div>
 
@@ -102,7 +104,7 @@
                                     type="checkbox" 
                                     id="ativo" 
                                     name="ativo" 
-                                    <%= isEdit ? (usuario.ativo ? 'checked' : '') : 'checked' %>
+                                    <%= usuario && usuario.ativo ? 'checked' : (!isEdit ? 'checked' : '') %>
                                 >
                                 Usuário ativo
                             </label>
@@ -299,8 +301,11 @@
         }
 
         try {
-            const url = <%= isEdit ? `'/dashboard/usuarios/${usuario.id}'` : "'/dashboard/usuarios'" %>;
-            const method = <%= isEdit ? "'PUT'" : "'POST'" %>;
+            const isEdit = <%= isEdit ? 'true' : 'false' %>;
+            const userId = <%= isEdit && usuario ? usuario.id : 'null' %>;
+            
+            const url = isEdit ? `/dashboard/usuarios/${userId}` : '/dashboard/usuarios';
+            const method = isEdit ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
                 method: method,

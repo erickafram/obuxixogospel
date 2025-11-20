@@ -111,7 +111,7 @@
                         <div class="card-body">
                             <div class="form-check">
                                 <label>
-                                    <input type="checkbox" name="publicado" value="true" <%=(isEdit &&
+                                    <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true" <%=(isEdit &&
                                         article.publicado) || !isEdit ? 'checked' : '' %>
                                     >
                                     <span>Publicar imediatamente</span>
@@ -148,8 +148,11 @@
                                         return `${year}-${month}-${day}T${hours}:${minutes}`;
                                     })()
                                 %>">
+                                <div id="agendamentoStatus" style="margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
+                                    <i class="fas fa-clock"></i> <span id="agendamentoTexto"></span>
+                                </div>
                                 <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
-                                    <i class="fas fa-info-circle"></i> Deixe no futuro para agendar a publicação
+                                    <i class="fas fa-info-circle"></i> <strong>Agendamento:</strong> Escolha uma data/hora futura para agendar a publicação automática
                                 </small>
                             </div>
 
@@ -2359,12 +2362,81 @@
         // Variável para controlar o modo do editor
         let editorMode = 'visual';
 
+        // Função para verificar e mostrar status do agendamento
+        function verificarAgendamento() {
+            const dataInput = document.getElementById('dataPublicacao');
+            const statusDiv = document.getElementById('agendamentoStatus');
+            const statusTexto = document.getElementById('agendamentoTexto');
+            const publicadoCheckbox = document.getElementById('publicadoCheckbox');
+            
+            if (!dataInput || !statusDiv) return;
+            
+            const dataSelecionada = new Date(dataInput.value);
+            const agora = new Date();
+            
+            if (dataSelecionada > agora) {
+                // Data futura - agendamento
+                const diff = dataSelecionada - agora;
+                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                
+                let mensagem = 'Publicação agendada para ';
+                if (dias > 0) mensagem += `${dias} dia${dias > 1 ? 's' : ''} `;
+                if (horas > 0) mensagem += `${horas}h `;
+                if (minutos > 0 && dias === 0) mensagem += `${minutos}min `;
+                
+                statusTexto.textContent = mensagem.trim();
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#FFF3CD';
+                statusDiv.style.border = '1px solid #FFE69C';
+                statusDiv.style.color = '#856404';
+                
+                // Desmarcar "Publicar imediatamente" quando agendar
+                if (publicadoCheckbox) {
+                    publicadoCheckbox.checked = false;
+                }
+            } else {
+                // Data passada ou presente - publicação imediata
+                statusTexto.textContent = 'Publicação imediata';
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#D4EDDA';
+                statusDiv.style.border = '1px solid #C3E6CB';
+                statusDiv.style.color = '#155724';
+                
+                // Marcar "Publicar imediatamente" quando data for presente/passada
+                if (publicadoCheckbox) {
+                    publicadoCheckbox.checked = true;
+                }
+            }
+        }
+
         // Inicializar quando o DOM estiver pronto
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initQuill);
+            document.addEventListener('DOMContentLoaded', function() {
+                initQuill();
+                
+                // Monitorar mudanças no campo de data
+                const dataInput = document.getElementById('dataPublicacao');
+                if (dataInput) {
+                    dataInput.addEventListener('change', verificarAgendamento);
+                    dataInput.addEventListener('input', verificarAgendamento);
+                    // Verificar inicialmente
+                    verificarAgendamento();
+                }
+            });
         } else {
             // DOM já está pronto
             initQuill();
+            
+            // Monitorar mudanças no campo de data
+            const dataInput = document.getElementById('dataPublicacao');
+            if (dataInput) {
+                dataInput.addEventListener('change', verificarAgendamento);
+                dataInput.addEventListener('input', verificarAgendamento);
+                // Verificar inicialmente
+                verificarAgendamento();
+            }
         }
 
         // Alternar entre modo visual e código

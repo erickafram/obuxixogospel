@@ -214,7 +214,7 @@ app.get('/logout', (req, res) => {
 });
 
 // Rotas do Dashboard (protegidas)
-const { isAuthenticated, isAdmin } = require('./middleware/auth');
+const { isAuthenticated, isAdmin, canDeletePosts, canAccessUsers, canAccessSettings, canAccessPages } = require('./middleware/auth');
 
 // Rotas de comentários
 const commentController = require('./controllers/commentController');
@@ -363,6 +363,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     // Processar data de publicação
     let dataPublicacaoFinal = new Date();
     if (dataPublicacao) {
+      // O datetime-local vem sem timezone, então precisamos tratá-lo como horário local
       dataPublicacaoFinal = new Date(dataPublicacao);
     }
 
@@ -370,12 +371,30 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     const agora = new Date();
     const isDataFutura = dataPublicacaoFinal > agora;
     
-    // Se a data é futura, a matéria fica como "agendada" (não publicada ainda)
-    let statusPublicado = rascunho === 'true' ? false : (publicado === 'true' || publicado === true);
+    // Logs detalhados para debug
+    console.log('🔍 DEBUG AGENDAMENTO:');
+    console.log('   Data recebida (dataPublicacao):', dataPublicacao);
+    console.log('   Data processada (dataPublicacaoFinal):', dataPublicacaoFinal);
+    console.log('   Data atual (agora):', agora);
+    console.log('   É data futura?', isDataFutura);
+    console.log('   Checkbox publicado:', publicado);
+    console.log('   É rascunho?', rascunho);
     
-    if (isDataFutura && statusPublicado) {
+    // Determinar status de publicação
+    let statusPublicado;
+    
+    if (rascunho === 'true') {
+      // Rascunho explícito
+      statusPublicado = false;
+      console.log('💾 Salvando como rascunho');
+    } else if (isDataFutura) {
+      // Data futura = agendamento (não publicar ainda, mas não é rascunho)
+      statusPublicado = false;
       console.log('📅 Matéria agendada para:', dataPublicacaoFinal);
-      statusPublicado = false; // Não publicar ainda
+    } else {
+      // Data presente/passada = publicar imediatamente
+      statusPublicado = publicado === 'true' || publicado === true;
+      console.log('✅ Publicando imediatamente');
     }
 
     const article = await Article.create({
@@ -488,12 +507,21 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
     const agora = new Date();
     const isDataFutura = dataPublicacaoFinal > agora;
     
-    // Se a data é futura, a matéria fica como "agendada" (não publicada ainda)
-    let statusPublicado = rascunho === 'true' ? false : (publicado === 'true');
+    // Determinar status de publicação
+    let statusPublicado;
     
-    if (isDataFutura && statusPublicado) {
+    if (rascunho === 'true') {
+      // Rascunho explícito
+      statusPublicado = false;
+      console.log('💾 Atualizando como rascunho');
+    } else if (isDataFutura) {
+      // Data futura = agendamento (não publicar ainda, mas não é rascunho)
+      statusPublicado = false;
       console.log('📅 Matéria agendada para:', dataPublicacaoFinal);
-      statusPublicado = false; // Não publicar ainda
+    } else {
+      // Data presente/passada = publicar imediatamente
+      statusPublicado = publicado === 'true';
+      console.log('✅ Publicando imediatamente');
     }
 
     await article.update({
@@ -531,7 +559,7 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-app.delete('/dashboard/posts/deletar/:id', isAuthenticated, async (req, res) => {
+app.delete('/dashboard/posts/deletar/:id', isAuthenticated, canDeletePosts, async (req, res) => {
   try {
     const article = await Article.findByPk(req.params.id);
 
@@ -583,30 +611,30 @@ app.get('/dashboard/categorias', isAuthenticated, async (req, res) => {
 
 // USUÁRIOS
 const userController = require('./controllers/userController');
-app.get('/dashboard/usuarios', isAuthenticated, userController.listarUsuarios);
-app.get('/dashboard/usuarios/novo', isAuthenticated, userController.novoUsuarioForm);
-app.post('/dashboard/usuarios', isAuthenticated, userController.criarUsuario);
-app.get('/dashboard/usuarios/:id/editar', isAuthenticated, userController.editarUsuarioForm);
-app.put('/dashboard/usuarios/:id', isAuthenticated, userController.atualizarUsuario);
-app.delete('/dashboard/usuarios/:id', isAuthenticated, userController.deletarUsuario);
-app.post('/dashboard/usuarios/:id/toggle-status', isAuthenticated, userController.toggleStatus);
+app.get('/dashboard/usuarios', isAuthenticated, canAccessUsers, userController.listarUsuarios);
+app.get('/dashboard/usuarios/novo', isAuthenticated, canAccessUsers, userController.novoUsuarioForm);
+app.post('/dashboard/usuarios', isAuthenticated, canAccessUsers, userController.criarUsuario);
+app.get('/dashboard/usuarios/:id/editar', isAuthenticated, canAccessUsers, userController.editarUsuarioForm);
+app.put('/dashboard/usuarios/:id', isAuthenticated, canAccessUsers, userController.atualizarUsuario);
+app.delete('/dashboard/usuarios/:id', isAuthenticated, canAccessUsers, userController.deletarUsuario);
+app.post('/dashboard/usuarios/:id/toggle-status', isAuthenticated, canAccessUsers, userController.toggleStatus);
 
 // CONFIGURAÇÕES
 const configController = require('./controllers/configController');
-app.get('/dashboard/configuracoes', isAuthenticated, configController.getAllConfigs);
-app.post('/dashboard/configuracoes', isAuthenticated, configController.updateConfigs);
+app.get('/dashboard/configuracoes', isAuthenticated, canAccessSettings, configController.getAllConfigs);
+app.post('/dashboard/configuracoes', isAuthenticated, canAccessSettings, configController.updateConfigs);
 
 // API de configurações
 app.get('/api/config/:chave', configController.getConfig);
-app.post('/api/config/:chave', isAuthenticated, configController.setConfig);
+app.post('/api/config/:chave', isAuthenticated, canAccessSettings, configController.setConfig);
 
 // REDIRECIONAMENTOS SEO
 const redirectController = require('./controllers/redirectController');
-app.get('/dashboard/configuracoes/redirects', isAuthenticated, redirectController.listar);
-app.get('/api/redirects/stats', isAuthenticated, redirectController.estatisticas);
-app.post('/api/redirects', isAuthenticated, redirectController.criar);
-app.post('/api/redirects/import', isAuthenticated, redirectController.importarCSV);
-app.get('/api/redirects/:id', isAuthenticated, async (req, res) => {
+app.get('/dashboard/configuracoes/redirects', isAuthenticated, canAccessSettings, redirectController.listar);
+app.get('/api/redirects/stats', isAuthenticated, canAccessSettings, redirectController.estatisticas);
+app.post('/api/redirects', isAuthenticated, canAccessSettings, redirectController.criar);
+app.post('/api/redirects/import', isAuthenticated, canAccessSettings, redirectController.importarCSV);
+app.get('/api/redirects/:id', isAuthenticated, canAccessSettings, async (req, res) => {
   try {
     const redirect = await Redirect.findByPk(req.params.id);
     if (!redirect) {
@@ -617,18 +645,18 @@ app.get('/api/redirects/:id', isAuthenticated, async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-app.put('/api/redirects/:id', isAuthenticated, redirectController.atualizar);
-app.delete('/api/redirects/:id', isAuthenticated, redirectController.deletar);
-app.post('/api/redirects/:id/toggle', isAuthenticated, redirectController.toggleAtivo);
+app.put('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.atualizar);
+app.delete('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.deletar);
+app.post('/api/redirects/:id/toggle', isAuthenticated, canAccessSettings, redirectController.toggleAtivo);
 
 // PÁGINAS ESTÁTICAS
 const pageController = require('./controllers/pageController');
-app.get('/dashboard/paginas', isAuthenticated, pageController.index);
-app.get('/dashboard/paginas/novo', isAuthenticated, pageController.novo);
-app.get('/dashboard/paginas/:id/editar', isAuthenticated, pageController.editar);
-app.post('/dashboard/paginas/criar', isAuthenticated, pageController.criar);
-app.post('/dashboard/paginas/:id/atualizar', isAuthenticated, pageController.atualizar);
-app.delete('/dashboard/paginas/:id', isAuthenticated, pageController.deletar);
+app.get('/dashboard/paginas', isAuthenticated, canAccessPages, pageController.index);
+app.get('/dashboard/paginas/novo', isAuthenticated, canAccessPages, pageController.novo);
+app.get('/dashboard/paginas/:id/editar', isAuthenticated, canAccessPages, pageController.editar);
+app.post('/dashboard/paginas/criar', isAuthenticated, canAccessPages, pageController.criar);
+app.post('/dashboard/paginas/:id/atualizar', isAuthenticated, canAccessPages, pageController.atualizar);
+app.delete('/dashboard/paginas/:id', isAuthenticated, canAccessPages, pageController.deletar);
 
 // Rota pública para exibir páginas
 app.get('/pagina/:slug', pageController.exibir);

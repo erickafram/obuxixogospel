@@ -76,9 +76,18 @@
                                     <td>
                                         <% if (article.publicado) { %>
                                             <span class="badge badge-success">Publicado</span>
+                                        <% } else { 
+                                            // Verificar se é agendado (data futura)
+                                            const dataPublicacao = new Date(article.dataPublicacao);
+                                            const agora = new Date();
+                                            const isAgendado = dataPublicacao > agora;
+                                        %>
+                                            <% if (isAgendado) { %>
+                                                <span class="badge badge-warning" style="background: #FFC107; color: #000;">⏰ Agendado</span>
                                             <% } else { %>
                                                 <span class="badge badge-secondary">Rascunho</span>
-                                                <% } %>
+                                            <% } %>
+                                        <% } %>
                                     </td>
                                     <td>
                                         <div class="action-buttons">

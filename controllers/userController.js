@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const { User } = require('../models');
 
 /**
@@ -31,10 +30,22 @@ exports.listarUsuarios = async (req, res) => {
  * Exibir formulário de novo usuário
  */
 exports.novoUsuarioForm = async (req, res) => {
+  // Pegar dados da query string se existirem
+  const { nome, email, senha, confirmarSenha, role, ativo } = req.query;
+  
+  const usuarioPreenchido = {
+    nome: nome || '',
+    email: email || '',
+    senha: senha || '',
+    confirmarSenha: confirmarSenha || '',
+    role: role || 'autor',
+    ativo: ativo === 'on' || ativo === 'true'
+  };
+
   res.render('dashboard/usuarios/form', {
     title: 'Novo Usuário',
     user: req.session.user,
-    usuario: null,
+    usuario: usuarioPreenchido,
     isEdit: false
   });
 };
@@ -55,14 +66,11 @@ exports.criarUsuario = async (req, res) => {
       });
     }
 
-    // Hash da senha
-    const senhaHash = await bcrypt.hash(senha, 10);
-
-    // Criar usuário
+    // Criar usuário (o hash da senha é feito automaticamente pelo hook beforeCreate do model)
     const usuario = await User.create({
       nome,
       email,
-      senha: senhaHash,
+      senha: senha, // Não fazer hash aqui, o model já faz
       role: role || 'autor',
       ativo: ativo === 'true' || ativo === true
     });
@@ -146,9 +154,9 @@ exports.atualizarUsuario = async (req, res) => {
     usuario.role = role;
     usuario.ativo = ativo === 'true' || ativo === true;
 
-    // Atualizar senha se fornecida
+    // Atualizar senha se fornecida (o hash é feito automaticamente pelo hook beforeUpdate do model)
     if (senha && senha.trim() !== '') {
-      usuario.senha = await bcrypt.hash(senha, 10);
+      usuario.senha = senha; // Não fazer hash aqui, o model já faz
     }
 
     await usuario.save();
