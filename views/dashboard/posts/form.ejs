@@ -260,116 +260,248 @@
                 <button type="button" class="ai-tab-btn" onclick="switchAITab('conteudo')">
                     <i class="fas fa-file-alt"></i> Por Conteúdo
                 </button>
+                <button type="button" class="ai-tab-btn" onclick="switchAITab('link')">
+                    <i class="fas fa-link"></i> Por Link
+                </button>
             </div>
 
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="aiModoAutomatico" checked>
-                    🚀 Modo Automático (Recomendado)
-                </label>
-                <small class="form-text">A IA faz tudo: pesquisa informações, busca e seleciona imagem
-                    automaticamente</small>
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="aiPesquisarInternet" checked>
-                    Pesquisar informações na internet
-                </label>
-                <small class="form-text">A IA buscará informações atualizadas sobre o tema</small>
-            </div>
-
-            <div class="form-group">
-                <label for="aiLinks">Links de Referência (opcional)</label>
-                <textarea id="aiLinks" class="form-control" rows="3"
-                    placeholder="Cole links de notícias, artigos ou Instagram (um por linha)&#10;Ex: https://www.instagram.com/p/ABC123/"></textarea>
-                <small class="form-text">✨ Suporta Instagram! A IA extrairá texto da postagem + comentários para
-                    criar a matéria</small>
-            </div>
-
-            <div class="form-group">
-                <label for="aiCategoria">Categoria</label>
-                <select id="aiCategoria" class="form-control">
-                    <option value="Notícias">Notícias</option>
-                    <option value="Música">Música</option>
-                    <option value="Eventos">Eventos</option>
-                    <option value="Ministérios">Ministérios</option>
-                    <option value="Estudos">Estudos</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="aiPalavrasChave">Palavras-chave (opcional)</label>
-                <input type="text" id="aiPalavrasChave" class="form-control" placeholder="Ex: louvor, adoração, gospel">
-                <small class="form-text">Palavras-chave separadas por vírgula</small>
-            </div>
-
-            <div class="form-group">
-                <label for="aiImagemDestaque">Imagem em Destaque (opcional)</label>
-                <div class="ai-image-selector">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="openMediaLibraryForAI()">
-                        <i class="fas fa-image"></i> Selecionar da Biblioteca
-                    </button>
-
-                    <!-- Sugestões de imagens (aparece após gerar matéria) -->
-                    <div id="aiImageSuggestions" style="display: none; margin-top: 15px;">
-                        <p style="font-weight: bold; color: #4CAF50;">
-                            <i class="fas fa-lightbulb"></i> Sugestões de Imagens:
-                        </p>
-                        <div id="aiImageSuggestionsGrid"
-                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
-                            <!-- Imagens serão inseridas aqui via JavaScript -->
-                        </div>
+            <div class="modal-body">
+                <!-- Tab Por Tema -->
+                <div class="ai-form ai-tab-content active" id="ai-tab-tema">
+                    <div class="form-group">
+                        <label for="aiTema">Tema da Matéria *</label>
+                        <input type="text" id="aiTema" class="form-control" placeholder="Ex: Silas Malafaia critica PT">
+                        <small class="form-text">Descreva o tema principal da matéria</small>
                     </div>
 
-                    <div id="aiImagePreview" style="display: none; margin-top: 10px;">
-                        <img id="aiImagePreviewImg" src="" alt="Preview" style="max-width: 200px; border-radius: 8px;">
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeAIImage()"
-                            style="margin-left: 10px;">
-                            <i class="fas fa-times"></i> Remover
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA faz tudo: pesquisa informações, busca e seleciona imagem
+                            automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiPesquisarInternet" checked>
+                            Pesquisar informações na internet
+                        </label>
+                        <small class="form-text">A IA buscará informações atualizadas sobre o tema</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinks">Links de Referência (opcional)</label>
+                        <textarea id="aiLinks" class="form-control" rows="3"
+                            placeholder="Cole links de notícias, artigos ou Instagram (um por linha)&#10;Ex: https://www.instagram.com/p/ABC123/"></textarea>
+                        <small class="form-text">✨ Suporta Instagram! A IA extrairá texto da postagem + comentários para
+                            criar a matéria</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiCategoria">Categoria</label>
+                        <select id="aiCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiPalavrasChave">Palavras-chave (opcional)</label>
+                        <input type="text" id="aiPalavrasChave" class="form-control"
+                            placeholder="Ex: louvor, adoração, gospel">
+                        <small class="form-text">Palavras-chave separadas por vírgula</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiImagemDestaque">Imagem em Destaque (opcional)</label>
+                        <div class="ai-image-selector">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openMediaLibraryForAI()">
+                                <i class="fas fa-image"></i> Selecionar da Biblioteca
+                            </button>
+
+                            <!-- Sugestões de imagens (aparece após gerar matéria) -->
+                            <div id="aiImageSuggestions" style="display: none; margin-top: 15px;">
+                                <p style="font-weight: bold; color: #4CAF50;">
+                                    <i class="fas fa-lightbulb"></i> Sugestões de Imagens:
+                                </p>
+                                <div id="aiImageSuggestionsGrid"
+                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                                    <!-- Imagens serão inseridas aqui via JavaScript -->
+                                </div>
+                            </div>
+
+                            <div id="aiImagePreview" style="display: none; margin-top: 10px;">
+                                <img id="aiImagePreviewImg" src="" alt="Preview"
+                                    style="max-width: 200px; border-radius: 8px;">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeAIImage()"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                            <input type="hidden" id="aiImagemDestaque">
+                        </div>
+                        <small class="form-text">Escolha uma imagem da biblioteca para usar como destaque</small>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>A IA criará uma matéria completa com título, descrição e conteúdo. Você poderá revisar e
+                            editar antes de publicar.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarComIA()">
+                            <i class="fas fa-magic"></i> Gerar Matéria
                         </button>
                     </div>
-                    <input type="hidden" id="aiImagemDestaque">
                 </div>
-                <small class="form-text">Escolha uma imagem da biblioteca para usar como destaque</small>
-            </div>
 
-            <div class="ai-info">
-                <i class="fas fa-info-circle"></i>
-                <p>A IA criará uma matéria completa com título, descrição e conteúdo. Você poderá revisar e
-                    editar antes de publicar.</p>
-            </div>
+                <!-- Tab Por Conteúdo -->
+                <div class="ai-form ai-tab-content" id="ai-tab-conteudo">
+                    <div class="form-group">
+                        <label for="aiConteudoTitulo">Título Sugerido (opcional)</label>
+                        <input type="text" id="aiConteudoTitulo" class="form-control"
+                            placeholder="Ex: Pastor anuncia novo projeto social">
+                        <small class="form-text">Deixe em branco para a IA criar um título automaticamente</small>
+                    </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="criarComIA()">
-                    <option value="Notícias">Notícias</option>
-                    <option value="Música">Música</option>
-                    <option value="Eventos">Eventos</option>
-                    <option value="Ministérios">Ministérios</option>
-                    <option value="Estudos">Estudos</option>
-                    </select>
-            </div>
+                    <div class="form-group">
+                        <label for="aiConteudoInformacoes">Informações e Conteúdo *</label>
+                        <div class="input-with-ai">
+                            <textarea id="aiConteudoInformacoes" class="form-control" rows="8"
+                                placeholder="Cole ou digite todas as informações que você tem sobre a matéria:&#10;&#10;- Fatos principais&#10;- Declarações importantes&#10;- Contexto do evento&#10;- Dados relevantes&#10;- Citações&#10;&#10;Quanto mais informações você fornecer, melhor será a matéria criada pela IA."
+                                required></textarea>
+                            <button type="button" class="btn-ai-small" onclick="corrigirCampo('aiConteudoInformacoes')"
+                                title="Organizar com IA">
+                                ✨
+                            </button>
+                        </div>
+                        <small class="form-text">📝 Forneça o máximo de informações possível. A IA criará uma matéria
+                            humanizada e sem plágio</small>
+                    </div>
 
-            <div class="ai-info">
-                <i class="fas fa-info-circle"></i>
-                <p>📱 A IA extrairá automaticamente o texto e comentários (se houver) do link e criará uma
-                    matéria completa.</p>
-            </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiConteudoModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA busca e seleciona imagem automaticamente</small>
+                    </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="criarPorLink()">
-                    <i class="fas fa-magic"></i> Gerar Matéria do Link
-                </button>
+                    <div class="form-group">
+                        <label for="aiConteudoCategoria">Categoria</label>
+                        <select id="aiConteudoCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoPalavrasChave">Palavras-chave (opcional)</label>
+                        <input type="text" id="aiConteudoPalavrasChave" class="form-control"
+                            placeholder="Ex: igreja, comunidade, projeto social">
+                        <small class="form-text">Palavras-chave separadas por vírgula</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoImagemDestaque">Imagem em Destaque (opcional)</label>
+                        <div class="ai-image-selector">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openMediaLibraryForAI()">
+                                <i class="fas fa-image"></i> Selecionar da Biblioteca
+                            </button>
+
+                            <div id="aiConteudoImagePreview" style="display: none; margin-top: 10px;">
+                                <img id="aiConteudoImagePreviewImg" src="" alt="Preview"
+                                    style="max-width: 200px; border-radius: 8px;">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeAIImage()"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                            <input type="hidden" id="aiConteudoImagemDestaque">
+                        </div>
+                        <small class="form-text">Escolha uma imagem ou deixe a IA selecionar automaticamente</small>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>✨ A IA criará uma matéria humanizada, sem plágio, com linguagem natural e profissional
+                            baseada nas informações fornecidas. O conteúdo será reescrito de forma única e original.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarPorConteudo()">
+                            <i class="fas fa-magic"></i> Gerar Matéria
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Por Link -->
+                <div class="ai-form ai-tab-content" id="ai-tab-link">
+                    <div class="form-group">
+                        <label for="aiLinkUrl">Link da Postagem (Instagram, etc.)</label>
+                        <input type="text" id="aiLinkUrl" class="form-control"
+                            placeholder="Ex: https://www.instagram.com/p/ABC123/">
+                        <small class="form-text">Cole o link da postagem que deseja transformar em matéria</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinkTexto">OU Cole o Texto Manualmente (opcional)</label>
+                        <textarea id="aiLinkTexto" class="form-control" rows="6"
+                            placeholder="Se o link não funcionar, cole o texto da postagem aqui..."></textarea>
+                        <small class="form-text">Use este campo se a extração automática falhar</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiLinkModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA cria a matéria e seleciona imagem automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinkCategoria">Categoria</label>
+                        <select id="aiLinkCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>📱 A IA extrairá automaticamente o texto e comentários (se houver) do link e criará uma
+                            matéria completa.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarPorLink()">
+                            <i class="fas fa-magic"></i> Gerar Matéria do Link
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    </div>
     </div>
 
     <!-- Modal Biblioteca de Mídia -->

@@ -1217,19 +1217,19 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
 
     const prompt = `Você é um revisor de textos especializado em português brasileiro.
 
-        Corrija o seguinte ${tipoTexto}, mantendo o sentido original:
+          Corrija o seguinte ${tipoTexto}, mantendo o sentido original:
 
-        ${texto}
+          ${texto}
 
-        REGRAS:
-        - Corrija erros de ortografia, gramática e pontuação
-        - Melhore a clareza e fluidez do texto
-        - Mantenha o tom e estilo original
-        - Se for HTML, preserve todas as tags
-        - Não adicione informações novas
-        - Retorne APENAS o texto corrigido, sem explicações
+          REGRAS:
+          - Corrija erros de ortografia, gramática e pontuação
+          - Melhore a clareza e fluidez do texto
+          - Mantenha o tom e estilo original
+          - Se for HTML, preserve todas as tags
+          - Não adicione informações novas
+          - Retorne APENAS o texto corrigido, sem explicações
 
-        TEXTO CORRIGIDO:`;
+          TEXTO CORRIGIDO:`;
 
     const messages = [
       {

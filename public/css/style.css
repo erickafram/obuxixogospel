@@ -1904,3 +1904,34 @@ body:not(:has(.admin-bar)) .hero-section {
 .social-links a:hover {
     background-color: var(--color-link);
 }
+
+/* Campos com IA */
+.input-with-ai {
+    position: relative;
+    width: 100%;
+}
+
+.btn-ai-small {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.btn-ai-small:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
