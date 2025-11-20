@@ -1110,11 +1110,12 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
         throw new Error('Erro ao processar resposta da IA');
       }
     }
+  }
 
-          /**
-           * Corrige erros de português em um texto
-           */
-          static async corrigirTexto(texto, tipo = 'conteudo') {
+  /**
+   * Corrige erros de português em um texto
+   */
+  static async corrigirTexto(texto, tipo = 'conteudo') {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
