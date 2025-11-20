@@ -13,6 +13,7 @@ require('dotenv').config();
 // Sequelize MySQL
 const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect } = require('./models');
 const AIService = require('./services/AIService');
+const { publishScheduledPosts } = require('./schedulers/publishScheduledPosts');
 
 // Configurar Multer para upload
 const storage = multer.diskStorage({
@@ -365,6 +366,18 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       dataPublicacaoFinal = new Date(dataPublicacao);
     }
 
+    // Verificar se a data de publicação é futura (agendamento)
+    const agora = new Date();
+    const isDataFutura = dataPublicacaoFinal > agora;
+    
+    // Se a data é futura, a matéria fica como "agendada" (não publicada ainda)
+    let statusPublicado = rascunho === 'true' ? false : (publicado === 'true' || publicado === true);
+    
+    if (isDataFutura && statusPublicado) {
+      console.log('📅 Matéria agendada para:', dataPublicacaoFinal);
+      statusPublicado = false; // Não publicar ainda
+    }
+
     const article = await Article.create({
       titulo,
       descricao: descricao || 'Rascunho',
@@ -373,7 +386,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
       categoria: categoria || 'noticias',
       subcategoria: subcategoria || null,
       autor: autor || 'Redação Obuxixo Gospel',
-      publicado: rascunho === 'true' ? false : (publicado === 'true' || publicado === true),
+      publicado: statusPublicado,
       destaque: destaque === 'true' || destaque === true,
       dataPublicacao: dataPublicacaoFinal,
       visualizacoes: 0,
@@ -471,6 +484,18 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       dataPublicacaoFinal = new Date(dataPublicacao);
     }
 
+    // Verificar se a data de publicação é futura (agendamento)
+    const agora = new Date();
+    const isDataFutura = dataPublicacaoFinal > agora;
+    
+    // Se a data é futura, a matéria fica como "agendada" (não publicada ainda)
+    let statusPublicado = rascunho === 'true' ? false : (publicado === 'true');
+    
+    if (isDataFutura && statusPublicado) {
+      console.log('📅 Matéria agendada para:', dataPublicacaoFinal);
+      statusPublicado = false; // Não publicar ainda
+    }
+
     await article.update({
       titulo,
       descricao: descricao || article.descricao,
@@ -479,7 +504,7 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       categoria: categoria || article.categoria,
       subcategoria: subcategoria || null,
       autor: autor || 'Redação Obuxixo Gospel',
-      publicado: rascunho === 'true' ? false : (publicado === 'true'),
+      publicado: statusPublicado,
       destaque: destaque === 'true',
       dataPublicacao: dataPublicacaoFinal
     });
@@ -1744,4 +1769,14 @@ app.listen(PORT, async () => {
   } catch (error) {
     console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
   }
+
+  // Iniciar scheduler de publicação de matérias agendadas
+  // Executa a cada 1 minuto
+  console.log('📅 Scheduler de publicação agendada iniciado (verifica a cada 1 minuto)');
+  setInterval(async () => {
+    await publishScheduledPosts();
+  }, 60000); // 60000ms = 1 minuto
+
+  // Executar imediatamente ao iniciar
+  await publishScheduledPosts();
 });

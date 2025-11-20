@@ -1514,49 +1514,57 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
     const messages = [
       {
         role: 'system',
-        content: 'Você é um assistente jornalístico especializado em expandir e enriquecer informações para matérias gospel.'
+        content: 'Você é um assistente jornalístico que ajuda a organizar e estruturar melhor informações já fornecidas, sem inventar novos fatos.'
       },
       {
         role: 'user',
-        content: `Você recebeu as seguintes informações básicas sobre uma matéria:
+        content: `Você recebeu as seguintes informações sobre uma matéria:
 
 ${conteudo}
 
-Sua tarefa é EXPANDIR essas informações, gerando um texto mais completo e detalhado que servirá como base para criar uma matéria jornalística.
+Sua tarefa é REORGANIZAR e MELHORAR a estrutura dessas informações, tornando-as mais claras e organizadas para criar uma matéria jornalística.
 
-INSTRUÇÕES:
-1. Mantenha TODOS os fatos e informações fornecidos
-2. Adicione contexto relevante e detalhes que enriqueçam a história
-3. Se houver nomes de pessoas, adicione possíveis contextos (ex: "pastor", "líder", "cantor gospel")
-4. Se houver eventos, adicione detalhes sobre quando, onde, como
-5. Se houver declarações, expanda o contexto da declaração
-6. Adicione possíveis repercussões ou impactos
-7. Mantenha tom jornalístico e objetivo
-8. NÃO invente fatos específicos (datas exatas, números, nomes que não foram mencionados)
-9. Foque em expandir o CONTEXTO e os DETALHES em torno dos fatos fornecidos
+⚠️ REGRAS CRÍTICAS - SIGA RIGOROSAMENTE:
+
+1. ✅ MANTENHA TODOS os fatos exatamente como foram fornecidos
+2. ✅ APENAS reorganize e melhore a estrutura do texto
+3. ✅ Adicione conectivos e transições entre as informações
+4. ✅ Separe em parágrafos lógicos (lide, desenvolvimento, repercussão)
+5. ❌ NÃO invente detalhes que não foram mencionados
+6. ❌ NÃO adicione nomes de lugares, datas ou números que não existem no texto original
+7. ❌ NÃO especule sobre "onde foi gravado", "quantas visualizações teve", etc
+8. ❌ NÃO adicione análises de "especialistas" ou "analistas" que não foram citados
+9. ❌ NÃO expanda citações ou declarações além do que foi dito
 
 FORMATO DE SAÍDA:
-Retorne um texto corrido, bem estruturado, com parágrafos separados por quebras de linha duplas.
-NÃO use formatação HTML, apenas texto puro.
-NÃO adicione título ou cabeçalhos, apenas o conteúdo expandido.
+- Texto corrido, bem estruturado
+- Parágrafos separados por quebras de linha duplas
+- NÃO use formatação HTML
+- NÃO adicione título
+- Máximo 3-4 parágrafos
 
-Exemplo:
-Se receber: "Acidente em Palmas deixou 3 feridos"
-Expanda para: "Um acidente de trânsito ocorreu na cidade de Palmas, capital do Tocantins, deixando três pessoas feridas. O incidente mobilizou equipes de resgate e chamou atenção para as condições de segurança viária na região. As vítimas foram prontamente socorridas e encaminhadas para atendimento médico. Autoridades locais devem investigar as circunstâncias do ocorrido para determinar as causas e responsabilidades."
+Exemplo CORRETO:
+Entrada: "Pastor anuncia projeto social. Vai ajudar 100 famílias. Começa em janeiro."
+Saída: "Um pastor anunciou um novo projeto social que vai beneficiar 100 famílias. A iniciativa está prevista para começar em janeiro."
 
-Agora expanda o conteúdo fornecido:`
+Exemplo ERRADO (NÃO FAÇA ISSO):
+"Um pastor da Igreja Batista Central, localizada no bairro Jardim das Flores, anunciou durante o culto de domingo à noite um ambicioso projeto social que pretende beneficiar 100 famílias carentes da região. Segundo especialistas em assistência social..."
+
+Agora reorganize o conteúdo fornecido acima:`
       }
     ];
 
     try {
-      const response = await this.makeRequest(messages, 0.7, 2000);
+      // Temperatura baixa (0.3) para respostas mais conservadoras e fiéis ao original
+      // Tokens limitados (800) para evitar expansões excessivas
+      const response = await this.makeRequest(messages, 0.3, 800);
 
       if (!response || response.trim().length === 0) {
         throw new Error('IA retornou resposta vazia');
       }
 
       const conteudoExpandido = response.trim();
-      console.log('✅ Conteúdo expandido com sucesso');
+      console.log('✅ Conteúdo reorganizado com sucesso');
       return conteudoExpandido;
     } catch (error) {
       console.error('❌ Erro ao expandir conteúdo:', error);
