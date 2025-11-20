@@ -24,11 +24,24 @@ class GoogleSitemapService {
      */
     async initialize() {
         try {
-            // User provided path: root directory
-            const keyPath = path.join(__dirname, '../service-account.json');
+            // Try multiple paths to find the credentials file
+            const possiblePaths = [
+                path.join(__dirname, '../service-account.json'), // Local dev / standard structure
+                path.join(process.cwd(), 'service-account.json'), // Root of execution
+                '/home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel/service-account.json' // Hardcoded production path
+            ];
 
-            if (!fs.existsSync(keyPath)) {
-                console.log('⚠️ Google Sitemap Service: Credentials file not found at ' + keyPath);
+            let keyPath = null;
+            for (const p of possiblePaths) {
+                if (fs.existsSync(p)) {
+                    keyPath = p;
+                    console.log('✅ Google Sitemap Service: Credentials found at', keyPath);
+                    break;
+                }
+            }
+
+            if (!keyPath) {
+                console.error('⚠️ Google Sitemap Service: Credentials file NOT found. Checked:', possiblePaths);
                 this.enabled = false;
                 return false;
             }
