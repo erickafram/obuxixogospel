@@ -1591,73 +1591,102 @@ Agora reorganize o conteúdo fornecido acima:`
     const messages = [
       {
         role: 'system',
-        content: 'Você é um jornalista gospel profissional especializado em reescrever matérias no estilo editorial do G1.'
+        content: 'Você é um jornalista profissional do G1 que reescreve matérias mantendo TODOS os fatos originais, sem inventar informações, com linguagem humanizada e natural.'
       },
       {
         role: 'user',
-        content: `⚠️ IMPORTANTE: Reescreva a matéria abaixo como um JORNALISTA SÊNIOR DA GLOBO (G1).
-          A matéria deve parecer 100% humana, fluida e natural.
+        content: `⚠️ TAREFA: Reescreva a matéria abaixo no estilo jornalístico do G1, mantendo TODOS os fatos e contexto da matéria original.
 
-          ESTILO JORNALÍSTICO G1 - HUMANIZADO E PROFISSIONAL:
-          - Escreva como se você estivesse cobrindo o fato presencialmente ou apurando diretamente.
-          - Use uma narrativa envolvente, com parágrafos bem conectados.
-          - Mantenha a objetividade, mas com fluidez (evite frases robóticas).
-          - Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão.
+🎯 REGRA PRINCIPAL - MANTENHA O CONTEXTO:
+- ✅ Mantenha TODOS os nomes, lugares, datas e fatos mencionados no texto original
+- ✅ NÃO saia do assunto principal da matéria
+- ✅ Se a matéria fala sobre um falecimento, mantenha o foco nisso
+- ✅ Se menciona uma igreja/organização específica, mantenha o nome exato
+- ✅ Se cita pessoas, mantenha os nomes e cargos exatos
 
-          🚫 PROIBIDO (CRITÉRIO DE ELIMINAÇÃO):
-          - JAMAIS escreva frases como: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou...".
-          - JAMAIS cite a fonte dessa maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, o pastor afirmou..."
-          - JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva a cena diretamente: "No vídeo, o pastor aparece gesticulando..."
-          - JAMAIS use meta-linguagem ("Segundo o texto fornecido...", "Baseado nas informações...").
-          - JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?").
+🚫 NUNCA INVENTE FATOS NOVOS:
+1. ❌ NÃO invente números, datas, horários ou locais que não foram mencionados
+2. ❌ NÃO adicione eventos que não foram citados (velório, sepultamento, etc)
+3. ❌ NÃO especule quantidades ("500 pessoas", "milhares de fiéis")
+4. ❌ NÃO invente declarações de pessoas não mencionadas
+5. ❌ NÃO mude nomes de pessoas ou organizações
 
-          ✅ OBRIGATÓRIO:
-          - Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou".
-          - Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais".
-          - Use conectivos variados para dar fluidez ao texto.
-          - Se houver citações, use-as organicamente no texto.
+✅ PODE FAZER:
+1. ✅ Reorganizar as informações em melhor estrutura jornalística
+2. ✅ Adicionar contexto genérico sobre o tema (sem inventar fatos)
+3. ✅ Usar sinônimos e variar a linguagem mantendo o sentido
+4. ✅ Melhorar conectivos e fluidez do texto
+5. ✅ Tornar o texto mais humanizado e próximo do leitor
 
-          TEXTO ORIGINAL:
-          ${textoLimpo}
+ESTRUTURA OBRIGATÓRIA:
+1. **Lide** (1-2 parágrafos): Fato principal de forma HUMANA e impactante
+   - Exemplo: "Pastora evangélica morre e comove fiéis de sua igreja"
+   - Use verbos emotivos: "comoveu", "abalou", "emocionou"
+   
+2. **Desenvolvimento** (2-3 parágrafos): Detalhes e contexto
+   - Use <h3> para subtítulos quando apropriado
+   - Mantenha parágrafos curtos (3-4 linhas)
+   
+3. **Conclusão** (1 parágrafo): Encerramento respeitoso
 
-          RETORNE APENAS O CONTEÚDO REESCRITO EM HTML:
-          - Use tags: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>
-            - Introdução impactante (Lide)
-            - Desenvolvimento fluido
-            - Citações diretas entre aspas ou em blockquote
-            - Conclusão jornalística (impacto ou desdobramento)
-            - Use <br> para quebras de linha (apenas uma vez)
+FORMATAÇÃO HTML - MUITO IMPORTANTE:
+- Use <p>texto aqui</p> para CADA parágrafo
+- NÃO adicione <p></p> vazios entre parágrafos
+- NÃO adicione <br> entre parágrafos
+- NÃO adicione espaços ou quebras de linha entre as tags
+- Use <h3>Subtítulo</h3> para subtítulos
+- Use <blockquote>citação</blockquote> para citações diretas
+- Use <strong> apenas para nomes importantes
+- Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
 
-              NÃO inclua título ou descrição, apenas o conteúdo HTML.`
+LINGUAGEM HUMANIZADA (ESTILO G1):
+- ✅ "Pastora evangélica morre e deixa comunidade em luto"
+- ✅ "O falecimento comoveu fiéis da igreja onde ela atuava"
+- ✅ "Conhecida por seu trabalho com a comunidade"
+- ✅ Tom próximo, emotivo mas respeitoso
+- ✅ Parágrafos curtos e diretos
+- ❌ Evite: "está de luto", "manifestaram apoio" (muito formal)
+- ❌ Evite: jargões técnicos ou linguagem rebuscada
+
+TEXTO ORIGINAL:
+${textoLimpo}
+
+EXEMPLO DE FORMATAÇÃO CORRETA (SEM ESPAÇOS ENTRE TAGS):
+<p>A comunidade gospel está em luto com o falecimento da pastora Ivaneide, que atuava na Obra Restauração Saquassú. Conhecida por sua dedicação ao evangelho, ela deixa um legado de fé que marcou a vida de muitos fiéis.</p><p>Sua trajetória foi marcada pelo amor às pessoas e compromisso com o Reino de Deus. O ministério da pastora se destacou pela compaixão e pelo exemplo de vida cristã.</p><h3>Homenagens</h3><p>O pastor Nilson Luiz e a equipe da Obra Restauração Saquassú expressaram solidariedade à família. "Sua missão na terra foi cumprida com excelência", destacaram em nota.</p><p>Mensagens de condolências têm sido compartilhadas por fiéis que foram impactados por seu trabalho.</p>
+
+RETORNE APENAS O HTML (sem título ou descrição):`
       }
     ];
 
     try {
-      const response = await this.makeRequest(messages, 0.7, 3000);
+      // Temperatura baixa (0.4) para ser mais fiel ao original e evitar invenções
+      const response = await this.makeRequest(messages, 0.4, 2500);
 
       if (!response || response.trim().length === 0) {
         throw new Error('IA retornou resposta vazia');
       }
 
-      // Limpar espaços extras e tags vazias
+      // Limpar tags vazias e adicionar espaçamento moderado
       let conteudoLimpo = response.trim()
-        // Remover <p> vazios (com ou sem espaços)
+        // Remover quebras de linha e espaços dentro das tags
+        .replace(/>\s+</g, '><')
+        // Remover <p> vazios (com ou sem espaços/quebras)
         .replace(/<p>\s*<\/p>/gi, '')
         .replace(/<p>[\s\n\r]*<\/p>/gi, '')
-        // Remover <p> que só tem quebra de linha
-        .replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '')
-        // Remover espaços/quebras entre </p> e próxima tag
-        .replace(/<\/p>\s+</g, '</p><')
-        // Remover espaços/quebras entre > e <p>
-        .replace(/>\s+<p>/g, '><p>')
-        // Remover espaços/quebras entre > e <h
-        .replace(/>\s+<h /g, '><h')
-        // Remover <br> múltiplos
+        .replace(/<p><\/p>/gi, '')
+        // Limpar padrões específicos problemáticos: </p><p></p><p>
+        .replace(/<\/p><p><\/p><p>/gi, '</p><p>')
+        .replace(/<\/p><p>\s*<\/p><p>/gi, '</p><p>')
+        // Remover múltiplos <br> seguidos
         .replace(/(<br\s*\/?>){2,}/gi, '<br>')
         // Remover espaços antes de tags de fechamento
-        .replace(/\s+<\//g, '</');
+        .replace(/\s+<\//g, '</')
+        // ADICIONAR um <br> entre parágrafos para espaçamento moderado
+        .replace(/<\/p><p>/gi, '</p><br><p>')
+        .replace(/<\/h3><p>/gi, '</h3><br><p>')
+        .replace(/<\/blockquote><p>/gi, '</blockquote><br><p>');
 
-      console.log('✅ Matéria reescrita com sucesso');
+      console.log('✅ Matéria reescrita com sucesso no estilo G1');
       return conteudoLimpo;
     } catch (error) {
       console.error('❌ Erro ao reescrever matéria:', error);
