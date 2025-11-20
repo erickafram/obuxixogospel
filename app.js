@@ -13,6 +13,7 @@ require('dotenv').config();
 // Sequelize MySQL
 const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect } = require('./models');
 const AIService = require('./services/AIService');
+const googleSitemapService = require('./services/GoogleSitemapService');
 const { publishScheduledPosts } = require('./schedulers/publishScheduledPosts');
 
 // Configurar Multer para upload
@@ -370,7 +371,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     // Verificar se a data de publicação é futura (agendamento)
     const agora = new Date();
     const isDataFutura = dataPublicacaoFinal > agora;
-    
+
     // Logs detalhados para debug
     console.log('🔍 DEBUG AGENDAMENTO:');
     console.log('   Data recebida (dataPublicacao):', dataPublicacao);
@@ -379,10 +380,10 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     console.log('   É data futura?', isDataFutura);
     console.log('   Checkbox publicado:', publicado);
     console.log('   É rascunho?', rascunho);
-    
+
     // Determinar status de publicação
     let statusPublicado;
-    
+
     if (rascunho === 'true') {
       // Rascunho explícito
       statusPublicado = false;
@@ -413,6 +414,13 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     });
 
     console.log('Post criado com sucesso:', article.id);
+
+    // Trigger Sitemap Refresh in background if published
+    if (statusPublicado) {
+      googleSitemapService.refreshSitemaps().catch(err =>
+        console.error('Background Sitemap Refresh Error:', err)
+      );
+    }
 
     // Se for requisição AJAX (rascunho), retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
@@ -506,10 +514,10 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
     // Verificar se a data de publicação é futura (agendamento)
     const agora = new Date();
     const isDataFutura = dataPublicacaoFinal > agora;
-    
+
     // Determinar status de publicação
     let statusPublicado;
-    
+
     if (rascunho === 'true') {
       // Rascunho explícito
       statusPublicado = false;
@@ -536,6 +544,13 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
       destaque: destaque === 'true',
       dataPublicacao: dataPublicacaoFinal
     });
+
+    // Trigger Sitemap Refresh in background if published
+    if (statusPublicado) {
+      googleSitemapService.refreshSitemaps().catch(err =>
+        console.error('Background Sitemap Refresh Error:', err)
+      );
+    }
 
     // Se for requisição AJAX (rascunho), retornar JSON
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
