@@ -1328,6 +1328,9 @@ app.post('/api/ia/criar-por-texto', async (req, res) => {
 // Criar matéria por conteúdo/informações fornecidas
 app.post('/api/ia/criar-por-conteudo', async (req, res) => {
   try {
+    console.log('📥 Requisição recebida em /api/ia/criar-por-conteudo');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+
     const {
       tituloSugerido,
       informacoes,
@@ -1341,14 +1344,15 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
 
     // Determinar o conteúdo a ser usado
     let conteudo = informacoes || textoManual || '';
+    console.log('📝 Conteúdo recebido:', conteudo.substring(0, 100) + '...');
 
     // Se tem link, extrair conteúdo
     if (link) {
-      console.log('Extraindo conteúdo do link:', link);
-      const conteudoExtraido = await AIService.extrairConteudoURL(link);
+      console.log('🔗 Extraindo conteúdo do link:', link);
+      const resultado = await AIService.extrairConteudoURL(link);
 
       // Se não conseguiu extrair e não tem texto manual, retornar erro
-      if (!conteudoExtraido || conteudoExtraido.includes('Não foi possível extrair')) {
+      if (!resultado || !resultado.texto || resultado.texto.includes('Não foi possível extrair')) {
         if (!conteudo) {
           return res.status(400).json({
             error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, cole o texto manualmente no campo opcional.'
@@ -1356,22 +1360,25 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
         }
       } else {
         // Usar conteúdo extraído (ou combinar com manual se houver)
-        conteudo = conteudo ? `${conteudoExtraido}\n\n${conteudo}` : conteudoExtraido;
+        conteudo = conteudo ? `${resultado.texto}\n\n${conteudo}` : resultado.texto;
       }
     }
 
     if (!conteudo || conteudo.trim().length < 50) {
+      console.log('❌ Conteúdo insuficiente:', conteudo.length, 'caracteres');
       return res.status(400).json({ error: 'Conteúdo insuficiente para gerar matéria (mínimo 50 caracteres)' });
     }
 
     // Construir o tema baseado no título sugerido ou nas informações
     let tema = tituloSugerido || conteudo.substring(0, 200);
+    console.log('🎯 Tema construído:', tema.substring(0, 100) + '...');
 
     // Se tem título sugerido, adicionar as informações como contexto adicional
     if (tituloSugerido && informacoes) {
       tema = `${tituloSugerido}\n\nCONTEXTO E INFORMAÇÕES:\n${informacoes}`;
     }
 
+    console.log('🤖 Chamando AIService.criarMateria...');
     // Usar o método criarMateria (igual ao "Por Tema") para gerar conteúdo mais humanizado
     const materia = await AIService.criarMateria(
       tema,
@@ -1381,9 +1388,15 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
       link ? [link] : [] // links para referência
     );
 
+    console.log('✅ Matéria gerada com sucesso!');
+    console.log('Título:', materia?.titulo);
+    console.log('Tem imagens?', materia?.imagensSugeridas?.length || 0);
+    console.log('📤 Enviando resposta:', { success: true, materia: materia ? 'OK' : 'NULL' });
+
     res.json({ success: true, materia });
   } catch (error) {
     console.error('❌ Erro ao criar matéria:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1401,6 +1414,23 @@ app.post('/api/ia/buscar-imagens-bing', async (req, res) => {
     res.json({ success: true, imagens });
   } catch (error) {
     console.error('Erro ao buscar imagens no Bing:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Expandir conteúdo com IA
+app.post('/api/ia/expandir-conteudo', async (req, res) => {
+  try {
+    const { conteudo } = req.body;
+
+    if (!conteudo) {
+      return res.status(400).json({ error: 'Conteúdo é obrigatório' });
+    }
+
+    const conteudoExpandido = await AIService.expandirConteudo(conteudo);
+    res.json({ success: true, conteudoExpandido });
+  } catch (error) {
+    console.error('Erro ao expandir conteúdo com IA:', error);
     res.status(500).json({ error: error.message });
   }
 });

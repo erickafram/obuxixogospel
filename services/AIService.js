@@ -93,13 +93,14 @@ class AIService {
 
   /**
    * Extrai conteúdo de uma URL (incluindo Instagram)
-   * Retorna objeto { texto, imagem }
+   * Retorna objeto com texto e imagem (se for artigo/matéria)
    */
   static async extrairConteudoURL(url) {
     try {
       // Detectar se é Instagram
       if (url.includes('instagram.com')) {
-        return await this.extrairConteudoInstagram(url);
+        const conteudo = await this.extrairConteudoInstagram(url);
+        return { texto: conteudo, imagem: null };
       }
 
       const response = await axios.get(url, {
@@ -110,6 +111,9 @@ class AIService {
       });
 
       const $ = cheerio.load(response.data);
+
+      // Tentar extrair imagem destaque de artigo/matéria
+      const imagemDestaque = await this.extrairImagemDestaque($, url);
 
       // Remover scripts e estilos
       $('script, style, nav, footer, header').remove();
@@ -122,25 +126,7 @@ class AIService {
         .replace(/\s+/g, ' ')
         .substring(0, 2000); // Limitar a 2000 caracteres
 
-      // Extrair imagem destaque
-      let imagem = $('meta[property="og:image"]').attr('content') ||
-        $('meta[name="twitter:image"]').attr('content') ||
-        $('link[rel="image_src"]').attr('href') ||
-        $('img').first().attr('src');
-
-      // Corrigir URL relativa da imagem se necessário
-      if (imagem && !imagem.startsWith('http')) {
-        const urlObj = new URL(url);
-        if (imagem.startsWith('//')) {
-          imagem = 'https:' + imagem;
-        } else if (imagem.startsWith('/')) {
-          imagem = urlObj.origin + imagem;
-        } else {
-          imagem = urlObj.origin + '/' + imagem;
-        }
-      }
-
-      return { texto, imagem };
+      return { texto, imagem: imagemDestaque };
     } catch (error) {
       console.error('Erro ao extrair conteúdo:', error.message);
       return { texto: '', imagem: null };
@@ -148,12 +134,81 @@ class AIService {
   }
 
   /**
-   * Extrai conteúdo do Instagram (texto da postagem + comentários + imagem)
+   * Extrai imagem destaque de um artigo/matéria
+   */
+  static async extrairImagemDestaque($, urlBase) {
+    try {
+      let imagemUrl = null;
+
+      // Método 1: Open Graph image (mais confiável)
+      imagemUrl = $('meta[property="og:image"]').attr('content') ||
+                  $('meta[property="og:image:secure_url"]').attr('content');
+
+      // Método 2: Twitter Card image
+      if (!imagemUrl) {
+        imagemUrl = $('meta[name="twitter:image"]').attr('content') ||
+                    $('meta[name="twitter:image:src"]').attr('content');
+      }
+
+      // Método 3: Schema.org image
+      if (!imagemUrl) {
+        const schemaScript = $('script[type="application/ld+json"]').html();
+        if (schemaScript) {
+          try {
+            const schema = JSON.parse(schemaScript);
+            imagemUrl = schema.image?.url || schema.image || schema.thumbnailUrl;
+          } catch (e) {
+            // Ignorar erro de parse
+          }
+        }
+      }
+
+      // Método 4: Link rel="image_src"
+      if (!imagemUrl) {
+        imagemUrl = $('link[rel="image_src"]').attr('href');
+      }
+
+      // Método 5: Primeira imagem grande no artigo
+      if (!imagemUrl) {
+        const primeiraImagem = $('article img, .post-content img, .entry-content img, main img').first();
+        imagemUrl = primeiraImagem.attr('src') || primeiraImagem.attr('data-src');
+      }
+
+      // Se encontrou imagem, normalizar URL
+      if (imagemUrl) {
+        // Se for URL relativa, converter para absoluta
+        if (imagemUrl.startsWith('/')) {
+          const urlObj = new URL(urlBase);
+          imagemUrl = `${urlObj.protocol}//${urlObj.host}${imagemUrl}`;
+        } else if (!imagemUrl.startsWith('http')) {
+          const urlObj = new URL(urlBase);
+          imagemUrl = `${urlObj.protocol}//${urlObj.host}/${imagemUrl}`;
+        }
+
+        // Validar se é uma imagem válida (não é ícone pequeno)
+        if (imagemUrl.includes('icon') || imagemUrl.includes('logo') || imagemUrl.includes('avatar')) {
+          console.log('Imagem ignorada (parece ser ícone/logo):', imagemUrl);
+          return null;
+        }
+
+        console.log('✅ Imagem destaque encontrada:', imagemUrl);
+        return imagemUrl;
+      }
+
+      console.log('❌ Nenhuma imagem destaque encontrada');
+      return null;
+    } catch (error) {
+      console.error('Erro ao extrair imagem destaque:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Extrai conteúdo do Instagram (texto da postagem + comentários)
    */
   static async extrairConteudoInstagram(url) {
     try {
       console.log('Extraindo conteúdo do Instagram:', url);
-      let imagem = null;
 
       // Método 1: Usar API pública do Instagram através de embed
       const postId = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[1] || url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[2];
@@ -179,12 +234,8 @@ class AIService {
               conteudo += `AUTOR: ${oembedResponse.data.author_name}\n\n`;
             }
 
-            if (oembedResponse.data.thumbnail_url) {
-              imagem = oembedResponse.data.thumbnail_url;
-            }
-
             console.log('✅ Conteúdo extraído via oEmbed:', conteudo.length, 'caracteres');
-            return { texto: conteudo, imagem };
+            return conteudo;
           }
         } catch (oembedError) {
           console.log('❌ oEmbed falhou:', oembedError.message);
@@ -204,13 +255,10 @@ class AIService {
             const description = $('meta[property="og:description"]').attr('content') ||
               $('meta[name="description"]').attr('content');
 
-            const img = $('meta[property="og:image"]').attr('content');
-            if (img) imagem = img;
-
             if (description && description.length > 50) {
               conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
               console.log('✅ Conteúdo extraído via proxy:', conteudo.length, 'caracteres');
-              return { texto: conteudo, imagem };
+              return conteudo;
             }
           }
         } catch (proxyError) {
@@ -249,10 +297,8 @@ class AIService {
                       conteudo += `AUTOR: @${post.owner.username}\n\n`;
                     }
 
-                    if (post.display_url) imagem = post.display_url;
-
                     console.log('✅ Conteúdo extraído via CORS proxy:', conteudo.length, 'caracteres');
-                    return { texto: conteudo.substring(0, 3000), imagem };
+                    return conteudo.substring(0, 3000);
                   }
                 }
               } catch (e) {
@@ -263,13 +309,10 @@ class AIService {
 
           // Tentar meta tags como fallback
           const description = $('meta[property="og:description"]').attr('content');
-          const img = $('meta[property="og:image"]').attr('content');
-          if (img) imagem = img;
-
           if (description && description.length > 50) {
             conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
             console.log('✅ Conteúdo extraído via meta tags (CORS):', conteudo.length, 'caracteres');
-            return { texto: conteudo, imagem };
+            return conteudo;
           }
         } catch (corsError) {
           console.log('❌ CORS proxy falhou:', corsError.message);
@@ -302,10 +345,8 @@ class AIService {
             conteudo += `AUTOR: @${post.owner.username}\n\n`;
           }
 
-          if (post.display_url) imagem = post.display_url;
-
           console.log('✅ Conteúdo extraído via JSON:', conteudo.length, 'caracteres');
-          return { texto: conteudo.substring(0, 3000), imagem };
+          return conteudo.substring(0, 3000);
         }
       } catch (jsonError) {
         console.log('❌ Método JSON falhou:', jsonError.message);
@@ -345,10 +386,8 @@ class AIService {
                   conteudo += `AUTOR: @${post.owner.username}\n\n`;
                 }
 
-                if (post.display_url) imagem = post.display_url;
-
                 console.log('Conteúdo extraído via _sharedData:', conteudo.length, 'caracteres');
-                return { texto: conteudo.substring(0, 3000), imagem };
+                return conteudo.substring(0, 3000);
               }
             }
           } catch (e) {
@@ -360,28 +399,18 @@ class AIService {
       // Método 4: Extrair de meta tags
       const description = $('meta[property="og:description"]').attr('content') ||
         $('meta[name="description"]').attr('content');
-
-      const img = $('meta[property="og:image"]').attr('content');
-      if (img) imagem = img;
-
       if (description && description.length > 50) {
         conteudo += `DESCRIÇÃO:\n${description}\n\n`;
         console.log('Conteúdo extraído via meta tags:', conteudo.length, 'caracteres');
-        return { texto: conteudo, imagem };
+        return conteudo;
       }
 
       console.log('Nenhum método funcionou, retornando mensagem de erro');
-      return {
-        texto: '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n',
-        imagem: null
-      };
+      return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
 
     } catch (error) {
       console.error('Erro ao extrair Instagram:', error.message);
-      return {
-        texto: '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n',
-        imagem: null
-      };
+      return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
     }
   }
 
@@ -761,13 +790,22 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
    * Cria uma matéria completa baseada em um tema
    */
   static async criarMateria(tema, categoria = 'Notícias', palavrasChave = '', pesquisarInternet = false, links = []) {
+    console.log('🎬 INÍCIO criarMateria');
+    console.log('Tema:', tema.substring(0, 100));
+    console.log('Categoria:', categoria);
+    console.log('PesquisarInternet:', pesquisarInternet);
+    console.log('Links:', links);
+
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
 
+    console.log('✅ IA está ativa');
+
     // Coletar informações adicionais
     let informacoesAdicionais = '';
     let imagensSugeridas = [];
+    console.log('📋 Variáveis inicializadas');
 
     // Pesquisar na internet se solicitado
     if (pesquisarInternet) {
@@ -809,22 +847,20 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 
     // Extrair conteúdo dos links fornecidos
     let conteudoExtraido = '';
+    let imagemExtraida = null;
     if (links && links.length > 0) {
       console.log('Extraindo conteúdo de', links.length, 'links');
 
       for (const link of links) {
-        const { texto, imagem } = await this.extrairConteudoURL(link);
-        if (texto) {
-          conteudoExtraido += `\n${texto}\n\n`;
-        }
-
-        if (imagem) {
-          console.log('📸 Imagem extraída do link:', imagem);
-          imagensSugeridas.unshift({
-            url: imagem,
-            descricao: 'Imagem extraída do link',
-            fonte: 'Link Original'
-          });
+        const resultado = await this.extrairConteudoURL(link);
+        if (resultado && resultado.texto) {
+          conteudoExtraido += `\n${resultado.texto}\n\n`;
+          
+          // Se encontrou imagem e ainda não tem uma, guardar
+          if (resultado.imagem && !imagemExtraida) {
+            imagemExtraida = resultado.imagem;
+            console.log('📸 Imagem destaque encontrada no link:', imagemExtraida);
+          }
         }
       }
 
@@ -864,14 +900,32 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
           if (imagensBing.length > 0) {
             imagensSugeridas = imagensBing;
           }
+          
+          // Se extraiu imagem do artigo, adicionar como primeira sugestão
+          if (imagemExtraida) {
+            console.log('✅ Adicionando imagem extraída do artigo como primeira sugestão');
+            imagensSugeridas.unshift({
+              url: imagemExtraida,
+              thumbnail: imagemExtraida,
+              descricao: 'Imagem destaque do artigo original',
+              fonte: 'Artigo Original'
+            });
+          }
         }
       } else if (links.length > 0) {
         // Se não conseguiu extrair nada útil
         throw new Error('Não foi possível extrair conteúdo suficiente do link. Por favor, use a aba "Por Link" e cole o texto manualmente.');
       }
-      // Ajustar prompt baseado se tem conteúdo extraído ou não
-      let promptInstrucao = '';
-      if (conteudoExtraido) {
+    }
+
+    console.log('📝 Conteúdo extraído:', conteudoExtraido.length, 'caracteres');
+    console.log('🖼️ Imagem extraída:', imagemExtraida ? 'SIM' : 'NÃO');
+    console.log('📸 Imagens sugeridas até agora:', imagensSugeridas.length);
+    
+    // Ajustar prompt baseado se tem conteúdo extraído ou não
+    let promptInstrucao = '';
+    console.log('🔨 Construindo prompt...');
+    if (conteudoExtraido) {
         promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
       
 ⚠️ IMPORTANTE: Crie uma matéria jornalística baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
@@ -1010,7 +1064,9 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
         }
       ];
 
+      console.log('🤖 Fazendo requisição para a IA...');
       const response = await this.makeRequest(messages, 0.7, 3000);
+      console.log('✅ Resposta recebida da IA (primeiros 200 chars):', response.substring(0, 200));
 
       try {
         // Limpar a resposta removendo markdown code blocks se existirem
@@ -1161,11 +1217,10 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
         }
 
         throw new Error('Resposta da IA não está no formato esperado');
-      } catch (error) {
-        console.error('Erro ao parsear resposta da IA:', error.message);
-        console.error('Resposta recebida (primeiros 500 chars):', response.substring(0, 500));
-        throw new Error('Erro ao processar resposta da IA');
-      }
+    } catch (error) {
+      console.error('Erro ao parsear resposta da IA:', error.message);
+      console.error('Resposta recebida (primeiros 500 chars):', response.substring(0, 500));
+      throw new Error('Erro ao processar resposta da IA');
     }
   }
 
@@ -1175,38 +1230,6 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
   static async corrigirTexto(texto, tipo = 'conteudo') {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
-    }
-
-    // Se for para organizar informações (anotações para matéria)
-    if (tipo === 'aiConteudoInformacoes') {
-      const prompt = `Você é um assistente editorial experiente.
-
-        Organize e melhore as seguintes informações/anotações que servirão de base para uma matéria jornalística:
-
-        ${texto}
-
-        REGRAS:
-        - Corrija erros de ortografia e gramática
-        - Organize as ideias de forma lógica e coerente
-        - Agrupe informações relacionadas
-        - Mantenha TODAS as informações fatuais importantes (nomes, datas, locais)
-        - Torne o texto mais claro e fluido
-        - Retorne APENAS o texto organizado, sem introduções ou explicações
-
-        TEXTO ORGANIZADO:`;
-
-      const messages = [
-        {
-          role: 'system',
-          content: 'Você é um assistente editorial especializado em organizar informações.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ];
-
-      return await this.makeRequest(messages, 0.5, 2000);
     }
 
     const tipoTexto = {
@@ -1472,6 +1495,73 @@ TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>,
       sucesso: materias.length,
       falhas: erros.length
     };
+  }
+
+  /**
+   * Expandir conteúdo com IA - gera mais informações baseadas no texto fornecido
+   */
+  static async expandirConteudo(conteudo) {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    if (!conteudo || conteudo.trim().length < 20) {
+      throw new Error('Conteúdo muito curto para expandir (mínimo 20 caracteres)');
+    }
+
+    console.log('🔄 Expandindo conteúdo com IA...');
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um assistente jornalístico especializado em expandir e enriquecer informações para matérias gospel.'
+      },
+      {
+        role: 'user',
+        content: `Você recebeu as seguintes informações básicas sobre uma matéria:
+
+${conteudo}
+
+Sua tarefa é EXPANDIR essas informações, gerando um texto mais completo e detalhado que servirá como base para criar uma matéria jornalística.
+
+INSTRUÇÕES:
+1. Mantenha TODOS os fatos e informações fornecidos
+2. Adicione contexto relevante e detalhes que enriqueçam a história
+3. Se houver nomes de pessoas, adicione possíveis contextos (ex: "pastor", "líder", "cantor gospel")
+4. Se houver eventos, adicione detalhes sobre quando, onde, como
+5. Se houver declarações, expanda o contexto da declaração
+6. Adicione possíveis repercussões ou impactos
+7. Mantenha tom jornalístico e objetivo
+8. NÃO invente fatos específicos (datas exatas, números, nomes que não foram mencionados)
+9. Foque em expandir o CONTEXTO e os DETALHES em torno dos fatos fornecidos
+
+FORMATO DE SAÍDA:
+Retorne um texto corrido, bem estruturado, com parágrafos separados por quebras de linha duplas.
+NÃO use formatação HTML, apenas texto puro.
+NÃO adicione título ou cabeçalhos, apenas o conteúdo expandido.
+
+Exemplo:
+Se receber: "Acidente em Palmas deixou 3 feridos"
+Expanda para: "Um acidente de trânsito ocorreu na cidade de Palmas, capital do Tocantins, deixando três pessoas feridas. O incidente mobilizou equipes de resgate e chamou atenção para as condições de segurança viária na região. As vítimas foram prontamente socorridas e encaminhadas para atendimento médico. Autoridades locais devem investigar as circunstâncias do ocorrido para determinar as causas e responsabilidades."
+
+Agora expanda o conteúdo fornecido:`
+      }
+    ];
+
+    try {
+      const response = await this.makeRequest(messages, 0.7, 2000);
+
+      if (!response || response.trim().length === 0) {
+        throw new Error('IA retornou resposta vazia');
+      }
+
+      const conteudoExpandido = response.trim();
+      console.log('✅ Conteúdo expandido com sucesso');
+      return conteudoExpandido;
+    } catch (error) {
+      console.error('❌ Erro ao expandir conteúdo:', error);
+      throw error;
+    }
   }
 
   /**

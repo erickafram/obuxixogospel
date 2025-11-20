@@ -46,7 +46,8 @@
         "dateModified": "<%= article.updatedAt %>",
         "author": {
             "@type": "Person",
-            "name": "<%= article.autor %>"
+            "name": "<%= article.autor %>",
+            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\\s+/g, '-') %>"
         },
         "publisher": {
             "@type": "Organization",

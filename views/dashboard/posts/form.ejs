@@ -375,17 +375,16 @@
 
                     <div class="form-group">
                         <label for="aiConteudoInformacoes">Informações e Conteúdo *</label>
-                        <div class="input-with-ai">
+                        <div class="input-with-ai" style="display: block;">
                             <textarea id="aiConteudoInformacoes" class="form-control" rows="8"
                                 placeholder="Cole ou digite todas as informações que você tem sobre a matéria:&#10;&#10;- Fatos principais&#10;- Declarações importantes&#10;- Contexto do evento&#10;- Dados relevantes&#10;- Citações&#10;&#10;Quanto mais informações você fornecer, melhor será a matéria criada pela IA."
                                 required></textarea>
-                            <button type="button" class="btn-ai-small" onclick="corrigirCampo('aiConteudoInformacoes')"
-                                title="Organizar com IA">
-                                ✨
+                            <button type="button" class="btn-ai-expand" onclick="expandirConteudoComIA()" 
+                                title="Expandir com IA - A IA irá gerar mais informações baseadas no que você digitou">
+                                ✨ Expandir com IA
                             </button>
                         </div>
-                        <small class="form-text">📝 Forneça o máximo de informações possível. A IA criará uma matéria
-                            humanizada e sem plágio</small>
+                        <small class="form-text">📝 Forneça informações básicas e clique em "Expandir com IA" para a IA gerar mais detalhes, ou forneça tudo e gere a matéria direto</small>
                     </div>
 
                     <div class="form-group">
@@ -453,17 +452,18 @@
                 <!-- Tab Por Link -->
                 <div class="ai-form ai-tab-content" id="ai-tab-link">
                     <div class="form-group">
-                        <label for="aiLinkUrl">Link da Postagem (Instagram, etc.)</label>
-                        <input type="text" id="aiLinkUrl" class="form-control"
-                            placeholder="Ex: https://www.instagram.com/p/ABC123/">
-                        <small class="form-text">Cole o link da postagem que deseja transformar em matéria</small>
+                        <label for="aiLinkUrl">Link da Postagem ou Matéria *</label>
+                        <input type="url" id="aiLinkUrl" class="form-control"
+                            placeholder="Ex: https://www.instagram.com/p/ABC123/ ou https://site.com/noticia">
+                        <small class="form-text">✨ Cole o link do Instagram, Facebook, ou link de matéria de qualquer site</small>
                     </div>
 
                     <div class="form-group">
                         <label for="aiLinkTexto">OU Cole o Texto Manualmente (opcional)</label>
                         <textarea id="aiLinkTexto" class="form-control" rows="6"
-                            placeholder="Se o link não funcionar, cole o texto da postagem aqui..."></textarea>
-                        <small class="form-text">Use este campo se a extração automática falhar</small>
+                            placeholder="Se o sistema não conseguir extrair automaticamente, cole o texto aqui..."></textarea>
+                        <small class="form-text">📱 Opcional: Cole o texto apenas se a extração automática
+                            falhar</small>
                     </div>
 
                     <div class="form-group">
@@ -487,8 +487,7 @@
 
                     <div class="ai-info">
                         <i class="fas fa-info-circle"></i>
-                        <p>📱 A IA extrairá automaticamente o texto e comentários (se houver) do link e criará uma
-                            matéria completa.</p>
+                        <p>📱 A IA extrairá automaticamente o texto do link e criará uma matéria completa. Se for link de matéria, tentará baixar a imagem destaque automaticamente.</p>
                     </div>
 
                     <div class="modal-footer">
@@ -1754,6 +1753,38 @@
             box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
         }
 
+        .btn-ai-expand {
+            background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-ai-expand:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-ai-expand:active {
+            transform: scale(0.98);
+        }
+
+        .btn-ai-expand:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Dropdown IA */
         .btn-ai-dropdown {
             position: relative;
@@ -2928,6 +2959,49 @@
             document.getElementById('ai-tab-' + tab).classList.add('active');
         }
 
+        // Expandir conteúdo com IA
+        async function expandirConteudoComIA() {
+            const informacoes = document.getElementById('aiConteudoInformacoes').value;
+
+            if (!informacoes || informacoes.trim().length < 20) {
+                alert('Por favor, forneça pelo menos algumas informações básicas (mínimo 20 caracteres)');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Expandindo...';
+
+            try {
+                const response = await fetch('/api/ia/expandir-conteudo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conteudo: informacoes
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Substituir o conteúdo pelo expandido
+                    document.getElementById('aiConteudoInformacoes').value = data.conteudoExpandido;
+                    alert('✅ Conteúdo expandido com sucesso! Revise e clique em "Gerar Matéria" quando estiver pronto.');
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Não foi possível expandir o conteúdo'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao expandir conteúdo: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         // Criar matéria por conteúdo
         async function criarPorConteudo() {
             const tituloSugerido = document.getElementById('aiConteudoTitulo').value;
@@ -2963,6 +3037,7 @@
                 });
 
                 const data = await response.json();
+                console.log('Resposta completa da API:', data);
 
                 if (data.success && data.materia) {
                     // Preencher os campos
