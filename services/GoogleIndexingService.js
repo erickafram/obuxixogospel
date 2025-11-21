@@ -18,11 +18,25 @@ class GoogleIndexingService {
    */
   async initialize() {
     try {
-      const keyPath = path.join(__dirname, '../config/google-service-account.json');
-      
-      // Verificar se arquivo de credenciais existe
-      if (!fs.existsSync(keyPath)) {
-        console.log('⚠️ Google Indexing API: Credenciais não encontradas');
+      // Try multiple paths to find the credentials file
+      const possiblePaths = [
+        path.join(__dirname, '../service-account.json'), // Local dev / standard structure
+        path.join(process.cwd(), 'service-account.json'), // Root of execution
+        '/home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel/service-account.json', // Hardcoded production path
+        path.join(__dirname, '../config/google-service-account.json') // Legacy path
+      ];
+
+      let keyPath = null;
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          keyPath = p;
+          console.log('✅ Google Indexing API: Credentials found at', keyPath);
+          break;
+        }
+      }
+
+      if (!keyPath) {
+        console.log('⚠️ Google Indexing API: Credenciais não encontradas. Checked:', possiblePaths);
         console.log('📝 Para ativar, siga: GOOGLE-INDEXING-API.md');
         this.enabled = false;
         return false;
@@ -30,7 +44,7 @@ class GoogleIndexingService {
 
       // Carregar credenciais
       const key = require(keyPath);
-      
+
       // Autenticar
       this.auth = new google.auth.GoogleAuth({
         credentials: key,
@@ -72,15 +86,15 @@ class GoogleIndexingService {
       });
 
       console.log(`✅ Indexação solicitada: ${url}`);
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: response.data,
         message: 'Indexação solicitada com sucesso'
       };
     } catch (error) {
       console.error(`❌ Erro ao solicitar indexação de ${url}:`, error.message);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
         code: error.code
       };
@@ -101,14 +115,14 @@ class GoogleIndexingService {
         url: url
       });
 
-      return { 
-        success: true, 
-        data: response.data 
+      return {
+        success: true,
+        data: response.data
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message 
+      return {
+        success: false,
+        error: error.message
       };
     }
   }
@@ -123,11 +137,11 @@ class GoogleIndexingService {
     }
 
     const results = [];
-    
+
     for (const url of urls) {
       // Aguardar 1 segundo entre requisições (rate limit)
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const result = await this.requestIndexing(url);
       results.push({ url, ...result });
     }

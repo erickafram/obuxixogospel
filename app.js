@@ -14,6 +14,7 @@ require('dotenv').config();
 const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect } = require('./models');
 const AIService = require('./services/AIService');
 const googleSitemapService = require('./services/GoogleSitemapService');
+const googleIndexingService = require('./services/GoogleIndexingService');
 const { publishScheduledPosts } = require('./schedulers/publishScheduledPosts');
 
 // Configurar Multer para upload
