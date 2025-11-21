@@ -1835,74 +1835,132 @@ app.use(async (req, res) => {
           // Se não for paginação (/page/2) ou feed (/feed)
           if (!['feed', 'amp', 'rss'].includes(lastPart) && !lastPart.match(/^\d+$/)) {
             possibleSlug = lastPart;
-          } else if (urlParts.length > 1) {
-            <html lang="pt-BR">
-              <head>
-                <meta charset="UTF-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Conteúdo Removido - Obuxixo Gospel</title>
-                    <style>
-                      body {font - family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                      h1 {color: #e74c3c; }
-                      p {color: #666; margin: 20px 0; }
-                      a {color: #3498db; text-decoration: none; font-weight: bold; }
-                      a:hover {text - decoration: underline; }
-                    </style>
-                  </head>
-                  <body>
-                    <h1>⚠️ Conteúdo Removido</h1>
-                    <p>Esta página foi permanentemente removida do nosso site.</p>
-                    <p><a href="/">← Voltar para a página inicial</a></p>
-                  </body>
-                </html>
-                `);
+            // Tenta o penúltimo (caso o último seja feed ou número)
+            possibleSlug = urlParts[urlParts.length - 2];
+          }
+        }
+
+        if (possibleSlug && possibleSlug.length > 3 && !possibleSlug.includes('wp-')) {
+          // Limpar slug
+          const keywords = possibleSlug
+            .replace(/\.html$|\.php$/i, '') // Remover extensões
+            .replace(/-/g, ' ') // Trocar traços por espaços
+            .replace(/\b(html|htm|php)\b/gi, '') // Remover palavras técnicas
+            .trim();
+
+          if (keywords.length > 3) {
+            // Tentar encontrar artigo no banco com título similar para salvar SEO
+            try {
+              const mainWords = keywords.split(' ')
+                .filter(w => w.length > 3)
+                .sort((a, b) => b.length - a.length) // Priorizar palavras maiores
+                .slice(0, 2); // Pegar as 2 mais relevantes
+
+              if (mainWords.length > 0) {
+                const { Op } = require('sequelize');
+                // Busca por qualquer uma das palavras principais no título
+                const similarArticle = await Article.findOne({
+                  where: {
+                    [Op.and]: [
+                      { publicado: true },
+                      {
+                        [Op.or]: mainWords.map(word => ({
+                          titulo: { [Op.like]: `%${word}%` }
+                        }))
+                      }
+                    ]
+                  },
+                  attributes: ['slug']
+                });
+
+                if (similarArticle) {
+                  console.log(`✅ SEO Rescue: "${req.url}" -> 301 para "/noticias/${similarArticle.slug}"`);
+                  return res.redirect(301, `/noticias/${similarArticle.slug}`);
+                }
+              }
+            } catch (dbError) {
+              console.error('Erro ao buscar artigo similar:', dbError);
+            }
+
+            console.log(`🔄 Smart Redirect: "${req.url}" -> Busca por "${keywords}"`);
+            return res.redirect(301, `/search?q=${encodeURIComponent(keywords)}`);
+          }
+        }
+      } catch (e) {
+        console.error('Erro no Smart Redirect:', e);
+      }
+
+      if (type === '410') {
+        // 410 Gone - Conteúdo removido permanentemente
+        return res.status(410).send(`
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Conteúdo Removido - Obuxixo Gospel</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+              h1 { color: #e74c3c; }
+              p { color: #666; margin: 20px 0; }
+              a { color: #3498db; text-decoration: none; font-weight: bold; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <h1>⚠️ Conteúdo Removido</h1>
+            <p>Esta página foi permanentemente removida do nosso site.</p>
+            <p><a href="/">← Voltar para a página inicial</a></p>
+          </body>
+          </html>
+        `);
       } else {
         // 301 Redirect - Redirecionar para home (Fallback final)
         return res.redirect(301, '/');
       }
     }
 
-                // Se redirecionamento está desativado, mostrar página 404 normal
-                const recentArticles = await Article.findAll({
-                  where: {publicado: true },
-                order: [['dataPublicacao', 'DESC']],
-                limit: 3
+    // Se redirecionamento está desativado, mostrar página 404 normal
+    const recentArticles = await Article.findAll({
+      where: { publicado: true },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 3
     });
 
-                res.status(404).render('404', {
-                  recentArticles,
-                  user: req.session.userId ? {
-                  nome: req.session.userName,
-                email: req.session.userEmail,
-                role: req.session.userRole
+    res.status(404).render('404', {
+      recentArticles,
+      user: req.session.userId ? {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
       } : null
     });
   } catch (error) {
-                  console.error('Erro ao carregar página 404:', error);
-                res.status(404).send('Página não encontrada');
+    console.error('Erro ao carregar página 404:', error);
+    res.status(404).send('Página não encontrada');
   }
 });
 
-                // Iniciar servidor
-                const PORT = process.env.PORT || 3000;
+// Iniciar servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
-                  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 
-                // Iniciar serviço de postagem automática
-                try {
+  // Iniciar serviço de postagem automática
+  try {
     const autoPostService = require('./services/AutoPostService');
-                await autoPostService.start();
+    await autoPostService.start();
   } catch (error) {
-                  console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
+    console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
   }
 
-                // Iniciar scheduler de publicação de matérias agendadas
-                // Executa a cada 1 minuto
-                console.log('📅 Scheduler de publicação agendada iniciado (verifica a cada 1 minuto)');
+  // Iniciar scheduler de publicação de matérias agendadas
+  // Executa a cada 1 minuto
+  console.log('📅 Scheduler de publicação agendada iniciado (verifica a cada 1 minuto)');
   setInterval(async () => {
-                  await publishScheduledPosts();
+    await publishScheduledPosts();
   }, 60000); // 60000ms = 1 minuto
 
-                // Executar imediatamente ao iniciar
-                await publishScheduledPosts();
+  // Executar imediatamente ao iniciar
+  await publishScheduledPosts();
 });
