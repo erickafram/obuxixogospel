@@ -2567,23 +2567,21 @@
                 .then(data => {
                     if (data.success) {
                         alert('✅ Rascunho salvo com sucesso!');
-                        // Se for novo post, redirecionar para edição
-                        if (!<%= isEdit ? 'true' : 'false' %> && data.articleId) {
-                window.location.href = `/dashboard/posts/editar/${data.articleId}`;
-            }
-        } else {
-            alert('❌ Erro ao salvar rascunho: ' + (data.message || 'Erro desconhecido'));
+                        // Redirecionar para a listagem de posts
+                        window.location.href = '/dashboard/posts';
+                    } else {
+                        alert('❌ Erro ao salvar rascunho: ' + (data.message || 'Erro desconhecido'));
+                    }
+                })
+                .catch (error => {
+                    console.error('Erro:', error);
+                    alert('❌ Erro ao salvar rascunho: ' + error.message);
+                })
+                .finally(() => {
+                    btnRascunho.disabled = false;
+                    btnRascunho.innerHTML = originalText;
+                });
         }
-        })
-        .catch (error => {
-            console.error('Erro:', error);
-            alert('❌ Erro ao salvar rascunho: ' + error.message);
-        })
-        .finally(() => {
-            btnRascunho.disabled = false;
-            btnRascunho.innerHTML = originalText;
-        });
-    }
 
         // Preparar submit
         function prepareSubmit() {
