@@ -703,7 +703,8 @@ class AIService {
         throw new Error('GOOGLE_API_KEY ou GOOGLE_CX não configuradas');
       }
 
-      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&imgSize=large&safe=active`;
+      // Buscar imagens em alta resolução (xlarge) e apenas fotos (não clipart/lineart)
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&imgSize=xlarge&imgType=photo&safe=active`;
 
       const response = await axios.get(searchUrl, {
         timeout: 15000
@@ -715,10 +716,10 @@ class AIService {
         for (const item of response.data.items) {
           if (imagens.length >= 10) break;
 
-          // Preferir thumbnailLink que é sempre uma imagem válida
-          // O item.link pode ser uma página HTML
-          const imageUrl = item.image?.thumbnailLink || item.link;
-
+          // Preferir item.link (alta resolução) se for imagem válida
+          // Caso contrário, usar thumbnailLink como fallback
+          let imageUrl = item.link;
+          
           // Validar se a URL parece ser uma imagem
           // URLs do Google (gstatic.com, googleusercontent.com) são sempre válidas
           const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) ||
@@ -726,7 +727,13 @@ class AIService {
             imageUrl.includes('ggpht.com') ||
             imageUrl.includes('gstatic.com');
 
-          if (isValidImageUrl) {
+          // Se item.link não for imagem válida, usar thumbnailLink
+          if (!isValidImageUrl && item.image?.thumbnailLink) {
+            imageUrl = item.image.thumbnailLink;
+            console.log('⚠️ Usando thumbnail como fallback para:', item.displayLink);
+          }
+
+          if (isValidImageUrl || item.image?.thumbnailLink) {
             imagens.push({
               url: imageUrl,
               thumbnail: item.image?.thumbnailLink || imageUrl,
