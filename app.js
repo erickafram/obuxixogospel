@@ -1833,8 +1833,10 @@ app.use(async (req, res) => {
         if (urlParts.length > 0) {
           const lastPart = urlParts[urlParts.length - 1];
           // Se não for paginação (/page/2) ou feed (/feed)
+          // Se não for paginação (/page/2) ou feed (/feed)
           if (!['feed', 'amp', 'rss'].includes(lastPart) && !lastPart.match(/^\d+$/)) {
             possibleSlug = lastPart;
+          } else if (urlParts.length > 1) {
             // Tenta o penúltimo (caso o último seja feed ou número)
             possibleSlug = urlParts[urlParts.length - 2];
           }

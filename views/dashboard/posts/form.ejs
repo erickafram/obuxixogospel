@@ -3411,13 +3411,37 @@
                     if (modoAutomatico) {
                         console.log('Modo automático: selecionando primeira imagem automaticamente');
                         const primeiraImagem = data.materia.imagensSugeridas[0];
-                        document.getElementById('imagem').value = primeiraImagem.url;
-                        document.getElementById('previewImg').src = primeiraImagem.url;
-                        document.getElementById('imagePreview').style.display = 'block';
+                        
+                        // Fazer upload da imagem do Google primeiro
+                        try {
+                            const uploadResponse = await fetch('/dashboard/media/upload-url', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    url: primeiraImagem.url, 
+                                    descricao: primeiraImagem.descricao || 'Imagem da matéria'
+                                })
+                            });
 
-                        closeAIModal();
-                        alert('✅ Matéria criada com sucesso! Imagem selecionada automaticamente. Revise e publique!');
-                        return;
+                            const uploadData = await uploadResponse.json();
+
+                            if (uploadData.success && uploadData.media) {
+                                // Usar a URL local da imagem baixada
+                                document.getElementById('imagem').value = uploadData.media.url;
+                                document.getElementById('previewImg').src = uploadData.media.url;
+                                document.getElementById('imagePreview').style.display = 'block';
+
+                                closeAIModal();
+                                alert('✅ Matéria criada com sucesso! Imagem selecionada automaticamente. Revise e publique!');
+                                return;
+                            } else {
+                                console.error('Erro ao fazer upload da imagem:', uploadData.error);
+                                // Continuar sem imagem automática
+                            }
+                        } catch (error) {
+                            console.error('Erro ao fazer upload automático da imagem:', error);
+                            // Continuar sem imagem automática
+                        }
                     }
                 }
 
