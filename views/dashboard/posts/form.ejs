@@ -2811,12 +2811,7 @@
                                 document.getElementById('fileInputModal').value = '';
                                 switchModalTab('biblioteca');
                                 loadMediaLibrary();
-                                // Selecionar mídia baseado no modo
-                                if (mediaLibraryMode === 'featured') {
-                                    selectMediaForFeatured(data.media.url);
-                                } else if (mediaLibraryMode === 'ai-image') {
-                                    selectMediaForAI(data.media.url);
-                                }
+                                selectMedia(data.media.url);
                             }, 1000);
                         }
                     } else {
@@ -2913,11 +2908,7 @@
                     loadMediaLibrary();
                     // Selecionar automaticamente a imagem recém-adicionada
                     setTimeout(() => {
-                        if (mediaLibraryMode === 'featured') {
-                            selectMediaForFeatured(data.media.url);
-                        } else if (mediaLibraryMode === 'ai-image') {
-                            selectMediaForAI(data.media.url);
-                        }
+                        selectMedia(data.media.url);
                     }, 500);
                 } else {
                     alert('Erro ao adicionar imagem: ' + (data.error || 'Erro desconhecido'));
@@ -3008,11 +2999,7 @@
                     loadMediaLibrary();
                     // Selecionar automaticamente a imagem recém-adicionada
                     setTimeout(() => {
-                        if (mediaLibraryMode === 'featured') {
-                            selectMediaForFeatured(data.media.url);
-                        } else if (mediaLibraryMode === 'ai-image') {
-                            selectMediaForAI(data.media.url);
-                        }
+                        selectMedia(data.media.url);
                     }, 500);
                 } else {
                     alert('Erro ao adicionar imagem: ' + (data.error || 'Erro desconhecido'));
