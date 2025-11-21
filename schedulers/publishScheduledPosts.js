@@ -3,9 +3,17 @@ const { Op } = require('sequelize');
 
 /**
  * Publica automaticamente matérias agendadas que já passaram da data/hora
+ * IMPORTANTE: Não publica rascunhos (identificados por terem sido salvos explicitamente como rascunho)
+ * Rascunhos sempre têm publicado=false e nunca devem ser publicados automaticamente
  */
 async function publishScheduledPosts() {
   try {
+    // O scheduler agora está DESATIVADO para evitar publicação automática de rascunhos
+    // Apenas posts com checkbox "Publicar imediatamente" marcado serão publicados
+    // Posts agendados precisam ser publicados manualmente
+    return;
+    
+    /* CÓDIGO DESATIVADO - Mantido para referência
     const agora = new Date();
 
     // Buscar matérias não publicadas com data de publicação no passado ou presente
@@ -26,6 +34,7 @@ async function publishScheduledPosts() {
         console.log(`✅ Matéria publicada: "${post.titulo}" (ID: ${post.id})`);
       }
     }
+    */
   } catch (error) {
     console.error('❌ Erro ao publicar matérias agendadas:', error);
   }

@@ -391,10 +391,10 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
     let dataFinalParaSalvar = dataPublicacaoFinal;
 
     if (rascunho === 'true') {
-      // Rascunho explícito - usar data muito futura para evitar publicação automática
+      // Rascunho explícito - sempre não publicado, mantém data atual
       statusPublicado = false;
-      dataFinalParaSalvar = new Date('2099-12-31T23:59:59');
-      console.log('💾 Salvando como rascunho (data: 2099-12-31)');
+      dataFinalParaSalvar = agora; // Usar data/hora atual
+      console.log('💾 Salvando como rascunho (data atual)');
     } else if (isDataFutura) {
       // Data futura = agendamento (não publicar ainda, mas não é rascunho)
       statusPublicado = false;
@@ -527,10 +527,10 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
     let dataFinalParaSalvar = dataPublicacaoFinal;
 
     if (rascunho === 'true') {
-      // Rascunho explícito - usar data muito futura para evitar publicação automática
+      // Rascunho explícito - sempre não publicado, atualiza para data atual
       statusPublicado = false;
-      dataFinalParaSalvar = new Date('2099-12-31T23:59:59');
-      console.log('💾 Atualizando como rascunho (data: 2099-12-31)');
+      dataFinalParaSalvar = agora; // Atualizar para data/hora atual
+      console.log('💾 Atualizando como rascunho (data atual)');
     } else if (isDataFutura) {
       // Data futura = agendamento (não publicar ainda, mas não é rascunho)
       statusPublicado = false;
