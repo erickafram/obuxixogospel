@@ -2,50 +2,42 @@ const { google } = require('googleapis');
 const path = require('path');
 const fs = require('fs');
 
-/**
- * Serviço para solicitar indexação automática no Google
- * Usa Google Indexing API para notificar o Google sobre novas páginas
- */
 class GoogleIndexingService {
   constructor() {
     this.auth = null;
     this.indexing = null;
     this.enabled = false;
+    this.initialize();
   }
 
-  /**
-   * Inicializar serviço com credenciais
-   */
   async initialize() {
     try {
       // Try multiple paths to find the credentials file
       const possiblePaths = [
         path.join(__dirname, '../service-account.json'), // Local dev / standard structure
         path.join(process.cwd(), 'service-account.json'), // Root of execution
-        '/home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel/service-account.json', // Hardcoded production path
-        path.join(__dirname, '../config/google-service-account.json') // Legacy path
+        '/home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel/service-account.json' // Hardcoded production path
       ];
 
       let keyPath = null;
       for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
           keyPath = p;
-          console.log('✅ Google Indexing API: Credentials found at', keyPath);
+          console.log('✅ Google Indexing Service: Credentials found at', keyPath);
           break;
         }
       }
 
       if (!keyPath) {
-        console.log('⚠️ Google Indexing API: Credenciais não encontradas. Checked:', possiblePaths);
-        console.log('📝 Para ativar, siga: GOOGLE-INDEXING-API.md');
+        console.error('⚠️ Google Indexing Service: Credentials file NOT found. Checked:', possiblePaths);
         this.enabled = false;
         return false;
       }
 
-      // Carregar credenciais
+      // Load credentials
       const key = require(keyPath);
 
-      // Autenticar
+      // Authenticate with Indexing API scope
       this.auth = new google.auth.GoogleAuth({
         credentials: key,
         scopes: ['https://www.googleapis.com/auth/indexing']
@@ -57,114 +49,72 @@ class GoogleIndexingService {
       });
 
       this.enabled = true;
-      console.log('✅ Google Indexing API inicializada');
+      console.log('✅ Google Indexing Service initialized');
       return true;
     } catch (error) {
-      console.error('❌ Erro ao inicializar Google Indexing API:', error.message);
+      console.error('❌ Error initializing Google Indexing Service:', error.message);
       this.enabled = false;
       return false;
     }
   }
 
   /**
-   * Solicitar indexação de uma URL
-   * @param {string} url - URL completa do artigo
-   * @param {string} type - Tipo: 'URL_UPDATED' ou 'URL_DELETED'
+   * Notifies Google that a URL has been updated or created.
+   * @param {string} url - The full URL of the page (e.g., https://www.obuxixogospel.com.br/noticias/titulo-do-post)
+   * @returns {Promise<Object>} - The API response
    */
-  async requestIndexing(url, type = 'URL_UPDATED') {
+  async publishUrl(url) {
     if (!this.enabled) {
-      console.log('⚠️ Google Indexing API não está ativada');
-      return { success: false, reason: 'API não ativada' };
+      const initialized = await this.initialize();
+      if (!initialized) return { success: false, message: 'Service not enabled' };
     }
 
     try {
-      const response = await this.indexing.urlNotifications.publish({
+      console.log(`🚀 Indexing API: Publishing URL ${url}`);
+
+      const result = await this.indexing.urlNotifications.publish({
         requestBody: {
           url: url,
-          type: type
+          type: 'URL_UPDATED'
         }
       });
 
-      console.log(`✅ Indexação solicitada: ${url}`);
-      return {
-        success: true,
-        data: response.data,
-        message: 'Indexação solicitada com sucesso'
-      };
+      console.log(`✅ Indexing API Success: ${url}`);
+      return { success: true, data: result.data };
     } catch (error) {
-      console.error(`❌ Erro ao solicitar indexação de ${url}:`, error.message);
-      return {
-        success: false,
-        error: error.message,
-        code: error.code
-      };
+      console.error(`❌ Indexing API Error for ${url}:`, error.message);
+      return { success: false, error: error.message };
     }
   }
 
   /**
-   * Verificar status de indexação de uma URL
-   * @param {string} url - URL completa do artigo
+   * Notifies Google that a URL has been deleted.
+   * @param {string} url - The full URL of the page
+   * @returns {Promise<Object>} - The API response
    */
-  async getIndexingStatus(url) {
+  async removeUrl(url) {
     if (!this.enabled) {
-      return { success: false, reason: 'API não ativada' };
+      const initialized = await this.initialize();
+      if (!initialized) return { success: false, message: 'Service not enabled' };
     }
 
     try {
-      const response = await this.indexing.urlNotifications.getMetadata({
-        url: url
+      console.log(`🗑️ Indexing API: Removing URL ${url}`);
+
+      const result = await this.indexing.urlNotifications.publish({
+        requestBody: {
+          url: url,
+          type: 'URL_DELETED'
+        }
       });
 
-      return {
-        success: true,
-        data: response.data
-      };
+      console.log(`✅ Indexing API Removed: ${url}`);
+      return { success: true, data: result.data };
     } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error(`❌ Indexing API Remove Error for ${url}:`, error.message);
+      return { success: false, error: error.message };
     }
-  }
-
-  /**
-   * Solicitar indexação de múltiplas URLs (batch)
-   * @param {Array<string>} urls - Array de URLs
-   */
-  async requestBatchIndexing(urls) {
-    if (!this.enabled) {
-      return { success: false, reason: 'API não ativada' };
-    }
-
-    const results = [];
-
-    for (const url of urls) {
-      // Aguardar 1 segundo entre requisições (rate limit)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const result = await this.requestIndexing(url);
-      results.push({ url, ...result });
-    }
-
-    return {
-      success: true,
-      total: urls.length,
-      successful: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
-      results
-    };
-  }
-
-  /**
-   * Notificar remoção de URL (para artigos deletados)
-   * @param {string} url - URL completa do artigo
-   */
-  async notifyUrlDeleted(url) {
-    return await this.requestIndexing(url, 'URL_DELETED');
   }
 }
 
-// Singleton
-const googleIndexingService = new GoogleIndexingService();
-
-module.exports = googleIndexingService;
+module.exports = new GoogleIndexingService();

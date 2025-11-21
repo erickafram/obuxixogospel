@@ -1211,9 +1211,25 @@ app.get('/artigo/:slug', async (req, res) => {
       limit: 4
     });
 
+    // Carregar categorias para o menu
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
+
+    // Criar mapa de nomes de categorias
+    const categoryNames = {
+      'g1': 'Notícias',
+      'ge': 'Música', 
+      'gshow': 'Eventos',
+      'quem': 'Ministérios',
+      'valor': 'Estudos'
+    };
+
     res.render('article', {
       article,
       related,
+      categories,
+      categoryNames,
       user: req.session.userId ? {
         nome: req.session.userName,
         email: req.session.userEmail,
@@ -1717,9 +1733,25 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
       where: { chave: 'amp_habilitado' }
     });
 
+    // Carregar categorias para o menu
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
+
+    // Criar mapa de nomes de categorias
+    const categoryNames = {
+      'g1': 'Notícias',
+      'ge': 'Música', 
+      'gshow': 'Eventos',
+      'quem': 'Ministérios',
+      'valor': 'Estudos'
+    };
+
     res.render('article', {
       article,
       related,
+      categories,
+      categoryNames,
       ampEnabled: ampConfig && ampConfig.valor === 'true',
       isPreview: isPreview, // Passar flag de preview para o template
       user: req.session.userId ? {
