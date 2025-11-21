@@ -682,14 +682,8 @@ class AIService {
       }
 
       // Se ficou muito curto ou vazio, usar fallback genérico
-      if (cleanQuery.length < 5) {
+      if (cleanQuery.length < 3) {
         cleanQuery = 'igreja gospel evangélico';
-      }
-
-      // Adicionar contexto gospel se não tiver palavras-chave relacionadas
-      const temContextoGospel = /igreja|pastor|gospel|evangélic|cristã|culto|assembleia|deus|jesus|bíblia/i.test(cleanQuery);
-      if (!temContextoGospel && cleanQuery.length < 80) {
-        cleanQuery = cleanQuery + ' gospel';
       }
 
       console.log('Query limpa para Google:', cleanQuery.substring(0, 100));
