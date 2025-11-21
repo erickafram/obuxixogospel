@@ -2372,22 +2372,43 @@ RETORNE APENAS O HTML (sem título ou descrição):`
       const { execSync } = require('child_process');
       const ytDlpPath = await this.garantirYtDlp();
       
-      // Executar yt-dlp para obter URL direta do vídeo
-      // -g = get URL, --no-warnings = sem avisos
-      const command = `${ytDlpPath} -g --no-warnings "${instagramUrl}"`;
-      console.log('🔧 Executando:', command);
+      // Tentar diferentes estratégias
+      const strategies = [
+        // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
+        `${ytDlpPath} -g --no-warnings "${instagramUrl}"`,
+        
+        // Estratégia 2: Com User-Agent específico
+        `${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`,
+        
+        // Estratégia 3: Ignorar erros e tentar extrair URL mesmo assim
+        `${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`
+      ];
       
-      const output = execSync(command, {
-        encoding: 'utf8',
-        timeout: 30000,
-        maxBuffer: 10 * 1024 * 1024 // 10MB
-      });
-      
-      const videoUrl = output.trim().split('\n')[0]; // Primeira linha é a URL do vídeo
-      
-      if (videoUrl && videoUrl.startsWith('http')) {
-        console.log('✅ URL do vídeo obtida:', videoUrl.substring(0, 100) + '...');
-        return videoUrl;
+      for (let i = 0; i < strategies.length; i++) {
+        try {
+          console.log(`🔧 Tentando estratégia ${i + 1}/3 do yt-dlp`);
+          
+          const output = execSync(strategies[i], {
+            encoding: 'utf8',
+            timeout: 30000,
+            maxBuffer: 10 * 1024 * 1024 // 10MB
+          });
+          
+          const videoUrl = output.trim().split('\n')[0]; // Primeira linha é a URL do vídeo
+          
+          if (videoUrl && videoUrl.startsWith('http')) {
+            console.log('✅ URL do vídeo obtida via yt-dlp');
+            return videoUrl;
+          }
+        } catch (strategyError) {
+          console.log(`⚠️ Estratégia ${i + 1} falhou`);
+          
+          // Se é rate limit, logar mensagem específica
+          if (strategyError.message.includes('rate-limit') || strategyError.message.includes('login required')) {
+            console.log('⚠️ Instagram bloqueou acesso (rate-limit ou login necessário)');
+            console.log('💡 Dica: Para resolver, seria necessário configurar cookies do Instagram no yt-dlp');
+          }
+        }
       }
       
       return null;
