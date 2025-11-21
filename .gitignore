@@ -46,6 +46,10 @@ temp/
 # Binários baixados automaticamente
 bin/
 
+# Cookies do Instagram (NUNCA COMMITAR!)
+instagram-cookies.txt
+*-cookies.txt
+
 # Google Service Account (NUNCA COMMITAR!)
 config/google-service-account.json
 service-account.json

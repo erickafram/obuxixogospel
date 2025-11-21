@@ -2372,21 +2372,37 @@ RETORNE APENAS O HTML (sem título ou descrição):`
       const { execSync } = require('child_process');
       const ytDlpPath = await this.garantirYtDlp();
       
+      // Verificar se existe arquivo de cookies manual
+      const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
+      const hasCookiesFile = fs.existsSync(cookiesPath);
+      
       // Tentar diferentes estratégias
-      const strategies = [
-        // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
-        `${ytDlpPath} -g --no-warnings "${instagramUrl}"`,
-        
-        // Estratégia 2: Com User-Agent específico
-        `${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`,
-        
-        // Estratégia 3: Ignorar erros e tentar extrair URL mesmo assim
-        `${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`
-      ];
+      const strategies = [];
+      
+      // Estratégia 0: Com arquivo de cookies manual (se existir) - PRIORIDADE MÁXIMA
+      if (hasCookiesFile) {
+        strategies.push(`${ytDlpPath} -g --no-warnings --cookies "${cookiesPath}" "${instagramUrl}"`);
+        console.log('✅ Arquivo de cookies encontrado, será usado como prioridade');
+      }
+      
+      // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
+      strategies.push(`${ytDlpPath} -g --no-warnings "${instagramUrl}"`);
+      
+      // Estratégia 2: Com cookies do Firefox (se disponível no servidor)
+      strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser firefox "${instagramUrl}"`);
+      
+      // Estratégia 3: Com cookies do Chrome (se disponível no servidor)
+      strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser chrome "${instagramUrl}"`);
+      
+      // Estratégia 4: Com User-Agent específico
+      strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`);
+      
+      // Estratégia 5: Ignorar erros e tentar extrair URL mesmo assim
+      strategies.push(`${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`);
       
       for (let i = 0; i < strategies.length; i++) {
         try {
-          console.log(`🔧 Tentando estratégia ${i + 1}/3 do yt-dlp`);
+          console.log(`🔧 Tentando estratégia ${i + 1}/${strategies.length} do yt-dlp`);
           
           const output = execSync(strategies[i], {
             encoding: 'utf8',
