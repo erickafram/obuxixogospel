@@ -1,80 +1,138 @@
 <!doctype html>
 <html ⚡ lang="pt-BR">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-    
+
     <!-- AMP Runtime -->
     <script async src="https://cdn.ampproject.org/v0.js"></script>
-    
+
     <!-- AMP Components -->
     <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-    <script async custom-element="amp-social-share" src="https://cdn.ampproject.org/v0/amp-social-share-0.1.js"></script>
+    <script async custom-element="amp-social-share"
+        src="https://cdn.ampproject.org/v0/amp-social-share-0.1.js"></script>
     <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>
     <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
     <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
     <script async custom-element="amp-youtube" src="https://cdn.ampproject.org/v0/amp-youtube-0.1.js"></script>
     <script async custom-element="amp-instagram" src="https://cdn.ampproject.org/v0/amp-instagram-0.1.js"></script>
-    
+
     <!-- SEO -->
-    <title><%= article.titulo %> - Obuxixo Gospel</title>
+    <title>
+        <%= article.titulo %> - Obuxixo Gospel
+    </title>
     <meta name="description" content="<%= article.descricao %>">
     <link rel="canonical" href="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="<%= article.titulo %>">
     <meta property="og:description" content="<%= article.descricao %>">
     <meta property="og:image" content="<%= article.imagem %>">
     <meta property="og:type" content="article">
     <meta property="og:url" content="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<%= article.titulo %>">
     <meta name="twitter:description" content="<%= article.descricao %>">
     <meta name="twitter:image" content="<%= article.imagem %>">
-    
+
     <!-- Schema.org -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
         "headline": "<%= article.titulo %>",
-        "alternativeHeadline": "<%= article.descricao %>",
         "description": "<%= article.descricao %>",
-        "image": [
-            "<%= article.imagem %>"
-        ],
-        "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
-        "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
+        "image": "<%= article.imagem %>",
+        "datePublished": "<%= article.dataPublicacao %>",
+        "dateModified": "<%= article.updatedAt %>",
         "author": {
             "@type": "Person",
             "name": "<%= article.autor %>",
-            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\s+/g, '-') %>"
+            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\\s+/g, '-') %>"
         },
         "publisher": {
             "@type": "Organization",
             "name": "Obuxixo Gospel",
-            "url": "<%= siteUrl %>",
             "logo": {
                 "@type": "ImageObject",
-                "url": "<%= siteUrl %>/images/logo.png",
-                "width": 600,
-                "height": 60
+                "url": "<%= siteUrl %>/images/logo.png"
             }
-        },
-        "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": "<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>"
-        },
-        "articleSection": "<%= categoryName %>",
-        "isAccessibleForFree": true
+        }
     }
     </script>
-    
+
     <!-- AMP Boilerplate -->
-    <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-    
+    <style amp-boilerplate>
+        body {
+            -webkit-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+            -moz-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+            -ms-animation: -amp-start 8s steps(1, end) 0s 1 normal both;
+            animation: -amp-start 8s steps(1, end) 0s 1 normal both
+        }
+
+        @-webkit-keyframes -amp-start {
+            from {
+                visibility: hidden
+            }
+
+            to {
+                visibility: visible
+            }
+        }
+
+        @-moz-keyframes -amp-start {
+            from {
+                visibility: hidden
+            }
+
+            to {
+                visibility: visible
+            }
+        }
+
+        @-ms-keyframes -amp-start {
+            from {
+                visibility: hidden
+            }
+
+            to {
+                visibility: visible
+            }
+        }
+
+        @-o-keyframes -amp-start {
+            from {
+                visibility: hidden
+            }
+
+            to {
+                visibility: visible
+            }
+        }
+
+        @keyframes -amp-start {
+            from {
+                visibility: hidden
+            }
+
+            to {
+                visibility: visible
+            }
+        }
+    </style><noscript>
+        <style amp-boilerplate>
+            body {
+                -webkit-animation: none;
+                -moz-animation: none;
+                -ms-animation: none;
+                animation: none
+            }
+        </style>
+    </noscript>
+
     <!-- Custom Styles -->
     <style amp-custom>
         * {
@@ -82,6 +140,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
@@ -90,15 +149,17 @@
             color: #1c1c1c;
             line-height: 1.6;
         }
+
         /* Header */
         .header {
             background: linear-gradient(135deg, #5706b4 0%, #490092 100%);
             padding: 10px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             position: sticky;
             top: 0;
             z-index: 100;
         }
+
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
@@ -107,8 +168,9 @@
             align-items: center;
             justify-content: space-between;
         }
+
         .menu-btn {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border: none;
             color: #fff;
             width: 36px;
@@ -120,6 +182,7 @@
             justify-content: center;
             font-size: 18px;
         }
+
         .logo {
             font-size: 20px;
             font-weight: 800;
@@ -128,8 +191,9 @@
             text-align: center;
             flex: 1;
         }
+
         .amp-badge {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: #fff;
             padding: 5px 10px;
             border-radius: 5px;
@@ -137,6 +201,7 @@
             font-weight: 700;
             letter-spacing: 1px;
         }
+
         /* Sidebar Menu */
         .sidebar {
             background: #fff;
@@ -144,6 +209,7 @@
             width: 300px;
             height: 100%;
         }
+
         .sidebar-header {
             background: linear-gradient(135deg, #5706b4 0%, #490092 100%);
             color: #fff;
@@ -151,15 +217,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+
         .sidebar-title {
             font-size: 18px;
             font-weight: 700;
             margin: 0;
         }
+
         .close-btn {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border: none;
             color: #fff;
             width: 32px;
@@ -173,20 +241,25 @@
             font-weight: 700;
             transition: background 0.2s;
         }
+
         .close-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
         }
+
         .menu-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+
         .menu-item {
             border-bottom: 1px solid #f0f0f0;
         }
+
         .menu-item:last-child {
             border-bottom: none;
         }
+
         .menu-item a {
             display: flex;
             align-items: center;
@@ -198,28 +271,33 @@
             font-size: 15px;
             transition: all 0.2s;
         }
+
         .menu-item a:hover {
             background: #f8f4ff;
             color: #5706b4;
             padding-left: 24px;
         }
+
         .menu-icon {
             font-size: 20px;
             width: 24px;
             text-align: center;
         }
+
         /* Container */
         .container {
             max-width: 720px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .article-header {
             background: #fff;
             padding: 30px 20px;
             margin-bottom: 20px;
             border-radius: 8px;
         }
+
         .article-category {
             display: inline-block;
             background: #FF6B00;
@@ -231,6 +309,7 @@
             text-transform: uppercase;
             margin-bottom: 15px;
         }
+
         .article-title {
             font-size: 28px;
             font-weight: 800;
@@ -238,6 +317,7 @@
             margin: 0 0 15px 0;
             color: #1c1c1c;
         }
+
         .article-meta {
             display: flex;
             gap: 15px;
@@ -245,18 +325,21 @@
             color: #666;
             margin-bottom: 15px;
         }
+
         .article-description {
             font-size: 16px;
             line-height: 1.6;
             color: #444;
             margin-bottom: 20px;
         }
+
         .article-image {
             width: 100%;
             height: auto;
             border-radius: 8px;
             margin-bottom: 20px;
         }
+
         .article-content {
             background: #fff;
             padding: 30px 20px;
@@ -268,33 +351,41 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+
         .article-content p {
             margin: 0 0 0 0;
             text-align: justify;
         }
-        .article-content p + p {
+
+        .article-content p+p {
             margin-top: 0;
         }
+
         .article-content h2 {
             font-size: 24px;
             font-weight: 700;
             margin: 25px 0 12px 0;
             color: #1c1c1c;
         }
+
         .article-content h3 {
             font-size: 20px;
             font-weight: 600;
             margin: 20px 0 10px 0;
             color: #1c1c1c;
         }
-        .article-content ul, .article-content ol {
+
+        .article-content ul,
+        .article-content ol {
             margin: 15px 0;
             padding-left: 30px;
         }
+
         .article-content li {
             margin-bottom: 8px;
             line-height: 1.7;
         }
+
         .article-content amp-iframe,
         .article-content amp-youtube,
         .article-content amp-instagram {
@@ -303,6 +394,7 @@
             overflow: hidden;
             display: block;
         }
+
         .article-content blockquote {
             margin: 20px 0;
             padding: 15px 20px;
@@ -311,10 +403,12 @@
             font-style: italic;
             color: #444;
         }
+
         .article-content strong {
             font-weight: 600;
             color: #1c1c1c;
         }
+
         .social-share {
             background: #fff;
             padding: 20px;
@@ -322,16 +416,19 @@
             border-radius: 8px;
             text-align: center;
         }
+
         .social-share h3 {
             font-size: 16px;
             margin: 0 0 15px 0;
         }
+
         .share-buttons {
             display: flex;
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
         }
+
         /* Related Articles */
         .related-section {
             background: #fff;
@@ -339,6 +436,7 @@
             border-radius: 8px;
             margin-top: 30px;
         }
+
         .related-title {
             font-size: 22px;
             font-weight: 700;
@@ -347,21 +445,25 @@
             padding-bottom: 12px;
             border-bottom: 3px solid #5706b4;
         }
+
         .related-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
         }
+
         .related-item {
             display: flex;
             gap: 15px;
             padding-bottom: 20px;
             border-bottom: 1px solid #f0f0f0;
         }
+
         .related-item:last-child {
             border-bottom: none;
             padding-bottom: 0;
         }
+
         .related-image {
             flex-shrink: 0;
             width: 120px;
@@ -369,9 +471,11 @@
             border-radius: 8px;
             overflow: hidden;
         }
+
         .related-content {
             flex: 1;
         }
+
         .related-category {
             display: inline-block;
             background: #5706b4;
@@ -383,6 +487,7 @@
             text-transform: uppercase;
             margin-bottom: 6px;
         }
+
         .related-item-title {
             font-size: 14px;
             font-weight: 600;
@@ -390,10 +495,12 @@
             color: #1c1c1c;
             margin-bottom: 6px;
         }
+
         .related-meta {
             font-size: 11px;
             color: #666;
         }
+
         .footer {
             background: #1c1c1c;
             color: #fff;
@@ -401,15 +508,18 @@
             text-align: center;
             margin-top: 40px;
         }
+
         .footer a {
             color: #FF6B00;
             text-decoration: none;
         }
+
         .footer p {
             margin: 8px 0;
         }
     </style>
 </head>
+
 <body>
     <!-- Sidebar Menu -->
     <amp-sidebar id="sidebar" layout="nodisplay" side="left">
@@ -471,85 +581,88 @@
     <!-- Article -->
     <div class="container">
         <article class="article-header">
-            <span class="article-category"><%= categoryName %></span>
-            <h1 class="article-title"><%= article.titulo %></h1>
+            <span class="article-category">
+                <%= categoryName %>
+            </span>
+            <h1 class="article-title">
+                <%= article.titulo %>
+            </h1>
             <div class="article-meta">
                 <span>📅 <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %></span>
                 <span>✍️ <%= article.autor %></span>
                 <span>👁️ <%= article.visualizacoes %> visualizações</span>
             </div>
-            <p class="article-description"><%= article.descricao %></p>
+            <p class="article-description">
+                <%= article.descricao %>
+            </p>
         </article>
 
         <% if (article.imagem) { %>
-        <amp-img 
-            src="<%= article.imagem %>" 
-            alt="<%= article.titulo %>"
-            width="680"
-            height="400"
-            layout="responsive"
-            class="article-image">
-        </amp-img>
-        <% } %>
+            <amp-img src="<%= article.imagem %>" alt="<%= article.titulo %>" width="680" height="400"
+                layout="responsive" class="article-image">
+            </amp-img>
+            <% } %>
 
-        <div class="article-content">
-            <%- article.conteudo %>
-        </div>
+                <div class="article-content">
+                    <%- article.conteudo %>
+                </div>
 
-        <!-- Social Share -->
-        <div class="social-share">
-            <h3>Compartilhe esta notícia</h3>
-            <div class="share-buttons">
-                <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
-                <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
-                <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
-                <amp-social-share type="email" width="48" height="48"></amp-social-share>
-            </div>
-        </div>
-
-        <!-- Related Articles -->
-        <% if (typeof related !== 'undefined' && related && related.length > 0) { %>
-        <div class="related-section">
-            <h2 class="related-title">📰 Notícias Relacionadas</h2>
-            <div class="related-grid">
-                <% related.forEach(item => { %>
-                <a href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>" class="related-item">
-                    <% if (item.imagem) { %>
-                    <div class="related-image">
-                        <amp-img 
-                            src="<%= item.imagem %>" 
-                            alt="<%= item.titulo %>"
-                            width="120"
-                            height="80"
-                            layout="responsive">
-                        </amp-img>
+                <!-- Social Share -->
+                <div class="social-share">
+                    <h3>Compartilhe esta notícia</h3>
+                    <div class="share-buttons">
+                        <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="email" width="48" height="48"></amp-social-share>
                     </div>
-                    <% } %>
-                    <div class="related-content">
-                        <span class="related-category"><%= categoryName %></span>
-                        <h3 class="related-item-title"><%= item.titulo %></h3>
-                        <div class="related-meta">
-                            📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
+                </div>
+
+                <!-- Related Articles -->
+                <% if (typeof related !=='undefined' && related && related.length> 0) { %>
+                    <div class="related-section">
+                        <h2 class="related-title">📰 Notícias Relacionadas</h2>
+                        <div class="related-grid">
+                            <% related.forEach(item=> { %>
+                                <a href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>"
+                                    class="related-item">
+                                    <% if (item.imagem) { %>
+                                        <div class="related-image">
+                                            <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" width="120"
+                                                height="80" layout="responsive">
+                                            </amp-img>
+                                        </div>
+                                        <% } %>
+                                            <div class="related-content">
+                                                <span class="related-category">
+                                                    <%= categoryName %>
+                                                </span>
+                                                <h3 class="related-item-title">
+                                                    <%= item.titulo %>
+                                                </h3>
+                                                <div class="related-meta">
+                                                    📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
+                                                </div>
+                                            </div>
+                                </a>
+                                <% }); %>
                         </div>
                     </div>
-                </a>
-                <% }); %>
-            </div>
-        </div>
-        <% } %>
+                    <% } %>
     </div>
 
     <!-- Footer -->
     <div class="footer">
         <p><strong>Obuxixo Gospel</strong> - Portal de Notícias Gospel</p>
         <p>&copy; <%= new Date().getFullYear() %> Todos os direitos reservados</p>
-        <p><a href="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">🌐 Ver versão completa do site</a></p>
+        <p><a href="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">🌐 Ver versão completa do site</a>
+        </p>
     </div>
 
     <!-- Google Analytics (se configurado) -->
     <% if (ampAnalyticsId) { %>
-    <amp-analytics type="googleanalytics">
-        <script type="application/json">
+        <amp-analytics type="googleanalytics">
+            <script type="application/json">
         {
             "vars": {
                 "account": "<%= ampAnalyticsId %>",
@@ -563,7 +676,8 @@
             }
         }
         </script>
-    </amp-analytics>
-    <% } %>
+        </amp-analytics>
+        <% } %>
 </body>
+
 </html>
