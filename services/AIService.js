@@ -716,37 +716,72 @@ class AIService {
         for (const item of response.data.items) {
           if (imagens.length >= 10) break;
 
-          // Preferir item.link (alta resolução) se for imagem válida
-          // Caso contrário, usar thumbnailLink como fallback
-          let imageUrl = item.link;
+          // Tentar múltiplas fontes de URL em ordem de prioridade
+          let imageUrl = null;
+          let isHighQuality = false;
           
-          // Validar se a URL parece ser uma imagem
-          // URLs do Google (gstatic.com, googleusercontent.com) são sempre válidas
-          const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) ||
-            imageUrl.includes('googleusercontent.com') ||
-            imageUrl.includes('ggpht.com') ||
-            imageUrl.includes('gstatic.com');
-
-          // Se item.link não for imagem válida, usar thumbnailLink
-          if (!isValidImageUrl && item.image?.thumbnailLink) {
+          // 1. Tentar item.link (URL original da imagem)
+          if (item.link) {
+            const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(item.link) ||
+              item.link.includes('googleusercontent.com') ||
+              item.link.includes('ggpht.com') ||
+              item.link.includes('gstatic.com');
+            
+            if (isValidImageUrl) {
+              imageUrl = item.link;
+              isHighQuality = true;
+            }
+          }
+          
+          // 2. Se não encontrou, tentar contextLink (URL da página que contém a imagem)
+          if (!imageUrl && item.image?.contextLink) {
+            const contextUrl = item.image.contextLink;
+            const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(contextUrl) ||
+              contextUrl.includes('googleusercontent.com') ||
+              contextUrl.includes('ggpht.com') ||
+              contextUrl.includes('gstatic.com');
+            
+            if (isValidImageUrl) {
+              imageUrl = contextUrl;
+              isHighQuality = true;
+            }
+          }
+          
+          // 3. Último recurso: usar thumbnailLink (baixa qualidade)
+          if (!imageUrl && item.image?.thumbnailLink) {
             imageUrl = item.image.thumbnailLink;
-            console.log('⚠️ Usando thumbnail como fallback para:', item.displayLink);
+            isHighQuality = false;
+            console.log('⚠️ Usando thumbnail (baixa qualidade) para:', item.displayLink);
           }
 
-          if (isValidImageUrl || item.image?.thumbnailLink) {
+          // Adicionar imagem se encontrou alguma URL válida
+          if (imageUrl) {
             imagens.push({
               url: imageUrl,
               thumbnail: item.image?.thumbnailLink || imageUrl,
               descricao: item.title || `Imagem relacionada a ${query}`,
-              fonte: item.displayLink || 'Google Images'
+              fonte: item.displayLink || 'Google Images',
+              highQuality: isHighQuality
             });
           } else {
-            console.log('⚠️ URL ignorada (não é imagem direta):', imageUrl.substring(0, 100));
+            console.log('⚠️ URL ignorada (nenhuma fonte válida):', item.displayLink);
           }
         }
       }
 
+      // Ordenar imagens: alta qualidade primeiro
+      imagens.sort((a, b) => {
+        if (a.highQuality && !b.highQuality) return -1;
+        if (!a.highQuality && b.highQuality) return 1;
+        return 0;
+      });
+
+      const highQualityCount = imagens.filter(img => img.highQuality).length;
+      const lowQualityCount = imagens.length - highQualityCount;
+      
       console.log('Imagens do Google encontradas:', imagens.length);
+      console.log(`  ✅ Alta qualidade: ${highQualityCount}`);
+      console.log(`  ⚠️ Baixa qualidade (thumbnails): ${lowQualityCount}`);
 
       if (imagens.length > 0) {
         return imagens;

@@ -553,10 +553,10 @@
 
                     <div class="media-actions" id="mediaActions" style="display: none;">
                         <button type="button" class="btn btn-danger" onclick="deleteSelectedMedia()">
-                            <i class="fas fa-trash"></i> Excluir Selecionados (<span id="selectedCount">0</span>)
+                            <i class="fas fa-trash"></i> Excluir (<span id="selectedCount">0</span>)
                         </button>
-                        <button type="button" class="btn btn-primary" onclick="insertSelectedMedia()">
-                            <i class="fas fa-plus"></i> Inserir no Conteúdo (<span id="selectedCountInsert">0</span>)
+                        <button type="button" class="btn btn-primary" onclick="useSelectedMedia()">
+                            <i class="fas fa-check"></i> Usar (<span id="selectedCountInsert">0</span>)
                         </button>
                     </div>
 
@@ -1568,7 +1568,7 @@
             }
 
             .content-header p {
-                font-size: 12px;
+                font-size: 13px;
             }
 
             .header-actions {
@@ -2714,16 +2714,24 @@
                 selectedMedia.splice(index, 1);
                 item.classList.remove('selected');
             } else {
+                // No modo biblioteca, permitir apenas uma seleção por vez para featured
+                if (mediaLibraryMode === 'featured') {
+                    // Desselecionar todos os outros
+                    selectedMedia.forEach(m => {
+                        const otherItem = document.querySelector(`.media-item[data-id="${m.id}"]`);
+                        if (otherItem) otherItem.classList.remove('selected');
+                    });
+                    selectedMedia = [];
+                }
+                
                 selectedMedia.push({ id, url, tipo });
                 item.classList.add('selected');
             }
 
             updateSelectedCount();
 
-            // Se modo 'featured' e selecionou 1, insere automaticamente
-            if (mediaLibraryMode === 'featured' && selectedMedia.length === 1) {
-                selectMediaForFeatured(url);
-            }
+            // Não insere mais automaticamente - usuário deve clicar em "Usar"
+            // Removido: selectMediaForFeatured(url)
 
             // Se modo 'ai-image' e é imagem, insere automaticamente na prévia da IA
             if (mediaLibraryMode === 'ai-image' && tipo === 'imagem') {
@@ -3061,15 +3069,23 @@
             }
         }
 
-        // Inserir mídia no editor Quill
-        function insertSelectedMedia() {
+        // Função para usar mídia selecionada (botão "Usar")
+        function useSelectedMedia() {
             if (selectedMedia.length === 0) {
                 alert('Nenhuma mídia selecionada');
                 return;
             }
 
-            console.log('insertSelectedMedia - modo:', mediaLibraryMode);
-            console.log('insertSelectedMedia - selectedMedia:', selectedMedia);
+            console.log('useSelectedMedia - modo:', mediaLibraryMode);
+            console.log('useSelectedMedia - selectedMedia:', selectedMedia);
+
+            // Se estiver no modo featured (imagem destaque), usar apenas a primeira selecionada
+            if (mediaLibraryMode === 'featured') {
+                if (selectedMedia.length > 0) {
+                    selectMediaForFeatured(selectedMedia[0].url);
+                    return;
+                }
+            }
 
             // Se estiver no modo ai-image, inserir na prévia da IA
             if (mediaLibraryMode === 'ai-image') {
@@ -3082,6 +3098,17 @@
                     alert('Por favor, selecione apenas uma imagem');
                     return;
                 }
+            }
+
+            // Modo content - inserir no editor Quill
+            insertSelectedMedia();
+        }
+
+        // Inserir mídia no editor Quill
+        function insertSelectedMedia() {
+            if (selectedMedia.length === 0) {
+                alert('Nenhuma mídia selecionada');
+                return;
             }
 
             // Modo normal - inserir no editor Quill
@@ -3106,10 +3133,6 @@
             closeMediaLibrary();
             alert(`${selectedMedia.length} arquivo(s) inserido(s) no conteúdo!`);
         }
-
-        // Botão separado para inserir mídia no conteúdo
-        // Os botões do Quill funcionam normalmente (URL manual)
-        // Use o botão "Selecionar da Biblioteca" para inserir do servidor
 
         // Remover imagem destaque
         function removeImage() {
