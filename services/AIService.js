@@ -712,16 +712,29 @@ class AIService {
       const imagens = [];
 
       if (response.data && response.data.items) {
-        response.data.items.forEach((item, index) => {
-          if (index < 10) {
+        for (const item of response.data.items) {
+          if (imagens.length >= 10) break;
+
+          // Preferir thumbnailLink que é sempre uma imagem válida
+          // O item.link pode ser uma página HTML
+          const imageUrl = item.image?.thumbnailLink || item.link;
+          
+          // Validar se a URL parece ser uma imagem
+          const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) || 
+                                  imageUrl.includes('googleusercontent.com') ||
+                                  imageUrl.includes('ggpht.com');
+
+          if (isValidImageUrl) {
             imagens.push({
-              url: item.link,
-              thumbnail: item.image?.thumbnailLink || item.link,
+              url: imageUrl,
+              thumbnail: item.image?.thumbnailLink || imageUrl,
               descricao: item.title || `Imagem relacionada a ${query}`,
               fonte: item.displayLink || 'Google Images'
             });
+          } else {
+            console.log('⚠️ URL ignorada (não é imagem direta):', imageUrl.substring(0, 100));
           }
-        });
+        }
       }
 
       console.log('Imagens do Google encontradas:', imagens.length);

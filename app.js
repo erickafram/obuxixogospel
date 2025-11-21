@@ -770,19 +770,30 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
 
     // Baixar a imagem
     const axios = require('axios');
+    console.log('📥 Tentando baixar imagem de:', url.substring(0, 100));
+    
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       timeout: 15000,
+      maxRedirects: 5,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8'
       }
     });
 
     // Verificar se é imagem
     const contentType = response.headers['content-type'];
+    console.log('📄 Content-Type recebido:', contentType);
+    
     if (!contentType || !contentType.startsWith('image/')) {
-      console.log('❌ URL não é imagem:', contentType);
-      return res.status(400).json({ success: false, error: 'A URL fornecida não é uma imagem válida' });
+      console.log('❌ URL não é imagem:', contentType, '| URL:', url.substring(0, 100));
+      return res.status(400).json({ 
+        success: false, 
+        error: 'A URL fornecida não é uma imagem válida',
+        contentType: contentType,
+        url: url.substring(0, 100)
+      });
     }
 
     // Gerar nome único (sempre WebP)
