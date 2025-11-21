@@ -720,9 +720,11 @@ class AIService {
           const imageUrl = item.image?.thumbnailLink || item.link;
           
           // Validar se a URL parece ser uma imagem
+          // URLs do Google (gstatic.com, googleusercontent.com) são sempre válidas
           const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) || 
                                   imageUrl.includes('googleusercontent.com') ||
-                                  imageUrl.includes('ggpht.com');
+                                  imageUrl.includes('ggpht.com') ||
+                                  imageUrl.includes('gstatic.com');
 
           if (isValidImageUrl) {
             imagens.push({
