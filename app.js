@@ -778,6 +778,13 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       }
     });
 
+    // Verificar se é imagem
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.log('❌ URL não é imagem:', contentType);
+      return res.status(400).json({ success: false, error: 'A URL fornecida não é uma imagem válida' });
+    }
+
     // Gerar nome único (sempre WebP)
     const tempFilename = `bing-${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
     const webpFilename = tempFilename.replace(/\.(jpg|jpeg|png)$/i, '.webp');

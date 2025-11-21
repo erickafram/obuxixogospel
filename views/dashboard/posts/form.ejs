@@ -111,8 +111,8 @@
                         <div class="card-body">
                             <div class="form-check">
                                 <label>
-                                    <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true" <%=(isEdit &&
-                                        article.publicado) || !isEdit ? 'checked' : '' %>
+                                    <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true"
+                                        <%=(isEdit && article.publicado) || !isEdit ? 'checked' : '' %>
                                     >
                                     <span>Publicar imediatamente</span>
                                 </label>
@@ -148,11 +148,13 @@
                                         return `${year}-${month}-${day}T${hours}:${minutes}`;
                                     })()
                                 %>">
-                                <div id="agendamentoStatus" style="margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
+                                <div id="agendamentoStatus"
+                                    style="margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
                                     <i class="fas fa-clock"></i> <span id="agendamentoTexto"></span>
                                 </div>
                                 <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
-                                    <i class="fas fa-info-circle"></i> <strong>Agendamento:</strong> Escolha uma data/hora futura para agendar a publicação automática
+                                    <i class="fas fa-info-circle"></i> <strong>Agendamento:</strong> Escolha uma
+                                    data/hora futura para agendar a publicação automática
                                 </small>
                             </div>
 
@@ -618,7 +620,8 @@
                         </div>
                         <div id="googleSearchResults" class="bing-results-grid">
                             <div class="bing-placeholder">
-                                <i class="fab fa-google" style="font-size: 48px; color: #4285F4; margin-bottom: 16px;"></i>
+                                <i class="fab fa-google"
+                                    style="font-size: 48px; color: #4285F4; margin-bottom: 16px;"></i>
                                 <p style="color: #666;">Digite uma palavra-chave e clique em "Buscar Imagens"</p>
                             </div>
                         </div>
@@ -2328,7 +2331,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <%-JSON.stringify(article.conteudo)%>;
+                let conteudoCarregado = <% -JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
@@ -2394,30 +2397,30 @@
             const statusDiv = document.getElementById('agendamentoStatus');
             const statusTexto = document.getElementById('agendamentoTexto');
             const publicadoCheckbox = document.getElementById('publicadoCheckbox');
-            
+
             if (!dataInput || !statusDiv) return;
-            
+
             const dataSelecionada = new Date(dataInput.value);
             const agora = new Date();
-            
+
             if (dataSelecionada > agora) {
                 // Data futura - agendamento
                 const diff = dataSelecionada - agora;
                 const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                
+
                 let mensagem = 'Publicação agendada para ';
                 if (dias > 0) mensagem += `${dias} dia${dias > 1 ? 's' : ''} `;
                 if (horas > 0) mensagem += `${horas}h `;
                 if (minutos > 0 && dias === 0) mensagem += `${minutos}min `;
-                
+
                 statusTexto.textContent = mensagem.trim();
                 statusDiv.style.display = 'block';
                 statusDiv.style.background = '#FFF3CD';
                 statusDiv.style.border = '1px solid #FFE69C';
                 statusDiv.style.color = '#856404';
-                
+
                 // Desmarcar "Publicar imediatamente" quando agendar
                 if (publicadoCheckbox) {
                     publicadoCheckbox.checked = false;
@@ -2429,7 +2432,7 @@
                 statusDiv.style.background = '#D4EDDA';
                 statusDiv.style.border = '1px solid #C3E6CB';
                 statusDiv.style.color = '#155724';
-                
+
                 // Marcar "Publicar imediatamente" quando data for presente/passada
                 if (publicadoCheckbox) {
                     publicadoCheckbox.checked = true;
@@ -2439,9 +2442,9 @@
 
         // Inicializar quando o DOM estiver pronto
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 initQuill();
-                
+
                 // Monitorar mudanças no campo de data
                 const dataInput = document.getElementById('dataPublicacao');
                 if (dataInput) {
@@ -2454,7 +2457,7 @@
         } else {
             // DOM já está pronto
             initQuill();
-            
+
             // Monitorar mudanças no campo de data
             const dataInput = document.getElementById('dataPublicacao');
             if (dataInput) {
@@ -3011,6 +3014,34 @@
         }
 
         // Deletar mídia selecionada
+        function selectMedia(url) {
+            console.log('selectMedia chamada com URL:', url);
+            // Tenta encontrar o item na biblioteca carregada
+            const item = mediaLibraryData.find(m => m.url === url);
+
+            if (item) {
+                console.log('Item encontrado na biblioteca:', item);
+                // Se já estiver selecionado, não faz nada
+                const isSelected = selectedMedia.some(m => m.id === item.id);
+                if (!isSelected) {
+                    toggleMediaSelection(item.id, item.url, item.tipo);
+                }
+            } else {
+                console.log('Item não encontrado na biblioteca local, forçando seleção direta...');
+                // Fallback: Selecionar diretamente baseado no modo atual
+                if (mediaLibraryMode === 'featured') {
+                    selectMediaForFeatured(url);
+                } else if (mediaLibraryMode === 'ai-image') {
+                    selectMediaForAI(url);
+                } else {
+                    // Modo content ou outro
+                    // Adicionar mock ao selectedMedia para insertSelectedMedia funcionar
+                    selectedMedia.push({ id: Date.now(), url: url, tipo: 'imagem' }); // Assumindo imagem
+                    updateSelectedCount();
+                }
+            }
+        }
+
         async function deleteSelectedMedia() {
             if (selectedMedia.length === 0) return;
 
