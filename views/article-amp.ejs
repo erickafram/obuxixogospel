@@ -40,23 +40,35 @@
         "@context": "https://schema.org",
         "@type": "NewsArticle",
         "headline": "<%= article.titulo %>",
+        "alternativeHeadline": "<%= article.descricao %>",
         "description": "<%= article.descricao %>",
-        "image": "<%= article.imagem %>",
-        "datePublished": "<%= article.dataPublicacao %>",
-        "dateModified": "<%= article.updatedAt %>",
+        "image": [
+            "<%= article.imagem %>"
+        ],
+        "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
+        "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "author": {
             "@type": "Person",
             "name": "<%= article.autor %>",
-            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\\s+/g, '-') %>"
+            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\s+/g, '-') %>"
         },
         "publisher": {
             "@type": "Organization",
             "name": "Obuxixo Gospel",
+            "url": "<%= siteUrl %>",
             "logo": {
                 "@type": "ImageObject",
-                "url": "<%= siteUrl %>/images/logo.png"
+                "url": "<%= siteUrl %>/images/logo.png",
+                "width": 600,
+                "height": 60
             }
-        }
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>"
+        },
+        "articleSection": "<%= categoryName %>",
+        "isAccessibleForFree": true
     }
     </script>
     
