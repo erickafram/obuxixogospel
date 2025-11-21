@@ -3,6 +3,15 @@ const cheerio = require('cheerio');
 const Parser = require('rss-parser');
 const fetch = require('node-fetch');
 const { SystemConfig } = require('../models');
+const fs = require('fs');
+const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const FormData = require('form-data');
+const { igApi } = require('insta-fetcher');
+
+// Configurar caminho do ffmpeg
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 class AIService {
   /**
@@ -210,203 +219,266 @@ class AIService {
     try {
       console.log('Extraindo conteúdo do Instagram:', url);
 
-      // Método 1: Usar API pública do Instagram através de embed
+      let textoLegenda = '';
+      let textoTranscricao = '';
+
+      // 1. Tentar extrair texto da postagem (Legenda) via oEmbed ou Proxy
       const postId = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[1] || url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/)?.[2];
 
       if (postId) {
-        // Método 1A: Tentar oEmbed API
+        // Método 1A: Tentar oEmbed API (Oficial e rápido para dados públicos)
         try {
           console.log('Tentando oEmbed API para post:', postId);
           const cleanUrl = `https://www.instagram.com/p/${postId}/`;
           const oembedUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}&omitscript=true`;
+
           const oembedResponse = await axios.get(oembedUrl, {
-            timeout: 10000,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; bot/1.0)'
-            }
+            timeout: 5000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; bot/1.0)' }
           });
 
           if (oembedResponse.data && oembedResponse.data.title) {
-            let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-            conteudo += `TEXTO DA POSTAGEM:\n${oembedResponse.data.title}\n\n`;
-
+            textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${oembedResponse.data.title}\n\n`;
             if (oembedResponse.data.author_name) {
-              conteudo += `AUTOR: ${oembedResponse.data.author_name}\n\n`;
+              textoLegenda += `AUTOR: ${oembedResponse.data.author_name}\n\n`;
             }
-
-            console.log('✅ Conteúdo extraído via oEmbed:', conteudo.length, 'caracteres');
-            return conteudo;
+            console.log('✅ Legenda extraída via oEmbed');
           }
         } catch (oembedError) {
-          console.log('❌ oEmbed falhou:', oembedError.message);
+          console.log('⚠️ oEmbed falhou, tentando próximos métodos...');
         }
 
-        // Método 1B: Tentar através de proxy público (allorigins.win)
-        try {
-          console.log('Tentando através de proxy AllOrigins');
-          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-          const proxyResponse = await axios.get(proxyUrl, { timeout: 15000 });
-
-          if (proxyResponse.data && proxyResponse.data.contents) {
-            const $ = cheerio.load(proxyResponse.data.contents);
-            let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-
-            // Procurar por meta tags
-            const description = $('meta[property="og:description"]').attr('content') ||
-              $('meta[name="description"]').attr('content');
-
-            if (description && description.length > 50) {
-              conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
-              console.log('✅ Conteúdo extraído via proxy:', conteudo.length, 'caracteres');
-              return conteudo;
-            }
-          }
-        } catch (proxyError) {
-          console.log('❌ Proxy falhou:', proxyError.message);
-        }
-
-        // Método 1C: Tentar através de outro proxy (corsproxy.io)
-        try {
-          console.log('Tentando através de proxy CORS');
-          const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-          const corsResponse = await axios.get(corsProxyUrl, {
-            timeout: 15000,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-
-          const $ = cheerio.load(corsResponse.data);
-          let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-
-          // Procurar por JSON embutido
-          const scripts = $('script').toArray();
-          for (const script of scripts) {
-            const scriptContent = $(script).html();
-            if (scriptContent && scriptContent.includes('window._sharedData')) {
-              try {
-                const jsonMatch = scriptContent.match(/window\._sharedData\s*=\s*({.+?});/);
-                if (jsonMatch) {
-                  const sharedData = JSON.parse(jsonMatch[1]);
-                  const post = sharedData.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-
-                  if (post && post.edge_media_to_caption?.edges?.[0]?.node?.text) {
-                    conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
-
-                    if (post.owner?.username) {
-                      conteudo += `AUTOR: @${post.owner.username}\n\n`;
-                    }
-
-                    console.log('✅ Conteúdo extraído via CORS proxy:', conteudo.length, 'caracteres');
-                    return conteudo.substring(0, 3000);
-                  }
-                }
-              } catch (e) {
-                // Continuar tentando
-              }
-            }
-          }
-
-          // Tentar meta tags como fallback
-          const description = $('meta[property="og:description"]').attr('content');
-          if (description && description.length > 50) {
-            conteudo += `TEXTO DA POSTAGEM:\n${description}\n\n`;
-            console.log('✅ Conteúdo extraído via meta tags (CORS):', conteudo.length, 'caracteres');
-            return conteudo;
-          }
-        } catch (corsError) {
-          console.log('❌ CORS proxy falhou:', corsError.message);
-        }
-      }
-
-      // Método 2: Tentar adicionar ?__a=1 ao URL para obter JSON
-      try {
-        console.log('Tentando obter JSON direto do Instagram');
-        const jsonUrl = url.includes('?') ? `${url}&__a=1` : `${url}?__a=1`;
-
-        const jsonResponse = await axios.get(jsonUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
-            'Accept': '*/*',
-            'Accept-Language': 'pt-BR,pt;q=0.9'
-          },
-          timeout: 15000
-        });
-
-        if (jsonResponse.data && jsonResponse.data.graphql) {
-          const post = jsonResponse.data.graphql.shortcode_media;
-          let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-
-          if (post.edge_media_to_caption?.edges?.[0]?.node?.text) {
-            conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
-          }
-
-          if (post.owner?.username) {
-            conteudo += `AUTOR: @${post.owner.username}\n\n`;
-          }
-
-          console.log('✅ Conteúdo extraído via JSON:', conteudo.length, 'caracteres');
-          return conteudo.substring(0, 3000);
-        }
-      } catch (jsonError) {
-        console.log('❌ Método JSON falhou:', jsonError.message);
-      }
-
-      // Método 3: Scraping HTML tradicional
-      const response = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Cookie': 'sessionid=; csrftoken='
-        },
-        timeout: 15000
-      });
-
-      const $ = cheerio.load(response.data);
-      let conteudo = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
-
-      // Procurar por JSON embutido no HTML
-      const scripts = $('script').toArray();
-      for (const script of scripts) {
-        const scriptContent = $(script).html();
-        if (scriptContent && scriptContent.includes('window._sharedData')) {
+        // Método 1B: Tentar via instagram-url-direct
+        if (!textoLegenda) {
           try {
-            const jsonMatch = scriptContent.match(/window\._sharedData\s*=\s*({.+?});/);
-            if (jsonMatch) {
-              const sharedData = JSON.parse(jsonMatch[1]);
-              const post = sharedData.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
+            console.log('Tentando extrair legenda via instagram-url-direct...');
+            let instagramGetUrl;
+            try {
+              const lib = require("instagram-url-direct");
+              instagramGetUrl = lib.instagramGetUrl;
+            } catch (e) { }
 
-              if (post) {
-                if (post.edge_media_to_caption?.edges?.[0]?.node?.text) {
-                  conteudo += `TEXTO DA POSTAGEM:\n${post.edge_media_to_caption.edges[0].node.text}\n\n`;
-                }
-
-                if (post.owner?.username) {
-                  conteudo += `AUTOR: @${post.owner.username}\n\n`;
-                }
-
-                console.log('Conteúdo extraído via _sharedData:', conteudo.length, 'caracteres');
-                return conteudo.substring(0, 3000);
+            if (instagramGetUrl) {
+              const links = await instagramGetUrl(url);
+              // Verificar se há caption nos dados retornados
+              if (links.caption) {
+                textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${links.caption}\n\n`;
+                console.log('✅ Legenda extraída via instagram-url-direct');
               }
             }
           } catch (e) {
-            // Continuar tentando outros métodos
+            console.log('⚠️ Falha ao extrair legenda via instagram-url-direct:', e.message);
+          }
+        }
+
+        // Método 1C: Tentar via insta-fetcher
+        if (!textoLegenda) {
+          try {
+            console.log('Tentando extrair legenda via insta-fetcher...');
+            const ig = new igApi();
+            const postData = await ig.fetchPost(url);
+
+            if (postData && (postData.caption || postData.description)) {
+              const caption = postData.caption || postData.description;
+              textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
+              if (postData.username || postData.owner?.username) {
+                const author = postData.username || postData.owner?.username;
+                textoLegenda += `AUTOR: ${author}\n\n`;
+              }
+              console.log('✅ Legenda extraída via insta-fetcher');
+            }
+          } catch (e) {
+            console.log('⚠️ Falha ao extrair legenda via insta-fetcher:', e.message);
+          }
+        }
+
+        // Método 1D: Scraping direto do HTML do Instagram
+        if (!textoLegenda) {
+          try {
+            console.log('Tentando scraping direto do HTML...');
+            const response = await axios.get(url, {
+              timeout: 15000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Cache-Control': 'max-age=0'
+              }
+            });
+
+            const html = response.data;
+            
+            // Método 1: Extrair do JSON embutido no HTML
+            const scriptRegex = /<script type="application\/ld\+json">(.*?)<\/script>/gs;
+            const scriptMatches = html.matchAll(scriptRegex);
+            
+            for (const match of scriptMatches) {
+              try {
+                const jsonData = JSON.parse(match[1]);
+                if (jsonData.articleBody) {
+                  textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${jsonData.articleBody}\n\n`;
+                  console.log('✅ Legenda extraída via JSON-LD');
+                  break;
+                }
+              } catch (e) {
+                // Ignorar erros de parse
+              }
+            }
+
+            // Método 2: Extrair do meta tag og:description
+            if (!textoLegenda) {
+              const $ = cheerio.load(html);
+              const ogDescription = $('meta[property="og:description"]').attr('content');
+              const twitterDescription = $('meta[name="twitter:description"]').attr('content');
+              const description = ogDescription || twitterDescription;
+
+              if (description && description.length > 20) {
+                // Remover contadores de likes/comentários que vêm no og:description
+                const cleanDescription = description.replace(/^\d+\s+(Likes|Comments|Followers|Following),?\s*/i, '');
+                if (cleanDescription.length > 10) {
+                  textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${cleanDescription}\n\n`;
+                  console.log('✅ Legenda extraída via meta tags');
+                }
+              }
+            }
+
+            // Método 3: Extrair do window._sharedData
+            if (!textoLegenda) {
+              const sharedDataMatch = html.match(/window\._sharedData\s*=\s*({.+?});/);
+              if (sharedDataMatch) {
+                try {
+                  const sharedData = JSON.parse(sharedDataMatch[1]);
+                  const postData = sharedData?.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
+                  
+                  if (postData?.edge_media_to_caption?.edges?.[0]?.node?.text) {
+                    const caption = postData.edge_media_to_caption.edges[0].node.text;
+                    textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
+                    console.log('✅ Legenda extraída via _sharedData');
+                  }
+                } catch (e) {
+                  console.log('⚠️ Erro ao parsear _sharedData:', e.message);
+                }
+              }
+            }
+
+          } catch (scrapingError) {
+            console.log('❌ Scraping direto falhou:', scrapingError.message);
+          }
+        }
+
+        // Método 1E: Tentar API pública Instagram Downloader
+        if (!textoLegenda) {
+          try {
+            console.log('Tentando API pública Instagram Downloader...');
+            const apiUrl = `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${encodeURIComponent(url)}`;
+            
+            const apiResponse = await axios.get(apiUrl, {
+              timeout: 10000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0'
+              }
+            });
+
+            if (apiResponse.data && apiResponse.data.data) {
+              const postData = apiResponse.data.data;
+              const caption = postData.caption?.text || postData.edge_media_to_caption?.edges?.[0]?.node?.text;
+              
+              if (caption && caption.length > 10) {
+                textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
+                if (postData.owner?.username) {
+                  textoLegenda += `AUTOR: ${postData.owner.username}\n\n`;
+                }
+                console.log('✅ Legenda extraída via API pública');
+              }
+            }
+          } catch (apiError) {
+            console.log('❌ API pública falhou:', apiError.message);
+          }
+        }
+
+        // Método 1F: Tentar proxy (allorigins) como último recurso
+        if (!textoLegenda) {
+          try {
+            console.log('Tentando proxy allorigins...');
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+            const proxyResponse = await axios.get(proxyUrl, { timeout: 15000 });
+
+            if (proxyResponse.data && proxyResponse.data.contents) {
+              const $ = cheerio.load(proxyResponse.data.contents);
+              const description = $('meta[property="og:description"]').attr('content') ||
+                $('meta[name="description"]').attr('content');
+
+              if (description && description.length > 20) {
+                const cleanDescription = description.replace(/^\d+\s+(Likes|Comments|Followers|Following),?\s*/i, '');
+                if (cleanDescription.length > 10) {
+                  textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${cleanDescription}\n\n`;
+                  console.log('✅ Legenda extraída via proxy');
+                }
+              }
+            }
+          } catch (proxyError) {
+            console.log('❌ Proxy falhou:', proxyError.message);
+          }
+        }
+
+        // Método 1G: Tentar extrair do próprio objeto retornado pelo instagram-url-direct (dados completos)
+        if (!textoLegenda) {
+          try {
+            console.log('Tentando extrair dados completos via instagram-url-direct...');
+            const lib = require("instagram-url-direct");
+            const result = await lib.instagramGetUrl(url);
+            
+            // Tentar diferentes campos onde a legenda pode estar
+            const possibleCaptions = [
+              result.caption,
+              result.edge_media_to_caption?.edges?.[0]?.node?.text,
+              result.title,
+              result.description
+            ];
+
+            for (const caption of possibleCaptions) {
+              if (caption && typeof caption === 'string' && caption.length > 10) {
+                textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
+                console.log('✅ Legenda extraída via instagram-url-direct (dados completos)');
+                break;
+              }
+            }
+          } catch (e) {
+            console.log('❌ Extração completa via instagram-url-direct falhou:', e.message);
           }
         }
       }
 
-      // Método 4: Extrair de meta tags
-      const description = $('meta[property="og:description"]').attr('content') ||
-        $('meta[name="description"]').attr('content');
-      if (description && description.length > 50) {
-        conteudo += `DESCRIÇÃO:\n${description}\n\n`;
-        console.log('Conteúdo extraído via meta tags:', conteudo.length, 'caracteres');
-        return conteudo;
+      // 2. Tentar transcrever vídeo (Reels ou Posts de vídeo)
+      if (url.includes('/reel/') || url.includes('/reels/') || url.includes('/p/')) {
+        try {
+          console.log('🎥 Verificando se há vídeo para transcrição...');
+          const transcricao = await this.processarVideoInstagram(url);
+          if (transcricao) {
+            textoTranscricao = `📱 CONTEÚDO DO VÍDEO (TRANSCRITO):\n\n${transcricao}\n\n`;
+          }
+        } catch (e) {
+          console.log('⚠️ Não foi possível transcrever vídeo (pode ser apenas foto):', e.message);
+        }
       }
 
-      console.log('Nenhum método funcionou, retornando mensagem de erro');
-      return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
+      // 3. Combinar resultados
+      let conteudoFinal = '\n\n📱 CONTEÚDO DO INSTAGRAM:\n\n';
+
+      if (textoLegenda) conteudoFinal += textoLegenda;
+      if (textoTranscricao) conteudoFinal += textoTranscricao;
+
+      if (!textoLegenda && !textoTranscricao) {
+        return '\n\n📱 Não foi possível extrair o conteúdo automaticamente do Instagram.\n\nPor favor, copie o texto da postagem e cole no campo "Cole o Texto da Postagem".\n';
+      }
+
+      return conteudoFinal;
 
     } catch (error) {
       console.error('Erro ao extrair Instagram:', error.message);
@@ -590,13 +662,48 @@ class AIService {
    */
   static async buscarImagensGoogle(query) {
     try {
-      console.log('Buscando imagens no Google para:', query);
+      // Limpar e preparar a query
+      let cleanQuery = query
+        .replace(/TEXTO DA POSTAGEM \(LEGENDA\):/gi, '')
+        .replace(/CONTEÚDO DO VÍDEO \(TRANSCRITO\):/gi, '')
+        .replace(/📱/g, '')
+        .replace(/AUTOR:/gi, '')
+        .replace(/-\s*\w+\s+no\s+\w+\s+\d+,\s+\d{4}:/gi, '') // Remove "- username no Month DD, YYYY:"
+        .replace(/\d+\s+(Likes|Comments|Followers|Following)/gi, '')
+        .replace(/@\w+/g, '')
+        .replace(/https?:\/\/[^\s]+/g, '')
+        .replace(/["""]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Limitar a 100 caracteres (limite seguro para Google Custom Search)
+      if (cleanQuery.length > 100) {
+        cleanQuery = cleanQuery.substring(0, 100).trim();
+      }
+
+      // Se ficou muito curto ou vazio, usar fallback genérico
+      if (cleanQuery.length < 5) {
+        cleanQuery = 'igreja gospel evangélico';
+      }
+
+      // Adicionar contexto gospel se não tiver palavras-chave relacionadas
+      const temContextoGospel = /igreja|pastor|gospel|evangélic|cristã|culto|assembleia|deus|jesus|bíblia/i.test(cleanQuery);
+      if (!temContextoGospel && cleanQuery.length < 80) {
+        cleanQuery = cleanQuery + ' gospel';
+      }
+
+      console.log('Query limpa para Google:', cleanQuery.substring(0, 100));
 
       // Configurar credenciais do Google Custom Search
-      const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || 'AIzaSyBpOqTvPxzKwYLDqpfFkHvCLqKvPDVEaOw';
-      const GOOGLE_CX = process.env.GOOGLE_CX || '64e6e5a8e0f4c4a84';
+      const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+      const GOOGLE_CX = process.env.GOOGLE_CX;
 
-      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}&searchType=image&num=10&imgSize=large&safe=active`;
+      if (!GOOGLE_API_KEY || !GOOGLE_CX) {
+        console.log('⚠️ Google API não configurada, usando fallback Picsum');
+        throw new Error('GOOGLE_API_KEY ou GOOGLE_CX não configuradas');
+      }
+
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&imgSize=large&safe=active`;
 
       const response = await axios.get(searchUrl, {
         timeout: 15000
@@ -741,7 +848,7 @@ class AIService {
     const palavrasParaImagem = textoLimpo.substring(0, 300);
     console.log('Palavras-chave para busca de imagens:', palavrasParaImagem.substring(0, 100) + '...');
 
-    const imagensSugeridas = await this.buscarImagensPexels(palavrasParaImagem);
+    const imagensSugeridas = await this.buscarImagensGoogle(palavrasParaImagem);
 
     const prompt = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
     
@@ -847,9 +954,9 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
       const palavrasChave = this.extrairPalavrasChave(resultado.titulo);
       console.log('🔍 Título completo:', resultado.titulo);
       console.log('🔑 Palavras-chave extraídas:', palavrasChave);
-      console.log('📸 Buscando imagens no Bing...');
+      console.log('📸 Buscando imagens no Google...');
 
-      const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+      const imagensRelevantes = await this.buscarImagensGoogle(palavrasChave);
 
       // Adicionar imagens sugeridas (prioriza as baseadas no título)
       resultado.imagensSugeridas = imagensRelevantes.length > 0 ? imagensRelevantes : imagensSugeridas;
@@ -869,7 +976,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
         const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
         console.log('🔍 Título extraído:', tituloMatch[1]);
         console.log('🔑 Palavras-chave:', palavrasChave);
-        const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+        const imagensRelevantes = await this.buscarImagensGoogle(palavrasChave);
 
         return {
           titulo: tituloMatch[1],
@@ -930,9 +1037,9 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 
       // Buscar imagens sugeridas
       console.log('Buscando imagens sugeridas:', tema);
-      const imagensPixabay = await this.buscarImagensPexels(tema);
-      if (imagensPixabay.length > 0) {
-        imagensSugeridas = imagensPixabay;
+      const imagensGoogle = await this.buscarImagensGoogle(tema);
+      if (imagensGoogle.length > 0) {
+        imagensSugeridas = imagensGoogle;
       } else {
         // Fallback para Unsplash
         const imagensUnsplash = await this.buscarImagensSugeridas(tema);
@@ -993,9 +1100,9 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 
           console.log('Palavras-chave para busca de imagens:', palavrasParaImagem.substring(0, 100) + '...');
 
-          const imagensBing = await this.buscarImagensPexels(palavrasParaImagem);
-          if (imagensBing.length > 0) {
-            imagensSugeridas = imagensBing;
+          const imagensGoogle = await this.buscarImagensGoogle(palavrasParaImagem);
+          if (imagensGoogle.length > 0) {
+            imagensSugeridas = imagensGoogle;
           }
 
           // Se extraiu imagem do artigo, adicionar como primeira sugestão
@@ -1194,9 +1301,9 @@ Retorne APENAS um objeto JSON válido:
             const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
             console.log('🔍 Título completo:', parsed.titulo);
             console.log('🔑 Palavras-chave extraídas:', palavrasChave);
-            console.log('📸 Buscando imagens no Bing...');
+            console.log('📸 Buscando imagens no Google...');
 
-            const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+            const imagensRelevantes = await this.buscarImagensGoogle(palavrasChave);
 
             // Adicionar embed do Instagram se houver link de referência
             let conteudoFinal = parsed.conteudo;
@@ -1251,9 +1358,9 @@ Retorne APENAS um objeto JSON válido:
               const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
               console.log('🔍 Título completo (2ª tentativa):', parsed.titulo);
               console.log('🔑 Palavras-chave extraídas:', palavrasChave);
-              console.log('📸 Buscando imagens no Bing...');
+              console.log('📸 Buscando imagens no Google...');
 
-              const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+              const imagensRelevantes = await this.buscarImagensGoogle(palavrasChave);
 
               // Adicionar embed do Instagram se houver link de referência
               let conteudoFinal = parsed.conteudo;
@@ -1302,9 +1409,9 @@ Retorne APENAS um objeto JSON válido:
                 const palavrasChave = this.extrairPalavrasChave(tituloMatch[1]);
                 console.log('🔍 Título extraído manualmente:', tituloMatch[1]);
                 console.log('🔑 Palavras-chave:', palavrasChave);
-                console.log('📸 Buscando imagens no Bing...');
+                console.log('📸 Buscando imagens no Google...');
 
-                const imagensRelevantes = await this.buscarImagensPexels(palavrasChave);
+                const imagensRelevantes = await this.buscarImagensGoogle(palavrasChave);
 
                 return {
                   titulo: tituloMatch[1],
@@ -1867,9 +1974,9 @@ Retorne APENAS um objeto JSON válido:
         const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
         console.log('🔍 Título:', parsed.titulo);
         console.log('🔑 Palavras-chave extraídas:', palavrasChave);
-        console.log('📸 Buscando imagens no Bing...');
+        console.log('📸 Buscando imagens no Google...');
 
-        const imagensSugeridas = await this.buscarImagensPexels(palavrasChave);
+        const imagensSugeridas = await this.buscarImagensGoogle(palavrasChave);
 
         console.log('✅ Matéria gerada com sucesso no estilo G1');
 
@@ -1895,7 +2002,7 @@ Retorne APENAS um objeto JSON válido:
 
           // Buscar imagens
           const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
-          const imagensSugeridas = await this.buscarImagensPexels(palavrasChave);
+          const imagensSugeridas = await this.buscarImagensGoogle(palavrasChave);
 
           return {
             titulo: parsed.titulo,
@@ -2034,6 +2141,271 @@ RETORNE APENAS O HTML (sem título ou descrição):`
       return conteudoLimpo;
     } catch (error) {
       console.error('❌ Erro ao reescrever matéria:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Baixa vídeo do Instagram temporariamente
+   */
+  static async baixarVideoInstagram(url) {
+    try {
+      console.log('📥 Baixando vídeo do Instagram:', url);
+      const tempDir = path.join(__dirname, '../temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      const timestamp = Date.now();
+      const videoPath = path.join(tempDir, `instagram_${timestamp}.mp4`);
+
+      // Método 1: instagram-url-direct (Nova biblioteca robusta)
+      try {
+        console.log('🔄 Tentando método 1: instagram-url-direct');
+        // Lazy load da biblioteca para evitar erro se não estiver instalada
+        let instagramLib;
+        try {
+          instagramLib = require("instagram-url-direct");
+        } catch (e) {
+          console.log('⚠️ Biblioteca instagram-url-direct não encontrada');
+        }
+
+        if (instagramLib && instagramLib.instagramGetUrl) {
+          const links = await instagramLib.instagramGetUrl(url);
+
+          if (links.url_list && links.url_list.length > 0) {
+            const videoUrl = links.url_list[0];
+            console.log('✅ URL do vídeo encontrada via instagram-url-direct');
+
+            const videoResponse = await axios.get(videoUrl, {
+              responseType: 'arraybuffer',
+              timeout: 60000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            });
+
+            fs.writeFileSync(videoPath, videoResponse.data);
+            console.log('✅ Vídeo salvo com sucesso:', videoPath);
+            return videoPath;
+          }
+        }
+      } catch (e) {
+        console.log('❌ Método 1 (instagram-url-direct) falhou:', e.message);
+      }
+
+      // Método 2: API Cobalt (Fallback)
+      try {
+        console.log('🔄 Tentando método 2: Cobalt API');
+        const cobaltEndpoints = [
+          'https://api.cobalt.tools/api/json',
+          'https://cobalt.api.wuk.sh/api/json',
+          'https://co.wuk.sh/api/json'
+        ];
+
+        for (const endpoint of cobaltEndpoints) {
+          try {
+            const cobaltResponse = await axios.post(endpoint, {
+              url: url,
+              vCodec: 'h264',
+              vQuality: '720',
+              aFormat: 'mp3',
+              filenamePattern: 'basic'
+            }, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              },
+              timeout: 15000
+            });
+
+            if (cobaltResponse.data && cobaltResponse.data.url) {
+              console.log('✅ URL do vídeo obtida via Cobalt');
+              const videoUrl = cobaltResponse.data.url;
+
+              const videoResponse = await axios.get(videoUrl, {
+                responseType: 'arraybuffer',
+                timeout: 60000
+              });
+
+              fs.writeFileSync(videoPath, videoResponse.data);
+              console.log('✅ Vídeo salvo via Cobalt:', videoPath);
+              return videoPath;
+            }
+          } catch (innerErr) {
+            // Silently fail for each endpoint
+          }
+        }
+      } catch (e) {
+        console.log('❌ Método 2 (Cobalt) falhou:', e.message);
+      }
+
+      // Método 3: Insta-fetcher (Fallback antigo)
+      try {
+        console.log('🔄 Tentando método 3: insta-fetcher');
+        const ig = new igApi();
+        const postData = await ig.fetchPost(url);
+
+        let videoUrl = null;
+        if (postData.links) {
+          for (const link of postData.links) {
+            if (link.type === 'video' || link.url.includes('.mp4')) {
+              videoUrl = link.url;
+              break;
+            }
+          }
+        }
+
+        if (videoUrl) {
+          const videoResponse = await axios.get(videoUrl, {
+            responseType: 'arraybuffer',
+            timeout: 60000
+          });
+          fs.writeFileSync(videoPath, videoResponse.data);
+          console.log('✅ Vídeo salvo via insta-fetcher:', videoPath);
+          return videoPath;
+        }
+      } catch (e) {
+        console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
+      }
+
+      throw new Error('Não foi possível baixar o vídeo por nenhum método.');
+    } catch (error) {
+      console.error('❌ Erro fatal ao baixar vídeo:', error.message);
+      throw new Error('Não foi possível baixar o vídeo do Instagram. Por favor, cole o texto manualmente.');
+    }
+  }
+
+  /**
+   * Extrai áudio do vídeo usando ffmpeg
+   */
+  static async extrairAudioDoVideo(videoPath) {
+    return new Promise((resolve, reject) => {
+      const audioPath = videoPath.replace('.mp4', '.mp3');
+      console.log('🔊 Extraindo áudio para:', audioPath);
+
+      ffmpeg(videoPath)
+        .toFormat('mp3')
+        .on('end', () => {
+          console.log('✅ Áudio extraído com sucesso');
+          resolve(audioPath);
+        })
+        .on('error', (err) => {
+          console.error('❌ Erro ao extrair áudio:', err.message);
+          reject(err);
+        })
+        .save(audioPath);
+    });
+  }
+
+  /**
+   * Transcreve áudio usando Groq (Whisper V3) - Mais rápido e barato/grátis
+   */
+  static async transcreverAudio(audioPath) {
+    try {
+      console.log('🗣️ Transcrevendo áudio com Whisper (via Groq)...');
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(audioPath));
+      formData.append('model', 'whisper-large-v3'); // Modelo superior da Groq
+      formData.append('language', 'pt');
+      formData.append('response_format', 'json');
+
+      // Usar chave da Groq fornecida especificamente para áudio
+      // Isso evita conflito com a chave do Together usada para texto
+      const apiKey = process.env.GROQ_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('GROQ_API_KEY não configurada no arquivo .env');
+      }
+
+      // Usar endpoint da Groq que é compatível com OpenAI e muito rápido
+      const apiUrl = 'https://api.groq.com/openai/v1/audio/transcriptions';
+
+      const response = await axios.post(apiUrl, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          'Authorization': `Bearer ${apiKey}`
+        },
+        timeout: 120000 // 2 minutos timeout
+      });
+
+      if (response.data && response.data.text) {
+        console.log('✅ Transcrição concluída:', response.data.text.substring(0, 50) + '...');
+        return response.data.text;
+      } else {
+        throw new Error('Resposta da API sem texto');
+      }
+    } catch (error) {
+      console.error('❌ Erro na transcrição:', error.response?.data || error.message);
+
+      // Fallback para OpenAI se a Groq falhar (caso a chave seja da OpenAI)
+      if (error.response?.status === 401) {
+        try {
+          console.log('⚠️ Falha na Groq (401), tentando endpoint OpenAI...');
+          const apiKey = await SystemConfig.getConfig('ia_api_key');
+          const formData = new FormData();
+          formData.append('file', fs.createReadStream(audioPath));
+          formData.append('model', 'whisper-1');
+          formData.append('language', 'pt');
+
+          const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+            headers: {
+              ...formData.getHeaders(),
+              'Authorization': `Bearer ${apiKey}`
+            },
+            timeout: 120000
+          });
+          return response.data.text;
+        } catch (e2) {
+          throw error; // Lança o erro original se o fallback falhar
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Limpa arquivos temporários
+   */
+  static async limparArquivosTemporarios(videoPath, audioPath) {
+    try {
+      if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+      if (audioPath && fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+      console.log('🧹 Arquivos temporários limpos');
+    } catch (e) {
+      console.error('Erro ao limpar arquivos:', e.message);
+    }
+  }
+
+  /**
+   * Processo completo de vídeo: Baixar -> Extrair Áudio -> Transcrever
+   */
+  static async processarVideoInstagram(url) {
+    let videoPath = null;
+    let audioPath = null;
+
+    try {
+      // 1. Baixar vídeo
+      videoPath = await this.baixarVideoInstagram(url);
+
+      // 2. Extrair áudio
+      audioPath = await this.extrairAudioDoVideo(videoPath);
+
+      // 3. Transcrever
+      const transcricao = await this.transcreverAudio(audioPath);
+
+      // 4. Limpar arquivos temporários
+      this.limparArquivosTemporarios(videoPath, audioPath);
+
+      console.log('✅ Processamento de vídeo concluído com sucesso');
+      return transcricao;
+    } catch (error) {
+      // Limpar arquivos em caso de erro
+      this.limparArquivosTemporarios(videoPath, audioPath);
+
+      console.error('❌ Erro ao processar vídeo:', error.message);
       throw error;
     }
   }
