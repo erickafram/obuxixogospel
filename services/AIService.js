@@ -313,11 +313,11 @@ class AIService {
             });
 
             const html = response.data;
-            
+
             // Método 1: Extrair do JSON embutido no HTML
             const scriptRegex = /<script type="application\/ld\+json">(.*?)<\/script>/gs;
             const scriptMatches = html.matchAll(scriptRegex);
-            
+
             for (const match of scriptMatches) {
               try {
                 const jsonData = JSON.parse(match[1]);
@@ -355,7 +355,7 @@ class AIService {
                 try {
                   const sharedData = JSON.parse(sharedDataMatch[1]);
                   const postData = sharedData?.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-                  
+
                   if (postData?.edge_media_to_caption?.edges?.[0]?.node?.text) {
                     const caption = postData.edge_media_to_caption.edges[0].node.text;
                     textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
@@ -377,7 +377,7 @@ class AIService {
           try {
             console.log('Tentando API pública Instagram Downloader...');
             const apiUrl = `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${encodeURIComponent(url)}`;
-            
+
             const apiResponse = await axios.get(apiUrl, {
               timeout: 10000,
               headers: {
@@ -388,7 +388,7 @@ class AIService {
             if (apiResponse.data && apiResponse.data.data) {
               const postData = apiResponse.data.data;
               const caption = postData.caption?.text || postData.edge_media_to_caption?.edges?.[0]?.node?.text;
-              
+
               if (caption && caption.length > 10) {
                 textoLegenda += `TEXTO DA POSTAGEM (LEGENDA):\n${caption}\n\n`;
                 if (postData.owner?.username) {
@@ -433,7 +433,7 @@ class AIService {
             console.log('Tentando extrair dados completos via instagram-url-direct...');
             const lib = require("instagram-url-direct");
             const result = await lib.instagramGetUrl(url);
-            
+
             // Tentar diferentes campos onde a legenda pode estar
             const possibleCaptions = [
               result.caption,
@@ -718,13 +718,13 @@ class AIService {
           // Preferir thumbnailLink que é sempre uma imagem válida
           // O item.link pode ser uma página HTML
           const imageUrl = item.image?.thumbnailLink || item.link;
-          
+
           // Validar se a URL parece ser uma imagem
           // URLs do Google (gstatic.com, googleusercontent.com) são sempre válidas
-          const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) || 
-                                  imageUrl.includes('googleusercontent.com') ||
-                                  imageUrl.includes('ggpht.com') ||
-                                  imageUrl.includes('gstatic.com');
+          const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) ||
+            imageUrl.includes('googleusercontent.com') ||
+            imageUrl.includes('ggpht.com') ||
+            imageUrl.includes('gstatic.com');
 
           if (isValidImageUrl) {
             imagens.push({
@@ -2155,163 +2155,23 @@ RETORNE APENAS O HTML (sem título ou descrição):`
       console.log('✅ Matéria reescrita com sucesso no estilo G1');
       return conteudoLimpo;
     } catch (error) {
-      console.error('❌ Erro ao reescrever matéria:', error);
-      throw error;
+      return new Promise((resolve, reject) => {
+        const audioPath = videoPath.replace('.mp4', '.mp3');
+        console.log('🔊 Extraindo áudio para:', audioPath);
+
+        ffmpeg(videoPath)
+          .toFormat('mp3')
+          .on('end', () => {
+            console.log('✅ Áudio extraído com sucesso');
+            resolve(audioPath);
+          })
+          .on('error', (err) => {
+            console.error('❌ Erro ao extrair áudio:', err.message);
+            reject(err);
+          })
+          .save(audioPath);
+      });
     }
-  }
-
-  /**
-   * Baixa vídeo do Instagram temporariamente
-   */
-  static async baixarVideoInstagram(url) {
-    try {
-      console.log('📥 Baixando vídeo do Instagram:', url);
-      const tempDir = path.join(__dirname, '../temp');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      const timestamp = Date.now();
-      const videoPath = path.join(tempDir, `instagram_${timestamp}.mp4`);
-
-      // Método 1: instagram-url-direct (Nova biblioteca robusta)
-      try {
-        console.log('🔄 Tentando método 1: instagram-url-direct');
-        // Lazy load da biblioteca para evitar erro se não estiver instalada
-        let instagramLib;
-        try {
-          instagramLib = require("instagram-url-direct");
-        } catch (e) {
-          console.log('⚠️ Biblioteca instagram-url-direct não encontrada');
-        }
-
-        if (instagramLib && instagramLib.instagramGetUrl) {
-          const links = await instagramLib.instagramGetUrl(url);
-
-          if (links.url_list && links.url_list.length > 0) {
-            const videoUrl = links.url_list[0];
-            console.log('✅ URL do vídeo encontrada via instagram-url-direct');
-
-            const videoResponse = await axios.get(videoUrl, {
-              responseType: 'arraybuffer',
-              timeout: 60000,
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              }
-            });
-
-            fs.writeFileSync(videoPath, videoResponse.data);
-            console.log('✅ Vídeo salvo com sucesso:', videoPath);
-            return videoPath;
-          }
-        }
-      } catch (e) {
-        console.log('❌ Método 1 (instagram-url-direct) falhou:', e.message);
-      }
-
-      // Método 2: API Cobalt (Fallback)
-      try {
-        console.log('🔄 Tentando método 2: Cobalt API');
-        const cobaltEndpoints = [
-          'https://api.cobalt.tools/api/json',
-          'https://cobalt.api.wuk.sh/api/json',
-          'https://co.wuk.sh/api/json'
-        ];
-
-        for (const endpoint of cobaltEndpoints) {
-          try {
-            const cobaltResponse = await axios.post(endpoint, {
-              url: url,
-              vCodec: 'h264',
-              vQuality: '720',
-              aFormat: 'mp3',
-              filenamePattern: 'basic'
-            }, {
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              },
-              timeout: 15000
-            });
-
-            if (cobaltResponse.data && cobaltResponse.data.url) {
-              console.log('✅ URL do vídeo obtida via Cobalt');
-              const videoUrl = cobaltResponse.data.url;
-
-              const videoResponse = await axios.get(videoUrl, {
-                responseType: 'arraybuffer',
-                timeout: 60000
-              });
-
-              fs.writeFileSync(videoPath, videoResponse.data);
-              console.log('✅ Vídeo salvo via Cobalt:', videoPath);
-              return videoPath;
-            }
-          } catch (innerErr) {
-            // Silently fail for each endpoint
-          }
-        }
-      } catch (e) {
-        console.log('❌ Método 2 (Cobalt) falhou:', e.message);
-      }
-
-      // Método 3: Insta-fetcher (Fallback antigo)
-      try {
-        console.log('🔄 Tentando método 3: insta-fetcher');
-        const ig = new igApi();
-        const postData = await ig.fetchPost(url);
-
-        let videoUrl = null;
-        if (postData.links) {
-          for (const link of postData.links) {
-            if (link.type === 'video' || link.url.includes('.mp4')) {
-              videoUrl = link.url;
-              break;
-            }
-          }
-        }
-
-        if (videoUrl) {
-          const videoResponse = await axios.get(videoUrl, {
-            responseType: 'arraybuffer',
-            timeout: 60000
-          });
-          fs.writeFileSync(videoPath, videoResponse.data);
-          console.log('✅ Vídeo salvo via insta-fetcher:', videoPath);
-          return videoPath;
-        }
-      } catch (e) {
-        console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
-      }
-
-      throw new Error('Não foi possível baixar o vídeo por nenhum método.');
-    } catch (error) {
-      console.error('❌ Erro fatal ao baixar vídeo:', error.message);
-      throw new Error('Não foi possível baixar o vídeo do Instagram. Por favor, cole o texto manualmente.');
-    }
-  }
-
-  /**
-   * Extrai áudio do vídeo usando ffmpeg
-   */
-  static async extrairAudioDoVideo(videoPath) {
-    return new Promise((resolve, reject) => {
-      const audioPath = videoPath.replace('.mp4', '.mp3');
-      console.log('🔊 Extraindo áudio para:', audioPath);
-
-      ffmpeg(videoPath)
-        .toFormat('mp3')
-        .on('end', () => {
-          console.log('✅ Áudio extraído com sucesso');
-          resolve(audioPath);
-        })
-        .on('error', (err) => {
-          console.error('❌ Erro ao extrair áudio:', err.message);
-          reject(err);
-        })
-        .save(audioPath);
-    });
-  }
 
   /**
    * Transcreve áudio usando Groq (Whisper V3) - Mais rápido e barato/grátis
