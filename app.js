@@ -794,6 +794,11 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
 
     // Converter para WebP
     try {
+      // Tentar detectar o formato da imagem
+      const metadata = await sharp(tempPath).metadata();
+      console.log(`📸 Formato detectado: ${metadata.format}`);
+
+      // Converter para WebP
       await sharp(tempPath)
         .webp({ quality: 85 })
         .toFile(webpPath);
@@ -805,13 +810,23 @@ app.post('/dashboard/media/upload-url', isAuthenticated, async (req, res) => {
       // Deletar arquivo temporário
       await fs.unlink(tempPath);
 
-      console.log(`✅ Imagem do Bing convertida para WebP: ${webpFilename}`);
+      console.log(`✅ Imagem convertida para WebP: ${webpFilename}`);
     } catch (conversionError) {
-      console.error('⚠️ Erro ao converter imagem do Bing para WebP:', conversionError);
-      // Se falhar, usa o arquivo original
-      finalFilename = tempFilename;
-      finalUrl = `/uploads/${tempFilename}`;
-      finalMimeType = response.headers['content-type'] || 'image/jpeg';
+      console.error('⚠️ Erro ao converter imagem para WebP:', conversionError.message);
+      
+      // Se falhar, tentar salvar como está (sem conversão)
+      try {
+        const stats = await fs.stat(tempPath);
+        finalSize = stats.size;
+        finalFilename = tempFilename;
+        finalUrl = `/uploads/${tempFilename}`;
+        finalMimeType = response.headers['content-type'] || 'image/jpeg';
+        console.log(`⚠️ Usando imagem original sem conversão: ${tempFilename}`);
+      } catch (statError) {
+        // Se nem isso funcionar, deletar e retornar erro
+        try { await fs.unlink(tempPath); } catch (e) { }
+        throw new Error('Formato de imagem não suportado');
+      }
     }
 
     // Salvar no banco
