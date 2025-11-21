@@ -1816,77 +1816,93 @@ app.use(async (req, res) => {
     if (redirectEnabled && redirectEnabled.valor === 'true') {
       const type = redirectType ? redirectType.valor : '301';
 
-      if (type === '410') {
-        // 410 Gone - Conteúdo removido permanentemente
-        return res.status(410).send(`
-          <!DOCTYPE html>
-          <html lang="pt-BR">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Conteúdo Removido - Obuxixo Gospel</title>
-            <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-              h1 { color: #e74c3c; }
-              p { color: #666; margin: 20px 0; }
-              a { color: #3498db; text-decoration: none; font-weight: bold; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <h1>⚠️ Conteúdo Removido</h1>
-            <p>Esta página foi permanentemente removida do nosso site.</p>
-            <p><a href="/">← Voltar para a página inicial</a></p>
-          </body>
-          </html>
-        `);
+      // 1. Ignorar arquivos estáticos (imagens, css, js, etc) - Retornar 404 real
+      if (req.url.match(/\.(jpg|jpeg|png|gif|webp|ico|css|js|xml|txt|json|map|woff|woff2|ttf|eot)$/i)) {
+        // Deixar cair no renderizador de 404 abaixo ou enviar status simples
+        return res.status(404).send('Arquivo não encontrado');
+      }
+
+      // 2. Tentar Redirecionamento Inteligente para URLs de posts antigos
+      // Ex: /2019/08/21/titulo-do-post/ -> Busca por "titulo do post"
+      try {
+        const urlParts = req.path.split('/').filter(p => p.trim() !== '');
+        // Pegar o último segmento que pareça um slug (não numérico)
+        let possibleSlug = '';
+
+        // Tenta pegar o último segmento
+        if (urlParts.length > 0) {
+          const lastPart = urlParts[urlParts.length - 1];
+          // Se não for paginação (/page/2) ou feed (/feed)
+          if (!['feed', 'amp', 'rss'].includes(lastPart) && !lastPart.match(/^\d+$/)) {
+            possibleSlug = lastPart;
+          } else if (urlParts.length > 1) {
+            <html lang="pt-BR">
+              <head>
+                <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Conteúdo Removido - Obuxixo Gospel</title>
+                    <style>
+                      body {font - family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+                      h1 {color: #e74c3c; }
+                      p {color: #666; margin: 20px 0; }
+                      a {color: #3498db; text-decoration: none; font-weight: bold; }
+                      a:hover {text - decoration: underline; }
+                    </style>
+                  </head>
+                  <body>
+                    <h1>⚠️ Conteúdo Removido</h1>
+                    <p>Esta página foi permanentemente removida do nosso site.</p>
+                    <p><a href="/">← Voltar para a página inicial</a></p>
+                  </body>
+                </html>
+                `);
       } else {
-        // 301 Redirect - Redirecionar para home
+        // 301 Redirect - Redirecionar para home (Fallback final)
         return res.redirect(301, '/');
       }
     }
 
-    // Se redirecionamento está desativado, mostrar página 404 normal
-    const recentArticles = await Article.findAll({
-      where: { publicado: true },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 3
+                // Se redirecionamento está desativado, mostrar página 404 normal
+                const recentArticles = await Article.findAll({
+                  where: {publicado: true },
+                order: [['dataPublicacao', 'DESC']],
+                limit: 3
     });
 
-    res.status(404).render('404', {
-      recentArticles,
-      user: req.session.userId ? {
-        nome: req.session.userName,
-        email: req.session.userEmail,
-        role: req.session.userRole
+                res.status(404).render('404', {
+                  recentArticles,
+                  user: req.session.userId ? {
+                  nome: req.session.userName,
+                email: req.session.userEmail,
+                role: req.session.userRole
       } : null
     });
   } catch (error) {
-    console.error('Erro ao carregar página 404:', error);
-    res.status(404).send('Página não encontrada');
+                  console.error('Erro ao carregar página 404:', error);
+                res.status(404).send('Página não encontrada');
   }
 });
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3000;
+                // Iniciar servidor
+                const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+                  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 
-  // Iniciar serviço de postagem automática
-  try {
+                // Iniciar serviço de postagem automática
+                try {
     const autoPostService = require('./services/AutoPostService');
-    await autoPostService.start();
+                await autoPostService.start();
   } catch (error) {
-    console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
+                  console.error('❌ Erro ao iniciar serviço de postagem automática:', error);
   }
 
-  // Iniciar scheduler de publicação de matérias agendadas
-  // Executa a cada 1 minuto
-  console.log('📅 Scheduler de publicação agendada iniciado (verifica a cada 1 minuto)');
+                // Iniciar scheduler de publicação de matérias agendadas
+                // Executa a cada 1 minuto
+                console.log('📅 Scheduler de publicação agendada iniciado (verifica a cada 1 minuto)');
   setInterval(async () => {
-    await publishScheduledPosts();
+                  await publishScheduledPosts();
   }, 60000); // 60000ms = 1 minuto
 
-  // Executar imediatamente ao iniciar
-  await publishScheduledPosts();
+                // Executar imediatamente ao iniciar
+                await publishScheduledPosts();
 });
