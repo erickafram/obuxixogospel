@@ -388,11 +388,13 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
 
     // Determinar status de publicação
     let statusPublicado;
+    let dataFinalParaSalvar = dataPublicacaoFinal;
 
     if (rascunho === 'true') {
-      // Rascunho explícito
+      // Rascunho explícito - usar data muito futura para evitar publicação automática
       statusPublicado = false;
-      console.log('💾 Salvando como rascunho');
+      dataFinalParaSalvar = new Date('2099-12-31T23:59:59');
+      console.log('💾 Salvando como rascunho (data: 2099-12-31)');
     } else if (isDataFutura) {
       // Data futura = agendamento (não publicar ainda, mas não é rascunho)
       statusPublicado = false;
@@ -413,7 +415,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       autor: autor || 'Redação Obuxixo Gospel',
       publicado: statusPublicado,
       destaque: destaque === 'true' || destaque === true,
-      dataPublicacao: dataPublicacaoFinal,
+      dataPublicacao: dataFinalParaSalvar,
       visualizacoes: 0,
       urlAmigavel
     });
@@ -522,11 +524,13 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
 
     // Determinar status de publicação
     let statusPublicado;
+    let dataFinalParaSalvar = dataPublicacaoFinal;
 
     if (rascunho === 'true') {
-      // Rascunho explícito
+      // Rascunho explícito - usar data muito futura para evitar publicação automática
       statusPublicado = false;
-      console.log('💾 Atualizando como rascunho');
+      dataFinalParaSalvar = new Date('2099-12-31T23:59:59');
+      console.log('💾 Atualizando como rascunho (data: 2099-12-31)');
     } else if (isDataFutura) {
       // Data futura = agendamento (não publicar ainda, mas não é rascunho)
       statusPublicado = false;
@@ -547,7 +551,7 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       autor: autor || 'Redação Obuxixo Gospel',
       publicado: statusPublicado,
       destaque: destaque === 'true',
-      dataPublicacao: dataPublicacaoFinal
+      dataPublicacao: dataFinalParaSalvar
     });
 
     // Trigger Sitemap Refresh in background if published
