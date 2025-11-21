@@ -2526,7 +2526,15 @@
                     'Accept': 'application/json'
                 }
             })
-                .then(response => response.json())
+                .then(async response => {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        const text = await response.text();
+                        throw new Error(text || 'Erro desconhecido');
+                    }
+                })
                 .then(data => {
                     if (data.success) {
                         alert('✅ Rascunho salvo com sucesso!');
@@ -2540,7 +2548,7 @@
         })
         .catch (error => {
             console.error('Erro:', error);
-            alert('❌ Erro ao salvar rascunho. Verifique o console para mais detalhes.');
+            alert('❌ Erro ao salvar rascunho: ' + error.message);
         })
         .finally(() => {
             btnRascunho.disabled = false;

@@ -323,7 +323,7 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
+app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
 
@@ -341,7 +341,11 @@ app.post('/dashboard/posts/criar', isAuthenticated, async (req, res) => {
     } else {
       // Validar campos obrigatórios para publicação
       if (!titulo || !descricao || !conteudo || !imagem || !categoria) {
-        return res.status(400).send('Campos obrigatórios faltando');
+        const errorMsg = 'Campos obrigatórios faltando';
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+          return res.status(400).json({ success: false, message: errorMsg });
+        }
+        return res.status(400).send(errorMsg);
       }
     }
 
@@ -492,7 +496,7 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
+app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
 
