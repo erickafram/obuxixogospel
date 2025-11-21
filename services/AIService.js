@@ -2296,10 +2296,104 @@ RETORNE APENAS O HTML (sem título ou descrição):`
         console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
       }
 
+      // Método 4: yt-dlp (Último recurso - mais robusto)
+      try {
+        console.log('🔄 Tentando método 4: yt-dlp');
+        const videoUrl = await this.obterUrlVideoComYtDlp(url);
+        
+        if (videoUrl) {
+          console.log('✅ URL do vídeo obtida via yt-dlp');
+          const videoResponse = await axios.get(videoUrl, {
+            responseType: 'arraybuffer',
+            timeout: 60000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+          
+          fs.writeFileSync(videoPath, videoResponse.data);
+          console.log('✅ Vídeo salvo via yt-dlp:', videoPath);
+          return videoPath;
+        }
+      } catch (e) {
+        console.log('❌ Método 4 (yt-dlp) falhou:', e.message);
+      }
+
       throw new Error('Não foi possível baixar o vídeo por nenhum método.');
     } catch (error) {
       console.error('❌ Erro fatal ao baixar vídeo:', error.message);
       throw new Error('Não foi possível baixar o vídeo do Instagram. Por favor, cole o texto manualmente.');
+    }
+  }
+
+  /**
+   * Baixa e configura yt-dlp se necessário
+   */
+  static async garantirYtDlp() {
+    const binDir = path.join(__dirname, '../bin');
+    const ytDlpPath = path.join(binDir, 'yt-dlp');
+    
+    // Se já existe, retorna o caminho
+    if (fs.existsSync(ytDlpPath)) {
+      return ytDlpPath;
+    }
+    
+    console.log('📦 Baixando yt-dlp...');
+    
+    // Criar diretório bin se não existir
+    if (!fs.existsSync(binDir)) {
+      fs.mkdirSync(binDir, { recursive: true });
+    }
+    
+    // Baixar yt-dlp (versão Linux)
+    const ytDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp';
+    const response = await axios.get(ytDlpUrl, {
+      responseType: 'arraybuffer',
+      timeout: 60000
+    });
+    
+    fs.writeFileSync(ytDlpPath, response.data);
+    
+    // Dar permissão de execução (Linux/Mac)
+    if (process.platform !== 'win32') {
+      const { execSync } = require('child_process');
+      execSync(`chmod +x ${ytDlpPath}`);
+    }
+    
+    console.log('✅ yt-dlp instalado com sucesso');
+    return ytDlpPath;
+  }
+
+  /**
+   * Obtém URL do vídeo usando yt-dlp
+   */
+  static async obterUrlVideoComYtDlp(instagramUrl) {
+    try {
+      const { execSync } = require('child_process');
+      const ytDlpPath = await this.garantirYtDlp();
+      
+      // Executar yt-dlp para obter URL direta do vídeo
+      // -g = get URL, --no-warnings = sem avisos
+      const command = `${ytDlpPath} -g --no-warnings "${instagramUrl}"`;
+      console.log('🔧 Executando:', command);
+      
+      const output = execSync(command, {
+        encoding: 'utf8',
+        timeout: 30000,
+        maxBuffer: 10 * 1024 * 1024 // 10MB
+      });
+      
+      const videoUrl = output.trim().split('\n')[0]; // Primeira linha é a URL do vídeo
+      
+      if (videoUrl && videoUrl.startsWith('http')) {
+        console.log('✅ URL do vídeo obtida:', videoUrl.substring(0, 100) + '...');
+        return videoUrl;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Erro ao executar yt-dlp:', error.message);
+      return null;
     }
   }
 

@@ -26,11 +26,12 @@ const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(imageUrl) 
 
 ---
 
-## 2. ⚠️ EM ANDAMENTO: Vídeos do Instagram não transcrevem em Produção
+## 2. ✅ IMPLEMENTADO: Sistema de Download de Vídeos com 4 Métodos
 
-### Problema
+### Problema Original
 ```
-❌ Método 1 (instagram-url-direct) falhou: Request failed with status code 401
+❌ Método 1 (Cobalt) falhou: Request failed with status code 403
+❌ Método 2 (instagram-url-direct) falhou: Request failed with status code 401
 ❌ Método 3 (insta-fetcher) falhou: Request failed with status code 403
 ⚠️ Não foi possível transcrever vídeo
 ```
@@ -40,47 +41,66 @@ Instagram está bloqueando requisições do servidor de produção com erros 401
 - **401 Unauthorized**: Falta de autenticação/cookies válidos
 - **403 Forbidden**: IP do servidor pode estar bloqueado ou detectado como bot
 
-### Por que funciona local mas não em produção?
-1. **IP diferente**: Instagram pode ter bloqueado o IP do servidor
-2. **Headers diferentes**: Servidor pode estar enviando headers suspeitos
-3. **Rate limiting**: Muitas requisições do mesmo IP
+### Solução Implementada
 
-### Soluções Possíveis
+O sistema agora tenta **4 métodos diferentes** em sequência:
 
-#### Opção 1: Usar serviço de proxy (RECOMENDADO)
-Adicionar um serviço de terceiros que baixa vídeos do Instagram:
-- **Cobalt API** (já implementado, mas pode estar falhando)
-- **RapidAPI Instagram Downloader**
-- **Instaloader** (biblioteca Python via subprocess)
+#### Método 1: Cobalt API (Multi-instâncias)
+Tenta 5 instâncias públicas do Cobalt:
+- `https://api.cobalt.tools/api/json`
+- `https://cobalt.api.wuk.sh/api/json`
+- `https://api.server.cobalt.tools/api/json`
+- `https://co.wuk.sh/api/json`
+- `https://cobalt.tools/api/json`
 
-#### Opção 2: Melhorar headers e cookies
-```javascript
-headers: {
-  'User-Agent': 'Instagram 123.0.0.21.114 Android',
-  'Accept': '*/*',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Accept-Encoding': 'gzip, deflate',
-  'X-IG-App-ID': '936619743392459',
-  'X-ASBD-ID': '198387',
-  'X-IG-WWW-Claim': '0',
-  'Origin': 'https://www.instagram.com',
-  'Referer': 'https://www.instagram.com/'
-}
+#### Método 2: instagram-url-direct
+Biblioteca Node.js que acessa diretamente a API do Instagram.
+
+#### Método 3: insta-fetcher
+Biblioteca alternativa para scraping do Instagram.
+
+#### Método 4: yt-dlp (NOVO - Mais Robusto) ✨
+**Último recurso** - Baixa e executa o binário do `yt-dlp` automaticamente:
+- Baixa o binário Linux do GitHub na primeira execução
+- Salva em `./bin/yt-dlp` (não commitado no Git)
+- Executa `yt-dlp -g` para obter URL direta do vídeo
+- **Muito mais resiliente** a bloqueios do Instagram
+
+### Como Funciona o yt-dlp
+
+1. **Primeira execução**: Sistema baixa automaticamente o binário do GitHub
+2. **Execuções seguintes**: Usa o binário já baixado
+3. **Sem dependências**: Binário estático, não precisa instalar nada
+4. **Atualização automática**: Pode ser configurado para atualizar periodicamente
+
+### Logs Esperados
+
+```bash
+🔄 Tentando método 1: Cobalt API (Multi-instâncias)
+   ❌ Todas as instâncias Cobalt falharam
+🔄 Tentando método 2: instagram-url-direct
+   ❌ Método 2 falhou: Request failed with status code 401
+🔄 Tentando método 3: insta-fetcher
+   ❌ Método 3 falhou: Request failed with status code 403
+🔄 Tentando método 4: yt-dlp
+   📦 Baixando yt-dlp... (primeira vez)
+   ✅ yt-dlp instalado com sucesso
+   🔧 Executando: /path/to/bin/yt-dlp -g --no-warnings "https://instagram.com/..."
+   ✅ URL do vídeo obtida
+   ✅ Vídeo salvo via yt-dlp
+   ✅ Áudio extraído com sucesso
+   ✅ Transcrição concluída
 ```
 
-#### Opção 3: Fallback manual (ATUAL)
-Sistema já mostra mensagem para usuário colar texto manualmente:
+### Fallback Manual
+Se todos os 4 métodos falharem, o sistema mostra:
 ```
-⚠️ Não foi possível transcrever vídeo (pode ser apenas foto): 
-Não foi possível baixar o vídeo do Instagram. 
-Por favor, cole o texto manualmente.
+⚠️ Não foi possível transcrever vídeo
+Por favor, cole o texto manualmente
 ```
-
-### Workaround Temporário
-**Use o campo "Cole o Texto da Postagem"** para adicionar manualmente a transcrição do vídeo quando o download automático falhar.
 
 ### Status
-⚠️ **EM INVESTIGAÇÃO** - Funciona local, falha em produção
+✅ **IMPLEMENTADO** - 4 métodos de fallback, incluindo yt-dlp como último recurso
 
 ---
 

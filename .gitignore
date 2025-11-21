@@ -41,6 +41,10 @@ build/
 .cache/
 .temp/
 .tmp/
+temp/
+
+# Binários baixados automaticamente
+bin/
 
 # Google Service Account (NUNCA COMMITAR!)
 config/google-service-account.json
