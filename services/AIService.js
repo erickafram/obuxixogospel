@@ -586,6 +586,85 @@ class AIService {
   }
 
   /**
+   * Busca imagens usando Google Custom Search API
+   */
+  static async buscarImagensGoogle(query) {
+    try {
+      console.log('Buscando imagens no Google para:', query);
+
+      // Configurar credenciais do Google Custom Search
+      const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || 'AIzaSyBpOqTvPxzKwYLDqpfFkHvCLqKvPDVEaOw';
+      const GOOGLE_CX = process.env.GOOGLE_CX || '64e6e5a8e0f4c4a84';
+
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}&searchType=image&num=10&imgSize=large&safe=active`;
+
+      const response = await axios.get(searchUrl, {
+        timeout: 15000
+      });
+
+      const imagens = [];
+
+      if (response.data && response.data.items) {
+        response.data.items.forEach((item, index) => {
+          if (index < 10) {
+            imagens.push({
+              url: item.link,
+              thumbnail: item.image?.thumbnailLink || item.link,
+              descricao: item.title || `Imagem relacionada a ${query}`,
+              fonte: item.displayLink || 'Google Images'
+            });
+          }
+        });
+      }
+
+      console.log('Imagens do Google encontradas:', imagens.length);
+
+      if (imagens.length > 0) {
+        return imagens;
+      }
+
+      // Fallback: usar Picsum se não encontrar nada
+      console.log('Nenhuma imagem encontrada no Google, usando fallback...');
+      const imagensFallback = [];
+      for (let i = 0; i < 5; i++) {
+        const randomId = 300 + Math.floor(Math.random() * 700);
+        imagensFallback.push({
+          url: `https://picsum.photos/800/600?random=${randomId}`,
+          thumbnail: `https://picsum.photos/200/150?random=${randomId}`,
+          descricao: `Imagem ${i + 1}`,
+          fonte: 'Picsum'
+        });
+      }
+      return imagensFallback;
+
+    } catch (error) {
+      console.error('Erro ao buscar imagens no Google:', error.message);
+
+      // Fallback: retornar imagens do Picsum
+      try {
+        console.log('Usando imagens genéricas de fallback (Picsum)');
+        const imagens = [];
+
+        for (let i = 0; i < 5; i++) {
+          const randomId = 400 + Math.floor(Math.random() * 600);
+          imagens.push({
+            url: `https://picsum.photos/800/600?random=${randomId}`,
+            thumbnail: `https://picsum.photos/200/150?random=${randomId}`,
+            descricao: `Imagem ${i + 1}`,
+            fonte: 'Picsum'
+          });
+        }
+
+        console.log('Imagens fallback geradas:', imagens.length);
+        return imagens;
+      } catch (fallbackError) {
+        console.error('Erro no fallback:', fallbackError.message);
+        return [];
+      }
+    }
+  }
+
+  /**
    * Extrai palavras-chave principais de um título para busca de imagens
    */
   static extrairPalavrasChave(titulo) {

@@ -530,6 +530,9 @@
                 <button type="button" class="modal-tab-btn" onclick="switchModalTab('buscar-bing', event)">
                     <i class="fas fa-search"></i> Buscar no Bing
                 </button>
+                <button type="button" class="modal-tab-btn" onclick="switchModalTab('buscar-google', event)">
+                    <i class="fab fa-google"></i> Buscar no Google
+                </button>
             </div>
 
             <div class="modal-body">
@@ -598,6 +601,29 @@
                         </div>
                         <div id="bingSearchLoading" class="loading" style="display: none;">
                             <i class="fas fa-spinner fa-spin"></i> Buscando imagens...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Buscar no Google -->
+                <div class="modal-tab-content" id="modal-buscar-google">
+                    <div class="bing-search-container">
+                        <div class="bing-search-box">
+                            <input type="text" id="googleSearchInput" class="form-control"
+                                placeholder="Digite o que você quer encontrar... (ex: igreja, louvor, pastor)"
+                                onkeypress="if(event.key === 'Enter') buscarImagensGoogle()">
+                            <button type="button" class="btn btn-primary" onclick="buscarImagensGoogle()">
+                                <i class="fab fa-google"></i> Buscar Imagens
+                            </button>
+                        </div>
+                        <div id="googleSearchResults" class="bing-results-grid">
+                            <div class="bing-placeholder">
+                                <i class="fab fa-google" style="font-size: 48px; color: #4285F4; margin-bottom: 16px;"></i>
+                                <p style="color: #666;">Digite uma palavra-chave e clique em "Buscar Imagens"</p>
+                            </div>
+                        </div>
+                        <div id="googleSearchLoading" class="loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando imagens no Google...
                         </div>
                     </div>
                 </div>
@@ -2889,6 +2915,97 @@
                 }
             } catch (error) {
                 console.error('Erro ao selecionar imagem:', error);
+                alert('Erro ao adicionar imagem à biblioteca');
+            }
+        }
+
+        // Buscar imagens no Google
+        async function buscarImagensGoogle() {
+            const query = document.getElementById('googleSearchInput').value.trim();
+            if (!query) {
+                alert('Por favor, digite uma palavra-chave para buscar');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('googleSearchResults');
+            const loadingDiv = document.getElementById('googleSearchLoading');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/ia/buscar-imagens-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+
+                if (data.success && data.imagens && data.imagens.length > 0) {
+                    renderGoogleImages(data.imagens);
+                } else {
+                    resultsDiv.innerHTML = `
+                    <div class="bing-placeholder">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ff9800; margin-bottom: 16px;"></i>
+                        <p style="color: #666;">Nenhuma imagem encontrada para "${query}"</p>
+                        <p style="color: #999; font-size: 13px;">Tente usar outras palavras-chave</p>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Erro ao buscar imagens no Google:', error);
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = `
+                <div class="bing-placeholder">
+                    <i class="fas fa-times-circle" style="font-size: 48px; color: #f44336; margin-bottom: 16px;"></i>
+                    <p style="color: #666;">Erro ao buscar imagens</p>
+                    <p style="color: #999; font-size: 13px;">${error.message}</p>
+                </div>
+            `;
+            }
+        }
+
+        function renderGoogleImages(imagens) {
+            const resultsDiv = document.getElementById('googleSearchResults');
+            resultsDiv.innerHTML = imagens.map((img, index) => `
+            <div class="bing-image-item">
+                <img src="${img.thumbnail || img.url}" alt="${img.descricao}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Erro+ao+carregar'">
+                <div class="bing-image-overlay">
+                    <span class="bing-image-info" title="${img.descricao}">${img.fonte || 'Google'}</span>
+                    <button type="button" class="bing-image-select" onclick="selecionarImagemGoogle('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-check"></i> Usar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        async function selecionarImagemGoogle(url, descricao) {
+            try {
+                // Fazer upload da imagem URL para o servidor
+                const response = await fetch('/dashboard/media/upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, descricao })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Imagem adicionada à biblioteca com sucesso!');
+                    switchModalTab('biblioteca');
+                    loadMediaLibrary();
+                    // Selecionar automaticamente a imagem recém-adicionada
+                    setTimeout(() => {
+                        selectMedia(data.media.url);
+                    }, 500);
+                } else {
+                    alert('Erro ao adicionar imagem: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro ao selecionar imagem do Google:', error);
                 alert('Erro ao adicionar imagem à biblioteca');
             }
         }

@@ -1513,6 +1513,23 @@ app.post('/api/ia/buscar-imagens-bing', async (req, res) => {
   }
 });
 
+// Buscar imagens no Google
+app.post('/api/ia/buscar-imagens-google', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Query é obrigatória' });
+    }
+
+    const imagens = await AIService.buscarImagensGoogle(query);
+    res.json({ success: true, imagens });
+  } catch (error) {
+    console.error('Erro ao buscar imagens no Google:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Expandir conteúdo com IA
 app.post('/api/ia/expandir-conteudo', async (req, res) => {
   try {
