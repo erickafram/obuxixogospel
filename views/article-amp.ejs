@@ -261,11 +261,9 @@
         }
 
         .menu-item a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 20px;
-            color: #1c1c1c;
+            display: block;
+            padding: 14px 20px;
+            color: #3c3e41;
             text-decoration: none;
             font-weight: 600;
             font-size: 15px;
@@ -273,15 +271,9 @@
         }
 
         .menu-item a:hover {
-            background: #f8f4ff;
-            color: #5706b4;
-            padding-left: 24px;
-        }
-
-        .menu-icon {
-            font-size: 20px;
-            width: 24px;
-            text-align: center;
+            background: #f5f5f5;
+            color: #FF6B00;
+            padding-left: 28px;
         }
 
         /* Container */
@@ -525,46 +517,20 @@
     <amp-sidebar id="sidebar" layout="nodisplay" side="left">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2 class="sidebar-title">📋 Categorias</h2>
+                <h2 class="sidebar-title">Categorias</h2>
                 <button class="close-btn" on="tap:sidebar.close">✕</button>
             </div>
             <ul class="menu-list">
                 <li class="menu-item">
-                    <a href="<%= siteUrl %>">
-                        <span class="menu-icon">🏠</span>
-                        <span>Início</span>
-                    </a>
+                    <a href="<%= siteUrl %>">Início</a>
                 </li>
-                <li class="menu-item">
-                    <a href="<%= siteUrl %>/categoria/noticias">
-                        <span class="menu-icon">📰</span>
-                        <span>Notícias</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="<%= siteUrl %>/categoria/musica">
-                        <span class="menu-icon">🎵</span>
-                        <span>Música</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="<%= siteUrl %>/categoria/eventos">
-                        <span class="menu-icon">🎉</span>
-                        <span>Eventos</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="<%= siteUrl %>/categoria/ministerios">
-                        <span class="menu-icon">⛪</span>
-                        <span>Ministérios</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="<%= siteUrl %>/categoria/estudos">
-                        <span class="menu-icon">📖</span>
-                        <span>Estudos Bíblicos</span>
-                    </a>
-                </li>
+                <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                    <% categories.forEach(cat => { %>
+                        <li class="menu-item">
+                            <a href="<%= siteUrl %>/categoria/<%= cat.slug %>"><%= cat.nome %></a>
+                        </li>
+                    <% }); %>
+                <% } %>
             </ul>
         </div>
     </amp-sidebar>

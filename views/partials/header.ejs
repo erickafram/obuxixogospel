@@ -215,13 +215,12 @@
                 <% categories.forEach(cat => { %>
                     <li>
                         <a href="/categoria/<%= cat.slug %>">
-                            <i class="fas fa-<%= cat.icone || 'newspaper' %>"></i> 
                             <%= cat.nome %>
                         </a>
                     </li>
                 <% }); %>
             <% } else { %>
-                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                <li><a href="/">Início</a></li>
             <% } %>
         </ul>
     </div>

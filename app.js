@@ -1151,9 +1151,15 @@ app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
       where: { slug: article.categoria }
     });
 
+    // Carregar todas as categorias para o menu
+    const categories = await Category.findAll({
+      order: [['ordem', 'ASC'], ['nome', 'ASC']]
+    });
+
     res.render('article-amp', {
       article: ampArticle,
       related,
+      categories,
       categoryRoute: req.params.categorySlug,
       categoryName: category ? category.nome : 'Notícias',
       siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
@@ -1219,7 +1225,7 @@ app.get('/artigo/:slug', async (req, res) => {
     // Criar mapa de nomes de categorias
     const categoryNames = {
       'g1': 'Notícias',
-      'ge': 'Música', 
+      'ge': 'Música',
       'gshow': 'Eventos',
       'quem': 'Ministérios',
       'valor': 'Estudos'
@@ -1741,7 +1747,7 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
     // Criar mapa de nomes de categorias
     const categoryNames = {
       'g1': 'Notícias',
-      'ge': 'Música', 
+      'ge': 'Música',
       'gshow': 'Eventos',
       'quem': 'Ministérios',
       'valor': 'Estudos'
