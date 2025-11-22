@@ -37,10 +37,20 @@
                                     <input type="text" id="titulo" name="titulo" class="form-control"
                                         value="<%= isEdit ? article.titulo : '' %>"
                                         placeholder="Digite o título do post..." required>
-                                    <button type="button" class="btn-ai-small" onclick="corrigirCampo('titulo')"
-                                        title="Corrigir com IA">
-                                        ✨
-                                    </button>
+                                    <div class="ai-dropdown-wrapper">
+                                        <button type="button" class="btn-ai-small" onclick="toggleAIDropdownField('titulo')"
+                                            title="Opções de IA">
+                                            ✨
+                                        </button>
+                                        <div class="ai-dropdown-menu" id="aiDropdownTitulo">
+                                            <button type="button" class="ai-dropdown-item" onclick="aplicarIACampo('titulo', 'corrigir')">
+                                                <i class="fas fa-check-circle"></i> Corrigir Português
+                                            </button>
+                                            <button type="button" class="ai-dropdown-item" onclick="aplicarIACampo('titulo', 'polemico')">
+                                                <i class="fas fa-fire"></i> Deixar mais polêmico
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -50,10 +60,20 @@
                                     <textarea id="descricao" name="descricao" class="form-control" rows="3"
                                         placeholder="Resumo que aparece nas listagens..."
                                         required><%= isEdit ? article.descricao : '' %></textarea>
-                                    <button type="button" class="btn-ai-small" onclick="corrigirCampo('descricao')"
-                                        title="Corrigir com IA">
-                                        ✨
-                                    </button>
+                                    <div class="ai-dropdown-wrapper">
+                                        <button type="button" class="btn-ai-small" onclick="toggleAIDropdownField('descricao')"
+                                            title="Opções de IA">
+                                            ✨
+                                        </button>
+                                        <div class="ai-dropdown-menu" id="aiDropdownDescricao">
+                                            <button type="button" class="ai-dropdown-item" onclick="aplicarIACampo('descricao', 'corrigir')">
+                                                <i class="fas fa-check-circle"></i> Corrigir Português
+                                            </button>
+                                            <button type="button" class="ai-dropdown-item" onclick="aplicarIACampo('descricao', 'polemico')">
+                                                <i class="fas fa-fire"></i> Deixar mais polêmico
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1007,8 +1027,8 @@
 
         .image-preview img {
             width: 100%;
-            height: auto;
-            display: block;
+            height: 100%;
+            object-fit: cover;
         }
 
         .btn-remove {
@@ -1831,7 +1851,7 @@
             display: none;
             position: absolute;
             top: 100%;
-            left: 0;
+            right: 0;
             margin-top: 4px;
             background: white;
             border-radius: 8px;
@@ -3473,149 +3493,51 @@
             }
         }
 
-        // Criar matéria com IA
-        async function criarComIA() {
-            const tema = document.getElementById('aiTema').value;
-            const categoria = document.getElementById('aiCategoria').value;
-            const palavrasChave = document.getElementById('aiPalavrasChave').value;
-            const imagemDestaque = document.getElementById('aiImagemDestaque').value;
-            const modoAutomatico = document.getElementById('aiModoAutomatico').checked;
-            const pesquisarInternet = document.getElementById('aiPesquisarInternet').checked;
-            const links = document.getElementById('aiLinks').value;
-
-            if (!tema) {
-                alert('Por favor, informe o tema da matéria');
-                return;
-            }
-
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pesquisando e gerando matéria...';
-
-            try {
-                const response = await fetch('/api/ia/criar-materia', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tema,
-                        categoria,
-                        palavrasChave,
-                        pesquisarInternet,
-                        links: links ? links.split('\n').filter(l => l.trim()) : []
-                    })
-                });
-
-                const data = await response.json();
-
-                console.log('Resposta da API:', data);
-                console.log('Imagens sugeridas:', data.materia?.imagensSugeridas);
-
-                if (data.success) {
-                    // Preencher os campos
-                    document.getElementById('titulo').value = data.materia.titulo;
-                    document.getElementById('descricao').value = data.materia.descricao;
-                    quill.root.innerHTML = data.materia.conteudo;
-
-                    // Se tiver imagem selecionada manualmente, preencher
-                    if (imagemDestaque) {
-                        console.log('Definindo imagem destaque:', imagemDestaque);
-                        document.getElementById('imagem').value = imagemDestaque;
-                        document.getElementById('previewImg').src = imagemDestaque;
-                        document.getElementById('imagePreview').style.display = 'block';
-                        console.log('Imagem destaque definida!');
-                    }
-
-                    // Mostrar sugestões de imagens se houver
-                    console.log('Verificando sugestões de imagens...');
-                    if (data.materia.imagensSugeridas && data.materia.imagensSugeridas.length > 0) {
-                        console.log('Encontradas', data.materia.imagensSugeridas.length, 'imagens');
-
-                        // Se modo automático está ativo, selecionar primeira imagem automaticamente
-                        if (modoAutomatico) {
-                            console.log('Modo automático: selecionando primeira imagem automaticamente');
-                            const primeiraImagem = data.materia.imagensSugeridas[0];
-                            document.getElementById('imagem').value = primeiraImagem.url;
-                            document.getElementById('previewImg').src = primeiraImagem.url;
-                            document.getElementById('imagePreview').style.display = 'block';
-
-                            closeAIModal();
-                            alert('✅ Matéria criada com sucesso! Imagem selecionada automaticamente. Revise e publique!');
-                            return;
-                        }
-
-                        // Modo manual: mostrar sugestões para escolher
-                        const suggestionsDiv = document.getElementById('aiImageSuggestions');
-                        const gridDiv = document.getElementById('aiImageSuggestionsGrid');
-
-                        gridDiv.innerHTML = '';
-                        data.materia.imagensSugeridas.forEach((img, index) => {
-                            const imgDiv = document.createElement('div');
-                            imgDiv.style.cssText = 'cursor: pointer; border: 3px solid #E0E0E0; border-radius: 8px; overflow: hidden; transition: all 0.2s;';
-                            imgDiv.innerHTML = `
-                            <img src="${img.thumbnail || img.url}" 
-                                 alt="${img.descricao}" 
-                                 style="width: 100%; height: 150px; object-fit: cover;">
-                            <div style="padding: 8px; font-size: 11px; text-align: center; background: #F5F5F5;">
-                                ${img.fonte}
-                            </div>
-                        `;
-                            imgDiv.onclick = () => selecionarImagemSugeridaEFechar(img.url);
-                            imgDiv.onmouseover = () => imgDiv.style.borderColor = '#FF6B00';
-                            imgDiv.onmouseout = () => imgDiv.style.borderColor = '#E0E0E0';
-                            gridDiv.appendChild(imgDiv);
-                        });
-
-                        suggestionsDiv.style.display = 'block';
-
-                        // Mudar texto do botão para "Finalizar sem Imagem" ou "Fechar"
-                        const modalFooter = document.querySelector('#aiModal .modal-footer');
-                        modalFooter.innerHTML = `
-                        <p style="color: #4CAF50; font-weight: bold; margin-right: auto;">
-                            <i class="fas fa-check-circle"></i> Matéria gerada! Escolha uma imagem ou finalize.
-                        </p>
-                        <button type="button" class="btn btn-secondary" onclick="finalizarSemImagem()">
-                            Finalizar sem Imagem
-                        </button>
-                    `;
-
-                        // NÃO fechar o modal - deixar aberto para escolher imagem
-                    } else {
-                        // Sem sugestões de imagem, fechar normalmente
-                        closeAIModal();
-                        alert('✅ Matéria criada com sucesso! Revise e ajuste conforme necessário.');
-                    }
-                } else {
-                    alert('❌ Erro: ' + data.error);
+        // Toggle dropdown de IA para campos específicos
+        function toggleAIDropdownField(campo) {
+            event.stopPropagation();
+            const dropdown = document.getElementById(`aiDropdown${campo.charAt(0).toUpperCase() + campo.slice(1)}`);
+            
+            // Fechar outros dropdowns
+            document.querySelectorAll('.ai-dropdown-menu').forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('active');
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('❌ Erro ao criar matéria: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
+            });
+            
+            dropdown.classList.toggle('active');
         }
 
-        // Corrigir campo específico
-        async function corrigirCampo(campo) {
+        // Aplicar IA no campo com ação específica
+        async function aplicarIACampo(campo, acao) {
             const elemento = document.getElementById(campo);
             const texto = elemento.value;
 
             if (!texto || texto.trim() === '') {
-                alert('Campo vazio, nada para corrigir');
+                alert('Campo vazio, nada para processar');
                 return;
             }
 
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            // Fechar dropdown
+            const dropdown = document.getElementById(`aiDropdown${campo.charAt(0).toUpperCase() + campo.slice(1)}`);
+            dropdown.classList.remove('active');
+
+            // Desabilitar todos os botões do dropdown
+            const buttons = dropdown.querySelectorAll('.ai-dropdown-item');
+            const clickedButton = event.target.closest('.ai-dropdown-item');
+            const originalTexts = Array.from(buttons).map(btn => btn.innerHTML);
+            
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            if (clickedButton) {
+                clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+            }
 
             try {
-                const response = await fetch('/api/ia/corrigir-texto', {
+                const endpoint = acao === 'corrigir' ? '/api/ia/corrigir-texto' : '/api/ia/tornar-polemico';
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3626,18 +3548,26 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    elemento.value = data.textoCorrigido.trim();
-                    alert('✅ Texto corrigido!');
+                    elemento.value = (data.textoCorrigido || data.textoPolemico || data.resultado).trim();
+                    alert(acao === 'corrigir' ? '✅ Texto corrigido!' : '🔥 Título mais polêmico criado!');
                 } else {
                     alert('❌ Erro: ' + data.error);
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('❌ Erro ao corrigir: ' + error.message);
+                alert('❌ Erro ao processar: ' + error.message);
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                // Restaurar botões
+                buttons.forEach((btn, index) => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalTexts[index];
+                });
             }
+        }
+
+        // Corrigir campo específico (manter para compatibilidade)
+        async function corrigirCampo(campo) {
+            aplicarIACampo(campo, 'corrigir');
         }
 
         // Toggle dropdown IA
@@ -3655,6 +3585,14 @@
             if (dropdown && !btnDropdown.contains(event.target)) {
                 dropdown.classList.remove('active');
             }
+
+            // Fechar dropdowns dos campos (título e descrição)
+            document.querySelectorAll('.ai-dropdown-menu').forEach(dropdown => {
+                const wrapper = dropdown.closest('.ai-dropdown-wrapper');
+                if (wrapper && !wrapper.contains(event.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
         });
 
         // Corrigir conteúdo do editor

@@ -1586,6 +1586,23 @@ app.post('/api/ia/corrigir-texto', async (req, res) => {
   }
 });
 
+// Tornar título/descrição mais polêmico
+app.post('/api/ia/tornar-polemico', async (req, res) => {
+  try {
+    const { texto, tipo } = req.body;
+
+    if (!texto) {
+      return res.status(400).json({ error: 'Texto é obrigatório' });
+    }
+
+    const textoPolemico = await AIService.tornarPolemico(texto, tipo);
+    res.json({ success: true, textoPolemico });
+  } catch (error) {
+    console.error('Erro ao tornar texto polêmico com IA:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Reescrever matéria estilo G1
 app.post('/api/ia/reescrever-materia', async (req, res) => {
   try {

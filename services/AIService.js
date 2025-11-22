@@ -1531,6 +1531,50 @@ Retorne APENAS um objeto JSON válido:
   }
 
   /**
+   * Torna título ou descrição mais polêmico e chamativo
+   */
+  static async tornarPolemico(texto, tipo = 'titulo') {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    const tipoTexto = {
+      'titulo': 'título',
+      'descricao': 'descrição'
+    }[tipo] || 'texto';
+
+    const prompt = `Você é um especialista em criar ${tipoTexto}s polêmicos e chamativos para notícias gospel.
+
+Transforme o seguinte ${tipoTexto} em algo mais polêmico, impactante e que gere curiosidade:
+
+${texto}
+
+REGRAS:
+- Mantenha a essência e veracidade da informação
+- Use palavras fortes e impactantes (ex: "choca", "revolta", "surpreende", "expõe", "denuncia")
+- Crie senso de urgência ou controvérsia
+- Seja direto e objetivo
+- Não invente fatos, apenas reformule de forma mais polêmica
+- ${tipo === 'titulo' ? 'Máximo 100 caracteres' : 'Máximo 200 caracteres'}
+- Retorne APENAS o ${tipoTexto} reformulado, sem explicações
+
+${tipoTexto.toUpperCase()} POLÊMICO:`;
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um especialista em criar títulos e descrições polêmicas e impactantes para notícias gospel, sempre mantendo a veracidade.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ];
+
+    return await this.makeRequest(messages, 0.7, 150);
+  }
+
+  /**
    * Gera sugestões de título baseado no conteúdo
    */
   static async sugerirTitulos(conteudo, quantidade = 3) {
