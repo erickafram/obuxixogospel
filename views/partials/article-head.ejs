@@ -77,17 +77,21 @@
             <meta property="og:image:type" content="image/jpeg">
 
             <!-- Additional Social Media Meta Tags -->
-            <meta name="thumbnail"
-                content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
-            <meta itemprop="image"
-                content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta name="thumbnail" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta itemprop="image" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
             <meta itemprop="name" content="<%= article.titulo %>">
             <meta itemprop="description" content="<%= article.descricao %>">
 
-            <!-- Favicon -->
+            <!-- Favicon e Icons para Google News -->
+            <link rel="icon" type="image/png" sizes="512x512" href="https://www.obuxixogospel.com.br/images/logo.png">
             <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
             <link rel="alternate icon" href="/images/favicon.svg">
-            <link rel="apple-touch-icon" href="/images/favicon.svg">
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.obuxixogospel.com.br/images/logo.png">
+            <link rel="shortcut icon" href="https://www.obuxixogospel.com.br/images/logo.png">
+            
+            <!-- Open Graph Image (para Google News) -->
+            <meta property="og:logo" content="https://www.obuxixogospel.com.br/images/logo.png">
+            <link rel="image_src" href="https://www.obuxixogospel.com.br/images/logo.png">
 
             <!-- Performance -->
             <link rel="preconnect" href="https://fonts.googleapis.com">
