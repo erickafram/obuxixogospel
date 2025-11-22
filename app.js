@@ -255,23 +255,44 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
 // POSTS
 app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
   try {
-    const { status, categoria } = req.query;
+    const { status, categoria, search, page = 1 } = req.query;
     const where = {};
+    const { Op } = require('sequelize');
 
+    // Filtro de status
     if (status === 'published') {
       where.publicado = true;
     } else if (status === 'draft') {
       where.publicado = false;
     }
 
+    // Filtro de categoria
     if (categoria) {
       where.categoria = categoria;
     }
 
-    const articles = await Article.findAll({
+    // Busca por título, descrição ou autor
+    if (search && search.trim()) {
+      where[Op.or] = [
+        { titulo: { [Op.like]: `%${search.trim()}%` } },
+        { descricao: { [Op.like]: `%${search.trim()}%` } },
+        { autor: { [Op.like]: `%${search.trim()}%` } }
+      ];
+    }
+
+    // Paginação
+    const limit = 20; // Posts por página
+    const offset = (parseInt(page) - 1) * limit;
+
+    const { count, rows: articles } = await Article.findAndCountAll({
       where,
-      order: [['dataPublicacao', 'DESC']]
+      order: [['dataPublicacao', 'DESC']],
+      limit,
+      offset
     });
+
+    const totalPages = Math.ceil(count / limit);
+    const currentPage = parseInt(page);
 
     const { Category } = require('./models');
     const categories = await Category.findAll({
@@ -286,7 +307,14 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
       },
       articles,
       categories,
-      filters: { status, categoria },
+      filters: { status, categoria, search },
+      pagination: {
+        currentPage,
+        totalPages,
+        totalPosts: count,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1
+      },
       success: req.query.success
     });
   } catch (error) {

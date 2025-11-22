@@ -173,7 +173,7 @@ img {
 .header {
     background-color: var(--color-bg);
     position: fixed;
-    top: 35px;
+    top: 40px;
     left: 0;
     right: 0;
     width: 100%;

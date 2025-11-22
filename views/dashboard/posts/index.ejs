@@ -21,101 +21,211 @@
                 <%= success %>
             </div>
         <% } %>
-            <table class="data-table">
-                <thead>
+
+        <!-- Filtros e Busca -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="Buscar por título, descrição ou autor..." 
+                       value="<%= filters.search || '' %>"
+                       onkeypress="if(event.key === 'Enter') performSearch()">
+                <% if (filters.search) { %>
+                    <button class="clear-search" onclick="clearSearch()" title="Limpar busca">
+                        <i class="fas fa-times"></i>
+                    </button>
+                <% } %>
+            </div>
+            <div class="filters-row">
+                <select id="filterStatus" onchange="applyFilters()" class="filter-select">
+                    <option value="">Todos os Status</option>
+                    <option value="published" <%= filters.status === 'published' ? 'selected' : '' %>>Publicados</option>
+                    <option value="draft" <%= filters.status === 'draft' ? 'selected' : '' %>>Rascunhos</option>
+                </select>
+                <select id="filterCategoria" onchange="applyFilters()" class="filter-select">
+                    <option value="">Todas as Categorias</option>
+                    <% if (typeof categories !== 'undefined' && categories) { %>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat.slug %>" <%= filters.categoria === cat.slug ? 'selected' : '' %>>
+                                <%= cat.nome %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-redo"></i> Limpar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Informações de Resultados -->
+        <% if (typeof pagination !== 'undefined' && pagination) { %>
+            <div class="results-info">
+                <p>
+                    Mostrando <%= articles.length %> de <%= pagination.totalPosts %> post(s)
+                    <% if (filters.search) { %>
+                        - Buscando por: "<strong><%= filters.search %></strong>"
+                    <% } %>
+                </p>
+            </div>
+        <% } %>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="40">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>Título</th>
+                    <th>Categoria</th>
+                    <th>Autor</th>
+                    <th>Visualizações</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (articles && articles.length > 0) { %>
+                    <% 
+                    // Criar mapa de nomes de categorias a partir das categorias carregadas 
+                    const categoryNames = {}; 
+                    if (typeof categories !== 'undefined' && categories) {
+                        categories.forEach(cat => {
+                            categoryNames[cat.slug] = cat.nome;
+                        });
+                    }
+                %>
+                <% articles.forEach(article => { %>
                     <tr>
-                        <th width="40">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
-                        </th>
-                        <th>Título</th>
-                        <th>Categoria</th>
-                        <th>Autor</th>
-                        <th>Visualizações</th>
-                        <th>Data</th>
-                        <th>Status</th>
-                        <th>Ações</th>
+                        <td>
+                            <input type="checkbox" class="post-checkbox" value="<%= article.id %>"
+                                onchange="updateDeleteButton()">
+                        </td>
+                        <td>
+                            <div class="post-title">
+                                <% if (article.destaque) { %>
+                                    <span class="badge badge-warning">Destaque</span>
+                                <% } %>
+                                <%= article.titulo %>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-<%= article.categoria %>">
+                                <%= categoryNames[article.categoria] || article.categoria %>
+                            </span></td>
+                        <td>
+                            <%= article.autor %>
+                        </td>
+                        <td><i class="fas fa-eye"></i>
+                            <%= article.visualizacoes %>
+                        </td>
+                        <td>
+                            <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                        </td>
+                        <td>
+                            <% if (article.publicado) { %>
+                                <span class="badge badge-success">Publicado</span>
+                            <% } else { 
+                                // Verificar se é agendado (data futura)
+                                const dataPublicacao = new Date(article.dataPublicacao);
+                                const agora = new Date();
+                                const isAgendado = dataPublicacao > agora;
+                            %>
+                                <% if (isAgendado) { %>
+                                    <span class="badge badge-warning" style="background: #FFC107; color: #000;">⏰ Agendado</span>
+                                <% } else { %>
+                                    <span class="badge badge-secondary">Rascunho</span>
+                                <% } %>
+                            <% } %>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <% if (article.publicado) { %>
+                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>"
+                                        target="_blank" class="btn-icon" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                <% } %>
+                                <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="deletePost(<%= article.id %>)"
+                                    class="btn-icon btn-danger" title="Deletar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <% if (articles && articles.length > 0) { %>
-                        <% 
-                        // Criar mapa de nomes de categorias a partir das categorias carregadas 
-                        const categoryNames = {}; 
-                        if (typeof categories !== 'undefined' && categories) {
-                            categories.forEach(cat => {
-                                categoryNames[cat.slug] = cat.nome;
-                            });
-                        }
+                <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center">Nenhum post encontrado</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+
+        <!-- Paginação -->
+        <% if (typeof pagination !== 'undefined' && pagination && pagination.totalPages > 1) { %>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Página <%= pagination.currentPage %> de <%= pagination.totalPages %>
+                </div>
+                <div class="pagination-buttons">
+                    <% if (pagination.hasPrev) { %>
+                        <a href="?page=1<%= filters.status ? '&status=' + filters.status : '' %><%= filters.categoria ? '&categoria=' + filters.categoria : '' %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>" 
+                           class="pagination-btn" title="Primeira página">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page=<%= pagination.currentPage - 1 %><%= filters.status ? '&status=' + filters.status : '' %><%= filters.categoria ? '&categoria=' + filters.categoria : '' %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>" 
+                           class="pagination-btn" title="Página anterior">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    <% } else { %>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-double-left"></i>
+                        </span>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-left"></i>
+                        </span>
+                    <% } %>
+
+                    <!-- Números de página -->
+                    <% 
+                        const startPage = Math.max(1, pagination.currentPage - 2);
+                        const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+                        for (let i = startPage; i <= endPage; i++) { 
                     %>
-                    <% articles.forEach(article => { %>
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" class="post-checkbox" value="<%= article.id %>"
-                                            onchange="updateDeleteButton()">
-                                    </td>
-                                    <td>
-                                        <div class="post-title">
-                                            <% if (article.destaque) { %>
-                                                <span class="badge badge-warning">Destaque</span>
-                                                <% } %>
-                                                    <%= article.titulo %>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge badge-<%= article.categoria %>">
-                                            <%= categoryNames[article.categoria] || article.categoria %>
-                                        </span></td>
-                                    <td>
-                                        <%= article.autor %>
-                                    </td>
-                                    <td><i class="fas fa-eye"></i>
-                                        <%= article.visualizacoes %>
-                                    </td>
-                                    <td>
-                                        <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
-                                    </td>
-                                    <td>
-                                        <% if (article.publicado) { %>
-                                            <span class="badge badge-success">Publicado</span>
-                                        <% } else { 
-                                            // Verificar se é agendado (data futura)
-                                            const dataPublicacao = new Date(article.dataPublicacao);
-                                            const agora = new Date();
-                                            const isAgendado = dataPublicacao > agora;
-                                        %>
-                                            <% if (isAgendado) { %>
-                                                <span class="badge badge-warning" style="background: #FFC107; color: #000;">⏰ Agendado</span>
-                                            <% } else { %>
-                                                <span class="badge badge-secondary">Rascunho</span>
-                                            <% } %>
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <% if (article.publicado) { %>
-                                                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>"
-                                                    target="_blank" class="btn-icon" title="Ver">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <% } %>
-                                                    <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon"
-                                                        title="Editar">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <button onclick="deletePost(<%= article.id %>)"
-                                                        class="btn-icon btn-danger" title="Deletar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <% }); %>
-                                    <% } else { %>
-                                        <tr>
-                                            <td colspan="8" class="text-center">Nenhum post encontrado</td>
-                                        </tr>
-                                        <% } %>
-                </tbody>
-            </table>
+                        <% if (i === pagination.currentPage) { %>
+                            <span class="pagination-btn active"><%= i %></span>
+                        <% } else { %>
+                            <a href="?page=<%= i %><%= filters.status ? '&status=' + filters.status : '' %><%= filters.categoria ? '&categoria=' + filters.categoria : '' %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>" 
+                               class="pagination-btn"><%= i %></a>
+                        <% } %>
+                    <% } %>
+
+                    <% if (pagination.hasNext) { %>
+                        <a href="?page=<%= pagination.currentPage + 1 %><%= filters.status ? '&status=' + filters.status : '' %><%= filters.categoria ? '&categoria=' + filters.categoria : '' %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>" 
+                           class="pagination-btn" title="Próxima página">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page=<%= pagination.totalPages %><%= filters.status ? '&status=' + filters.status : '' %><%= filters.categoria ? '&categoria=' + filters.categoria : '' %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>" 
+                           class="pagination-btn" title="Última página">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    <% } else { %>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-right"></i>
+                        </span>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-double-right"></i>
+                        </span>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
     </div>
     </div>
     </div>
@@ -499,6 +609,181 @@
                 white-space: nowrap;
             }
         }
+
+        /* Filtros e Busca */
+        .filters-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E8E8E8;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-box i.fa-search {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            font-size: 14px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 40px 11px 40px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #F3F4F6;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #6B7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .clear-search:hover {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 14px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        }
+
+        .btn-secondary {
+            background: #F3F4F6;
+            color: #4B5563;
+            padding: 10px 16px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #E5E7EB;
+            color: #1F2937;
+        }
+
+        .results-info {
+            padding: 12px 0;
+            color: #6B7280;
+            font-size: 13px;
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 16px;
+        }
+
+        .results-info strong {
+            color: #FF6B00;
+        }
+
+        /* Paginação */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #F9FAFB;
+            border-top: 1px solid #E2E8F0;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pagination-info {
+            color: #6B7280;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #E2E8F0;
+            background: white;
+            color: #4B5563;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .pagination-btn:hover:not(.disabled):not(.active) {
+            background: #F9FAFB;
+            border-color: #FF6B00;
+            color: #FF6B00;
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+            color: white;
+            border-color: #FF6B00;
+            font-weight: 600;
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
     </style>
 
     <script>
@@ -597,6 +882,7 @@
                     });
             }
         }
+
         // Aplicar filtros
         function applyFilters() {
             const categoria = document.getElementById('filterCategoria').value;
@@ -613,19 +899,41 @@
             window.location.href = `${window.location.pathname}?${params.toString()}`;
         }
 
-        // Search functionality (client-side for now, or could be server-side)
-        document.getElementById('searchPosts').addEventListener('keyup', function (e) {
-            const term = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.data-table tbody tr');
+        // Busca (server-side)
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const params = new URLSearchParams(window.location.search);
+            
+            if (searchTerm) {
+                params.set('search', searchTerm);
+            } else {
+                params.delete('search');
+            }
+            
+            // Resetar para página 1 ao buscar
+            params.set('page', '1');
+            
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
 
-            rows.forEach(row => {
-                const title = row.querySelector('.post-title').textContent.toLowerCase();
-                if (title.includes(term)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+        // Limpar busca
+        function clearSearch() {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('search');
+            params.set('page', '1');
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        // Limpar todos os filtros
+        function clearFilters() {
+            window.location.href = window.location.pathname;
+        }
+
+        // Buscar ao pressionar Enter
+        document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
         });
     </script>
 
