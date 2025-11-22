@@ -375,8 +375,10 @@ async function loadComments() {
 
 function updateStats() {
     const total = allComments.length;
-    const pending = allComments.filter(c => !c.aprovado).length;
-    const approved = allComments.filter(c => c.aprovado).length;
+    const pending = allComments.filter(c => !c.aprovado || c.aprovado === 0).length;
+    const approved = allComments.filter(c => c.aprovado === true || c.aprovado === 1).length;
+    
+    console.log('Stats - Total:', total, 'Pendentes:', pending, 'Aprovados:', approved); // Debug
     
     document.getElementById('totalComments').textContent = total;
     document.getElementById('pendingComments').textContent = pending;
@@ -387,13 +389,20 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
     
+    console.log('Filtro selecionado:', statusFilter); // Debug
+    console.log('Total de comentários:', allComments.length); // Debug
+    
     let filtered = allComments;
     
     // Filtrar por status
     if (statusFilter === 'pending') {
-        filtered = filtered.filter(c => !c.aprovado);
+        // Verifica tanto boolean false quanto número 0
+        filtered = filtered.filter(c => !c.aprovado || c.aprovado === 0);
+        console.log('Pendentes encontrados:', filtered.length); // Debug
     } else if (statusFilter === 'approved') {
-        filtered = filtered.filter(c => c.aprovado);
+        // Verifica tanto boolean true quanto número 1
+        filtered = filtered.filter(c => c.aprovado === true || c.aprovado === 1);
+        console.log('Aprovados encontrados:', filtered.length); // Debug
     }
     
     // Filtrar por busca
@@ -404,8 +413,10 @@ function applyFilters() {
             c.comentario.toLowerCase().includes(searchTerm) ||
             (c.article && c.article.titulo.toLowerCase().includes(searchTerm))
         );
+        console.log('Após busca:', filtered.length); // Debug
     }
     
+    console.log('Comentários filtrados:', filtered); // Debug
     renderComments(filtered);
 }
 
@@ -469,13 +480,13 @@ function renderComments(comments) {
                 </td>
                 <td style="font-size: 13px; color: #4A5568;">${formattedDate}</td>
                 <td>
-                    ${comment.aprovado ? 
+                    ${(comment.aprovado === true || comment.aprovado === 1) ? 
                         '<span class="badge badge-success">Aprovado</span>' : 
                         '<span class="badge badge-warning">Pendente</span>'}
                 </td>
                 <td>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                        ${!comment.aprovado ? `
+                        ${(!comment.aprovado || comment.aprovado === 0) ? `
                             <button onclick="approveComment(${comment.id})" 
                                     class="action-btn btn-approve"
                                     title="Aprovar comentário">
