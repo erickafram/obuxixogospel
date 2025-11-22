@@ -5,6 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Preconnect para recursos externos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.instagram.com">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
     <!-- SEO Meta Tags -->
     <title>
         <%= article.titulo %> | Obuxixo Gospel
@@ -274,8 +282,8 @@
     <header class="header">
         <div class="header-top">
             <div class="container">
-                <button class="menu-hamburger" id="menuToggle">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <button class="menu-hamburger" id="menuToggle" aria-label="Abrir menu de navegação">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                         <circle cx="3" cy="3" r="1.5" fill="currentColor" />
                         <circle cx="10" cy="3" r="1.5" fill="currentColor" />
                         <circle cx="17" cy="3" r="1.5" fill="currentColor" />
@@ -296,8 +304,8 @@
                 </div>
                 <div class="header-actions">
                     <div class="search-container">
-                        <button class="search-toggle" id="searchToggle">
-                            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                        <button class="search-toggle" id="searchToggle" aria-label="Abrir busca">
+                            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                 <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" fill="none" />
                                 <path d="M12 12L17 17" stroke="currentColor" stroke-width="1.5"
                                     stroke-linecap="round" />
@@ -337,8 +345,8 @@
     <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-header">
             <h3>Menu</h3>
-            <button class="close-menu" id="closeMenu">
-                <i class="fas fa-times"></i>
+            <button class="close-menu" id="closeMenu" aria-label="Fechar menu">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
         <ul class="mobile-menu-links">
