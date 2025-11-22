@@ -713,20 +713,20 @@ class AIService {
           // Tentar múltiplas fontes de URL em ordem de prioridade
           let imageUrl = null;
           let isHighQuality = false;
-          
+
           // 1. Tentar item.link (URL original da imagem)
           if (item.link) {
             const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(item.link) ||
               item.link.includes('googleusercontent.com') ||
               item.link.includes('ggpht.com') ||
               item.link.includes('gstatic.com');
-            
+
             if (isValidImageUrl) {
               imageUrl = item.link;
               isHighQuality = true;
             }
           }
-          
+
           // 2. Se não encontrou, tentar contextLink (URL da página que contém a imagem)
           if (!imageUrl && item.image?.contextLink) {
             const contextUrl = item.image.contextLink;
@@ -734,13 +734,13 @@ class AIService {
               contextUrl.includes('googleusercontent.com') ||
               contextUrl.includes('ggpht.com') ||
               contextUrl.includes('gstatic.com');
-            
+
             if (isValidImageUrl) {
               imageUrl = contextUrl;
               isHighQuality = true;
             }
           }
-          
+
           // 3. Último recurso: usar thumbnailLink (baixa qualidade)
           if (!imageUrl && item.image?.thumbnailLink) {
             imageUrl = item.image.thumbnailLink;
@@ -772,7 +772,7 @@ class AIService {
 
       const highQualityCount = imagens.filter(img => img.highQuality).length;
       const lowQualityCount = imagens.length - highQualityCount;
-      
+
       console.log('Imagens do Google encontradas:', imagens.length);
       console.log(`  ✅ Alta qualidade: ${highQualityCount}`);
       console.log(`  ⚠️ Baixa qualidade (thumbnails): ${lowQualityCount}`);
@@ -901,9 +901,7 @@ class AIService {
 
     const imagensSugeridas = await this.buscarImagensGoogle(palavrasParaImagem);
 
-    const prompt = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
-    
-⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no texto fornecido abaixo.
+    const prompt = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada EXCLUSIVAMENTE no texto fornecido abaixo.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
 - ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
@@ -912,34 +910,75 @@ class AIService {
 - ❌ NÃO invente nomes de igrejas, cidades, bairros ou lugares
 - ❌ NÃO adicione citações ou falas que NÃO existem no texto original
 - ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
+- ❌ NÃO adicione informações sobre "velório", "sepultamento", "horários" se NÃO foram citados
 - ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
-- ❌ JAMAIS cite a fonte de maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, afirmou..."
-- ❌ JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva diretamente: "No vídeo, o pastor aparece..."
 - ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
-- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
+- ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
 
-✅ O QUE VOCÊ DEVE FAZER:
-1. ✅ Use APENAS as informações que estão no texto original fornecido
+✅ O QUE VOCÊ DEVE FAZER (ESTILO METRÓPOLES):
+1. ✅ Use APENAS as informações que estão no texto original
 2. ✅ Reorganize essas informações em estrutura jornalística profissional
 3. ✅ Melhore a fluidez e conectivos entre as frases
 4. ✅ Use sinônimos mantendo o sentido exato
-5. ✅ Torne o texto mais humanizado e próximo do leitor
+5. ✅ Torne o texto informativo e direto
 6. ✅ Se houver citações no original, mantenha-as exatamente como estão
 7. ✅ Se NÃO houver citações, NÃO invente nenhuma
-8. ✅ Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou"
 
 📏 TAMANHO DO CONTEÚDO:
 - Escreva APENAS com base no que foi fornecido
-- Se o texto original é curto, a matéria será curta (200-400 palavras está OK)
+- Se o texto original é curto, a matéria será curta (200-300 palavras está OK)
 - Se o texto original é longo, a matéria será mais longa
 - NÃO force expansão artificial do conteúdo
 
-ESTILO JORNALÍSTICO G1 - HUMANIZADO:
-- Escreva como se você estivesse cobrindo o fato presencialmente
-- Use uma narrativa envolvente, com parágrafos bem conectados
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
-- Use conectivos variados para dar fluidez ao texto
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão
+ESTRUTURA OBRIGATÓRIA:
+
+1. TÍTULO (máximo 80 caracteres):
+   - Impactante, jornalístico e direto (estilo Metrópoles)
+   - Baseado APENAS no fato principal mencionado
+   - Sem sensacionalismo exagerado, foco na notícia
+
+2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
+   - Brief, direct introduction summarizing the lead
+   - Linguagem simples e direta
+
+3. CONTEÚDO HTML:
+
+   a) LIDE (1-2 parágrafos): Fato principal de forma DIRETA
+      - Comece com o fato mais importante (Quem, o quê, onde, quando)
+      - Texto objetivo, sem rodeios
+
+   b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível):
+      - Use <h3> para subtítulos APENAS se fizer sentido e o texto for longo
+      - Mantenha parágrafos de tamanho médio (3-5 linhas)
+      - Desenvolva APENAS os pontos mencionados no original
+      - Conecte os parágrafos de forma lógica
+
+   c) CITAÇÕES (SE HOUVER no texto original):
+      - Use <blockquote> para citações que já existem
+      - NÃO crie citações novas
+      - Se NÃO há citações, NÃO adicione nenhuma
+
+   d) CONCLUSÃO (1 parágrafo):
+      - Encerramento informativo baseado no contexto
+      - EVITE: "hora de repensar", "chamado à reflexão"
+      - PREFIRA: Informações sobre desdobramentos ou contexto final
+
+FORMATAÇÃO HTML - MUITO IMPORTANTE:
+- Use <p>texto aqui</p> para CADA parágrafo
+- NÃO adicione <p></p> vazios entre parágrafos
+- NÃO adicione <br> entre parágrafos
+- Use <h3>Subtítulo</h3> APENAS se necessário
+- Use <blockquote>citação</blockquote> APENAS para citações que JÁ EXISTEM
+- Use <strong> apenas para nomes importantes
+- Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
+
+LINGUAGEM (ESTILO METRÓPOLES):
+- ✅ Tom informativo, sério e direto
+- ✅ Parágrafos bem estruturados
+- ✅ Uso de voz ativa preferencialmente
+- ✅ Vocabulário jornalístico padrão
+- ❌ Evite gírias, exclamações excessivas ou linguagem muito informal
+- ❌ Evite opiniões pessoais ou juízos de valor
 
 CATEGORIA: ${categoria}
 ${linkReferencia ? `LINK DE REFERÊNCIA: ${linkReferencia}` : ''}
@@ -947,25 +986,11 @@ ${linkReferencia ? `LINK DE REFERÊNCIA: ${linkReferencia}` : ''}
 TEXTO FORNECIDO (USE APENAS ISSO):
 ${texto}
 
-ESTRUTURA OBRIGATÓRIA:
+⚠️ LEMBRE-SE: É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!
 
-1. TÍTULO (máximo 80 caracteres):
-   - Impactante, jornalístico e claro (estilo G1)
+IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
 
-2. DESCRIÇÃO (máximo 160 caracteres):
-   - Resumo objetivo e instigante do conteúdo
-
-3. CONTEÚDO EM HTML:
-   - Use tags: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>
-   - Introdução impactante (Lide)
-   - Desenvolvimento fluido com os detalhes disponíveis
-   - Citações diretas entre aspas ou em blockquote (SE HOUVER)
-   - Conclusão jornalística (impacto ou desdobramento)
-   - Use <br> para quebras de linha (apenas uma vez)
-
-⚠️ LEMBRE-SE: É MELHOR uma matéria fiel ao texto fornecido do que uma matéria longa com informações inventadas!
-
-IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
+Retorne APENAS um objeto JSON válido:
 {
   "titulo": "título da matéria",
   "descricao": "descrição curta",
@@ -975,7 +1000,7 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     const messages = [
       {
         role: 'system',
-        content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade baseado em textos fornecidos, sem inventar informações.'
+        content: 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.'
       },
       {
         role: 'user',
@@ -1180,10 +1205,11 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
     // Ajustar prompt baseado se tem conteúdo extraído ou não
     let promptInstrucao = '';
     console.log('🔨 Construindo prompt...');
+
+    const systemRole = 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.';
+
     if (conteudoExtraido) {
-      promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
-      
-⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
+      promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
 - ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
@@ -1194,68 +1220,47 @@ IMPORTANTE: Retorne APENAS um objeto JSON válido no formato:
 - ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
 - ❌ NÃO adicione informações sobre "velório", "sepultamento", "horários" se NÃO foram citados
 - ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
-- ❌ JAMAIS cite a fonte de maneira robótica. Se precisar citar, faça naturalmente: "Em publicação nas redes sociais, afirmou..."
-- ❌ JAMAIS descreva a mídia de forma técnica ("A imagem mostra...", "O vídeo exibe..."). Descreva diretamente: "No vídeo, o pastor aparece..."
 - ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
-- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
+- ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
 
-✅ O QUE VOCÊ DEVE FAZER:
-1. ✅ Use APENAS as informações que estão no texto original fornecido
+✅ O QUE VOCÊ DEVE FAZER (ESTILO METRÓPOLES):
+1. ✅ Use APENAS as informações que estão no texto original
 2. ✅ Reorganize essas informações em estrutura jornalística profissional
 3. ✅ Melhore a fluidez e conectivos entre as frases
 4. ✅ Use sinônimos mantendo o sentido exato
-5. ✅ Torne o texto mais humanizado e próximo do leitor
+5. ✅ Torne o texto informativo e direto
 6. ✅ Se houver citações no original, mantenha-as exatamente como estão
 7. ✅ Se NÃO houver citações, NÃO invente nenhuma
-8. ✅ Transforme "Segundo o post, Pereira afirmou" em "O pastor Marcos Pereira afirmou"
-9. ✅ Transforme "A publicação obteve comentários" em "A declaração gerou debate nas redes sociais"
 
 📏 TAMANHO DO CONTEÚDO:
 - Escreva APENAS com base no que foi fornecido
-- Se o texto original é curto, a matéria será curta (200-400 palavras está OK)
+- Se o texto original é curto, a matéria será curta (200-300 palavras está OK)
 - Se o texto original é longo, a matéria será mais longa
-- NÃO force expansão artificial do conteúdo
-
-ESTILO JORNALÍSTICO G1 - HUMANIZADO:
-- Escreva como se você estivesse cobrindo o fato presencialmente
-- Use uma narrativa envolvente, com parágrafos bem conectados
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
-- Use conectivos variados para dar fluidez ao texto
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão`;
+- NÃO force expansão artificial do conteúdo`;
     } else {
-      promptInstrucao = `Você é um jornalista sênior do portal G1, especializado em notícias do mundo gospel.
-      
-⚠️ IMPORTANTE: Crie uma matéria jornalística sobre o tema abaixo.
+      promptInstrucao = `⚠️ TAREFA: Crie uma matéria jornalística no estilo do portal Metrópoles sobre o tema abaixo.
 
 🚨 REGRAS IMPORTANTES:
-- ✅ Use informações gerais e conhecimento público sobre o tema
-- ✅ Mantenha um tom jornalístico profissional e humanizado
+- ✅ Use informações gerais e conhecimento público VERIFICÁVEL sobre o tema
+- ✅ Mantenha um tom jornalístico profissional, direto e objetivo (Estilo Metrópoles)
 - ✅ Se você NÃO tem informações específicas sobre o tema, seja genérico mas factual
 - ❌ NÃO invente números específicos, datas ou eventos que você não tem certeza
 - ❌ NÃO invente declarações ou citações de pessoas específicas
 - ❌ NÃO especule sobre quantidades ("500 pessoas", "milhares de fiéis") sem base
 - ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas"
 - ❌ JAMAIS use meta-linguagem: "Segundo informações...", "Baseado em..."
-- ❌ JAMAIS termine com perguntas ou chamadas para ação ("E você, o que acha?")
 
 ✅ O QUE VOCÊ PODE FAZER:
 1. ✅ Escrever sobre o tema de forma geral e contextual
 2. ✅ Usar conhecimento público sobre o assunto
-3. ✅ Manter tom jornalístico profissional
+3. ✅ Manter tom jornalístico profissional e sério
 4. ✅ Ser objetivo e direto
 5. ✅ Se mencionar pessoas, use apenas informações públicas conhecidas
 
 📏 TAMANHO DO CONTEÚDO:
 - Matéria de tamanho médio (300-500 palavras)
 - Não force expansão artificial
-- Seja conciso e direto
-
-ESTILO JORNALÍSTICO G1 - HUMANIZADO:
-- Escreva como se você estivesse cobrindo o fato presencialmente
-- Use uma narrativa envolvente, com parágrafos bem conectados
-- Mantenha a objetividade, mas com fluidez (evite frases robóticas)
-- Use conectivos variados para dar fluidez ao texto
-- Organize em: Lide (o que, quem, quando, onde), Contexto, Detalhes e Repercussão`;
+- Seja conciso e direto`;
     }
 
     const prompt = `${promptInstrucao}
@@ -1268,56 +1273,64 @@ ${informacoesAdicionais ? `\n${informacoesAdicionais}` : ''}
 ESTRUTURA OBRIGATÓRIA:
 
 1. TÍTULO (máximo 80 caracteres):
-   - Impactante, jornalístico e claro (estilo G1)
-   - Direto ao ponto
+   - Impactante, jornalístico e direto (estilo Metrópoles)
+   - Baseado APENAS no fato principal mencionado
+   - Sem sensacionalismo exagerado, foco na notícia
 
 2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
-   - Breve introdução reforçando os principais fatos
+   - Brief, direct introduction summarizing the lead
    - Linguagem simples e direta
 
 3. CONTEÚDO HTML:
 
-   a) LIDE (1-2 parágrafos):
-      - Fato principal de forma clara e impactante
-      - O que, quem, quando, onde (baseado nas informações disponíveis)
+   a) LIDE (1-2 parágrafos): Fato principal de forma DIRETA
+      - Comece com o fato mais importante (Quem, o quê, onde, quando)
+      - Texto objetivo, sem rodeios
 
-   b) DESENVOLVIMENTO (conforme conteúdo disponível):
-      - Detalhes e contexto
-      - Use <h3> para subtítulos APENAS se fizer sentido
-      - Mantenha parágrafos curtos (3-4 linhas)
+   b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível):
+      - Use <h3> para subtítulos APENAS se fizer sentido e o texto for longo
+      - Mantenha parágrafos de tamanho médio (3-5 linhas)
+      - Desenvolva APENAS os pontos mencionados no original ou fatos públicos conhecidos
+      - Conecte os parágrafos de forma lógica
 
    c) CITAÇÕES (SE HOUVER):
-      - Use <blockquote> para citações que existem no conteúdo
-      - NÃO invente citações se não houver
+      - Use <blockquote> para citações que já existem
+      - NÃO crie citações novas
+      - Se NÃO há citações, NÃO adicione nenhuma
 
    d) CONCLUSÃO (1 parágrafo):
-      - Encerramento jornalístico
-      - Impacto ou repercussão (se mencionado)
+      - Encerramento informativo baseado no contexto
       - EVITE: "hora de repensar", "chamado à reflexão"
-      - PREFIRA: "A notícia repercutiu", "O caso comoveu"
+      - PREFIRA: Informações sobre desdobramentos ou contexto final
 
-FORMATAÇÃO HTML:
-- Use <p>texto</p> para CADA parágrafo
-- Use <br> (UMA quebra apenas) entre parágrafos para espaçamento
-- Use <h3>Subtítulo</h3> para subtítulos (se necessário)
-- Use <blockquote>citação</blockquote> para citações (se houver)
+FORMATAÇÃO HTML - MUITO IMPORTANTE:
+- Use <p>texto aqui</p> para CADA parágrafo
+- NÃO adicione <p></p> vazios entre parágrafos
+- NÃO adicione <br> entre parágrafos
+- Use <h3>Subtítulo</h3> APENAS se necessário
+- Use <blockquote>citação</blockquote> APENAS para citações que JÁ EXISTEM
 - Use <strong> apenas para nomes importantes
-- Formato: <p>texto1</p><br><p>texto2</p><br><h3>título</h3><br><p>texto3</p>
+- Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
 
+LINGUAGEM (ESTILO METRÓPOLES):
+- ✅ Tom informativo, sério e direto
+- ✅ Parágrafos bem estruturados
+- ✅ Uso de voz ativa preferencialmente
+- ✅ Vocabulário jornalístico padrão
+- ❌ Evite gírias, exclamações excessivas ou linguagem muito informal
+- ❌ Evite opiniões pessoais ou juízos de valor
 
-⚠️ LEMBRE-SE: É MELHOR uma matéria fiel ao conteúdo disponível do que uma matéria longa com informações inventadas!
-
-TAGS HTML PERMITIDAS: <p>, <h2>, <h3>, <strong>, <em>, <blockquote>, <ul>, <li>, <br>
+⚠️ LEMBRE-SE: É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!
 
 IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
 
 Retorne APENAS um objeto JSON válido:
-{"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha com <br> entre parágrafos"}`;
+{"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha"}`;
 
     const messages = [
       {
         role: 'system',
-        content: 'Você é um assistente especializado em criar conteúdo jornalístico gospel de alta qualidade.'
+        content: systemRole
       },
       {
         role: 'user',
@@ -1912,11 +1925,11 @@ Agora reorganize o conteúdo fornecido acima:`
     const messages = [
       {
         role: 'system',
-        content: 'Você é um jornalista profissional do G1 que cria matérias mantendo TODOS os fatos originais, sem inventar informações, com linguagem humanizada e natural.'
+        content: 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.'
       },
       {
         role: 'user',
-        content: `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo G1 baseada EXCLUSIVAMENTE no conteúdo abaixo.
+        content: `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada EXCLUSIVAMENTE no conteúdo abaixo.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
 - ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
@@ -1930,12 +1943,12 @@ Agora reorganize o conteúdo fornecido acima:`
 - ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
 - ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
 
-✅ O QUE VOCÊ DEVE FAZER:
+✅ O QUE VOCÊ DEVE FAZER (ESTILO METRÓPOLES):
 1. ✅ Use APENAS as informações que estão no texto original
-2. ✅ Reorganize essas informações em estrutura jornalística
+2. ✅ Reorganize essas informações em estrutura jornalística profissional
 3. ✅ Melhore a fluidez e conectivos entre as frases
 4. ✅ Use sinônimos mantendo o sentido exato
-5. ✅ Torne o texto mais humanizado e próximo do leitor
+5. ✅ Torne o texto informativo e direto
 6. ✅ Se houver citações no original, mantenha-as exatamente como estão
 7. ✅ Se NÃO houver citações, NÃO invente nenhuma
 
@@ -1948,24 +1961,25 @@ Agora reorganize o conteúdo fornecido acima:`
 ESTRUTURA OBRIGATÓRIA:
 
 1. TÍTULO (máximo 80 caracteres):
-   - Impactante, jornalístico e claro (estilo G1)
+   - Impactante, jornalístico e direto (estilo Metrópoles)
    - Baseado APENAS no fato principal mencionado
-   - Use verbos emotivos quando apropriado: "comoveu", "abalou", "emocionou"
+   - Sem sensacionalismo exagerado, foco na notícia
 
 2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
    - Breve introdução reforçando os principais fatos DO TEXTO ORIGINAL
-   - Linguagem simples e direta
+   - Linguagem simples e direta, resumindo o lide
 
 3. CONTEÚDO HTML:
 
-   a) LIDE (1-2 parágrafos): Fato principal de forma HUMANA
-      - Escreva o QUE aconteceu baseado no texto
-      - Use narrativa envolvente MAS sem inventar detalhes
+   a) LIDE (1-2 parágrafos): Fato principal de forma DIRETA
+      - Comece com o fato mais importante (Quem, o quê, onde, quando)
+      - Texto objetivo, sem rodeios
 
    b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível):
-      - Use <h3> para subtítulos APENAS se fizer sentido
-      - Mantenha parágrafos curtos (3-4 linhas)
+      - Use <h3> para subtítulos APENAS se fizer sentido e o texto for longo
+      - Mantenha parágrafos de tamanho médio (3-5 linhas)
       - Desenvolva APENAS os pontos mencionados no original
+      - Conecte os parágrafos de forma lógica
 
    c) CITAÇÕES (SE HOUVER no texto original):
       - Use <blockquote> para citações que já existem
@@ -1973,9 +1987,9 @@ ESTRUTURA OBRIGATÓRIA:
       - Se NÃO há citações no original, NÃO adicione nenhuma
 
    d) CONCLUSÃO (1 parágrafo):
-      - Encerramento respeitoso baseado no contexto
+      - Encerramento informativo baseado no contexto
       - EVITE: "hora de repensar", "chamado à reflexão"
-      - PREFIRA: "A notícia repercutiu", "O caso comoveu"
+      - PREFIRA: Informações sobre desdobramentos (se houver no texto) ou contexto final
 
 FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <p>texto aqui</p> para CADA parágrafo
@@ -1986,12 +2000,13 @@ FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <strong> apenas para nomes importantes
 - Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
 
-LINGUAGEM HUMANIZADA (ESTILO G1):
-- ✅ Tom próximo, emotivo mas respeitoso
-- ✅ Parágrafos curtos e diretos
-- ✅ Use conectivos variados (além disso, enquanto isso, por outro lado)
-- ✅ Varie o tamanho das frases (curtas, médias, longas)
-- ❌ Evite jargões técnicos ou linguagem rebuscada
+LINGUAGEM (ESTILO METRÓPOLES):
+- ✅ Tom informativo, sério e direto
+- ✅ Parágrafos bem estruturados
+- ✅ Uso de voz ativa preferencialmente
+- ✅ Vocabulário jornalístico padrão
+- ❌ Evite gírias, exclamações excessivas ou linguagem muito informal
+- ❌ Evite opiniões pessoais ou juízos de valor
 
 CONTEÚDO ORIGINAL (USE APENAS ISSO):
 ${textoLimpo}
@@ -2137,11 +2152,11 @@ Retorne APENAS um objeto JSON válido:
     const messages = [
       {
         role: 'system',
-        content: 'Você é um jornalista profissional do G1 que reescreve matérias mantendo TODOS os fatos originais, sem inventar informações, com linguagem humanizada e natural.'
+        content: 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.'
       },
       {
         role: 'user',
-        content: `⚠️ TAREFA: Reescreva a matéria abaixo no estilo jornalístico do G1, mantendo TODOS os fatos e contexto da matéria original.
+        content: `⚠️ TAREFA: Reescreva a matéria abaixo no estilo jornalístico do portal Metrópoles, mantendo TODOS os fatos e contexto da matéria original.
 
 🎯 REGRA PRINCIPAL - MANTENHA O CONTEXTO:
 - ✅ Mantenha TODOS os nomes, lugares, datas e fatos mencionados no texto original
@@ -2157,23 +2172,24 @@ Retorne APENAS um objeto JSON válido:
 4. ❌ NÃO invente declarações de pessoas não mencionadas
 5. ❌ NÃO mude nomes de pessoas ou organizações
 
-✅ PODE FAZER:
-1. ✅ Reorganizar as informações em melhor estrutura jornalística
+✅ PODE FAZER (ESTILO METRÓPOLES):
+1. ✅ Reorganizar as informações em melhor estrutura jornalística profissional
 2. ✅ Adicionar contexto genérico sobre o tema (sem inventar fatos)
 3. ✅ Usar sinônimos e variar a linguagem mantendo o sentido
 4. ✅ Melhorar conectivos e fluidez do texto
-5. ✅ Tornar o texto mais humanizado e próximo do leitor
+5. ✅ Tornar o texto informativo e direto
 
 ESTRUTURA OBRIGATÓRIA:
-1. **Lide** (1-2 parágrafos): Fato principal de forma HUMANA e impactante
-   - Exemplo: "Pastora evangélica morre e comove fiéis de sua igreja"
-   - Use verbos emotivos: "comoveu", "abalou", "emocionou"
+1. **Lide** (1-2 parágrafos): Fato principal de forma DIRETA e informativa
+   - Exemplo: "A pastora Ivaneide faleceu nesta terça-feira (20/11), deixando fiéis comovidos."
+   - Foco no quê, quem, quando e onde.
    
 2. **Desenvolvimento** (2-3 parágrafos): Detalhes e contexto
    - Use <h3> para subtítulos quando apropriado
-   - Mantenha parágrafos curtos (3-4 linhas)
+   - Mantenha parágrafos de tamanho médio (3-5 linhas)
    
-3. **Conclusão** (1 parágrafo): Encerramento respeitoso
+3. **Conclusão** (1 parágrafo): Encerramento informativo
+   - Informações sobre desdobramentos ou contexto final
 
 FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <p>texto aqui</p> para CADA parágrafo
@@ -2185,20 +2201,20 @@ FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <strong> apenas para nomes importantes
 - Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
 
-LINGUAGEM HUMANIZADA (ESTILO G1):
-- ✅ "Pastora evangélica morre e deixa comunidade em luto"
-- ✅ "O falecimento comoveu fiéis da igreja onde ela atuava"
-- ✅ "Conhecida por seu trabalho com a comunidade"
-- ✅ Tom próximo, emotivo mas respeitoso
-- ✅ Parágrafos curtos e diretos
-- ❌ Evite: "está de luto", "manifestaram apoio" (muito formal)
+LINGUAGEM (ESTILO METRÓPOLES):
+- ✅ "Morre a pastora Ivaneide, da Obra Restauração Saquassú"
+- ✅ "O falecimento foi confirmado pela igreja onde ela atuava"
+- ✅ "Ela era conhecida pelo trabalho comunitário na região"
+- ✅ Tom informativo, sério e direto
+- ✅ Parágrafos bem estruturados
+- ❌ Evite: "está de luto", "manifestaram apoio" (clichês excessivos)
 - ❌ Evite: jargões técnicos ou linguagem rebuscada
 
 TEXTO ORIGINAL:
 ${textoLimpo}
 
 EXEMPLO DE FORMATAÇÃO CORRETA (SEM ESPAÇOS ENTRE TAGS):
-<p>A comunidade gospel está em luto com o falecimento da pastora Ivaneide, que atuava na Obra Restauração Saquassú. Conhecida por sua dedicação ao evangelho, ela deixa um legado de fé que marcou a vida de muitos fiéis.</p><p>Sua trajetória foi marcada pelo amor às pessoas e compromisso com o Reino de Deus. O ministério da pastora se destacou pela compaixão e pelo exemplo de vida cristã.</p><h3>Homenagens</h3><p>O pastor Nilson Luiz e a equipe da Obra Restauração Saquassú expressaram solidariedade à família. "Sua missão na terra foi cumprida com excelência", destacaram em nota.</p><p>Mensagens de condolências têm sido compartilhadas por fiéis que foram impactados por seu trabalho.</p>
+<p>A pastora Ivaneide, da Obra Restauração Saquassú, faleceu deixando a comunidade gospel comovida. Reconhecida por sua dedicação, ela construiu um legado de fé que marcou a vida de diversos fiéis na região.</p><p>Sua trajetória foi pautada pelo compromisso com o evangelho e pelo auxílio ao próximo. O ministério liderado pela pastora se destacou pelas ações de compaixão e pelo exemplo de vida cristã.</p><h3>Homenagens</h3><p>Em nota, o pastor Nilson Luiz e a equipe da Obra Restauração Saquassú lamentaram a perda. "Sua missão na terra foi cumprida com excelência", afirmaram.</p><p>Nas redes sociais, fiéis e admiradores compartilharam mensagens de pesar e recordaram o impacto do trabalho realizado pela religiosa.</p>
 
 RETORNE APENAS O HTML (sem título ou descrição):`
       }
@@ -2380,7 +2396,7 @@ RETORNE APENAS O HTML (sem título ou descrição):`
       try {
         console.log('🔄 Tentando método 4: yt-dlp');
         const videoUrl = await this.obterUrlVideoComYtDlp(url);
-        
+
         if (videoUrl) {
           console.log('✅ URL do vídeo obtida via yt-dlp');
           const videoResponse = await axios.get(videoUrl, {
@@ -2390,7 +2406,7 @@ RETORNE APENAS O HTML (sem título ou descrição):`
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
           });
-          
+
           fs.writeFileSync(videoPath, videoResponse.data);
           console.log('✅ Vídeo salvo via yt-dlp:', videoPath);
           return videoPath;
@@ -2412,34 +2428,34 @@ RETORNE APENAS O HTML (sem título ou descrição):`
   static async garantirYtDlp() {
     const binDir = path.join(__dirname, '../bin');
     const ytDlpPath = path.join(binDir, 'yt-dlp');
-    
+
     // Se já existe, retorna o caminho
     if (fs.existsSync(ytDlpPath)) {
       return ytDlpPath;
     }
-    
+
     console.log('📦 Baixando yt-dlp...');
-    
+
     // Criar diretório bin se não existir
     if (!fs.existsSync(binDir)) {
       fs.mkdirSync(binDir, { recursive: true });
     }
-    
+
     // Baixar yt-dlp (versão Linux)
     const ytDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp';
     const response = await axios.get(ytDlpUrl, {
       responseType: 'arraybuffer',
       timeout: 60000
     });
-    
+
     fs.writeFileSync(ytDlpPath, response.data);
-    
+
     // Dar permissão de execução (Linux/Mac)
     if (process.platform !== 'win32') {
       const { execSync } = require('child_process');
       execSync(`chmod +x ${ytDlpPath}`);
     }
-    
+
     console.log('✅ yt-dlp instalado com sucesso');
     return ytDlpPath;
   }
@@ -2451,54 +2467,54 @@ RETORNE APENAS O HTML (sem título ou descrição):`
     try {
       const { execSync } = require('child_process');
       const ytDlpPath = await this.garantirYtDlp();
-      
+
       // Verificar se existe arquivo de cookies manual
       const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
       const hasCookiesFile = fs.existsSync(cookiesPath);
-      
+
       // Tentar diferentes estratégias
       const strategies = [];
-      
+
       // Estratégia 0: Com arquivo de cookies manual (se existir) - PRIORIDADE MÁXIMA
       if (hasCookiesFile) {
         strategies.push(`${ytDlpPath} -g --no-warnings --cookies "${cookiesPath}" "${instagramUrl}"`);
         console.log('✅ Arquivo de cookies encontrado, será usado como prioridade');
       }
-      
+
       // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
       strategies.push(`${ytDlpPath} -g --no-warnings "${instagramUrl}"`);
-      
+
       // Estratégia 2: Com cookies do Firefox (se disponível no servidor)
       strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser firefox "${instagramUrl}"`);
-      
+
       // Estratégia 3: Com cookies do Chrome (se disponível no servidor)
       strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser chrome "${instagramUrl}"`);
-      
+
       // Estratégia 4: Com User-Agent específico
       strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`);
-      
+
       // Estratégia 5: Ignorar erros e tentar extrair URL mesmo assim
       strategies.push(`${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`);
-      
+
       for (let i = 0; i < strategies.length; i++) {
         try {
           console.log(`🔧 Tentando estratégia ${i + 1}/${strategies.length} do yt-dlp`);
-          
+
           const output = execSync(strategies[i], {
             encoding: 'utf8',
             timeout: 30000,
             maxBuffer: 10 * 1024 * 1024 // 10MB
           });
-          
+
           const videoUrl = output.trim().split('\n')[0]; // Primeira linha é a URL do vídeo
-          
+
           if (videoUrl && videoUrl.startsWith('http')) {
             console.log('✅ URL do vídeo obtida via yt-dlp');
             return videoUrl;
           }
         } catch (strategyError) {
           console.log(`⚠️ Estratégia ${i + 1} falhou`);
-          
+
           // Se é rate limit, logar mensagem específica
           if (strategyError.message.includes('rate-limit') || strategyError.message.includes('login required')) {
             console.log('⚠️ Instagram bloqueou acesso (rate-limit ou login necessário)');
@@ -2506,7 +2522,7 @@ RETORNE APENAS O HTML (sem título ou descrição):`
           }
         }
       }
-      
+
       return null;
     } catch (error) {
       console.error('❌ Erro ao executar yt-dlp:', error.message);

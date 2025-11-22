@@ -1357,11 +1357,21 @@ body:not(:has(.admin-bar)) .hero-section {
     display: none !important;
 }
 
+/* Compartilhamento no rodapé do artigo */
+.article-footer-share {
+    max-width: 748px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* Seção de Comentários */
 .comments-section {
     margin-top: 40px;
     padding-top: 30px;
     border-top: 2px solid var(--color-border);
+    max-width: 748px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .comments-title {
@@ -1372,6 +1382,43 @@ body:not(:has(.admin-bar)) .hero-section {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Botão Toggle Formulário de Comentário */
+.btn-toggle-comment-form {
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.2);
+}
+
+.btn-toggle-comment-form:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 107, 0, 0.3);
+}
+
+.btn-toggle-comment-form:active {
+    transform: translateY(0);
+}
+
+.btn-toggle-comment-form.active {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.btn-toggle-comment-form i {
+    font-size: 18px;
 }
 
 .comments-tabs {
@@ -1426,6 +1473,23 @@ body:not(:has(.admin-bar)) .hero-section {
     border-radius: 10px;
     margin-bottom: 24px;
     border: 1px solid var(--color-border);
+    animation: slideDown 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
+        padding-top: 24px;
+        padding-bottom: 24px;
+    }
 }
 
 .comment-form-container h3 {
@@ -1719,6 +1783,9 @@ body:not(:has(.admin-bar)) .hero-section {
 
 .related-articles {
     margin-top: 40px;
+    max-width: 748px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .related-articles h2 {
@@ -1851,6 +1918,22 @@ body:not(:has(.admin-bar)) .hero-section {
     color: #cccccc;
     font-size: 14px;
     transition: color 0.3s ease;
+}
+
+/* Links Internos Automáticos */
+.internal-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--color-primary);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.internal-link:hover {
+    color: var(--color-primary);
+    text-decoration-thickness: 3px;
 }
 
 .footer-section a:hover {

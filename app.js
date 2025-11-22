@@ -14,7 +14,8 @@ require('dotenv').config();
 const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect } = require('./models');
 const AIService = require('./services/AIService');
 const googleSitemapService = require('./services/GoogleSitemapService');
-const googleIndexingService = require('./services/GoogleIndexingService');
+const GoogleIndexingService = require('./services/GoogleIndexingService');
+const InternalLinkingService = require('./services/InternalLinkingService');
 const { publishScheduledPosts } = require('./schedulers/publishScheduledPosts');
 
 // Configurar Multer para upload
@@ -405,10 +406,27 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       console.log('✅ Publicando imediatamente');
     }
 
+    // Adicionar links internos automaticamente se estiver publicando
+    let conteudoFinal = conteudo;
+    if (statusPublicado) {
+      console.log('🔗 Adicionando links internos automaticamente...');
+      try {
+        conteudoFinal = await InternalLinkingService.addInternalLinks(
+          conteudo,
+          titulo,
+          null, // Novo artigo, sem ID ainda
+          2 // Máximo de 2 links
+        );
+      } catch (linkError) {
+        console.error('Erro ao adicionar links internos:', linkError);
+        // Continua com conteúdo original se houver erro
+      }
+    }
+
     const article = await Article.create({
       titulo,
       descricao: descricao || 'Rascunho',
-      conteudo,
+      conteudo: conteudoFinal,
       imagem: imagem || '/images/default-post.jpg',
       categoria: categoria || 'noticias',
       subcategoria: subcategoria || null,
@@ -541,10 +559,28 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       console.log('✅ Publicando imediatamente');
     }
 
+    // Adicionar links internos automaticamente se estiver publicando
+    let conteudoFinal = conteudo;
+    if (statusPublicado && !article.publicado) {
+      // Só adiciona links se estiver publicando pela primeira vez
+      console.log('🔗 Adicionando links internos automaticamente...');
+      try {
+        conteudoFinal = await InternalLinkingService.addInternalLinks(
+          conteudo,
+          titulo,
+          article.id, // ID do artigo atual para não linkar para si mesmo
+          2 // Máximo de 2 links
+        );
+      } catch (linkError) {
+        console.error('Erro ao adicionar links internos:', linkError);
+        // Continua com conteúdo original se houver erro
+      }
+    }
+
     await article.update({
       titulo,
       descricao: descricao || article.descricao,
-      conteudo,
+      conteudo: conteudoFinal,
       imagem: imagem || article.imagem,
       categoria: categoria || article.categoria,
       subcategoria: subcategoria || null,

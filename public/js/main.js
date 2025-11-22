@@ -84,8 +84,8 @@ shareButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.preventDefault();
         const url = window.location.href;
-        const title = document.querySelector('.article-title')?.textContent || 'Globo.com';
-        
+        const title = document.querySelector('.article-title')?.textContent || 'Obuxixo Gospel';
+
         if (btn.classList.contains('facebook')) {
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=600,height=400');
         } else if (btn.classList.contains('twitter')) {
