@@ -230,6 +230,26 @@ app.get('/api/admin/comments', isAuthenticated, commentController.getAllComments
 app.put('/api/admin/comments/:id/approve', isAuthenticated, commentController.approveComment);
 app.delete('/api/admin/comments/:id', isAuthenticated, commentController.deleteComment);
 
+// Dashboard de comentários
+app.get('/dashboard/comentarios', isAuthenticated, async (req, res) => {
+  try {
+    res.render('dashboard/comentarios/index', {
+      user: {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao carregar página de comentários:', error);
+    res.status(500).send('Erro ao carregar página de comentários');
+  }
+});
+
+app.get('/dashboard/comentarios/api/all', isAuthenticated, commentController.getAllComments);
+app.post('/dashboard/comentarios/api/:id/approve', isAuthenticated, commentController.approveComment);
+app.delete('/dashboard/comentarios/api/:id', isAuthenticated, commentController.deleteComment);
+
 app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     const totalPosts = await Article.count();

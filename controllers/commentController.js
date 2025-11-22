@@ -109,7 +109,8 @@ exports.getAllComments = async (req, res) => {
     const comments = await Comment.findAll({
       include: [{
         model: Article,
-        attributes: ['id', 'titulo', 'url_amigavel']
+        as: 'article',
+        attributes: ['id', 'titulo', 'url_amigavel', 'categoria']
       }],
       order: [['created_at', 'DESC']]
     });
