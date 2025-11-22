@@ -697,8 +697,26 @@ class AIService {
         throw new Error('GOOGLE_API_KEY ou GOOGLE_CX não configuradas');
       }
 
+      // Adicionar contexto gospel/evangélico se não estiver na query
+      let finalQuery = cleanQuery;
+      if (!cleanQuery.toLowerCase().includes('gospel') && 
+          !cleanQuery.toLowerCase().includes('evangélico') && 
+          !cleanQuery.toLowerCase().includes('igreja') &&
+          !cleanQuery.toLowerCase().includes('pastor') &&
+          !cleanQuery.toLowerCase().includes('cantor')) {
+        // Adicionar contexto apenas se for nome de pessoa ou termo genérico
+        const palavras = cleanQuery.toLowerCase().split(' ');
+        const temNomeProprio = cleanQuery.split(' ').some(p => p[0] === p[0].toUpperCase());
+        if (temNomeProprio || palavras.length <= 2) {
+          finalQuery = `${cleanQuery} gospel evangélico`;
+        }
+      }
+      
+      console.log('Query final para Google:', finalQuery.substring(0, 100));
+      
       // Buscar imagens em alta resolução (xlarge) e apenas fotos (não clipart/lineart)
-      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&imgSize=xlarge&imgType=photo&safe=active`;
+      // Aumentado de 10 para 15 imagens
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(finalQuery)}&searchType=image&num=10&imgSize=xlarge&imgType=photo&safe=active`;
 
       const response = await axios.get(searchUrl, {
         timeout: 15000
@@ -708,7 +726,7 @@ class AIService {
 
       if (response.data && response.data.items) {
         for (const item of response.data.items) {
-          if (imagens.length >= 10) break;
+          if (imagens.length >= 15) break;
 
           // Tentar múltiplas fontes de URL em ordem de prioridade
           let imageUrl = null;
@@ -742,7 +760,15 @@ class AIService {
           }
 
           // 3. Último recurso: usar thumbnailLink (baixa qualidade)
-          if (!imageUrl && item.image?.thumbnailLink) {
+          // Filtrar redes sociais que sempre retornam thumbnails
+          const isSocialMedia = item.displayLink && (
+            item.displayLink.includes('instagram.com') ||
+            item.displayLink.includes('facebook.com') ||
+            item.displayLink.includes('twitter.com') ||
+            item.displayLink.includes('tiktok.com')
+          );
+          
+          if (!imageUrl && item.image?.thumbnailLink && !isSocialMedia) {
             imageUrl = item.image.thumbnailLink;
             isHighQuality = false;
             console.log('⚠️ Usando thumbnail (baixa qualidade) para:', item.displayLink);
@@ -755,16 +781,51 @@ class AIService {
               thumbnail: item.image?.thumbnailLink || imageUrl,
               descricao: item.title || `Imagem relacionada a ${query}`,
               fonte: item.displayLink || 'Google Images',
-              highQuality: isHighQuality
+              highQuality: isHighQuality,
+              relevancia: item.image?.contextLink ? 10 : (isHighQuality ? 8 : 5) // Score de relevância
             });
           } else {
-            console.log('⚠️ URL ignorada (nenhuma fonte válida):', item.displayLink);
+            console.log('⚠️ URL ignorada (nenhuma fonte válida ou rede social):', item.displayLink);
           }
         }
       }
 
-      // Ordenar imagens: alta qualidade primeiro
+      // Fazer segunda busca se não conseguiu 15 imagens
+      if (imagens.length < 15 && imagens.length > 0) {
+        console.log(`Apenas ${imagens.length} imagens encontradas, fazendo busca complementar...`);
+        try {
+          const searchUrl2 = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&start=11&imgSize=large&imgType=photo&safe=active`;
+          const response2 = await axios.get(searchUrl2, { timeout: 10000 });
+          
+          if (response2.data && response2.data.items) {
+            for (const item of response2.data.items) {
+              if (imagens.length >= 15) break;
+              
+              if (item.link) {
+                const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(item.link);
+                if (isValidImageUrl) {
+                  imagens.push({
+                    url: item.link,
+                    thumbnail: item.image?.thumbnailLink || item.link,
+                    descricao: item.title || `Imagem relacionada a ${query}`,
+                    fonte: item.displayLink || 'Google Images',
+                    highQuality: true,
+                    relevancia: 7
+                  });
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.log('Erro na busca complementar, continuando com', imagens.length, 'imagens');
+        }
+      }
+      
+      // Ordenar imagens: relevância e qualidade
       imagens.sort((a, b) => {
+        // Primeiro por relevância
+        if (a.relevancia !== b.relevancia) return b.relevancia - a.relevancia;
+        // Depois por qualidade
         if (a.highQuality && !b.highQuality) return -1;
         if (!a.highQuality && b.highQuality) return 1;
         return 0;
