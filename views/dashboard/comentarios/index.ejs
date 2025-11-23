@@ -1,0 +1,567 @@
+<%- include('../partials/header', { title: 'Comentários', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Comentários</h1>
+            <p>Gerencie e modere os comentários do portal</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="loadComments()" class="btn btn-secondary">
+                <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros e Busca -->
+    <div class="filters-container">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Buscar por nome, email ou comentário..."
+                   onkeyup="applyFilters()">
+        </div>
+        <div class="filters-row">
+            <select id="statusFilter" onchange="applyFilters()" class="filter-select">
+                <option value="all">Todos os Status</option>
+                <option value="pending" selected>Pendentes</option>
+                <option value="approved">Aprovados</option>
+            </select>
+            <button class="btn btn-secondary" onclick="clearFilters()">
+                <i class="fas fa-redo"></i> Limpar Filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Total</div>
+                    <div style="font-size: 32px; font-weight: 700;" id="totalComments">0</div>
+                </div>
+                <i class="fas fa-comments" style="font-size: 40px; opacity: 0.3;"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Pendentes</div>
+                    <div style="font-size: 32px; font-weight: 700;" id="pendingComments">0</div>
+                </div>
+                <i class="fas fa-clock" style="font-size: 40px; opacity: 0.3;"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Aprovados</div>
+                    <div style="font-size: 32px; font-weight: 700;" id="approvedComments">0</div>
+                </div>
+                <i class="fas fa-check-circle" style="font-size: 40px; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações de Resultados -->
+    <div class="results-info" id="resultsInfo" style="display: none;">
+        <p id="resultsText"></p>
+    </div>
+
+    <!-- Tabela de Comentários -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="60">Avatar</th>
+                <th width="180">Nome</th>
+                <th>Comentário</th>
+                <th width="200">Post</th>
+                <th width="120">Data</th>
+                <th width="100">Status</th>
+                <th width="120">Ações</th>
+            </tr>
+        </thead>
+        <tbody id="commentsTableBody">
+            <tr id="commentsLoading">
+                <td colspan="7" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #0153b9;"></i>
+                    <p style="margin-top: 15px; color: #666;">Carregando comentários...</p>
+                </td>
+            </tr>
+            <tr id="noComments" style="display: none;">
+                <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                    <i class="fas fa-inbox" style="font-size: 64px; color: #ddd; margin-bottom: 20px;"></i>
+                    <p style="color: #999; font-size: 16px;">Nenhum comentário encontrado</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Filtros e Busca */
+    .filters-container {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border: 1px solid #E8E8E8;
+    }
+
+    .search-box {
+        position: relative;
+        margin-bottom: 16px;
+    }
+
+    .search-box i.fa-search {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+        font-size: 14px;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 11px 40px 11px 40px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #FF6B00;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+    }
+
+    .filters-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        flex: 1;
+        min-width: 180px;
+        padding: 10px 14px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #FF6B00;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+    }
+
+    .btn-secondary {
+        background: #F3F4F6;
+        color: #4B5563;
+        padding: 10px 16px;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-secondary:hover {
+        background: #E5E7EB;
+        color: #1F2937;
+    }
+
+    .results-info {
+        padding: 12px 0;
+        color: #6B7280;
+        font-size: 13px;
+        border-bottom: 1px solid #E2E8F0;
+        margin-bottom: 16px;
+    }
+
+    .results-info strong {
+        color: #FF6B00;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    /* Avatar */
+    .comment-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .comment-text {
+        max-width: 350px;
+        color: #4A5568;
+        font-size: 13px;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .comment-text-full {
+        white-space: normal;
+        max-width: none;
+    }
+    
+    /* Badges de Status */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .badge-success {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+    
+    .badge-warning {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+    
+    .post-link {
+        color: #4299e1;
+        text-decoration: none;
+        font-size: 13px;
+        max-width: 200px;
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .post-link:hover {
+        text-decoration: underline;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 5px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: white;
+    }
+    
+    .action-btn i {
+        font-size: 11px;
+    }
+    
+    .btn-approve {
+        background: #48BB78;
+    }
+    
+    .btn-approve:hover {
+        background: #38A169;
+    }
+    
+    .btn-delete {
+        background: #F56565;
+    }
+    
+    .btn-delete:hover {
+        background: #E53E3E;
+    }
+    
+    .btn-view {
+        background: #4299E1;
+    }
+    
+    .btn-view:hover {
+        background: #3182CE;
+    }
+</style>
+
+<script>
+let allComments = [];
+
+// Carregar comentários ao iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    loadComments();
+    
+    // Busca em tempo real
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            applyFilters();
+        }, 300);
+    });
+});
+
+async function loadComments() {
+    const loading = document.getElementById('commentsLoading');
+    const noComments = document.getElementById('noComments');
+    
+    loading.style.display = 'table-row';
+    noComments.style.display = 'none';
+    
+    try {
+        const response = await fetch('/dashboard/comentarios/api/all');
+        const data = await response.json();
+        
+        console.log('Comentários carregados:', data); // Debug
+        
+        if (data.success) {
+            allComments = data.comments || [];
+            console.log('Total de comentários:', allComments.length); // Debug
+            updateStats();
+            applyFilters();
+        } else {
+            throw new Error(data.error || 'Erro ao carregar comentários');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar:', error);
+        const tbody = document.getElementById('commentsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #e53e3e;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>Erro ao carregar comentários: ${error.message}</p>
+                    <button onclick="loadComments()" class="btn btn-secondary" style="margin-top: 15px;">
+                        <i class="fas fa-sync-alt"></i> Tentar Novamente
+                    </button>
+                </td>
+            </tr>
+        `;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+function updateStats() {
+    const total = allComments.length;
+    const pending = allComments.filter(c => !c.aprovado || c.aprovado === 0).length;
+    const approved = allComments.filter(c => c.aprovado === true || c.aprovado === 1).length;
+    
+    console.log('Stats - Total:', total, 'Pendentes:', pending, 'Aprovados:', approved); // Debug
+    
+    document.getElementById('totalComments').textContent = total;
+    document.getElementById('pendingComments').textContent = pending;
+    document.getElementById('approvedComments').textContent = approved;
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    console.log('Filtro selecionado:', statusFilter); // Debug
+    console.log('Total de comentários:', allComments.length); // Debug
+    
+    let filtered = allComments;
+    
+    // Filtrar por status
+    if (statusFilter === 'pending') {
+        // Verifica tanto boolean false quanto número 0
+        filtered = filtered.filter(c => !c.aprovado || c.aprovado === 0);
+        console.log('Pendentes encontrados:', filtered.length); // Debug
+    } else if (statusFilter === 'approved') {
+        // Verifica tanto boolean true quanto número 1
+        filtered = filtered.filter(c => c.aprovado === true || c.aprovado === 1);
+        console.log('Aprovados encontrados:', filtered.length); // Debug
+    }
+    
+    // Filtrar por busca
+    if (searchTerm) {
+        filtered = filtered.filter(c => 
+            c.nome.toLowerCase().includes(searchTerm) ||
+            c.email.toLowerCase().includes(searchTerm) ||
+            c.comentario.toLowerCase().includes(searchTerm) ||
+            (c.article && c.article.titulo.toLowerCase().includes(searchTerm))
+        );
+        console.log('Após busca:', filtered.length); // Debug
+    }
+    
+    console.log('Comentários filtrados:', filtered); // Debug
+    renderComments(filtered);
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = 'all';
+    applyFilters();
+}
+
+function renderComments(comments) {
+    const tbody = document.getElementById('commentsTableBody');
+    const noComments = document.getElementById('noComments');
+    const resultsInfo = document.getElementById('resultsInfo');
+    const resultsText = document.getElementById('resultsText');
+    
+    if (comments.length === 0) {
+        tbody.innerHTML = '';
+        noComments.style.display = 'table-row';
+        resultsInfo.style.display = 'none';
+        return;
+    }
+    
+    noComments.style.display = 'none';
+    resultsInfo.style.display = 'block';
+    resultsText.textContent = `Mostrando ${comments.length} de ${allComments.length} comentário(s)`;
+    
+    tbody.innerHTML = comments.map(comment => {
+        const date = new Date(comment.created_at);
+        const formattedDate = date.toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: 'short', 
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const initial = comment.nome.charAt(0).toUpperCase();
+        
+        return `
+            <tr>
+                <td>
+                    <div class="comment-avatar">${initial}</div>
+                </td>
+                <td>
+                    <div style="font-weight: 500; color: #2D3748; margin-bottom: 2px;">${escapeHtml(comment.nome)}</div>
+                    <div style="font-size: 12px; color: #718096;">${escapeHtml(comment.email)}</div>
+                </td>
+                <td>
+                    <div class="comment-text" title="${escapeHtml(comment.comentario)}">
+                        ${escapeHtml(comment.comentario)}
+                    </div>
+                </td>
+                <td>
+                    ${comment.article ? `
+                        <a href="/${comment.article.categoria || 'noticias'}/${comment.article.url_amigavel}" 
+                           target="_blank" 
+                           class="post-link"
+                           title="${escapeHtml(comment.article.titulo)}">
+                            ${escapeHtml(comment.article.titulo)}
+                        </a>
+                    ` : '<span style="color: #999;">-</span>'}
+                </td>
+                <td style="font-size: 13px; color: #4A5568;">${formattedDate}</td>
+                <td>
+                    ${(comment.aprovado === true || comment.aprovado === 1) ? 
+                        '<span class="badge badge-success">Aprovado</span>' : 
+                        '<span class="badge badge-warning">Pendente</span>'}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        ${(!comment.aprovado || comment.aprovado === 0) ? `
+                            <button onclick="approveComment(${comment.id})" 
+                                    class="action-btn btn-approve"
+                                    title="Aprovar comentário">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        <button onclick="deleteComment(${comment.id})" 
+                                class="action-btn btn-delete"
+                                title="Deletar comentário">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ${comment.article ? `
+                            <a href="/${comment.article.categoria || 'noticias'}/${comment.article.url_amigavel}#comentarios" 
+                               target="_blank" 
+                               class="action-btn btn-view"
+                               title="Ver post">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function approveComment(id) {
+    if (!confirm('Deseja aprovar este comentário?')) return;
+    
+    try {
+        const response = await fetch(`/dashboard/comentarios/api/${id}/approve`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Comentário aprovado com sucesso!');
+            loadComments();
+        } else {
+            throw new Error(data.error || 'Erro ao aprovar comentário');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('❌ Erro ao aprovar comentário: ' + error.message);
+    }
+}
+
+async function deleteComment(id) {
+    if (!confirm('Deseja realmente deletar este comentário? Esta ação não pode ser desfeita.')) return;
+    
+    try {
+        const response = await fetch(`/dashboard/comentarios/api/${id}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Comentário deletado com sucesso!');
+            loadComments();
+        } else {
+            throw new Error(data.error || 'Erro ao deletar comentário');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('❌ Erro ao deletar comentário: ' + error.message);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+<%- include('../partials/footer') %>

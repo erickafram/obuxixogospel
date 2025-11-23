@@ -1,0 +1,384 @@
+<%- include('../partials/header', { title: 'Páginas', user: user }) %>
+
+<!-- SortableJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Páginas</h1>
+            <p>Gerencie as páginas estáticas do site</p>
+        </div>
+        <a href="/dashboard/paginas/novo" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Página
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="search-filter">
+                <input type="text" id="searchPaginas" placeholder="Buscar páginas..." class="search-input">
+                <button id="saveOrderBtn" class="btn btn-success" style="display: none;" onclick="salvarOrdem()">
+                    <i class="fas fa-save"></i> Salvar Ordem
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" id="pagesTable">
+                <thead>
+                    <tr>
+                        <th width="50"></th>
+                        <th>Título</th>
+                        <th>Slug</th>
+                        <th>Footer</th>
+                        <th>Menu</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="sortableList">
+                    <% if (pages && pages.length > 0) { %>
+                        <% pages.forEach(page => { %>
+                        <tr data-id="<%= page.id %>">
+                            <td class="drag-handle" style="cursor: grab; text-align: center; color: #A0AEC0;">
+                                <i class="fas fa-grip-vertical"></i>
+                            </td>
+                            <td><%= page.titulo %></td>
+                            <td><code><%= page.slug %></code></td>
+                            <td>
+                                <% if (page.exibirFooter) { %>
+                                <span class="badge badge-success">Sim</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Não</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (page.exibirMenu) { %>
+                                <span class="badge badge-success">Sim</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Não</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (page.ativo) { %>
+                                <span class="badge badge-success">Ativo</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Inativo</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/pagina/<%= page.slug %>" target="_blank" class="btn-icon" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/dashboard/paginas/<%= page.id %>/editar" class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="deletarPagina(<%= page.id %>, '<%= page.titulo %>')" class="btn-icon btn-danger" title="Deletar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">Nenhuma página encontrada</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .drag-handle:hover {
+        color: #4A5568 !important;
+    }
+    
+    .sortable-ghost {
+        background-color: #EDF2F7;
+        opacity: 0.5;
+    }
+    
+    .sortable-chosen {
+        background-color: #E2E8F0;
+    }
+    
+    .btn-success {
+        background: #48BB78;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #38A169;
+    }
+    
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+        letter-spacing: -0.5px;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+    }
+
+    .search-input {
+        flex: 1;
+        max-width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 11px;
+        color: #4A5568;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: #F7FAFC;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .data-table tr:hover {
+        background: #F7FAFC;
+    }
+
+    .data-table code {
+        background: #F7FAFC;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #0669de;
+        font-family: 'Courier New', monospace;
+    }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-success { background: #D4EDDA; color: #155724; }
+    .badge-secondary { background: #E2E3E5; color: #383D41; }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: #F7FAFC;
+        color: #718096;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    .btn-icon:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+        transform: scale(1.05);
+    }
+
+    .btn-icon.btn-danger:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .text-center {
+        text-align: center;
+        padding: 32px !important;
+        color: #9CA3AF;
+        font-size: 13px;
+    }
+</style>
+
+<script>
+    // Inicializar SortableJS
+    const el = document.getElementById('sortableList');
+    const sortable = Sortable.create(el, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function() {
+            // Mostrar botão de salvar quando houver mudança
+            document.getElementById('saveOrderBtn').style.display = 'inline-flex';
+        }
+    });
+
+    function salvarOrdem() {
+        const rows = document.querySelectorAll('#sortableList tr[data-id]');
+        const ordem = Array.from(rows).map(row => ({
+            id: row.getAttribute('data-id')
+        }));
+
+        const btn = document.getElementById('saveOrderBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+        btn.disabled = true;
+
+        fetch('/dashboard/paginas/reordenar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ordem })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ordem atualizada com sucesso!');
+                btn.style.display = 'none';
+            } else {
+                alert('Erro ao salvar ordem: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar ordem');
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // Filtro de busca
+    document.getElementById('searchPaginas').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        
+        rows.forEach(row => {
+            const titulo = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+            const slug = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+            
+            if (titulo.includes(searchTerm) || slug.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    function deletarPagina(id, titulo) {
+        if (confirm(`Tem certeza que deseja deletar a página "${titulo}"?`)) {
+            fetch(`/dashboard/paginas/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao deletar página');
+                }
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

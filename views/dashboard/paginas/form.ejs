@@ -1,0 +1,470 @@
+<%- include('../partials/header', { title: isEdit ? 'Editar Página' : 'Nova Página', user: user }) %>
+
+<!-- Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1><%= isEdit ? 'Editar Página' : 'Nova Página' %></h1>
+            <p><%= isEdit ? 'Atualize as informações da página' : 'Crie uma nova página estática para o site' %></p>
+        </div>
+        <a href="/dashboard/paginas" class="btn btn-secondary">
+            ← Voltar
+        </a>
+    </div>
+
+    <form action="<%= isEdit ? `/dashboard/paginas/${page.id}/atualizar` : '/dashboard/paginas/criar' %>" method="POST" class="page-form" onsubmit="return prepareSubmit()">
+        <div class="form-grid">
+            <!-- Coluna Principal -->
+            <div class="form-main">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="titulo">Título *</label>
+                            <input type="text" id="titulo" name="titulo" class="form-control"
+                                value="<%= isEdit ? page.titulo : '' %>"
+                                placeholder="Digite o título da página..." required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="slug">Slug *</label>
+                            <input type="text" id="slug" name="slug" class="form-control"
+                                value="<%= isEdit ? page.slug : '' %>"
+                                placeholder="url-amigavel-da-pagina" required>
+                            <small class="form-text">URL amigável para acessar a página</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea id="descricao" name="descricao" class="form-control" rows="3"
+                                placeholder="Descrição para SEO..."><%= isEdit ? page.descricao : '' %></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="editor-header">
+                                <label>Conteúdo *</label>
+                                <div class="editor-mode-toggle">
+                                    <button type="button" class="mode-btn active" data-mode="visual" onclick="switchEditorMode('visual')">
+                                        <i class="fas fa-eye"></i> Visual
+                                    </button>
+                                    <button type="button" class="mode-btn" data-mode="code" onclick="switchEditorMode('code')">
+                                        <i class="fas fa-code"></i> Código
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="editor-visual" style="height: 400px;"><%= isEdit ? page.conteudo : '' %></div>
+                            <textarea id="editor-code" class="code-editor" style="display: none; height: 400px; font-family: 'Courier New', monospace; font-size: 13px;"><%= isEdit ? page.conteudo : '' %></textarea>
+                            <input type="hidden" id="conteudo" name="conteudo" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="form-sidebar">
+                <!-- Publicação -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Publicação</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="ativo" <%= isEdit && page.ativo ? 'checked' : '' %>>
+                                <span>Página Ativa</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ordem">Ordem de Exibição</label>
+                            <input type="number" id="ordem" name="ordem" class="form-control"
+                                value="<%= isEdit ? page.ordem : 0 %>" min="0">
+                            <small class="form-text">Ordem de exibição nos menus</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações de Exibição -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Exibição</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="exibirFooter" <%= isEdit && page.exibirFooter ? 'checked' : '' %>>
+                                <span>Exibir no Footer</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="exibirMenu" <%= isEdit && page.exibirMenu ? 'checked' : '' %>>
+                                <span>Exibir no Menu</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="card">
+                    <div class="card-body">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-save"></i> <%= isEdit ? 'Atualizar' : 'Criar' %> Página
+                        </button>
+                        <a href="/dashboard/paginas" class="btn btn-secondary btn-block">
+                            Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+        letter-spacing: -0.5px;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .btn-secondary {
+        background: #F7FAFC;
+        color: #4A5568;
+        border: 1px solid #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+        background: #EDF2F7;
+    }
+
+    .btn-block {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        margin-bottom: 20px;
+    }
+
+    .card-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .card-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        color: #1A202C;
+    }
+
+    .card-body {
+        padding: 18px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #2D3748;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 4px;
+        font-size: 11px;
+        color: #718096;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-weight: 400;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .checkbox-label span {
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .editor-mode-toggle {
+        display: flex;
+        gap: 4px;
+        background: #F7FAFC;
+        padding: 3px;
+        border-radius: 6px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .mode-btn {
+        padding: 6px 12px;
+        border: none;
+        background: transparent;
+        color: #718096;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .mode-btn:hover {
+        color: #2D3748;
+        background: rgba(255, 107, 0, 0.05);
+    }
+
+    .mode-btn.active {
+        background: white;
+        color: #0669de;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    #editor-visual {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+    }
+
+    .code-editor {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        resize: vertical;
+        line-height: 1.6;
+        tab-size: 2;
+    }
+
+    .code-editor:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    .ql-toolbar {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        border: none !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        background: #FAFBFC;
+    }
+
+    .ql-container {
+        border: none !important;
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Quill Editor JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<script>
+    // Inicializar Quill Editor
+    const quill = new Quill('#editor-visual', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'align': [] }],
+                ['link', 'image', 'video'],
+                ['clean']
+            ]
+        }
+    });
+
+    // Auto-gerar slug a partir do título
+    document.getElementById('titulo').addEventListener('input', function() {
+        const slug = this.value
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+        
+        <% if (!isEdit) { %>
+        document.getElementById('slug').value = slug;
+        <% } %>
+    });
+
+    // Controle de modo do editor
+    let currentMode = 'visual';
+
+    function switchEditorMode(mode) {
+        const visualEditor = document.getElementById('editor-visual');
+        const codeEditor = document.getElementById('editor-code');
+        const visualBtn = document.querySelector('.mode-btn[data-mode="visual"]');
+        const codeBtn = document.querySelector('.mode-btn[data-mode="code"]');
+
+        if (mode === 'code') {
+            // Salvar conteúdo do visual para o código
+            const htmlContent = quill.root.innerHTML;
+            codeEditor.value = htmlContent;
+            
+            // Mostrar editor de código
+            visualEditor.style.display = 'none';
+            codeEditor.style.display = 'block';
+            
+            // Atualizar botões
+            visualBtn.classList.remove('active');
+            codeBtn.classList.add('active');
+            
+            currentMode = 'code';
+        } else {
+            // Salvar conteúdo do código para o visual
+            const htmlContent = codeEditor.value;
+            quill.root.innerHTML = htmlContent;
+            
+            // Mostrar editor visual
+            codeEditor.style.display = 'none';
+            visualEditor.style.display = 'block';
+            
+            // Atualizar botões
+            codeBtn.classList.remove('active');
+            visualBtn.classList.add('active');
+            
+            currentMode = 'visual';
+        }
+    }
+
+    // Preparar submit do formulário
+    function prepareSubmit() {
+        let conteudo;
+        
+        if (currentMode === 'visual') {
+            conteudo = quill.root.innerHTML;
+        } else {
+            conteudo = document.getElementById('editor-code').value;
+            // Atualizar o Quill com o código antes de enviar
+            quill.root.innerHTML = conteudo;
+        }
+        
+        document.getElementById('conteudo').value = conteudo;
+        
+        if (!conteudo || conteudo === '<p><br></p>' || conteudo.trim() === '') {
+            alert('Por favor, adicione conteúdo à página');
+            return false;
+        }
+        
+        return true;
+    }
+</script>
+
+<%- include('../partials/footer') %>

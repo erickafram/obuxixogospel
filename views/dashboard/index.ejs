@@ -1,0 +1,78 @@
+<%- include('../dashboard/partials/header', { title: 'Dashboard', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="welcome-section">
+        <h1>Bem-vindo, <%= user.nome %>! 👋</h1>
+        <p>Gerencie todo o conteúdo do portal Obuxixo Gospel</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #FF6B00;">
+                <i class="fas fa-newspaper"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total de Posts</h3>
+                <p class="stat-number"><%= stats.totalPosts || 0 %></p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #28A745;">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Visualizações</h3>
+                <p class="stat-number"><%= stats.totalViews || 0 %></p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #8B3A62;">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Categorias</h3>
+                <p class="stat-number">5</p>
+            </div>
+        </div>
+
+        <% if (user.role === 'admin') { %>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #1F4788;">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Usuários</h3>
+                <p class="stat-number">1</p>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <div class="quick-actions">
+        <h2>Ações Rápidas</h2>
+        <div class="actions-grid">
+            <a href="/dashboard/posts/novo" class="action-card">
+                <i class="fas fa-plus-circle"></i>
+                <span>Novo Post</span>
+            </a>
+            <a href="/dashboard/posts" class="action-card">
+                <i class="fas fa-list"></i>
+                <span>Ver Posts</span>
+            </a>
+            <a href="/dashboard/categorias" class="action-card">
+                <i class="fas fa-tags"></i>
+                <span>Categorias</span>
+            </a>
+            <% if (user.role === 'admin') { %>
+            <a href="/dashboard/configuracoes" class="action-card">
+                <i class="fas fa-cog"></i>
+                <span>Configurações</span>
+            </a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../dashboard/partials/footer') %>

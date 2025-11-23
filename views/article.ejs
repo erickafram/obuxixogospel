@@ -1,0 +1,373 @@
+<%- include('partials/article-head') %>
+    <%- include('partials/admin-bar') %>
+
+        <% if (typeof isPreview !=='undefined' && isPreview && !article.publicado) { %>
+            <div
+                style="background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%); color: white; padding: 15px 20px; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(255, 107, 0, 0.3); position: sticky; top: 0; z-index: 9998;">
+                <i class="fas fa-eye"></i> MODO PREVIEW - Este post está em rascunho e não está visível publicamente
+            </div>
+            <% } %>
+
+                <main class="main-content article-page">
+                    <div class="container">
+                        <nav class="breadcrumb">
+                            <a href="/" class="breadcrumb-item">
+                                <i class="fas fa-home"></i> Início
+                            </a>
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-item active">
+                                <%= article.titulo %>
+                            </span>
+                        </nav>
+
+                        <div class="article-container">
+                            <article class="article-full">
+                                <div class="article-header">
+                                    <span class="article-category <%= article.categoria %>">
+                                        <%= categoryNames[article.categoria] || article.categoria %>
+                                    </span>
+                                    <h1 class="article-title">
+                                        <%= article.titulo %>
+                                    </h1>
+                                    <p class="article-lead">
+                                        <%= article.descricao %>
+                                    </p>
+
+                                    <div class="article-meta">
+                                        <span class="article-author">
+                                            <i class="fas fa-user"></i>
+                                            <%= article.autor %>
+                                        </span>
+                                        <span class="article-date">
+                                            <i class="fas fa-clock"></i>
+                                            <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR', {
+                                                day: '2-digit' , month: 'long' , year: 'numeric' , hour: '2-digit' ,
+                                                minute: '2-digit' }) %>
+                                        </span>
+                                    </div>
+
+                                    <div class="article-share">
+                                        <a href="#" class="share-btn facebook" title="Facebook">
+                                            <i class="fab fa-facebook-f"></i>
+                                        </a>
+                                        <a href="#" class="share-btn twitter" title="Twitter">
+                                            <i class="fab fa-twitter"></i>
+                                        </a>
+                                        <a href="#" class="share-btn whatsapp" title="WhatsApp">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </a>
+                                        <a href="#" class="share-btn linkedin" title="LinkedIn">
+                                            <i class="fab fa-linkedin-in"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="article-image-main">
+                                    <img src="<%= article.imagem %>" alt="<%= article.titulo %>" fetchpriority="high"
+                                        width="800" height="500">
+                                </div>
+
+                                <%- article.conteudo %>
+
+                                    <div class="article-footer-share"
+                                        style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                                        <h3 style="margin-bottom: 15px; font-size: 1.2rem; color: #333;">Gostou da
+                                            notícia?
+                                            Compartilhe!</h3>
+                                        <div class="article-share" style="justify-content: center;">
+                                            <a href="#" class="share-btn facebook" title="Facebook">
+                                                <i class="fab fa-facebook-f"></i>
+                                            </a>
+                                            <a href="#" class="share-btn twitter" title="Twitter">
+                                                <i class="fab fa-twitter"></i>
+                                            </a>
+                                            <a href="#" class="share-btn whatsapp" title="WhatsApp">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </a>
+                                            <a href="#" class="share-btn linkedin" title="LinkedIn">
+                                                <i class="fab fa-linkedin-in"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                        </div>
+
+                        <script>
+                            // Forçar Instagram a processar embeds após carregamento da página
+                            if (window.instgrm) {
+                                window.instgrm.Embeds.process();
+                            } else {
+                                // Se o script ainda não carregou, aguardar e processar
+                                window.addEventListener('load', function () {
+                                    setTimeout(function () {
+                                        if (window.instgrm) {
+                                            window.instgrm.Embeds.process();
+                                        }
+                                    }, 1000);
+                                });
+                            }
+                        </script>
+
+                        <% if (article.tags && article.tags.length> 0) { %>
+                            <div class="article-tags">
+                                <strong>Tags:</strong>
+                                <% article.tags.forEach(tag=> { %>
+                                    <span class="tag">#<%= tag %></span>
+                                    <% }); %>
+                            </div>
+                            <% } %>
+                                </article>
+
+                                <!-- Seção de Comentários -->
+                                <section class="comments-section">
+                                    <h2 class="comments-title">
+                                        <i class="fas fa-comments"></i> Comentários (<span id="commentCount">0</span>)
+                                    </h2>
+
+                                    <!-- Botão para expandir formulário -->
+                                    <button class="btn-toggle-comment-form" id="btnToggleCommentForm"
+                                        onclick="toggleCommentForm()">
+                                        <i class="fas fa-plus-circle"></i> Deixe seu comentário
+                                    </button>
+
+                                    <!-- Comentários do Sistema -->
+                                    <div id="sistema-comments" class="comment-tab-content active">
+                                        <!-- Formulário de Novo Comentário (inicialmente oculto) -->
+                                        <div class="comment-form-container" id="commentFormContainer"
+                                            style="display: none;">
+                                            <h3>
+                                                <i class="fas fa-comment-dots"></i> Escreva seu comentário
+                                            </h3>
+                                            <form id="commentForm" onsubmit="submitComment(event)">
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label for="commentNome">
+                                                            <i class="fas fa-user"></i> Nome *
+                                                        </label>
+                                                        <input type="text" id="commentNome" name="nome" required
+                                                            minlength="2" placeholder="Seu nome completo"
+                                                            class="form-input">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="commentEmail">
+                                                            <i class="fas fa-envelope"></i> Email *
+                                                        </label>
+                                                        <input type="email" id="commentEmail" name="email" required
+                                                            placeholder="seu@email.com" class="form-input">
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="commentTexto">
+                                                        <i class="fas fa-comment"></i> Comentário *
+                                                    </label>
+                                                    <textarea id="commentTexto" name="comentario" required
+                                                        minlength="10" rows="4"
+                                                        placeholder="Escreva seu comentário aqui..."
+                                                        class="form-textarea"></textarea>
+                                                </div>
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label for="commentCaptcha">
+                                                            <i class="fas fa-shield-alt"></i> Digite "obuxixo" para
+                                                            confirmar *
+                                                        </label>
+                                                        <input type="text" id="commentCaptcha" name="captcha" required
+                                                            placeholder="obuxixo" class="form-input">
+                                                    </div>
+                                                </div>
+                                                <button type="submit" class="btn-submit-comment" id="btnSubmitComment">
+                                                    <i class="fas fa-paper-plane"></i> Enviar Comentário
+                                                </button>
+                                                <p class="form-note">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    Seu comentário será analisado antes de ser publicado.
+                                                </p>
+                                            </form>
+                                        </div>
+
+                                        <!-- Lista de Comentários -->
+                                        <div class="comments-list" id="commentsList">
+                                            <div class="loading-comments">
+                                                <i class="fas fa-spinner fa-spin"></i> Carregando comentários...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Notícias Relacionadas -->
+                                <% if (related && related.length> 0) { %>
+                                    <section class="related-articles">
+                                        <h2>Notícias Relacionadas</h2>
+                                        <div class="related-grid">
+                                            <% related.forEach(rel=> { %>
+                                                <article class="news-card">
+                                                    <a href="/<%= rel.categoria %>/<%= rel.urlAmigavel %>">
+                                                        <div class="news-image">
+                                                            <img src="<%= rel.imagem %>" alt="<%= rel.titulo %>"
+                                                                loading="lazy" width="400" height="250">
+                                                            <span class="news-category <%= rel.categoria %>">
+                                                                <%= rel.categoria.toUpperCase() %>
+                                                            </span>
+                                                        </div>
+                                                        <div class="news-content">
+                                                            <h3 class="news-title">
+                                                                <%= rel.titulo %>
+                                                            </h3>
+                                                            <p class="news-description">
+                                                                <%= rel.descricao %>
+                                                            </p>
+                                                        </div>
+                                                    </a>
+                                                </article>
+                                                <% }); %>
+                                        </div>
+                                    </section>
+                                    <% } %>
+                    </div>
+                    </div>
+                </main>
+
+                <script>
+                    const articleId = <%= article.id %>;
+
+                    // Toggle do formulário de comentários
+                    function toggleCommentForm() {
+                        const container = document.getElementById('commentFormContainer');
+                        const btn = document.getElementById('btnToggleCommentForm');
+
+                        if (container.style.display === 'none') {
+                            container.style.display = 'block';
+                            btn.innerHTML = '<i class="fas fa-minus-circle"></i> Fechar formulário';
+                            btn.classList.add('active');
+                            // Scroll suave até o formulário
+                            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } else {
+                            container.style.display = 'none';
+                            btn.innerHTML = '<i class="fas fa-plus-circle"></i> Deixe seu comentário';
+                            btn.classList.remove('active');
+                        }
+                    }
+
+                    // Carregar comentários do sistema
+                    async function loadComments() {
+                        try {
+                            const response = await fetch(`/api/comments/${articleId}`);
+                            const data = await response.json();
+
+                            if (data.success) {
+                                displayComments(data.comments);
+                                document.getElementById('commentCount').textContent = data.comments.length;
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar comentários:', error);
+                            document.getElementById('commentsList').innerHTML =
+                                '<p class="error-message"><i class="fas fa-exclamation-circle"></i> Erro ao carregar comentários</p>';
+                        }
+                    }
+
+                    // Exibir comentários
+                    function displayComments(comments) {
+                        const container = document.getElementById('commentsList');
+
+                        if (comments.length === 0) {
+                            container.innerHTML = '<p class="no-comments"><i class="fas fa-info-circle"></i> Nenhum comentário ainda. Seja o primeiro a comentar!</p>';
+                            return;
+                        }
+
+                        container.innerHTML = comments.map(comment => `
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="comment-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="comment-info">
+                        <strong class="comment-author">${escapeHtml(comment.nome)}</strong>
+                        <span class="comment-date">
+                            <i class="fas fa-clock"></i> 
+                            ${formatDate(comment.created_at)}
+                        </span>
+                    </div>
+                </div>
+                <div class="comment-body">
+                    ${escapeHtml(comment.comentario)}
+                </div>
+            </div>
+        `).join('');
+                    }
+
+                    // Enviar comentário
+                    async function submitComment(event) {
+                        event.preventDefault();
+
+                        const form = event.target;
+                        const btn = document.getElementById('btnSubmitComment');
+                        const originalText = btn.innerHTML;
+
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+                        try {
+                            const formData = {
+                                nome: form.nome.value,
+                                email: form.email.value,
+                                comentario: form.comentario.value,
+                                captcha: form.captcha.value
+                            };
+
+                            const response = await fetch(`/api/comments/${articleId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(formData)
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                alert('✅ ' + data.message);
+                                form.reset();
+                                await loadComments();
+                            } else {
+                                alert('❌ ' + data.error);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao enviar comentário:', error);
+                            alert('❌ Erro ao enviar comentário. Tente novamente.');
+                        } finally {
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                        }
+                    }
+
+                    // Utilitários
+                    function escapeHtml(text) {
+                        const div = document.createElement('div');
+                        div.textContent = text;
+                        return div.innerHTML;
+                    }
+
+                    function formatDate(dateString) {
+                        const date = new Date(dateString);
+                        const now = new Date();
+                        const diff = Math.floor((now - date) / 1000); // diferença em segundos
+
+                        if (diff < 60) return 'Agora mesmo';
+                        if (diff < 3600) return Math.floor(diff / 60) + ' minutos atrás';
+                        if (diff < 86400) return Math.floor(diff / 3600) + ' horas atrás';
+                        if (diff < 604800) return Math.floor(diff / 86400) + ' dias atrás';
+
+                        return date.toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                    }
+
+                    // Carregar comentários ao iniciar
+                    document.addEventListener('DOMContentLoaded', function () {
+                        loadComments();
+                    });
+                </script>
+
+                <%- include('partials/footer') %>

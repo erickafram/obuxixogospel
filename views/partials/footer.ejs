@@ -1,0 +1,110 @@
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Categorias</h4>
+                    <ul>
+                        <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                            <% categories.slice(0, 6).forEach(cat => { %>
+                                <li><a href="/categoria/<%= cat.slug %>"><%= cat.nome %></a></li>
+                            <% }); %>
+                        <% } else { %>
+                            <li><a href="/">Início</a></li>
+                        <% } %>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Conteúdo</h4>
+                    <ul>
+                        <li><a href="#">Testemunhos</a></li>
+                        <li><a href="#">Devocionais</a></li>
+                        <li><a href="#">Pregações</a></li>
+                        <li><a href="#">Estudos Bíblicos</a></li>
+                        <li><a href="#">Louvor e Adoração</a></li>
+                        <li><a href="#">Juventude</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Ministérios</h4>
+                    <ul>
+                        <li><a href="#">Infantil</a></li>
+                        <li><a href="#">Adolescentes</a></li>
+                        <li><a href="#">Jovens</a></li>
+                        <li><a href="#">Casais</a></li>
+                        <li><a href="#">Mulheres</a></li>
+                        <li><a href="#">Homens</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Eventos</h4>
+                    <ul>
+                        <li><a href="#">Conferências</a></li>
+                        <li><a href="#">Congressos</a></li>
+                        <li><a href="#">Shows</a></li>
+                        <li><a href="#">Festivais</a></li>
+                        <li><a href="#">Retiros</a></li>
+                        <li><a href="#">Encontros</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Missões</h4>
+                    <ul>
+                        <li><a href="#">Missões Nacionais</a></li>
+                        <li><a href="#">Missões Internacionais</a></li>
+                        <li><a href="#">Ação Social</a></li>
+                        <li><a href="#">Projetos</a></li>
+                        <li><a href="#">Voluntariado</a></li>
+                        <li><a href="#">Doações</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Institucional</h4>
+                    <ul>
+                        <li><a href="#">Sobre Nós</a></li>
+                        <li><a href="#">Contato</a></li>
+                        <li><a href="#">Equipe</a></li>
+                        <li><a href="#">Parceiros</a></li>
+                        <li><a href="#">Anuncie</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-info">
+                    <p>&copy; 2025 Obuxixo Gospel - Todos os direitos reservados</p>
+                    <div class="footer-links">
+                        <a href="/pagina/termos-de-uso">Termos de Uso</a>
+                        <a href="/pagina/politica-de-privacidade">Política de Privacidade</a>
+                        <a href="/pagina/anuncie-conosco">Anuncie Conosco</a>
+                        <a href="/pagina/trabalhe-conosco">Trabalhe Conosco</a>
+                    </div>
+                </div>
+                <div class="social-links">
+                    <a href="#" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="#" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" target="_blank" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    
+    <!-- Instagram Embed Script -->
+    <script async src="//www.instagram.com/embed.js"></script>
+    
+    <!-- Facebook SDK -->
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" 
+            src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v18.0" 
+            nonce="YOUR_NONCE">
+    </script>
+</body>
+</html>

@@ -1,0 +1,4222 @@
+<%- include('../partials/header', { title: isEdit ? 'Editar Post' : 'Novo Post' , user: user }) %>
+
+    <!-- Quill Editor CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.snow.css" rel="stylesheet">
+
+    <div class="dashboard-content">
+        <div class="content-header">
+            <div>
+                <h1>
+                    <%= isEdit ? 'Editar Post' : 'Novo Post' %>
+                </h1>
+                <p>
+                    <%= isEdit ? 'Atualize as informações do post' : 'Crie um novo artigo para o portal' %>
+                </p>
+            </div>
+            <div class="header-actions">
+                <button type="button" class="btn btn-ai" onclick="openAIModal()">
+                    🤖 Criar com IA
+                </button>
+                <a href="/dashboard/posts" class="btn btn-secondary">
+                    ← Voltar
+                </a>
+            </div>
+        </div>
+
+        <form action="<%= isEdit ? `/dashboard/posts/editar/${article.id}` : '/dashboard/posts/criar' %>" method="POST"
+            class="post-form" onsubmit="return prepareSubmit()">
+            <div class="form-grid">
+                <!-- Coluna Principal -->
+                <div class="form-main">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="titulo">Título *</label>
+                                <div class="input-with-ai">
+                                    <input type="text" id="titulo" name="titulo" class="form-control"
+                                        value="<%= isEdit ? article.titulo : '' %>"
+                                        placeholder="Digite o título do post..." required>
+                                    <div class="ai-dropdown-wrapper">
+                                        <button type="button" class="btn-ai-small"
+                                            onclick="toggleAIDropdownField('titulo')" title="Opções de IA">
+                                            ✨
+                                        </button>
+                                        <div class="ai-dropdown-menu" id="aiDropdownTitulo">
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="aplicarIACampo('titulo', 'corrigir')">
+                                                <i class="fas fa-check-circle"></i> Corrigir Português
+                                            </button>
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="aplicarIACampo('titulo', 'polemico')">
+                                                <i class="fas fa-fire"></i> Deixar mais polêmico
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="descricao">Descrição *</label>
+                                <div class="input-with-ai">
+                                    <textarea id="descricao" name="descricao" class="form-control" rows="3"
+                                        placeholder="Resumo que aparece nas listagens..."
+                                        required><%= isEdit ? article.descricao : '' %></textarea>
+                                    <div class="ai-dropdown-wrapper">
+                                        <button type="button" class="btn-ai-small"
+                                            onclick="toggleAIDropdownField('descricao')" title="Opções de IA">
+                                            ✨
+                                        </button>
+                                        <div class="ai-dropdown-menu" id="aiDropdownDescricao">
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="aplicarIACampo('descricao', 'corrigir')">
+                                                <i class="fas fa-check-circle"></i> Corrigir Português
+                                            </button>
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="aplicarIACampo('descricao', 'polemico')">
+                                                <i class="fas fa-fire"></i> Deixar mais polêmico
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Conteúdo *</label>
+                                <div class="editor-toolbar-custom">
+                                    <div class="editor-toolbar-left">
+                                        <button type="button" class="btn-insert-media"
+                                            onclick="openMediaLibrary('content')">
+                                            <i class="fas fa-images"></i> Inserir Mídia
+                                        </button>
+                                        <div class="btn-ai-dropdown">
+                                            <button type="button" class="btn-ai-correct"
+                                                onclick="toggleAIDropdown(event)">
+                                                ✨ Corrigir com IA <i class="fas fa-caret-down"></i>
+                                            </button>
+                                            <div class="ai-dropdown-menu" id="aiDropdownMenu">
+                                                <button type="button" class="ai-dropdown-item"
+                                                    onclick="corrigirConteudo('corrigir')">
+                                                    <i class="fas fa-spell-check"></i> Corrigir Erros de Português
+                                                </button>
+                                                <button type="button" class="ai-dropdown-item"
+                                                    onclick="corrigirConteudo('reescrever')">
+                                                    <i class="fas fa-sync-alt"></i> Reescrever Matéria (Estilo G1)
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn-ai-enhance"
+                                            onclick="abrirModalAcrescentarInfo()">
+                                            <i class="fas fa-plus-circle"></i> Acrescentar Informação
+                                        </button>
+                                    </div>
+                                    <div class="editor-mode-toggle">
+                                        <button type="button" class="mode-btn active" data-mode="visual"
+                                            onclick="toggleEditorMode('visual')">
+                                            <i class="fas fa-eye"></i> Visual
+                                        </button>
+                                        <button type="button" class="mode-btn" data-mode="code"
+                                            onclick="toggleEditorMode('code')">
+                                            <i class="fas fa-code"></i> Código
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="editor" style="height: 400px; background: white;"></div>
+                                <textarea id="conteudo" name="conteudo" class="form-control code-editor"
+                                    style="display: none; height: 400px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6;"><%= isEdit ? article.conteudo : '' %></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="form-sidebar">
+                    <!-- Publicação -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Publicação</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check">
+                                <label>
+                                    <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true"
+                                        <%=isEdit && article.publicado ? 'checked' : '' %>
+                                    >
+                                    <span>Publicar imediatamente</span>
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <label>
+                                    <input type="checkbox" name="destaque" value="true" <%=isEdit && article.destaque
+                                        ? 'checked' : '' %>
+                                    >
+                                    <span>Marcar como destaque</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label for="dataPublicacao">
+                                    <i class="fas fa-calendar-alt"></i> Data e Hora de Publicação (Horário de Brasília)
+                                </label>
+                                <input type="datetime-local" id="dataPublicacao" name="dataPublicacao"
+                                    class="form-control" value="<%= 
+                                    (() => {
+                                        const data = isEdit && article.dataPublicacao ? new Date(article.dataPublicacao) : new Date();
+                                        // Ajustar para horário de Brasília (UTC-3)
+                                        // Subtrair 3 horas do UTC para obter horário de Brasília
+                                        const offsetBrasilia = -3 * 60 * 60 * 1000; // -3 horas em milissegundos
+                                        const dataBrasilia = new Date(data.getTime() + offsetBrasilia);
+                                        // Formatar para datetime-local (YYYY-MM-DDTHH:mm)
+                                        const year = dataBrasilia.getUTCFullYear();
+                                        const month = String(dataBrasilia.getUTCMonth() + 1).padStart(2, '0');
+                                        const day = String(dataBrasilia.getUTCDate()).padStart(2, '0');
+                                        const hours = String(dataBrasilia.getUTCHours()).padStart(2, '0');
+                                        const minutes = String(dataBrasilia.getUTCMinutes()).padStart(2, '0');
+                                        return `${year}-${month}-${day}T${hours}:${minutes}`;
+                                    })()
+                                %>">
+                                <div id="agendamentoStatus"
+                                    style="margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
+                                    <i class="fas fa-clock"></i> <span id="agendamentoTexto"></span>
+                                </div>
+                                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                                    <i class="fas fa-info-circle"></i> <strong>Agendamento:</strong> Escolha uma
+                                    data/hora futura para agendar a publicação automática
+                                </small>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="salvarRascunho()">
+                                    <i class="fas fa-file"></i> Rascunho
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <%= isEdit ? 'Atualizar' : 'Publicar' %>
+                                </button>
+                            </div>
+
+                            <% if (isEdit && article.categoria && article.urlAmigavel) { %>
+                                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>?preview=true"
+                                    target="_blank" class="btn btn-secondary btn-block btn-sm" style="margin-top: 8px;">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </a>
+                                <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Categoria -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Categoria</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="categoria">Categoria *</label>
+                                <select id="categoria" name="categoria" class="form-control" required>
+                                    <option value="">Selecione uma categoria...</option>
+                                    <% if (typeof categories !=='undefined' && categories.length> 0) { %>
+                                        <% categories.forEach(cat=> { %>
+                                            <option value="<%= cat.slug %>" <%=isEdit && article.categoria===cat.slug
+                                                ? 'selected' : '' %>>
+                                                <%= cat.nome %>
+                                            </option>
+                                            <% }); %>
+                                                <% } %>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="subcategoria">Subcategoria</label>
+                                <input type="text" id="subcategoria" name="subcategoria" class="form-control"
+                                    value="<%= isEdit && article.subcategoria ? article.subcategoria : '' %>"
+                                    placeholder="Ex: Lançamentos, Eventos...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagem Destaque -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Imagem Destaque</h3>
+                        </div>
+                        <div class="card-body">
+                            <button type="button" class="btn btn-primary btn-block" onclick="openMediaLibrary()">
+                                <i class="fas fa-images"></i> Selecionar da Biblioteca
+                            </button>
+
+                            <!-- Campo Hidden -->
+                            <input type="hidden" id="imagem" name="imagem" value="<%= isEdit ? article.imagem : '' %>"
+                                required>
+
+                            <!-- Preview -->
+                            <div class="image-preview" id="imagePreview"
+                                style="<%= isEdit && article.imagem ? '' : 'display: none;' %>">
+                                <img src="<%= isEdit ? article.imagem : '' %>" alt="Preview" id="previewImg">
+                                <button type="button" class="btn-remove" onclick="removeImage()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Autor -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Autor</h3>
+                        </div>
+                        <div class="card-body">
+                            <input type="text" id="autor" name="autor" class="form-control"
+                                value="<%= isEdit ? article.autor : 'Redação Obuxixo Gospel' %>">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Criar com IA -->
+    <div id="aiModal" class="modal">
+        <div class="modal-content modal-ai">
+            <div class="modal-header">
+                <h2>🤖 Criar Matéria com IA</h2>
+                <button type="button" class="modal-close" onclick="closeAIModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="ai-tabs">
+                <button type="button" class="ai-tab-btn active" onclick="switchAITab('tema')">
+                    <i class="fas fa-lightbulb"></i> Por Tema
+                </button>
+                <button type="button" class="ai-tab-btn" onclick="switchAITab('conteudo')">
+                    <i class="fas fa-file-alt"></i> Por Conteúdo
+                </button>
+                <button type="button" class="ai-tab-btn" onclick="switchAITab('link')">
+                    <i class="fas fa-link"></i> Por Link
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab Por Tema -->
+                <div class="ai-form ai-tab-content active" id="ai-tab-tema">
+                    <div class="form-group">
+                        <label for="aiTema">Tema da Matéria *</label>
+                        <input type="text" id="aiTema" class="form-control" placeholder="Ex: Silas Malafaia critica PT">
+                        <small class="form-text">Descreva o tema principal da matéria</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA faz tudo: pesquisa informações, busca e seleciona imagem
+                            automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiPesquisarInternet" checked>
+                            Pesquisar informações na internet
+                        </label>
+                        <small class="form-text">A IA buscará informações atualizadas sobre o tema</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinks">Links de Referência (opcional)</label>
+                        <textarea id="aiLinks" class="form-control" rows="3"
+                            placeholder="Cole links de notícias, artigos ou Instagram (um por linha)&#10;Ex: https://www.instagram.com/p/ABC123/"></textarea>
+                        <small class="form-text">✨ Suporta Instagram! A IA extrairá texto da postagem + comentários para
+                            criar a matéria</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiCategoria">Categoria</label>
+                        <select id="aiCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiPalavrasChave">Palavras-chave (opcional)</label>
+                        <input type="text" id="aiPalavrasChave" class="form-control"
+                            placeholder="Ex: louvor, adoração, gospel">
+                        <small class="form-text">Palavras-chave separadas por vírgula</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiImagemDestaque">Imagem em Destaque (opcional)</label>
+                        <div class="ai-image-selector">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openMediaLibraryForAI()">
+                                <i class="fas fa-image"></i> Selecionar da Biblioteca
+                            </button>
+
+                            <!-- Sugestões de imagens (aparece após gerar matéria) -->
+                            <div id="aiImageSuggestions" style="display: none; margin-top: 15px;">
+                                <p style="font-weight: bold; color: #4CAF50;">
+                                    <i class="fas fa-lightbulb"></i> Sugestões de Imagens:
+                                </p>
+                                <div id="aiImageSuggestionsGrid"
+                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                                    <!-- Imagens serão inseridas aqui via JavaScript -->
+                                </div>
+                            </div>
+
+                            <div id="aiImagePreview" style="display: none; margin-top: 10px;">
+                                <img id="aiImagePreviewImg" src="" alt="Preview"
+                                    style="max-width: 200px; border-radius: 8px;">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeAIImage()"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                            <input type="hidden" id="aiImagemDestaque">
+                        </div>
+                        <small class="form-text">Escolha uma imagem da biblioteca para usar como destaque</small>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>A IA criará uma matéria completa com título, descrição e conteúdo. Você poderá revisar e
+                            editar antes de publicar.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarComIA()">
+                            <i class="fas fa-magic"></i> Gerar Matéria
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Por Conteúdo -->
+                <div class="ai-form ai-tab-content" id="ai-tab-conteudo">
+                    <div class="form-group">
+                        <label for="aiConteudoTitulo">Título Sugerido (opcional)</label>
+                        <input type="text" id="aiConteudoTitulo" class="form-control"
+                            placeholder="Ex: Pastor anuncia novo projeto social">
+                        <small class="form-text">Deixe em branco para a IA criar um título automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoInformacoes">Informações e Conteúdo *</label>
+                        <div class="input-with-ai" style="display: block;">
+                            <textarea id="aiConteudoInformacoes" class="form-control" rows="8"
+                                placeholder="Cole ou digite todas as informações que você tem sobre a matéria:&#10;&#10;- Fatos principais&#10;- Declarações importantes&#10;- Contexto do evento&#10;- Dados relevantes&#10;- Citações&#10;&#10;Quanto mais informações você fornecer, melhor será a matéria criada pela IA."
+                                required></textarea>
+                            <button type="button" class="btn-ai-expand" onclick="expandirConteudoComIA()"
+                                title="Reorganizar com IA - A IA irá reorganizar e melhorar a estrutura do texto sem inventar novos fatos">
+                                ✨ Reorganizar com IA
+                            </button>
+                        </div>
+                        <small class="form-text">📝 Forneça as informações e clique em "Reorganizar com IA" para
+                            melhorar a estrutura do texto (sem inventar fatos), ou forneça tudo e gere a matéria
+                            direto</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiConteudoModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA busca e seleciona imagem automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoCategoria">Categoria</label>
+                        <select id="aiConteudoCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoPalavrasChave">Palavras-chave (opcional)</label>
+                        <input type="text" id="aiConteudoPalavrasChave" class="form-control"
+                            placeholder="Ex: igreja, comunidade, projeto social">
+                        <small class="form-text">Palavras-chave separadas por vírgula</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiConteudoImagemDestaque">Imagem em Destaque (opcional)</label>
+                        <div class="ai-image-selector">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openMediaLibraryForAI()">
+                                <i class="fas fa-image"></i> Selecionar da Biblioteca
+                            </button>
+
+                            <div id="aiConteudoImagePreview" style="display: none; margin-top: 10px;">
+                                <img id="aiConteudoImagePreviewImg" src="" alt="Preview"
+                                    style="max-width: 200px; border-radius: 8px;">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeAIImage()"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-times"></i> Remover
+                                </button>
+                            </div>
+                            <input type="hidden" id="aiConteudoImagemDestaque">
+                        </div>
+                        <small class="form-text">Escolha uma imagem ou deixe a IA selecionar automaticamente</small>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>✨ A IA criará uma matéria humanizada, sem plágio, com linguagem natural e profissional
+                            baseada nas informações fornecidas. O conteúdo será reescrito de forma única e original.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarPorConteudo()">
+                            <i class="fas fa-magic"></i> Gerar Matéria
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Por Link -->
+                <div class="ai-form ai-tab-content" id="ai-tab-link">
+                    <div class="form-group">
+                        <label for="aiLinkUrl">Link da Postagem ou Matéria *</label>
+                        <input type="url" id="aiLinkUrl" class="form-control"
+                            placeholder="Ex: https://www.instagram.com/p/ABC123/ ou https://site.com/noticia">
+                        <small class="form-text">✨ Cole o link do Instagram, Facebook, ou link de matéria de qualquer
+                            site</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinkTexto">OU Cole o Texto Manualmente (opcional)</label>
+                        <textarea id="aiLinkTexto" class="form-control" rows="6"
+                            placeholder="Se o sistema não conseguir extrair automaticamente, cole o texto aqui..."></textarea>
+                        <small class="form-text">📱 Opcional: Cole o texto apenas se a extração automática
+                            falhar</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiLinkModoAutomatico" checked>
+                            🚀 Modo Automático (Recomendado)
+                        </label>
+                        <small class="form-text">A IA cria a matéria e seleciona imagem automaticamente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiLinkCategoria">Categoria</label>
+                        <select id="aiLinkCategoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="ai-info">
+                        <i class="fas fa-info-circle"></i>
+                        <p>📱 A IA extrairá automaticamente o texto do link e criará uma matéria completa. Se for link
+                            de matéria, tentará baixar a imagem destaque automaticamente.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAIModal()">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="criarPorLink()">
+                            <i class="fas fa-magic"></i> Gerar Matéria do Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Acrescentar Informação -->
+    <div id="modalAcrescentarInfo" class="modal">
+        <div class="modal-content modal-ai">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Acrescentar Informação com IA</h2>
+                <button type="button" class="modal-close" onclick="fecharModalAcrescentarInfo()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="instrucaoAcrescentar">O que você quer acrescentar ou modificar? *</label>
+                    <textarea id="instrucaoAcrescentar" class="form-control" rows="4"
+                        placeholder="Ex: Adicione informações sobre a biografia do cantor&#10;Ex: Mude o título para ficar mais chamativo&#10;Ex: Acrescente detalhes sobre o evento&#10;Ex: Reescreva o segundo parágrafo de forma mais clara"></textarea>
+                    <small class="form-text">💡 Seja específico sobre o que deseja modificar no título ou conteúdo</small>
+                </div>
+
+                <div class="ai-info" style="margin-top: 16px;">
+                    <i class="fas fa-info-circle"></i>
+                    <p><strong>Como funciona:</strong> A IA vai analisar seu conteúdo atual e fazer as modificações que você pediu, mantendo o estilo e estrutura da matéria.</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalAcrescentarInfo()">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="aplicarAcrescentarInfo()">
+                        <i class="fas fa-magic"></i> Aplicar Modificações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Biblioteca de Mídia -->
+    <div id="mediaLibraryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-images"></i> Biblioteca de Mídia</h2>
+                <button type="button" class="modal-close" onclick="closeMediaLibrary()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab-btn active" onclick="switchModalTab('biblioteca', event)">
+                    <i class="fas fa-folder-open"></i> Biblioteca
+                </button>
+                <button type="button" class="modal-tab-btn" onclick="switchModalTab('upload', event)">
+                    <i class="fas fa-upload"></i> Fazer Upload
+                </button>
+                <button type="button" class="modal-tab-btn" onclick="switchModalTab('buscar-bing', event)">
+                    <i class="fas fa-search"></i> Buscar no Bing
+                </button>
+                <button type="button" class="modal-tab-btn" onclick="switchModalTab('buscar-google', event)">
+                    <i class="fab fa-google"></i> Buscar no Google
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab Biblioteca -->
+                <div class="modal-tab-content active" id="modal-biblioteca">
+                    <div class="media-filters">
+                        <input type="text" id="mediaSearch" class="form-control" placeholder="Buscar mídia..."
+                            onkeyup="filterMedia()">
+                        <select id="mediaTypeFilter" class="form-control" onchange="loadMediaLibrary()">
+                            <option value="">Todos os tipos</option>
+                            <option value="imagem">Imagens</option>
+                            <option value="video">Vídeos</option>
+                            <option value="audio">Áudios</option>
+                        </select>
+                    </div>
+
+                    <div class="media-actions" id="mediaActions" style="display: none;">
+                        <button type="button" class="btn btn-danger" onclick="deleteSelectedMedia()">
+                            <i class="fas fa-trash"></i> Excluir (<span id="selectedCount">0</span>)
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="useSelectedMedia()">
+                            <i class="fas fa-check"></i> Usar (<span id="selectedCountInsert">0</span>)
+                        </button>
+                    </div>
+
+                    <div id="mediaGrid" class="media-grid">
+                        <div class="loading">Carregando...</div>
+                    </div>
+                </div>
+
+                <!-- Tab Upload -->
+                <div class="modal-tab-content" id="modal-upload">
+                    <div class="upload-area-modal" id="uploadAreaModal">
+                        <input type="file" id="fileInputModal" accept="image/*,video/*,audio/*" style="display: none;"
+                            onchange="handleModalUpload(event)">
+                        <div class="upload-placeholder" onclick="document.getElementById('fileInputModal').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar arquivo</p>
+                            <small>Imagens, Vídeos, Áudios até 10MB</small>
+                        </div>
+                    </div>
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p id="progressText">Enviando...</p>
+                    </div>
+                </div>
+
+                <!-- Tab Buscar no Bing -->
+                <div class="modal-tab-content" id="modal-buscar-bing">
+                    <div class="bing-search-container">
+                        <div class="bing-search-box">
+                            <input type="text" id="bingSearchInput" class="form-control"
+                                placeholder="Digite o que você quer encontrar... (ex: igreja, louvor, pastor)"
+                                onkeypress="if(event.key === 'Enter') buscarImagensBing()">
+                            <button type="button" class="btn btn-primary" onclick="buscarImagensBing()">
+                                <i class="fas fa-search"></i> Buscar Imagens
+                            </button>
+                        </div>
+                        <div id="bingSearchResults" class="bing-results-grid">
+                            <div class="bing-placeholder">
+                                <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+                                <p style="color: #666;">Digite uma palavra-chave e clique em "Buscar Imagens"</p>
+                            </div>
+                        </div>
+                        <div id="bingSearchLoading" class="loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando imagens...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Buscar no Google -->
+                <div class="modal-tab-content" id="modal-buscar-google">
+                    <div class="bing-search-container">
+                        <div class="bing-search-box">
+                            <input type="text" id="googleSearchInput" class="form-control"
+                                placeholder="Digite o que você quer encontrar... (ex: igreja, louvor, pastor)"
+                                onkeypress="if(event.key === 'Enter') buscarImagensGoogle()">
+                            <button type="button" class="btn btn-primary" onclick="buscarImagensGoogle()">
+                                <i class="fab fa-google"></i> Buscar Imagens
+                            </button>
+                        </div>
+                        <div id="googleSearchResults" class="bing-results-grid">
+                            <div class="bing-placeholder">
+                                <i class="fab fa-google"
+                                    style="font-size: 48px; color: #4285F4; margin-bottom: 16px;"></i>
+                                <p style="color: #666;">Digite uma palavra-chave e clique em "Buscar Imagens"</p>
+                            </div>
+                        </div>
+                        <div id="googleSearchLoading" class="loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando imagens no Google...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editor de Imagem -->
+    <div id="imageEditorModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-crop"></i> Editor de Imagem</h2>
+                <button type="button" class="modal-close" onclick="closeImageEditor()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="image-editor-container">
+                    <div class="editor-toolbar">
+                        <div class="toolbar-group">
+                            <button type="button" class="btn-editor-tool" onclick="rotateImage(-90)"
+                                title="Girar para esquerda">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                            <button type="button" class="btn-editor-tool" onclick="rotateImage(90)"
+                                title="Girar para direita">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button type="button" class="btn-editor-tool" onclick="flipImage('horizontal')"
+                                title="Espelhar horizontal">
+                                <i class="fas fa-arrows-alt-h"></i>
+                            </button>
+                            <button type="button" class="btn-editor-tool" onclick="flipImage('vertical')"
+                                title="Espelhar vertical">
+                                <i class="fas fa-arrows-alt-v"></i>
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button type="button" id="eraserBtn" class="btn-editor-tool" onclick="toggleEraserMode()"
+                                title="Remover Objeto (Borracha Mágica)">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button type="button" class="btn-editor-tool" onclick="zoomImage(0.1)" title="Zoom In (+)">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button type="button" class="btn-editor-tool" onclick="zoomImage(-0.1)"
+                                title="Zoom Out (-)">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button type="button" class="btn-editor-tool" onclick="resetCrop()" title="Resetar">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <label class="aspect-ratio-label">Proporção:</label>
+                            <select id="aspectRatio" class="form-control" onchange="changeAspectRatio()"
+                                style="width: auto; display: inline-block;">
+                                <option value="NaN">Livre</option>
+                                <option value="1">1:1 (Quadrado)</option>
+                                <option value="1.7777777777777777">16:9 (Paisagem)</option>
+                                <option value="0.5625">9:16 (Retrato)</option>
+                                <option value="1.3333333333333333">4:3</option>
+                                <option value="0.75">3:4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="editor-canvas-container">
+                        <img id="imageEditorCanvas" src="" alt="Imagem para editar">
+                    </div>
+
+                    <div class="editor-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeImageEditor()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveEditedImage()">
+                            <i class="fas fa-save"></i> Salvar Imagem Editada
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Header da página */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .content-header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            color: #1A202C;
+            letter-spacing: -0.5px;
+        }
+
+        .content-header p {
+            font-size: 13px;
+            color: #718096;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .post-form {
+            margin-top: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .form-main,
+        .form-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E8E8E8;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #F0F0F0;
+            background: #FAFBFC;
+        }
+
+        .card-header h3 {
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0;
+            color: #2D3748;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            font-size: 11px;
+            color: #4A5568;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.15s;
+            background: white;
+            color: #2D3748;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+            background: #FFFBF7;
+        }
+
+        .form-control:hover {
+            border-color: #CBD5E0;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 75px;
+            line-height: 1.5;
+        }
+
+        .form-check {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            background: #F7FAFC;
+            border-radius: 8px;
+            transition: all 0.15s;
+            border: 1px solid #E2E8F0;
+        }
+
+        .form-check:hover {
+            background: #EDF2F7;
+            border-color: #CBD5E0;
+        }
+
+        .form-check label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 400;
+            font-size: 13px;
+            margin: 0;
+            color: #2D3748;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            accent-color: #0669de;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4A5568;
+            transform: translateY(-1px);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 12px;
+        }
+
+        /* Upload Tabs */
+        .upload-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .tab-btn {
+            padding: 8px 14px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            color: #718096;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tab-btn:hover {
+            color: #0669de;
+            background: #FFF5ED;
+        }
+
+        .tab-btn.active {
+            color: #0669de;
+            border-bottom-color: #0669de;
+            background: #FFF5ED;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #CBD5E0;
+            border-radius: 10px;
+            padding: 32px 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #F7FAFC;
+        }
+
+        .upload-area:hover {
+            border-color: #0669de;
+            background: #FFF5ED;
+        }
+
+        .upload-placeholder i {
+            font-size: 38px;
+            color: #0669de;
+            margin-bottom: 10px;
+        }
+
+        .upload-placeholder p {
+            font-size: 13px;
+            font-weight: 500;
+            color: #2D3748;
+            margin-bottom: 3px;
+        }
+
+        .upload-placeholder small {
+            color: #718096;
+            font-size: 11px;
+        }
+
+        /* Preview */
+        .image-preview {
+            margin-top: 14px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            position: relative;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .btn-remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            font-size: 13px;
+        }
+
+        .btn-remove:hover {
+            background: #DC2626;
+            transform: scale(1.08);
+        }
+
+        /* Editor Toolbar Custom */
+        .editor-toolbar-custom {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .editor-toolbar-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-insert-media {
+            padding: 9px 16px;
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s;
+            font-size: 12px;
+            box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+            letter-spacing: 0.2px;
+        }
+
+        .btn-insert-media:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+        }
+
+        .btn-insert-media:active {
+            transform: translateY(0);
+        }
+
+        /* Toggle de Modo Visual/Código */
+        .editor-mode-toggle {
+            display: flex;
+            gap: 0;
+            background: #F7FAFC;
+            border-radius: 8px;
+            padding: 3px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .mode-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .mode-btn:hover {
+            color: #2D3748;
+            background: #EDF2F7;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: #0669de;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .mode-btn i {
+            font-size: 12px;
+        }
+
+        /* Editor de Código */
+        .code-editor {
+            resize: vertical;
+            background: #1E293B;
+            color: #E2E8F0;
+            border: 1px solid #334155;
+            border-radius: 0 0 8px 8px;
+            padding: 14px;
+            tab-size: 2;
+        }
+
+        .code-editor:focus {
+            outline: none;
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+
+        /* Quill */
+        .ql-toolbar {
+            background: #F7FAFC;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid #E2E8F0;
+            border-bottom: none;
+        }
+
+        .ql-container {
+            font-size: 14px;
+            font-family: Inter, -apple-system, sans-serif;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .ql-editor {
+            min-height: 280px;
+            padding: 14px;
+        }
+
+        /* Instagram Embed - Corrigir z-index e posicionamento */
+        .ql-editor iframe.instagram-media,
+        .ql-editor iframe.instagram-media-rendered,
+        iframe.instagram-media,
+        iframe.instagram-media-rendered {
+            position: static !important;
+            z-index: auto !important;
+            margin: 20px auto !important;
+            display: block !important;
+            max-width: 540px !important;
+        }
+
+        .ql-editor blockquote.instagram-media {
+            position: static !important;
+            z-index: auto !important;
+            margin: 20px auto !important;
+            max-width: 540px !important;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #FAFBFC;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2D3748;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #EDF2F7;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            font-size: 16px;
+            color: #718096;
+        }
+
+        .modal-close:hover {
+            background: #0669de;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #E2E8F0;
+            background: #F7FAFC;
+        }
+
+        .modal-tab-btn {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            color: #718096;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .modal-tab-btn:hover {
+            color: #0669de;
+            background: white;
+        }
+
+        .modal-tab-btn.active {
+            color: #0669de;
+            border-bottom-color: #0669de;
+            background: white;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-tab-content {
+            display: none;
+        }
+
+        .modal-tab-content.active {
+            display: block;
+        }
+
+        .media-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .media-filters .form-control {
+            flex: 1;
+            font-size: 12px;
+        }
+
+        .media-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #F5F7FA;
+            border-radius: 8px;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .media-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            background: #F5F7FA;
+        }
+
+        .media-item:hover {
+            border-color: #0669de;
+            transform: scale(1.05);
+        }
+
+        .media-item.selected {
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.2);
+        }
+
+        .media-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-item-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 8px;
+            color: white;
+            font-size: 11px;
+        }
+
+        .media-item-checkbox {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .media-item-checkbox i {
+            color: #0669de;
+            font-size: 14px;
+            display: none;
+        }
+
+        .media-item.selected .media-item-checkbox i {
+            display: block;
+        }
+
+        .upload-area-modal {
+            border: 3px dashed #E0E0E0;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #F9FAFB;
+        }
+
+        .upload-area-modal:hover {
+            border-color: #0669de;
+            background: #FFF5ED;
+        }
+
+        .upload-progress {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #E0E0E0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0669de;
+            transition: width 0.3s;
+        }
+
+        .upload-progress p {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        /* Estilos para busca do Bing */
+        .bing-search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .bing-search-box {
+            display: flex;
+            gap: 12px;
+        }
+
+        .bing-search-box .form-control {
+            flex: 1;
+        }
+
+        .bing-results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            min-height: 300px;
+        }
+
+        .bing-placeholder {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+
+        .bing-image-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            background: #F5F7FA;
+        }
+
+        .bing-image-item:hover {
+            border-color: #0669de;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.2);
+        }
+
+        .bing-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bing-image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 12px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bing-image-info {
+            color: white;
+            font-size: 10px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .bing-image-select {
+            background: #0669de;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bing-image-select:hover {
+            background: #3d8bfd;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .bing-results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .content-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .content-header h1 {
+                font-size: 20px;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .editor-toolbar-custom {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .editor-toolbar-left {
+                width: 100%;
+            }
+
+            .editor-mode-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-header h1 {
+                font-size: 18px;
+            }
+
+            .content-header p {
+                font-size: 13px;
+            }
+
+            .header-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .card-body {
+                padding: 16px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+            }
+
+            .form-control {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .btn-ai-small {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .editor-toolbar-left {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .btn-insert-media,
+            .btn-ai-correct {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+            .mode-btn {
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+
+            #editor {
+                height: 300px !important;
+            }
+
+            .code-editor {
+                height: 300px !important;
+            }
+
+            .modal-content {
+                width: 100%;
+                max-height: 90vh;
+                margin: 5vh auto;
+            }
+
+            .modal-header h2 {
+                font-size: 16px;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 8px;
+            }
+
+            .bing-results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-header h1 {
+                font-size: 16px;
+            }
+
+            .card-body {
+                padding: 12px;
+            }
+
+            .form-control {
+                font-size: 16px;
+            }
+
+            /* Prevent zoom on iOS */
+            .btn-ai-small {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+
+            .editor-toolbar-left {
+                flex-direction: column;
+            }
+
+            .btn-insert-media,
+            .btn-ai-correct {
+                width: 100%;
+            }
+
+            #editor {
+                height: 250px !important;
+            }
+
+            .code-editor {
+                height: 250px !important;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+
+            .bing-results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+
+        /* ============================================
+       ESTILOS DA IA
+       ============================================ */
+
+        .header-actions {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        .input-with-ai {
+            position: relative;
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .input-with-ai .form-control {
+            flex: 1;
+        }
+
+        .btn-ai-small {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 15px;
+            flex-shrink: 0;
+            margin-top: 0;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-ai-small:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-ai-small:active {
+            transform: scale(0.96);
+        }
+
+        .btn-ai-correct {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 7px;
+            font-weight: 500;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-ai-correct:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-ai-enhance {
+            background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 7px;
+            font-weight: 500;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+            margin-left: 8px;
+        }
+
+        .btn-ai-enhance:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-ai-enhance:active {
+            transform: scale(0.98);
+        }
+
+        .btn-ai-expand {
+            background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-ai-expand:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-ai-expand:active {
+            transform: scale(0.98);
+        }
+
+        .btn-ai-expand:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Dropdown IA */
+        .btn-ai-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .ai-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid #E2E8F0;
+            min-width: 250px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .ai-dropdown-menu.active {
+            display: block;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-dropdown-item {
+            width: 100%;
+            padding: 12px 16px;
+            background: white;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #2D3748;
+            transition: all 0.15s;
+            border-bottom: 1px solid #F7FAFC;
+        }
+
+        .ai-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .ai-dropdown-item:hover {
+            background: #F7FAFC;
+            color: #8B5CF6;
+        }
+
+        .ai-dropdown-item i {
+            font-size: 14px;
+            width: 18px;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #mediaLibraryModal {
+            z-index: 10001 !important;
+        }
+
+        #imageEditorModal {
+            z-index: 10002 !important;
+        }
+
+        .modal-ai {
+            max-width: 850px;
+            margin: 20px;
+        }
+
+        .modal-ai .modal-body {
+            padding: 16px 20px;
+        }
+
+        .modal-ai .form-group {
+            margin-bottom: 16px;
+        }
+
+        .modal-ai .form-group label {
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .modal-ai .form-control {
+            font-size: 13px;
+            padding: 8px 11px;
+        }
+
+        .modal-ai .form-text {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .ai-image-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-select-image {
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-weight: 500;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-select-image:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-sm {
+            padding: 7px 12px;
+            font-size: 12px;
+        }
+
+        .ai-image-preview {
+            position: relative;
+            width: 100%;
+            max-width: 260px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .ai-image-preview img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .btn-remove-image {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            font-size: 12px;
+        }
+
+        .btn-remove-image:hover {
+            background: #DC2626;
+            transform: scale(1.08);
+        }
+
+        .ai-form {
+            padding: 0;
+        }
+
+        .ai-info {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 8px;
+            padding: 12px 14px;
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .ai-info i {
+            color: #3B82F6;
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .ai-info p {
+            margin: 0;
+            font-size: 12px;
+            color: #1E40AF;
+            line-height: 1.5;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #E2E8F0;
+        }
+
+        /* AI Tabs */
+        .ai-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #E2E8F0;
+            background: #F7FAFC;
+            margin: 0;
+            padding: 0;
+        }
+
+        .ai-tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            color: #718096;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .ai-tab-btn:hover {
+            color: #0669de;
+            background: #FFF5ED;
+        }
+
+        .ai-tab-btn.active {
+            color: #0669de;
+            border-bottom-color: #0669de;
+            background: white;
+        }
+
+        .ai-tab-btn i {
+            font-size: 14px;
+        }
+
+        .ai-tab-content {
+            display: none !important;
+        }
+
+        .ai-tab-content.active {
+            display: block !important;
+        }
+
+        /* Checkboxes no modal AI */
+        .modal-ai .form-group label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+        }
+
+        .modal-ai .form-group>label {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #2D3748;
+            cursor: pointer;
+            padding: 0;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        /* Editor de Imagem */
+        .image-editor-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: #F7FAFC;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            padding: 0 8px;
+            border-right: 1px solid #E2E8F0;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .btn-editor-tool {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #CBD5E0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            color: #4A5568;
+            font-size: 14px;
+        }
+
+        .btn-editor-tool:hover {
+            background: #0669de;
+            color: white;
+            border-color: #0669de;
+            transform: translateY(-1px);
+        }
+
+        .btn-editor-tool:active {
+            transform: translateY(0);
+        }
+
+        .btn-editor-tool.active {
+            background: #0669de;
+            border-color: #0669de;
+            color: white;
+        }
+
+        .editor-canvas-container.eraser-mode {
+            cursor: crosshair !important;
+        }
+
+        .editor-canvas-container.eraser-mode .cropper-crop-box,
+        .editor-canvas-container.eraser-mode .cropper-view-box {
+            cursor: crosshair !important;
+        }
+
+        .aspect-ratio-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #4A5568;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .editor-canvas-container {
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+            background: #F7FAFC;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+            display: block;
+            position: relative;
+        }
+
+        .editor-canvas-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Ajustar tamanho do Cropper */
+        .cropper-container {
+            width: 100% !important;
+            height: 600px !important;
+        }
+
+        .cropper-canvas {
+            max-width: 100% !important;
+            max-height: 600px !important;
+        }
+
+        .cropper-view-box {
+            outline: 2px solid #0669de;
+            outline-offset: -1px;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 12px;
+            border-top: 1px solid #E2E8F0;
+        }
+
+        .media-item {
+            position: relative;
+        }
+
+        .media-item-edit-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 107, 0, 0.95);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .media-item:hover .media-item-edit-btn {
+            display: flex;
+        }
+
+        .media-item-edit-btn:hover {
+            background: #3d8bfd;
+            transform: scale(1.08);
+        }
+    </style>
+
+    <!-- Cropper.js CSS e JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+    <!-- Quill JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <script>
+        // Variáveis globais
+        var quill;
+        var editorMode = 'visual';
+
+        // Alternar entre modo visual e código (DECLARAR NO TOPO PARA ESTAR DISPONÍVEL)
+        function toggleEditorMode(mode) {
+            const editor = document.getElementById('editor');
+            const textarea = document.getElementById('conteudo');
+            const visualBtn = document.querySelector('.mode-btn[data-mode="visual"]');
+            const codeBtn = document.querySelector('.mode-btn[data-mode="code"]');
+
+            if (!quill) {
+                console.error('❌ Quill não está inicializado ainda');
+                return;
+            }
+
+            if (mode === 'code') {
+                // Salvar conteúdo do Quill no textarea
+                textarea.value = quill.root.innerHTML;
+
+                // Mostrar textarea e esconder Quill
+                editor.style.display = 'none';
+                textarea.style.display = 'block';
+
+                // Atualizar botões
+                visualBtn.classList.remove('active');
+                codeBtn.classList.add('active');
+
+                editorMode = 'code';
+            } else {
+                // Carregar conteúdo do textarea no Quill
+                quill.root.innerHTML = textarea.value;
+
+                // Mostrar Quill e esconder textarea
+                editor.style.display = 'block';
+                textarea.style.display = 'none';
+
+                // Atualizar botões
+                codeBtn.classList.remove('active');
+                visualBtn.classList.add('active');
+
+                editorMode = 'visual';
+            }
+        }
+
+        // Função para inicializar o Quill
+        function initQuill() {
+            // Verificar se o Quill foi carregado
+            if (typeof Quill === 'undefined') {
+                console.error('❌ Quill não foi carregado corretamente');
+                console.log('🔄 Tentando carregar Quill novamente...');
+
+                // Tentar carregar o Quill manualmente
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.min.js';
+                script.onload = function () {
+                    console.log('✅ Quill carregado via fallback');
+                    initQuillEditor();
+                };
+                script.onerror = function () {
+                    console.error('❌ Falha ao carregar Quill. Verifique sua conexão com a internet.');
+                    alert('Erro ao carregar o editor. Por favor, recarregue a página.');
+                };
+                document.head.appendChild(script);
+                return;
+            }
+
+            initQuillEditor();
+        }
+
+        // Função para inicializar o editor Quill
+        function initQuillEditor() {
+            // Inicializar Quill
+            quill = new Quill('#editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        [{ 'align': [] }],
+                        ['link', 'image', 'video'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            console.log('✅ Quill inicializado com sucesso');
+
+        // Carregar conteúdo existente
+        <% if (isEdit && article.conteudo) { %>
+                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
+                console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
+                console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
+
+                // Extrair e guardar o embed do Instagram (se existir)
+                let embedInstagram = '';
+
+                // Primeiro, remover TODOS os iframes renderizados do Instagram (evitar duplicação)
+                // Regex mais agressiva para pegar qualquer iframe do Instagram
+                conteudoCarregado = conteudoCarregado.replace(/<iframe[^>]*instagram[^>]*>.*?<\/iframe>/gis, '');
+                conteudoCarregado = conteudoCarregado.replace(/<iframe[^>]*class="instagram-media[^"]*"[^>]*>.*?<\/iframe>/gis, '');
+                console.log('🧹 Todos os iframes do Instagram removidos para evitar duplicação');
+
+                // Regex para capturar o blockquote do Instagram (novo formato sem div wrapper)
+                const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>/gi;
+                const embedMatch = conteudoCarregado.match(embedRegex);
+                if (embedMatch) {
+                    embedInstagram = embedMatch[0];
+                    console.log('📱 Embed do Instagram encontrado e removido temporariamente');
+                    console.log('📏 Tamanho do embed:', embedInstagram.length);
+                    // Remover embed do conteúdo para o Quill não ter problemas
+                    conteudoCarregado = conteudoCarregado.replace(embedRegex, '');
+                    console.log('📏 Tamanho após remover embed:', conteudoCarregado.length);
+                }
+
+                // Limpar HTML problemático que o Quill não consegue processar
+                // Remover atributos data-* que podem causar problemas
+                conteudoCarregado = conteudoCarregado.replace(/data-[a-z-]+="[^"]*"/gi, '');
+
+                // Tentar carregar no Quill com tratamento de erro
+                try {
+                    quill.root.innerHTML = conteudoCarregado;
+                    console.log('✅ Conteúdo carregado no Quill com sucesso');
+                } catch (error) {
+                    console.error('❌ Erro ao carregar conteúdo no Quill:', error);
+                    // Se falhar, carregar apenas o texto sem formatação
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = conteudoCarregado;
+                    quill.setText(tempDiv.textContent || tempDiv.innerText || '');
+                    console.log('⚠️ Conteúdo carregado como texto simples');
+                }
+        <% } %>
+
+        // Garantir que o modo visual está ativo
+        const editor = document.getElementById('editor');
+            const textarea = document.getElementById('conteudo');
+
+            // Sempre começar no modo visual
+            editor.style.display = 'block';
+            textarea.style.display = 'none';
+
+            // Se houver conteúdo no textarea, carregar no Quill
+            if (textarea.value.trim() && !quill.root.innerHTML.trim()) {
+                quill.root.innerHTML = textarea.value;
+            }
+        }
+
+        // Função para verificar e mostrar status do agendamento
+        function verificarAgendamento() {
+            const dataInput = document.getElementById('dataPublicacao');
+            const statusDiv = document.getElementById('agendamentoStatus');
+            const statusTexto = document.getElementById('agendamentoTexto');
+            const publicadoCheckbox = document.getElementById('publicadoCheckbox');
+
+            if (!dataInput || !statusDiv) return;
+
+            const dataSelecionada = new Date(dataInput.value);
+            const agora = new Date();
+
+            if (dataSelecionada > agora) {
+                // Data futura - agendamento
+                const diff = dataSelecionada - agora;
+                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+                let mensagem = 'Publicação agendada para ';
+                if (dias > 0) mensagem += `${dias} dia${dias > 1 ? 's' : ''} `;
+                if (horas > 0) mensagem += `${horas}h `;
+                if (minutos > 0 && dias === 0) mensagem += `${minutos}min `;
+
+                statusTexto.textContent = mensagem.trim();
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#FFF3CD';
+                statusDiv.style.border = '1px solid #FFE69C';
+                statusDiv.style.color = '#856404';
+
+                // Desmarcar "Publicar imediatamente" quando agendar
+                if (publicadoCheckbox) {
+                    publicadoCheckbox.checked = false;
+                }
+            } else {
+                // Data passada ou presente - publicação imediata
+                statusTexto.textContent = 'Publicação imediata';
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#D4EDDA';
+                statusDiv.style.border = '1px solid #C3E6CB';
+                statusDiv.style.color = '#155724';
+
+                // Marcar "Publicar imediatamente" quando data for presente/passada
+                if (publicadoCheckbox) {
+                    publicadoCheckbox.checked = true;
+                }
+            }
+        }
+
+        // Inicializar quando o DOM estiver pronto
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                initQuill();
+
+                // Monitorar mudanças no campo de data
+                const dataInput = document.getElementById('dataPublicacao');
+                if (dataInput) {
+                    dataInput.addEventListener('change', verificarAgendamento);
+                    dataInput.addEventListener('input', verificarAgendamento);
+                    // Verificar inicialmente
+                    verificarAgendamento();
+                }
+            });
+        } else {
+            // DOM já está pronto
+            initQuill();
+
+            // Monitorar mudanças no campo de data
+            const dataInput = document.getElementById('dataPublicacao');
+            if (dataInput) {
+                dataInput.addEventListener('change', verificarAgendamento);
+                dataInput.addEventListener('input', verificarAgendamento);
+                // Verificar inicialmente
+                verificarAgendamento();
+            }
+        }
+
+        // Salvar como rascunho
+        function salvarRascunho() {
+            // Preparar conteúdo
+            let content;
+            if (editorMode === 'code') {
+                const textarea = document.getElementById('conteudo');
+                content = textarea.value.trim();
+            } else {
+                content = quill.root.innerHTML;
+            }
+
+            // Validações básicas
+            const titulo = document.querySelector('input[name="titulo"]').value.trim();
+
+            if (!titulo) {
+                alert('Por favor, adicione um título ao rascunho!');
+                document.querySelector('input[name="titulo"]').focus();
+                return;
+            }
+
+            if (!content || content === '<p><br></p>') {
+                alert('Por favor, adicione algum conteúdo ao rascunho!');
+                return;
+            }
+
+            // Criar FormData
+            const form = document.querySelector('.post-form');
+            const btnRascunho = event.target;
+            const originalText = btnRascunho.innerHTML;
+            btnRascunho.disabled = true;
+            btnRascunho.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(async response => {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        const text = await response.text();
+                        throw new Error(text || 'Erro desconhecido');
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Rascunho salvo com sucesso!');
+                        // Redirecionar para a listagem de posts
+                        window.location.href = '/dashboard/posts';
+                    } else {
+                        alert('❌ Erro ao salvar rascunho: ' + (data.message || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('❌ Erro ao salvar rascunho: ' + error.message);
+                })
+                .finally(() => {
+                    btnRascunho.disabled = false;
+                    btnRascunho.innerHTML = originalText;
+                });
+        }
+
+        // Preparar submit
+        function prepareSubmit() {
+            // Se estiver no modo código, usar o valor do textarea
+            if (editorMode === 'code') {
+                const textarea = document.getElementById('conteudo');
+                // O valor já está no textarea, não precisa fazer nada
+                if (textarea.value.trim().length === 0) {
+                    alert('Por favor, adicione conteúdo ao post!');
+                    textarea.focus();
+                    return false;
+                }
+
+                // Adicionar embed do Instagram de volta se existir
+                if (typeof embedInstagram !== 'undefined' && embedInstagram) {
+                    textarea.value += embedInstagram;
+                    console.log('📱 Embed do Instagram adicionado de volta ao conteúdo (modo código)');
+                }
+            } else {
+                // Se estiver no modo visual, usar o Quill
+                let content = quill.root.innerHTML;
+
+                // Adicionar embed do Instagram de volta se existir
+                if (typeof embedInstagram !== 'undefined' && embedInstagram) {
+                    content += embedInstagram;
+                    console.log('📱 Embed do Instagram adicionado de volta ao conteúdo (modo visual)');
+                }
+
+                document.getElementById('conteudo').value = content;
+
+                // Validar se o conteúdo não está vazio
+                const text = quill.getText().trim();
+                if (text.length === 0) {
+                    alert('Por favor, adicione conteúdo ao post!');
+                    quill.focus();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // BIBLIOTECA DE MÍDIA
+        let mediaLibraryData = [];
+        let selectedMedia = [];
+        let mediaLibraryMode = 'featured'; // 'featured' ou 'content'
+
+        function openMediaLibrary(mode = 'featured') {
+            mediaLibraryMode = mode;
+            selectedMedia = [];
+            const modal = document.getElementById('mediaLibraryModal');
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            loadMediaLibrary();
+            updateSelectedCount();
+        }
+
+        function closeMediaLibrary() {
+            console.log('closeMediaLibrary chamada');
+            const modal = document.getElementById('mediaLibraryModal');
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+            selectedMedia = [];
+            console.log('Modal escondido!');
+        }
+
+        function switchModalTab(tab, event) {
+            document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Fallback: encontrar o botão pela tab
+                document.querySelector(`[onclick*="'${tab}'"]`)?.classList.add('active');
+            }
+            document.getElementById('modal-' + tab).classList.add('active');
+        }
+
+        async function loadMediaLibrary() {
+            const tipo = document.getElementById('mediaTypeFilter').value;
+            const url = tipo ? `/dashboard/media?tipo=${tipo}` : '/dashboard/media';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    mediaLibraryData = data.media;
+                    renderMediaGrid(data.media);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mídia:', error);
+                document.getElementById('mediaGrid').innerHTML = '<div class="loading">Erro ao carregar mídia</div>';
+            }
+        }
+
+        function renderMediaGrid(media) {
+            const grid = document.getElementById('mediaGrid');
+
+            if (media.length === 0) {
+                grid.innerHTML = '<div class="loading">Nenhuma mídia encontrada. Faça upload na aba "Fazer Upload".</div>';
+                return;
+            }
+
+            grid.innerHTML = media.map(item => `
+            <div class="media-item" data-id="${item.id}" data-url="${item.url}" data-tipo="${item.tipo}" onclick="toggleMediaSelection(${item.id}, '${item.url}', '${item.tipo}')">
+                ${item.tipo === 'imagem' ? `
+                    <button type="button" class="media-item-edit-btn" onclick="event.stopPropagation(); openImageEditor(${item.id}, '${item.url}')" title="Editar imagem">
+                        <i class="fas fa-crop"></i>
+                    </button>
+                ` : ''}
+                <div class="media-item-checkbox">
+                    <i class="fas fa-check"></i>
+                </div>
+                ${item.tipo === 'imagem' ? `<img src="${item.url}" alt="${item.nomeOriginal}">` : ''}
+                ${item.tipo === 'video' ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><i class="fas fa-video" style="font-size:48px;color:#666;"></i></div>` : ''}
+                ${item.tipo === 'audio' ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><i class="fas fa-music" style="font-size:48px;color:#666;"></i></div>` : ''}
+                <div class="media-item-info">${item.nomeOriginal}</div>
+            </div>
+        `).join('');
+        }
+
+        function toggleMediaSelection(id, url, tipo) {
+            const item = document.querySelector(`.media-item[data-id="${id}"]`);
+            const index = selectedMedia.findIndex(m => m.id === id);
+
+            if (index > -1) {
+                selectedMedia.splice(index, 1);
+                item.classList.remove('selected');
+            } else {
+                // No modo biblioteca, permitir apenas uma seleção por vez para featured
+                if (mediaLibraryMode === 'featured') {
+                    // Desselecionar todos os outros
+                    selectedMedia.forEach(m => {
+                        const otherItem = document.querySelector(`.media-item[data-id="${m.id}"]`);
+                        if (otherItem) otherItem.classList.remove('selected');
+                    });
+                    selectedMedia = [];
+                }
+
+                selectedMedia.push({ id, url, tipo });
+                item.classList.add('selected');
+            }
+
+            updateSelectedCount();
+
+            // Não insere mais automaticamente - usuário deve clicar em "Usar"
+            // Removido: selectMediaForFeatured(url)
+
+            // Se modo 'ai-image' e é imagem, insere automaticamente na prévia da IA
+            if (mediaLibraryMode === 'ai-image' && tipo === 'imagem') {
+                console.log('Modo ai-image detectado no clique! URL:', url);
+                // Limpar seleções anteriores e selecionar apenas esta
+                selectedMedia = [{ id, url, tipo }];
+                console.log('Chamando selectMediaForAI...');
+                selectMediaForAI(url);
+            }
+        }
+
+        function selectMediaForFeatured(url) {
+            document.getElementById('imagem').value = url;
+            document.getElementById('previewImg').src = url;
+            document.getElementById('imagePreview').style.display = 'block';
+            closeMediaLibrary();
+        }
+
+        function selectMediaForAI(url) {
+            console.log('selectMediaForAI chamada com URL:', url);
+            const inputElement = document.getElementById('aiImagemDestaque');
+            const imgElement = document.getElementById('aiImagePreviewImg');
+            const previewElement = document.getElementById('aiImagePreview');
+
+            console.log('Elementos encontrados:', {
+                input: !!inputElement,
+                img: !!imgElement,
+                preview: !!previewElement
+            });
+
+            if (inputElement) inputElement.value = url;
+            if (imgElement) imgElement.src = url;
+            if (previewElement) previewElement.style.display = 'block';
+
+            console.log('Fechando biblioteca...');
+            closeMediaLibrary();
+            console.log('Biblioteca fechada!');
+        }
+
+        function updateSelectedCount() {
+            const count = selectedMedia.length;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('selectedCountInsert').textContent = count;
+            document.getElementById('mediaActions').style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function filterMedia() {
+            const search = document.getElementById('mediaSearch').value.toLowerCase();
+            const filtered = mediaLibraryData.filter(item =>
+                item.nomeOriginal.toLowerCase().includes(search)
+            );
+            renderMediaGrid(filtered);
+        }
+
+        async function handleModalUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            progressDiv.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Enviando...';
+
+            try {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = `Enviando... ${Math.round(percent)}%`;
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            progressText.textContent = 'Upload concluído!';
+                            setTimeout(() => {
+                                progressDiv.style.display = 'none';
+                                document.getElementById('fileInputModal').value = '';
+                                switchModalTab('biblioteca');
+                                loadMediaLibrary();
+                                selectMedia(data.media.url);
+                            }, 1000);
+                        }
+                    } else {
+                        progressText.textContent = 'Erro no upload';
+                    }
+                });
+
+                xhr.open('POST', '/dashboard/media/upload');
+                xhr.send(formData);
+
+            } catch (error) {
+                console.error('Erro no upload:', error);
+                progressText.textContent = 'Erro no upload';
+            }
+        }
+
+        // Buscar imagens no Bing
+        async function buscarImagensBing() {
+            const query = document.getElementById('bingSearchInput').value.trim();
+            if (!query) {
+                alert('Por favor, digite uma palavra-chave para buscar');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('bingSearchResults');
+            const loadingDiv = document.getElementById('bingSearchLoading');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/ia/buscar-imagens-bing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+
+                if (data.success && data.imagens && data.imagens.length > 0) {
+                    renderBingImages(data.imagens);
+                } else {
+                    resultsDiv.innerHTML = `
+                    <div class="bing-placeholder">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ff9800; margin-bottom: 16px;"></i>
+                        <p style="color: #666;">Nenhuma imagem encontrada para "${query}"</p>
+                        <p style="color: #999; font-size: 13px;">Tente usar outras palavras-chave</p>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Erro ao buscar imagens:', error);
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = `
+                <div class="bing-placeholder">
+                    <i class="fas fa-times-circle" style="font-size: 48px; color: #f44336; margin-bottom: 16px;"></i>
+                    <p style="color: #666;">Erro ao buscar imagens</p>
+                    <p style="color: #999; font-size: 13px;">${error.message}</p>
+                </div>
+            `;
+            }
+        }
+
+        function renderBingImages(imagens) {
+            const resultsDiv = document.getElementById('bingSearchResults');
+            resultsDiv.innerHTML = imagens.map((img, index) => `
+            <div class="bing-image-item">
+                <img src="${img.thumbnail || img.url}" alt="${img.descricao}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Erro+ao+carregar'">
+                <div class="bing-image-overlay">
+                    <span class="bing-image-info" title="${img.descricao}">${img.fonte || 'Bing'}</span>
+                    <button type="button" class="bing-image-select" onclick="selecionarImagemBing('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-check"></i> Usar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        async function selecionarImagemBing(url, descricao) {
+            try {
+                // Fazer upload da imagem URL para o servidor
+                const response = await fetch('/dashboard/media/upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, descricao })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Imagem adicionada à biblioteca com sucesso!');
+                    switchModalTab('biblioteca');
+                    loadMediaLibrary();
+                    // Selecionar automaticamente a imagem recém-adicionada
+                    setTimeout(() => {
+                        selectMedia(data.media.url);
+                    }, 500);
+                } else {
+                    alert('Erro ao adicionar imagem: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro ao selecionar imagem:', error);
+                alert('Erro ao adicionar imagem à biblioteca');
+            }
+        }
+
+        // Buscar imagens no Google
+        async function buscarImagensGoogle() {
+            const query = document.getElementById('googleSearchInput').value.trim();
+            if (!query) {
+                alert('Por favor, digite uma palavra-chave para buscar');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('googleSearchResults');
+            const loadingDiv = document.getElementById('googleSearchLoading');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/ia/buscar-imagens-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+
+                if (data.success && data.imagens && data.imagens.length > 0) {
+                    renderGoogleImages(data.imagens);
+                } else {
+                    resultsDiv.innerHTML = `
+                    <div class="bing-placeholder">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ff9800; margin-bottom: 16px;"></i>
+                        <p style="color: #666;">Nenhuma imagem encontrada para "${query}"</p>
+                        <p style="color: #999; font-size: 13px;">Tente usar outras palavras-chave</p>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Erro ao buscar imagens no Google:', error);
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = `
+                <div class="bing-placeholder">
+                    <i class="fas fa-times-circle" style="font-size: 48px; color: #f44336; margin-bottom: 16px;"></i>
+                    <p style="color: #666;">Erro ao buscar imagens</p>
+                    <p style="color: #999; font-size: 13px;">${error.message}</p>
+                </div>
+            `;
+            }
+        }
+
+        function renderGoogleImages(imagens) {
+            const resultsDiv = document.getElementById('googleSearchResults');
+            resultsDiv.innerHTML = imagens.map((img, index) => `
+            <div class="bing-image-item">
+                <img src="${img.thumbnail || img.url}" alt="${img.descricao}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Erro+ao+carregar'">
+                <div class="bing-image-overlay">
+                    <span class="bing-image-info" title="${img.descricao}">${img.fonte || 'Google'}</span>
+                    <button type="button" class="bing-image-select" onclick="selecionarImagemGoogle('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-check"></i> Usar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        async function selecionarImagemGoogle(url, descricao) {
+            try {
+                // Fazer upload da imagem URL para o servidor
+                const response = await fetch('/dashboard/media/upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, descricao })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Imagem adicionada à biblioteca com sucesso!');
+                    switchModalTab('biblioteca');
+                    loadMediaLibrary();
+                    // Selecionar automaticamente a imagem recém-adicionada
+                    setTimeout(() => {
+                        selectMedia(data.media.url);
+                    }, 500);
+                } else {
+                    alert('Erro ao adicionar imagem: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro ao selecionar imagem do Google:', error);
+                alert('Erro ao adicionar imagem à biblioteca');
+            }
+        }
+
+        // Deletar mídia selecionada
+        function selectMedia(url) {
+            console.log('selectMedia chamada com URL:', url);
+            // Tenta encontrar o item na biblioteca carregada
+            const item = mediaLibraryData.find(m => m.url === url);
+
+            if (item) {
+                console.log('Item encontrado na biblioteca:', item);
+                // Se já estiver selecionado, não faz nada
+                const isSelected = selectedMedia.some(m => m.id === item.id);
+                if (!isSelected) {
+                    toggleMediaSelection(item.id, item.url, item.tipo);
+                }
+            } else {
+                console.log('Item não encontrado na biblioteca local, forçando seleção direta...');
+                // Fallback: Selecionar diretamente baseado no modo atual
+                if (mediaLibraryMode === 'featured') {
+                    selectMediaForFeatured(url);
+                } else if (mediaLibraryMode === 'ai-image') {
+                    selectMediaForAI(url);
+                } else {
+                    // Modo content ou outro
+                    // Adicionar mock ao selectedMedia para insertSelectedMedia funcionar
+                    selectedMedia.push({ id: Date.now(), url: url, tipo: 'imagem' }); // Assumindo imagem
+                    updateSelectedCount();
+                }
+            }
+        }
+
+        async function deleteSelectedMedia() {
+            if (selectedMedia.length === 0) return;
+
+            if (!confirm(`Deseja realmente excluir ${selectedMedia.length} arquivo(s)?`)) return;
+
+            try {
+                for (const media of selectedMedia) {
+                    await fetch(`/dashboard/media/${media.id}`, { method: 'DELETE' });
+                }
+
+                selectedMedia = [];
+                loadMediaLibrary();
+                alert('Arquivos excluídos com sucesso!');
+            } catch (error) {
+                console.error('Erro ao deletar:', error);
+                alert('Erro ao deletar arquivos');
+            }
+        }
+
+        // Função para usar mídia selecionada (botão "Usar")
+        function useSelectedMedia() {
+            if (selectedMedia.length === 0) {
+                alert('Nenhuma mídia selecionada');
+                return;
+            }
+
+            console.log('useSelectedMedia - modo:', mediaLibraryMode);
+            console.log('useSelectedMedia - selectedMedia:', selectedMedia);
+
+            // Se estiver no modo featured (imagem destaque), usar apenas a primeira selecionada
+            if (mediaLibraryMode === 'featured') {
+                if (selectedMedia.length > 0) {
+                    selectMediaForFeatured(selectedMedia[0].url);
+                    return;
+                }
+            }
+
+            // Se estiver no modo ai-image, inserir na prévia da IA
+            if (mediaLibraryMode === 'ai-image') {
+                console.log('Modo ai-image detectado');
+                if (selectedMedia.length > 0 && selectedMedia[0].tipo === 'imagem') {
+                    console.log('Chamando selectMediaForAI com URL:', selectedMedia[0].url);
+                    selectMediaForAI(selectedMedia[0].url);
+                    return;
+                } else {
+                    alert('Por favor, selecione apenas uma imagem');
+                    return;
+                }
+            }
+
+            // Modo content - inserir no editor Quill
+            insertSelectedMedia();
+        }
+
+        // Inserir mídia no editor Quill
+        function insertSelectedMedia() {
+            if (selectedMedia.length === 0) {
+                alert('Nenhuma mídia selecionada');
+                return;
+            }
+
+            // Modo normal - inserir no editor Quill
+            const range = quill.getSelection(true);
+            const position = range ? range.index : quill.getLength();
+
+            selectedMedia.forEach((media, index) => {
+                if (media.tipo === 'imagem') {
+                    quill.insertEmbed(position + index, 'image', media.url);
+                    quill.insertText(position + index + 1, '\n');
+                } else if (media.tipo === 'video') {
+                    quill.insertEmbed(position + index, 'video', media.url);
+                    quill.insertText(position + index + 1, '\n');
+                } else if (media.tipo === 'audio') {
+                    // Para áudio, inserir como link
+                    quill.insertText(position + index, `🎵 Áudio: `);
+                    quill.insertText(position + index + 9, media.url, 'link', media.url);
+                    quill.insertText(position + index + 9 + media.url.length, '\n');
+                }
+            });
+
+            closeMediaLibrary();
+            alert(`${selectedMedia.length} arquivo(s) inserido(s) no conteúdo!`);
+        }
+
+        // Remover imagem destaque
+        function removeImage() {
+            document.getElementById('imagem').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('mediaLibraryModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeMediaLibrary();
+            }
+        });
+
+        // ============================================
+        // FUNÇÕES DA IA
+        // ============================================
+
+        // Abrir modal para criar matéria com IA
+        function openAIModal() {
+            document.getElementById('aiModal').style.display = 'flex';
+        }
+
+        // Fechar modal da IA
+        function closeAIModal() {
+            document.getElementById('aiModal').style.display = 'none';
+        }
+
+        // Variável para controlar se a biblioteca foi aberta pela IA
+        let mediaLibraryForAI = false;
+
+        // Abrir biblioteca de mídia para selecionar imagem da IA
+        function openMediaLibraryForAI() {
+            console.log('openMediaLibraryForAI chamada');
+            mediaLibraryForAI = true;
+            mediaLibraryMode = 'ai-image';
+            selectedMedia = [];
+            console.log('Modo definido como:', mediaLibraryMode);
+            document.getElementById('mediaLibraryModal').style.display = 'flex';
+            loadMediaLibrary();
+            updateSelectedCount();
+        }
+
+        // Remover imagem selecionada da IA
+        function removeAIImage() {
+            document.getElementById('aiImagemDestaque').value = '';
+            document.getElementById('aiImagePreview').style.display = 'none';
+        }
+
+        // Selecionar imagem sugerida
+        function selecionarImagemSugerida(url) {
+            document.getElementById('imagem').value = url;
+            document.getElementById('previewImg').src = url;
+            document.getElementById('imagePreview').style.display = 'block';
+            alert('✅ Imagem selecionada! A matéria já está pronta para publicação.');
+        }
+
+        // Selecionar imagem sugerida e fechar modal
+        function selecionarImagemSugeridaEFechar(url) {
+            document.getElementById('imagem').value = url;
+            document.getElementById('previewImg').src = url;
+            document.getElementById('imagePreview').style.display = 'block';
+            closeAIModal();
+            alert('✅ Matéria criada com sucesso! Imagem selecionada. Revise e publique.');
+        }
+
+        // Finalizar sem imagem
+        function finalizarSemImagem() {
+            closeAIModal();
+            alert('✅ Matéria criada com sucesso! Você pode adicionar uma imagem depois.');
+        }
+
+        // Trocar tab da IA
+        function switchAITab(tab) {
+            document.querySelectorAll('.ai-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.ai-tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById('ai-tab-' + tab).classList.add('active');
+        }
+
+        // Expandir conteúdo com IA
+        async function expandirConteudoComIA() {
+            const informacoes = document.getElementById('aiConteudoInformacoes').value;
+
+            if (!informacoes || informacoes.trim().length < 20) {
+                alert('Por favor, forneça pelo menos algumas informações básicas (mínimo 20 caracteres)');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Expandindo...';
+
+            try {
+                const response = await fetch('/api/ia/expandir-conteudo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conteudo: informacoes
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Substituir o conteúdo pelo expandido
+                    document.getElementById('aiConteudoInformacoes').value = data.conteudoExpandido;
+                    alert('✅ Conteúdo expandido com sucesso! Revise e clique em "Gerar Matéria" quando estiver pronto.');
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Não foi possível expandir o conteúdo'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao expandir conteúdo: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Criar matéria por conteúdo
+        async function criarPorConteudo() {
+            const tituloSugerido = document.getElementById('aiConteudoTitulo').value;
+            const informacoes = document.getElementById('aiConteudoInformacoes').value;
+            const categoria = document.getElementById('aiConteudoCategoria').value;
+            const palavrasChave = document.getElementById('aiConteudoPalavrasChave').value;
+            const imagemDestaque = document.getElementById('aiConteudoImagemDestaque').value;
+            const modoAutomatico = document.getElementById('aiConteudoModoAutomatico').checked;
+
+            if (!informacoes || informacoes.trim().length < 50) {
+                alert('Por favor, forneça informações suficientes (mínimo 50 caracteres)');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando matéria humanizada...';
+
+            try {
+                const response = await fetch('/api/ia/criar-por-conteudo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tituloSugerido,
+                        informacoes,
+                        categoria,
+                        palavrasChave,
+                        modoAutomatico
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Resposta completa da API:', data);
+
+                if (data.success && data.materia) {
+                    // Preencher os campos
+                    document.getElementById('titulo').value = data.materia.titulo;
+                    document.getElementById('descricao').value = data.materia.descricao;
+                    quill.root.innerHTML = data.materia.conteudo;
+
+                    // Se tiver imagem selecionada manualmente, preencher
+                    if (imagemDestaque) {
+                        document.getElementById('imagem').value = imagemDestaque;
+                        document.getElementById('previewImg').src = imagemDestaque;
+                        document.getElementById('imagePreview').style.display = 'block';
+                    }
+
+                    // Se modo automático e houver imagens sugeridas
+                    if (modoAutomatico && data.materia.imagensSugeridas && data.materia.imagensSugeridas.length > 0) {
+                        const primeiraImagem = data.materia.imagensSugeridas[0];
+                        document.getElementById('imagem').value = primeiraImagem.url;
+                        document.getElementById('previewImg').src = primeiraImagem.url;
+                        document.getElementById('imagePreview').style.display = 'block';
+                    }
+
+                    closeAIModal();
+                    alert('✅ Matéria criada com sucesso! Conteúdo humanizado e sem plágio. Revise e publique!');
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Não foi possível criar a matéria'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao criar matéria: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Criar matéria por link
+        async function criarPorLink() {
+            const linkUrl = document.getElementById('aiLinkUrl').value;
+            const textoPostagem = document.getElementById('aiLinkTexto').value;
+            const categoria = document.getElementById('aiLinkCategoria').value;
+            const modoAutomatico = document.getElementById('aiLinkModoAutomatico').checked;
+
+            if (!linkUrl && !textoPostagem) {
+                alert('Por favor, cole o link da postagem OU o texto manualmente');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+
+            // Se tem texto manual, usar direto
+            if (textoPostagem) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando matéria do texto...';
+
+                try {
+                    const response = await fetch('/api/ia/criar-por-texto', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            texto: textoPostagem,
+                            linkReferencia: linkUrl,
+                            categoria
+                        })
+                    });
+
+                    const data = await response.json();
+                    await processarRespostaMateria(data, modoAutomatico);
+
+                } catch (error) {
+                    console.error('Erro:', error);
+                    alert('❌ Erro ao criar matéria: ' + error.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+                return;
+            }
+
+            // Se tem apenas link, tentar extrair automaticamente
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Extraindo e gerando matéria...';
+
+            try {
+                const response = await fetch('/api/ia/criar-materia', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tema: `Criar matéria baseada no conteúdo do link`,
+                        categoria,
+                        palavrasChave: '',
+                        pesquisarInternet: false,
+                        links: [linkUrl]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await processarRespostaMateria(data, modoAutomatico);
+                } else {
+                    // Se erro de extração, mostrar mensagem específica
+                    if (data.error && data.error.includes('extrair')) {
+                        alert('❌ ' + data.error + '\n\n💡 Dica: Cole o texto da postagem no campo "OU Cole o Texto Manualmente" e tente novamente.');
+                        // Focar no campo de texto
+                        document.getElementById('aiLinkTexto').focus();
+                    } else {
+                        alert('❌ Erro: ' + data.error);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao criar matéria: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Função auxiliar para processar resposta da matéria
+        async function processarRespostaMateria(data, modoAutomatico) {
+            console.log('Resposta da API:', data);
+            console.log('Imagens sugeridas:', data.materia?.imagensSugeridas);
+
+            if (data.success) {
+                // Preencher os campos
+                document.getElementById('titulo').value = data.materia.titulo;
+                document.getElementById('descricao').value = data.materia.descricao;
+                quill.root.innerHTML = data.materia.conteudo;
+
+                // Mostrar sugestões de imagens se houver
+                if (data.materia.imagensSugeridas && data.materia.imagensSugeridas.length > 0) {
+                    // Se modo automático está ativo, selecionar primeira imagem automaticamente
+                    if (modoAutomatico) {
+                        console.log('Modo automático: selecionando primeira imagem automaticamente');
+                        const primeiraImagem = data.materia.imagensSugeridas[0];
+
+                        // Fazer upload da imagem do Google primeiro
+                        try {
+                            const uploadResponse = await fetch('/dashboard/media/upload-url', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    url: primeiraImagem.url,
+                                    descricao: primeiraImagem.descricao || 'Imagem da matéria'
+                                })
+                            });
+
+                            const uploadData = await uploadResponse.json();
+
+                            if (uploadData.success && uploadData.media) {
+                                // Usar a URL local da imagem baixada
+                                document.getElementById('imagem').value = uploadData.media.url;
+                                document.getElementById('previewImg').src = uploadData.media.url;
+                                document.getElementById('imagePreview').style.display = 'block';
+
+                                closeAIModal();
+                                alert('✅ Matéria criada com sucesso! Imagem selecionada automaticamente. Revise e publique!');
+                                return;
+                            } else {
+                                console.error('Erro ao fazer upload da imagem:', uploadData.error);
+                                // Continuar sem imagem automática
+                            }
+                        } catch (error) {
+                            console.error('Erro ao fazer upload automático da imagem:', error);
+                            // Continuar sem imagem automática
+                        }
+                    }
+                }
+
+                closeAIModal();
+                alert('✅ Matéria criada com sucesso! Revise e ajuste conforme necessário.');
+            } else {
+                alert('❌ Erro: ' + data.error);
+            }
+        }
+
+        // Toggle dropdown de IA para campos específicos
+        function toggleAIDropdownField(campo) {
+            event.stopPropagation();
+            const dropdown = document.getElementById(`aiDropdown${campo.charAt(0).toUpperCase() + campo.slice(1)}`);
+
+            // Fechar outros dropdowns
+            document.querySelectorAll('.ai-dropdown-menu').forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('active');
+                }
+            });
+
+            dropdown.classList.toggle('active');
+        }
+
+        // Aplicar IA no campo com ação específica
+        async function aplicarIACampo(campo, acao) {
+            const elemento = document.getElementById(campo);
+            const texto = elemento.value;
+
+            if (!texto || texto.trim() === '') {
+                alert('Campo vazio, nada para processar');
+                return;
+            }
+
+            // Fechar dropdown
+            const dropdown = document.getElementById(`aiDropdown${campo.charAt(0).toUpperCase() + campo.slice(1)}`);
+            dropdown.classList.remove('active');
+
+            // Desabilitar todos os botões do dropdown
+            const buttons = dropdown.querySelectorAll('.ai-dropdown-item');
+            const clickedButton = event.target.closest('.ai-dropdown-item');
+            const originalTexts = Array.from(buttons).map(btn => btn.innerHTML);
+
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+
+            if (clickedButton) {
+                clickedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+            }
+
+            try {
+                const endpoint = acao === 'corrigir' ? '/api/ia/corrigir-texto' : '/api/ia/tornar-polemico';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ texto, tipo: campo })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    elemento.value = (data.textoCorrigido || data.textoPolemico || data.resultado).trim();
+                    alert(acao === 'corrigir' ? '✅ Texto corrigido!' : '🔥 Título mais polêmico criado!');
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao processar: ' + error.message);
+            } finally {
+                // Restaurar botões
+                buttons.forEach((btn, index) => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalTexts[index];
+                });
+            }
+        }
+
+        // Corrigir campo específico (manter para compatibilidade)
+        async function corrigirCampo(campo) {
+            aplicarIACampo(campo, 'corrigir');
+        }
+
+        // Toggle dropdown IA
+        function toggleAIDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('aiDropdownMenu');
+            dropdown.classList.toggle('active');
+        }
+
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('aiDropdownMenu');
+            const btnDropdown = document.querySelector('.btn-ai-dropdown');
+
+            if (dropdown && !btnDropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+
+            // Fechar dropdowns dos campos (título e descrição)
+            document.querySelectorAll('.ai-dropdown-menu').forEach(dropdown => {
+                const wrapper = dropdown.closest('.ai-dropdown-wrapper');
+                if (wrapper && !wrapper.contains(event.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        });
+
+        // Corrigir conteúdo do editor
+        async function corrigirConteudo(tipo) {
+            // Fechar dropdown
+            document.getElementById('aiDropdownMenu').classList.remove('active');
+
+            const html = quill.root.innerHTML;
+            const texto = quill.getText();
+
+            if (!texto || texto.trim() === '') {
+                alert('Conteúdo vazio, nada para processar');
+                return;
+            }
+
+            const btn = document.querySelector('.btn-ai-correct');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+
+            if (tipo === 'corrigir') {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Corrigindo...';
+            } else {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reescrevendo...';
+            }
+
+            try {
+                let endpoint, bodyData, successMessage;
+
+                if (tipo === 'corrigir') {
+                    // Corrigir erros de português
+                    endpoint = '/api/ia/corrigir-texto';
+                    bodyData = { texto: html, tipo: 'conteudo' };
+                    successMessage = '✅ Conteúdo corrigido!';
+                } else {
+                    // Reescrever matéria estilo G1
+                    endpoint = '/api/ia/reescrever-materia';
+                    bodyData = { conteudo: html };
+                    successMessage = '✅ Matéria reescrita com sucesso!';
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    quill.root.innerHTML = data.textoCorrigido || data.conteudo;
+                    alert(successMessage);
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao processar: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Fechar modal da IA ao clicar fora
+        document.getElementById('aiModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeAIModal();
+            }
+        });
+
+        // ==================== ACRESCENTAR INFORMAÇÃO COM IA ====================
+        function abrirModalAcrescentarInfo() {
+            const titulo = document.getElementById('titulo').value;
+            const conteudo = quill.root.innerHTML;
+            const texto = quill.getText();
+
+            if (!titulo && (!texto || texto.trim() === '')) {
+                alert('⚠️ Você precisa ter pelo menos um título ou conteúdo para acrescentar informações');
+                return;
+            }
+
+            document.getElementById('modalAcrescentarInfo').style.display = 'flex';
+            document.getElementById('instrucaoAcrescentar').value = '';
+            document.getElementById('instrucaoAcrescentar').focus();
+        }
+
+        function fecharModalAcrescentarInfo() {
+            document.getElementById('modalAcrescentarInfo').style.display = 'none';
+        }
+
+        async function aplicarAcrescentarInfo() {
+            const instrucao = document.getElementById('instrucaoAcrescentar').value;
+
+            if (!instrucao || instrucao.trim() === '') {
+                alert('⚠️ Por favor, descreva o que você quer acrescentar ou modificar');
+                return;
+            }
+
+            const tituloAtual = document.getElementById('titulo').value;
+            const conteudoAtual = quill.root.innerHTML;
+            const textoAtual = quill.getText();
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+
+            try {
+                const response = await fetch('/api/ia/acrescentar-informacao', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        titulo: tituloAtual,
+                        conteudo: conteudoAtual,
+                        instrucao: instrucao
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualizar título se foi modificado
+                    if (data.titulo && data.titulo !== tituloAtual) {
+                        document.getElementById('titulo').value = data.titulo;
+                    }
+
+                    // Atualizar conteúdo se foi modificado
+                    if (data.conteudo && data.conteudo !== conteudoAtual) {
+                        quill.root.innerHTML = data.conteudo;
+                    }
+
+                    fecharModalAcrescentarInfo();
+                    alert('✅ Modificações aplicadas com sucesso!');
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao processar: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modalAcrescentarInfo').addEventListener('click', function (e) {
+            if (e.target === this) {
+                fecharModalAcrescentarInfo();
+            }
+        });
+
+        // Fechar modal da IA ao clicar fora
+        document.getElementById('aiModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeAIModal();
+            }
+        });
+
+        // ==================== EDITOR DE IMAGENS ====================
+        let cropper = null;
+        let currentEditingMediaId = null;
+
+        function openImageEditor(mediaId, imageUrl) {
+            currentEditingMediaId = mediaId;
+            const modal = document.getElementById('imageEditorModal');
+            const image = document.getElementById('imageEditorCanvas');
+
+            // Destruir cropper anterior se existir
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            // Carregar imagem
+            image.src = imageUrl;
+            modal.classList.add('active');
+
+            // Inicializar Cropper.js após a imagem carregar
+            image.onload = function () {
+                cropper = new Cropper(image, {
+                    viewMode: 1, // Imagem não pode ser menor que o container
+                    dragMode: 'move',
+                    aspectRatio: NaN,
+                    autoCropArea: 0.9, // Área inicial 90%
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: true,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                    background: true,
+                    responsive: true,
+                    checkOrientation: true,
+                    modal: false,
+                    movable: true,
+                    zoomable: true,
+                    zoomOnWheel: true,
+                    wheelZoomRatio: 0.1,
+                    minCropBoxWidth: 50,
+                    minCropBoxHeight: 50,
+                    ready: function () {
+                        // Ajustar zoom inicial para preencher melhor o container
+                        const containerData = cropper.getContainerData();
+                        const imageData = cropper.getImageData();
+
+                        // Calcular zoom para preencher altura
+                        const zoomRatio = containerData.height / imageData.naturalHeight;
+                        if (zoomRatio > 1) {
+                            cropper.zoomTo(zoomRatio * 0.9);
+                        }
+                    }
+                });
+            };
+        }
+
+        function closeImageEditor() {
+            const modal = document.getElementById('imageEditorModal');
+            modal.classList.remove('active');
+
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            currentEditingMediaId = null;
+        }
+
+        function rotateImage(degrees) {
+            if (cropper) {
+                cropper.rotate(degrees);
+            }
+        }
+
+        function flipImage(direction) {
+            if (!cropper) return;
+
+            if (direction === 'horizontal') {
+                const scaleX = cropper.getData().scaleX || 1;
+                cropper.scaleX(-scaleX);
+            } else if (direction === 'vertical') {
+                const scaleY = cropper.getData().scaleY || 1;
+                cropper.scaleY(-scaleY);
+            }
+        }
+
+        function resetCrop() {
+            if (cropper) {
+                cropper.reset();
+            }
+        }
+
+        function changeAspectRatio() {
+            if (!cropper) return;
+
+            const select = document.getElementById('aspectRatio');
+            const ratio = parseFloat(select.value);
+
+            cropper.setAspectRatio(ratio);
+        }
+
+        function zoomImage(ratio) {
+            if (!cropper) return;
+            cropper.zoom(ratio);
+        }
+
+        async function saveEditedImage() {
+            if (!cropper || !currentEditingMediaId) {
+                alert('Erro ao salvar imagem');
+                return;
+            }
+
+            try {
+                // Obter canvas com a imagem editada (tamanho reduzido)
+                const canvas = cropper.getCroppedCanvas({
+                    maxWidth: 2048,  // Reduzido de 4096
+                    maxHeight: 2048, // Reduzido de 4096
+                    fillColor: '#fff',
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                // Converter para base64 com qualidade reduzida
+                const imageData = canvas.toDataURL('image/webp', 0.75); // Reduzido de 0.85
+
+                // Verificar tamanho (limite ~10MB)
+                const sizeInMB = (imageData.length * 0.75) / (1024 * 1024);
+                console.log('Tamanho da imagem:', sizeInMB.toFixed(2), 'MB');
+
+                if (sizeInMB > 10) {
+                    alert('⚠️ Imagem muito grande! Tente recortar uma área menor ou reduzir o zoom.');
+                    return;
+                }
+
+                // Mostrar loading
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+                // Enviar para o servidor
+                const response = await fetch(`/dashboard/media/${currentEditingMediaId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageData })
+                });
+
+                // Verificar se a resposta é JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Resposta inválida do servidor (não é JSON)');
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Imagem editada e salva com sucesso!');
+                    closeImageEditor();
+                    loadMediaLibrary(); // Recarregar biblioteca
+                } else {
+                    alert('❌ Erro ao salvar imagem: ' + data.message);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            } catch (error) {
+                console.error('Erro ao salvar imagem:', error);
+                alert('❌ Erro ao salvar imagem: ' + error.message);
+            }
+        }
+
+        // Fechar modal do editor ao clicar fora
+        document.getElementById('imageEditorModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeImageEditor();
+            }
+        });
+
+        // ==================== MODO BORRACHA MÁGICA ====================
+        let eraserMode = false;
+        let eraserCanvas = null;
+        let eraserContext = null;
+        let isDrawing = false;
+
+        function toggleEraserMode() {
+            eraserMode = !eraserMode;
+            const btn = document.getElementById('eraserBtn');
+            const container = document.querySelector('.editor-canvas-container');
+
+            console.log('🧹 Modo borracha:', eraserMode ? 'ATIVADO' : 'DESATIVADO');
+
+            if (eraserMode) {
+                btn.classList.add('active');
+                container.classList.add('eraser-mode');
+
+                // Desabilitar cropper temporariamente
+                if (cropper) {
+                    cropper.disable();
+                    console.log('✅ Cropper desabilitado');
+                }
+
+                // Criar canvas de borracha sobre a imagem
+                setupEraserCanvas();
+
+                alert('✅ Modo Borracha Ativado!\n\nDesenhe sobre a área que deseja remover.');
+            } else {
+                btn.classList.remove('active');
+                container.classList.remove('eraser-mode');
+
+                // Reabilitar cropper
+                if (cropper) {
+                    cropper.enable();
+                    console.log('✅ Cropper reabilitado');
+                }
+
+                // Remover canvas de borracha
+                if (eraserCanvas) {
+                    eraserCanvas.remove();
+                    eraserCanvas = null;
+                    eraserContext = null;
+                    console.log('✅ Canvas de borracha removido');
+                }
+            }
+        }
+
+        function setupEraserCanvas() {
+            const container = document.querySelector('.editor-canvas-container');
+
+            // Remover canvas anterior se existir
+            if (eraserCanvas) {
+                eraserCanvas.remove();
+            }
+
+            // Criar canvas overlay
+            eraserCanvas = document.createElement('canvas');
+            eraserCanvas.style.position = 'absolute';
+            eraserCanvas.style.top = '0';
+            eraserCanvas.style.left = '0';
+            eraserCanvas.style.cursor = 'crosshair';
+            eraserCanvas.style.zIndex = '1000';
+            eraserCanvas.style.pointerEvents = 'auto';
+
+            // Ajustar tamanho do canvas para cobrir todo o container
+            const rect = container.getBoundingClientRect();
+            eraserCanvas.width = rect.width;
+            eraserCanvas.height = rect.height;
+            eraserCanvas.style.width = '100%';
+            eraserCanvas.style.height = '100%';
+
+            container.appendChild(eraserCanvas);
+            eraserContext = eraserCanvas.getContext('2d');
+
+            // Configurar contexto para desenho de máscara
+            eraserContext.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+            eraserContext.lineWidth = 30;
+            eraserContext.lineCap = 'round';
+            eraserContext.lineJoin = 'round';
+
+            console.log('✅ Canvas de borracha criado:', eraserCanvas.width, 'x', eraserCanvas.height);
+
+            // Event listeners para desenho
+            eraserCanvas.addEventListener('mousedown', startErasing);
+            eraserCanvas.addEventListener('mousemove', erase);
+            eraserCanvas.addEventListener('mouseup', stopErasing);
+            eraserCanvas.addEventListener('mouseleave', stopErasing);
+
+            // Touch events para mobile
+            eraserCanvas.addEventListener('touchstart', handleTouchStart);
+            eraserCanvas.addEventListener('touchmove', handleTouchMove);
+            eraserCanvas.addEventListener('touchend', stopErasing);
+        }
+
+        function startErasing(e) {
+            isDrawing = true;
+            const rect = eraserCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            eraserContext.beginPath();
+            eraserContext.moveTo(x, y);
+        }
+
+        function erase(e) {
+            if (!isDrawing) return;
+
+            const rect = eraserCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            eraserContext.lineTo(x, y);
+            eraserContext.stroke();
+        }
+
+        function stopErasing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            eraserContext.closePath();
+
+            // Aplicar remoção de objeto
+            applyObjectRemoval();
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            eraserCanvas.dispatchEvent(mouseEvent);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            eraserCanvas.dispatchEvent(mouseEvent);
+        }
+
+        function applyObjectRemoval() {
+            if (!eraserCanvas || !eraserContext) return;
+
+            // Pegar dados da máscara desenhada
+            const maskData = eraserContext.getImageData(0, 0, eraserCanvas.width, eraserCanvas.height);
+
+            // Pegar imagem original do cropper
+            const canvas = cropper.getCroppedCanvas();
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Aplicar inpainting simples (preenchimento com cor de fundo ou blur)
+            const scaleX = canvas.width / eraserCanvas.width;
+            const scaleY = canvas.height / eraserCanvas.height;
+
+            for (let y = 0; y < eraserCanvas.height; y++) {
+                for (let x = 0; x < eraserCanvas.width; x++) {
+                    const maskIdx = (y * eraserCanvas.width + x) * 4;
+
+                    // Se a máscara tem cor vermelha (área marcada para remoção)
+                    if (maskData.data[maskIdx] > 0) {
+                        const imgX = Math.floor(x * scaleX);
+                        const imgY = Math.floor(y * scaleY);
+                        const imgIdx = (imgY * canvas.width + imgX) * 4;
+
+                        // Aplicar blur/transparência ou cor de preenchimento
+                        // Aqui vamos fazer transparente
+                        imageData.data[imgIdx + 3] = 0; // Alpha = 0 (transparente)
+                    }
+                }
+            }
+
+            // Aplicar de volta na imagem
+            ctx.putImageData(imageData, 0, 0);
+
+            // Atualizar cropper com nova imagem
+            const newImageUrl = canvas.toDataURL('image/png');
+            document.getElementById('imageEditorCanvas').src = newImageUrl;
+
+            // Limpar canvas de borracha
+            eraserContext.clearRect(0, 0, eraserCanvas.width, eraserCanvas.height);
+
+            // Reinicializar cropper
+            if (cropper) {
+                cropper.destroy();
+            }
+
+            const image = document.getElementById('imageEditorCanvas');
+            image.onload = function () {
+                cropper = new Cropper(image, {
+                    viewMode: 1,
+                    dragMode: 'move',
+                    aspectRatio: NaN,
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                    background: false,
+                    responsive: true,
+                    checkOrientation: true,
+                    modal: true,
+                    minContainerWidth: 200,
+                    minContainerHeight: 200
+                });
+
+                // Desabilitar se ainda em modo borracha
+                if (eraserMode) {
+                    cropper.disable();
+                }
+            };
+        }
+    </script>
+
+    <%- include('../partials/footer') %>

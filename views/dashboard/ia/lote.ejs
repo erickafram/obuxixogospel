@@ -1,0 +1,1686 @@
+<%- include('../partials/header', { title: 'Geração Automática de Matérias', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>🤖 Geração Automática de Matérias</h1>
+            <p>Extraia posts do Instagram e gere matérias automaticamente com IA</p>
+        </div>
+    </div>
+
+    <!-- Etapa 1: Extrair Posts -->
+    <div id="step1" class="step-container active">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fab fa-instagram"></i> Passo 1: Extrair Posts do Instagram</h3>
+            </div>
+            <div class="card-body">
+                <form id="formExtrairPosts" onsubmit="extrairPosts(event)">
+                    <div class="form-group">
+                        <label for="profileUrl">
+                            <i class="fab fa-instagram"></i> URL do Perfil do Instagram *
+                        </label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input 
+                                type="url" 
+                                id="profileUrl" 
+                                name="profileUrl" 
+                                class="form-control" 
+                                placeholder="https://www.instagram.com/falafarizeu/"
+                                required
+                                style="flex: 1;"
+                            >
+                            <button type="button" onclick="salvarPerfil()" class="btn btn-secondary" title="Salvar perfil nos favoritos">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </div>
+                        <small>Cole a URL completa do perfil (ex: https://www.instagram.com/usuario/)</small>
+                        
+                        <!-- Perfis Salvos -->
+                        <div id="perfisSalvos" style="margin-top: 12px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="limit">
+                            <i class="fas fa-list-ol"></i> Quantidade de Posts
+                        </label>
+                        <select id="limit" name="limit" class="form-control">
+                            <option value="6">6 posts</option>
+                            <option value="12" selected>12 posts</option>
+                            <option value="18">18 posts</option>
+                            <option value="24">24 posts</option>
+                        </select>
+                        <small>Número máximo de posts recentes a extrair</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoria">
+                            <i class="fas fa-folder"></i> Categoria das Matérias
+                        </label>
+                        <select id="categoria" name="categoria" class="form-control">
+                            <option value="Notícias">Notícias</option>
+                            <option value="Música">Música</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Ministérios">Ministérios</option>
+                            <option value="Estudos">Estudos</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Como funciona:</strong> O sistema vai extrair os últimos posts do perfil e gerar automaticamente matérias completas com imagens do Bing para cada post.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg" id="btnExtrair">
+                        <i class="fas fa-download"></i> Extrair Posts
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Etapa 2: Visualizar Posts Extraídos -->
+    <div id="step2" class="step-container">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Passo 2: Posts Extraídos</h3>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <div style="font-size:13px;color:#718096;">
+                        <span id="postsSelectedCount">0</span> posts selecionados
+                    </div>
+                    <button onclick="toggleSelectAll()" class="btn btn-secondary btn-sm" id="btnSelectAll">
+                        <i class="fas fa-check-square"></i> Selecionar Todos
+                    </button>
+                </div>
+                
+                <div id="postsExtraidos" class="posts-grid"></div>
+                
+                <div class="action-buttons-container">
+                    <button onclick="voltarPasso1()" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    <button onclick="gerarMaterias()" class="btn btn-primary btn-lg" id="btnGerar">
+                        <i class="fas fa-magic"></i> Gerar Matérias com IA (<span id="btnGerarCount">0</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Etapa 3: Matérias Geradas -->
+    <div id="step3" class="step-container">
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-newspaper"></i> Passo 3: Matérias Geradas</h3>
+                    <div id="progressInfo" class="progress-info"></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="materiasGeradas" class="materias-list"></div>
+                
+                <div class="action-buttons-container">
+                    <button onclick="voltarPasso2()" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar para Posts
+                    </button>
+                    <button onclick="voltarPasso1()" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Nova Extração
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3 id="loadingText">Processando...</h3>
+            <p id="loadingSubtext"></p>
+        </div>
+    </div>
+
+    <!-- Modal Visualizar Post -->
+    <div id="postModal" class="post-modal" style="display: none;" onclick="closePostModal(event)">
+        <div class="post-modal-content" onclick="event.stopPropagation()">
+            <div class="post-modal-header">
+                <h3><i class="fab fa-instagram"></i> Post do Instagram</h3>
+                <button type="button" class="post-modal-close" onclick="closePostModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="post-modal-body">
+                <iframe id="postIframe" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        margin-bottom: 24px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .step-container {
+        display: none;
+    }
+
+    .step-container.active {
+        display: block;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .card-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #2D3748;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 7px;
+        font-size: 12px;
+        color: #2D3748;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #FF6B00;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    small {
+        display: block;
+        margin-top: 5px;
+        color: #718096;
+        font-size: 11px;
+    }
+
+    .alert {
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-size: 13px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .alert-info {
+        background: #D1ECF1;
+        color: #0C5460;
+        border: 1px solid #BEE5EB;
+    }
+
+    .alert-success {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+
+    .alert-warning {
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+    }
+
+    .alert-danger {
+        background: #FEE2E2;
+        color: #991B1B;
+        border: 1px solid #FECACA;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: #EDF2F7;
+        color: #2D3748;
+    }
+
+    .btn-secondary:hover {
+        background: #E2E8F0;
+    }
+
+    .btn-success {
+        background: #10B981;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #059669;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn-lg {
+        padding: 11px 20px;
+        font-size: 14px;
+    }
+
+    .posts-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .post-card {
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: white;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .post-card:hover {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        border-color: #CBD5E0;
+    }
+
+    .post-card.post-publicado {
+        border-color: #10B981;
+        background: #F0FDF4;
+    }
+
+    .badge-publicado {
+        background: #10B981;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .post-checkbox-wrapper {
+        flex-shrink: 0;
+    }
+
+    .post-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #FF6B00;
+    }
+
+    .post-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .post-caption {
+        font-size: 13px;
+        color: #2D3748;
+        line-height: 1.4;
+        margin-bottom: 6px;
+        word-wrap: break-word;
+    }
+
+    .post-stats {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: #718096;
+        flex-wrap: wrap;
+    }
+
+    .post-stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .materias-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .materia-card {
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 18px;
+        background: white;
+        transition: all 0.15s;
+    }
+
+    .materia-card.saved {
+        border-color: #10B981;
+        background: #F0FDF4;
+    }
+
+    .materia-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        gap: 14px;
+    }
+
+    .materia-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1A202C;
+        margin-bottom: 6px;
+        flex: 1;
+        line-height: 1.4;
+    }
+
+    .materia-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .materia-description {
+        font-size: 13px;
+        color: #4A5568;
+        margin-bottom: 14px;
+        line-height: 1.5;
+    }
+
+    .materia-content {
+        font-size: 12px;
+        color: #2D3748;
+        line-height: 1.6;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 14px;
+        background: #F7FAFC;
+        border-radius: 8px;
+        margin-bottom: 14px;
+    }
+
+    .materia-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .materia-image {
+        width: 100%;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.15s;
+    }
+
+    .materia-image:hover {
+        border-color: #FF6B00;
+        transform: scale(1.05);
+    }
+
+    .materia-image.selected {
+        border-color: #10B981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    .materia-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 14px;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .materia-meta {
+        font-size: 11px;
+        color: #718096;
+    }
+
+    .action-buttons-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .progress-info {
+        font-size: 13px;
+        color: #4A5568;
+        font-weight: 500;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .loading-content {
+        text-align: center;
+        color: white;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #FF6B00;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    #loadingText {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    #loadingSubtext {
+        font-size: 13px;
+        opacity: 0.8;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-badge.success {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
+    .status-badge.processing {
+        background: #DBEAFE;
+        color: #1E40AF;
+    }
+
+    /* Modal Post */
+    .post-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    }
+
+    .post-modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .post-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .post-modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #2D3748;
+    }
+
+    .post-modal-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #F7FAFC;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        color: #4A5568;
+    }
+
+    .post-modal-close:hover {
+        background: #EDF2F7;
+        color: #1A202C;
+    }
+
+    .post-modal-body {
+        padding: 0;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F7FAFC;
+    }
+
+    .post-modal-body iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+    }
+
+    /* Perfis Salvos */
+    .perfil-salvo {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background: #F7FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .perfil-salvo:hover {
+        background: #EDF2F7;
+        border-color: #CBD5E0;
+    }
+
+    .perfil-salvo .btn-remove {
+        background: none;
+        border: none;
+        color: #E53E3E;
+        cursor: pointer;
+        padding: 0;
+        font-size: 12px;
+        margin-left: 4px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .content-header h1 {
+            font-size: 18px;
+        }
+        .content-header p {
+            font-size: 12px;
+        }
+        .card-body {
+            padding: 16px;
+        }
+        .form-group label {
+            font-size: 11px;
+        }
+        .form-control {
+            font-size: 14px;
+            padding: 8px 10px;
+        }
+        .btn {
+            font-size: 12px;
+            padding: 8px 14px;
+        }
+        .btn-lg {
+            font-size: 13px;
+            padding: 10px 16px;
+        }
+        .post-card {
+            padding: 10px 12px;
+            gap: 10px;
+        }
+        .post-caption {
+            font-size: 12px;
+        }
+        .post-stats {
+            font-size: 10px;
+            gap: 10px;
+        }
+        .materia-card {
+            padding: 14px;
+        }
+        .materia-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .materia-title {
+            font-size: 14px;
+        }
+        .materia-description {
+            font-size: 12px;
+        }
+        .materia-content {
+            font-size: 11px;
+            padding: 12px;
+            max-height: 150px;
+        }
+        .materia-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+        }
+        .materia-image {
+            height: 60px;
+        }
+        .materia-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .action-buttons-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .action-buttons-container .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .post-modal-content {
+            max-width: 95%;
+        }
+        .post-modal-body iframe {
+            height: 400px;
+        }
+        .alert {
+            font-size: 12px;
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .content-header h1 {
+            font-size: 16px;
+        }
+        .card-body {
+            padding: 12px;
+        }
+        .form-control {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+        .btn {
+            font-size: 11px;
+            padding: 7px 12px;
+        }
+        .btn-lg {
+            font-size: 12px;
+            padding: 9px 14px;
+        }
+        .post-card {
+            padding: 8px 10px;
+            gap: 8px;
+        }
+        .post-checkbox {
+            width: 18px;
+            height: 18px;
+        }
+        .post-caption {
+            font-size: 11px;
+        }
+        .post-stats {
+            font-size: 9px;
+            gap: 8px;
+        }
+        .materia-card {
+            padding: 12px;
+        }
+        .materia-title {
+            font-size: 13px;
+        }
+        .materia-description {
+            font-size: 11px;
+        }
+        .materia-content {
+            font-size: 10px;
+            padding: 10px;
+            max-height: 120px;
+        }
+        .materia-images {
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 4px;
+        }
+        .materia-image {
+            height: 50px;
+        }
+        .materia-meta {
+            font-size: 10px;
+        }
+        .post-modal-body iframe {
+            height: 300px;
+        }
+        #loadingText {
+            font-size: 16px;
+        }
+        #loadingSubtext {
+            font-size: 12px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+        }
+    }
+</style>
+
+<script>
+    let postsExtraidos = [];
+    let materiasGeradas = [];
+    let categoriaEscolhida = 'Notícias';
+
+    // Extrair posts do Instagram
+    async function extrairPosts(event) {
+        event.preventDefault();
+        
+        const profileUrl = document.getElementById('profileUrl').value;
+        const limit = document.getElementById('limit').value;
+        categoriaEscolhida = document.getElementById('categoria').value;
+        
+        showLoading('Extraindo posts do Instagram...', 'Isso pode levar alguns segundos');
+        
+        try {
+            const response = await fetch('/api/ia/extrair-posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profileUrl, limit })
+            });
+            
+            const data = await response.json();
+            
+            console.log('📊 Resposta da API:', data);
+            console.log('📱 Posts extraídos:', data.posts);
+            
+            if (data.success && data.posts && data.posts.length > 0) {
+                postsExtraidos = data.posts;
+                console.log('✅ Posts salvos:', postsExtraidos);
+                mostrarPostsExtraidos();
+                mudarPasso(2);
+            } else {
+                alert('Erro: ' + (data.error || 'Nenhum post encontrado'));
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao extrair posts: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Mostrar posts extraídos
+    async function mostrarPostsExtraidos() {
+        console.log('🎨 Mostrando posts extraídos...');
+        const container = document.getElementById('postsExtraidos');
+        
+        if (!container) {
+            console.error('❌ Container postsExtraidos não encontrado!');
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        console.log('📊 Total de posts:', postsExtraidos.length);
+        
+        if (postsExtraidos.length === 0) {
+            container.innerHTML = '<p class="text-center">Nenhum post encontrado.</p>';
+            return;
+        }
+        
+        // Verificar quais posts já foram publicados
+        const postIds = postsExtraidos.map(post => post.id || post.url);
+        let postsPublicados = {};
+        
+        try {
+            const response = await fetch('/api/ia/verificar-posts-publicados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ postIds })
+            });
+            const data = await response.json();
+            if (data.success) {
+                postsPublicados = data.postsPublicados;
+                console.log('✅ Posts publicados verificados:', postsPublicados);
+            }
+        } catch (error) {
+            console.error('❌ Erro ao verificar posts publicados:', error);
+        }
+        
+        postsExtraidos.forEach((post, index) => {
+            console.log(`📝 Post ${index + 1}:`, post);
+            
+            const postId = post.id || post.url;
+            const isPublicado = postsPublicados[postId];
+            
+            const card = document.createElement('div');
+            card.className = 'post-card';
+            if (isPublicado) {
+                card.classList.add('post-publicado');
+            }
+            
+            // Usar thumbnail ou imageUrl
+            const imageUrl = post.thumbnail || post.imageUrl || '';
+            console.log(`🖼️ Imagem do post ${index + 1}:`, imageUrl);
+            
+            card.innerHTML = `
+                <div class="post-checkbox-wrapper">
+                    <input type="checkbox" class="post-checkbox" data-index="${index}" ${isPublicado ? '' : 'checked'}>
+                </div>
+                <div class="post-content">
+                    <div class="post-caption">${post.caption || 'Sem legenda'}</div>
+                    <div class="post-stats">
+                        <span class="post-stat"><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
+                        <span class="post-stat"><i class="fas fa-comment"></i> ${formatNumber(post.comments || 0)}</span>
+                        <span class="post-stat">
+                            <a href="javascript:void(0)" onclick="openPostModal('${post.url}')" style="color:#FF6B00;text-decoration:none;cursor:pointer;" title="Ver no Instagram">
+                                <i class="fab fa-instagram"></i> Ver
+                            </a>
+                        </span>
+                        ${isPublicado ? `
+                            <span class="badge-publicado" title="Publicado: ${isPublicado.titulo}">
+                                <i class="fas fa-check-circle"></i> Publicado
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+        console.log('✅ Posts exibidos com sucesso!');
+        
+        // Adicionar event listeners aos checkboxes
+        document.querySelectorAll('.post-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+        
+        // Atualizar contador inicial
+        updateSelectedCount();
+    }
+
+    // Atualizar contador de posts selecionados
+    function updateSelectedCount() {
+        const checkboxes = document.querySelectorAll('.post-checkbox');
+        const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        
+        document.getElementById('postsSelectedCount').textContent = selectedCount;
+        document.getElementById('btnGerarCount').textContent = selectedCount;
+        
+        // Desabilitar botão se nenhum post selecionado
+        const btnGerar = document.getElementById('btnGerar');
+        btnGerar.disabled = selectedCount === 0;
+    }
+
+    // Selecionar/Desselecionar todos
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.post-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        
+        // Atualizar texto do botão
+        const btn = document.getElementById('btnSelectAll');
+        if (allChecked) {
+            btn.innerHTML = '<i class="fas fa-check-square"></i> Selecionar Todos';
+        } else {
+            btn.innerHTML = '<i class="fas fa-square"></i> Desselecionar Todos';
+        }
+        
+        updateSelectedCount();
+    }
+
+    // Gerar matérias com IA
+    async function gerarMaterias() {
+        // Pegar apenas os posts selecionados
+        const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+        const selectedIndexes = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+        const postsSelecionados = selectedIndexes.map(i => postsExtraidos[i]);
+        
+        if (postsSelecionados.length === 0) {
+            alert('Selecione pelo menos um post para gerar matérias');
+            return;
+        }
+        
+        console.log(`📝 Gerando matérias para ${postsSelecionados.length} posts selecionados`);
+        
+        showLoading(
+            `Gerando ${postsSelecionados.length} matérias com IA...`,
+            'Isso pode levar alguns minutos. Aguarde...'
+        );
+        
+        try {
+            const response = await fetch('/api/ia/gerar-materias-lote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    posts: postsSelecionados,
+                    categoria: categoriaEscolhida
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                materiasGeradas = data.materias;
+                mostrarMateriasGeradas(data);
+                mudarPasso(3);
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao gerar matérias: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Mostrar matérias geradas
+    function mostrarMateriasGeradas(resultado) {
+        const container = document.getElementById('materiasGeradas');
+        const progressInfo = document.getElementById('progressInfo');
+        
+        progressInfo.innerHTML = `
+            <span class="status-badge success">
+                <i class="fas fa-check-circle"></i>
+                ${resultado.sucesso} matérias geradas
+            </span>
+            ${resultado.falhas > 0 ? `<span class="status-badge" style="background: #FEE2E2; color: #991B1B; margin-left: 8px;">
+                <i class="fas fa-exclamation-circle"></i>
+                ${resultado.falhas} erros
+            </span>` : ''}
+        `;
+        
+        container.innerHTML = '';
+        
+        if (materiasGeradas.length === 0) {
+            container.innerHTML = '<div class="alert alert-warning">Nenhuma matéria foi gerada com sucesso.</div>';
+            return;
+        }
+        
+        materiasGeradas.forEach((materia, index) => {
+            const card = document.createElement('div');
+            card.className = 'materia-card';
+            card.id = `materia-${index}`;
+            
+            card.innerHTML = `
+                <div class="materia-header">
+                    <div style="flex: 1;">
+                        <div class="materia-title">${materia.titulo}</div>
+                        <div class="materia-description">${materia.descricao}</div>
+                    </div>
+                    <div class="materia-actions">
+                        ${materia.articleId ? `
+                            <a href="/dashboard/posts/editar/${materia.articleId}" target="_blank" class="btn btn-primary" title="Editar matéria">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        ` : ''}
+                        <button onclick="salvarMateria(${index})" class="btn btn-success" id="btnSalvar-${index}" ${materia.articleId ? 'style="display:none;"' : ''}>
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="materia-content">${materia.conteudo}</div>
+                
+                ${materia.imagensSugeridas && materia.imagensSugeridas.length > 0 ? `
+                    <div>
+                        <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-images"></i> Selecione uma imagem:
+                        </label>
+                        <div class="materia-images">
+                            ${materia.imagensSugeridas.map((img, imgIndex) => `
+                                <img 
+                                    src="${img.url}" 
+                                    alt="${img.descricao}" 
+                                    class="materia-image ${imgIndex === 0 ? 'selected' : ''}"
+                                    onclick="selecionarImagem(${index}, ${imgIndex})"
+                                    data-url="${img.url}"
+                                >
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div class="materia-footer">
+                    <div class="materia-meta">
+                        <i class="fab fa-instagram"></i> 
+                        <a href="${materia.postOriginal.url}" target="_blank">Ver post original</a>
+                        • ${formatNumber(materia.postOriginal.likes)} likes
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+        
+        // Processar embeds do Instagram após adicionar as matérias ao DOM
+        setTimeout(() => {
+            if (window.instgrm && window.instgrm.Embeds) {
+                console.log('📱 Processando embeds do Instagram...');
+                window.instgrm.Embeds.process();
+            } else {
+                console.log('⚠️ Aguardando carregamento do Instagram...');
+                // Aguardar o script carregar (já está no header)
+                let attempts = 0;
+                const checkInstagram = setInterval(() => {
+                    attempts++;
+                    if (window.instgrm && window.instgrm.Embeds) {
+                        console.log('✅ Instagram carregado, processando embeds...');
+                        clearInterval(checkInstagram);
+                        window.instgrm.Embeds.process();
+                    } else if (attempts > 20) {
+                        console.log('❌ Timeout ao aguardar Instagram');
+                        clearInterval(checkInstagram);
+                    }
+                }, 200);
+            }
+        }, 500);
+    }
+
+    // Selecionar imagem
+    function selecionarImagem(materiaIndex, imagemIndex) {
+        const card = document.getElementById(`materia-${materiaIndex}`);
+        const imagens = card.querySelectorAll('.materia-image');
+        
+        imagens.forEach((img, idx) => {
+            if (idx === imagemIndex) {
+                img.classList.add('selected');
+            } else {
+                img.classList.remove('selected');
+            }
+        });
+    }
+
+    // Salvar matéria
+    async function salvarMateria(index) {
+        const materia = materiasGeradas[index];
+        const card = document.getElementById(`materia-${index}`);
+        const imagemSelecionada = card.querySelector('.materia-image.selected');
+        
+        const btn = document.getElementById(`btnSalvar-${index}`);
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+        
+        try {
+            const response = await fetch('/api/ia/salvar-materia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    titulo: materia.titulo,
+                    descricao: materia.descricao,
+                    conteudo: materia.conteudo,
+                    imagem: imagemSelecionada ? imagemSelecionada.dataset.url : '',
+                    categoria: categoriaEscolhida,
+                    instagramPostId: materia.instagramPostId || null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Salvar articleId na matéria
+                materia.articleId = data.articleId;
+                
+                card.classList.add('saved');
+                
+                // Esconder botão Salvar e mostrar botão Editar
+                btn.style.display = 'none';
+                
+                // Adicionar botão Editar
+                const actionsDiv = card.querySelector('.materia-actions');
+                const editBtn = document.createElement('a');
+                editBtn.href = `/dashboard/posts/editar/${data.articleId}`;
+                editBtn.target = '_blank';
+                editBtn.className = 'btn btn-primary';
+                editBtn.title = 'Editar matéria';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Editar';
+                actionsDiv.insertBefore(editBtn, btn);
+                
+                // Mostrar mensagem de sucesso
+                const successMsg = document.createElement('div');
+                successMsg.style.cssText = 'color: #10B981; font-size: 12px; margin-top: 8px;';
+                successMsg.innerHTML = '<i class="fas fa-check-circle"></i> Salvo como Rascunho';
+                card.querySelector('.materia-header').appendChild(successMsg);
+            } else {
+                alert('Erro ao salvar: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao salvar matéria');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+        }
+    }
+
+    // Navegação entre passos
+    function mudarPasso(passo) {
+        console.log(`🔄 Mudando para passo ${passo}`);
+        
+        // Remover active de todos
+        document.querySelectorAll('.step-container').forEach(el => {
+            el.classList.remove('active');
+            el.style.display = 'none';
+            console.log('Removendo active de:', el.id);
+        });
+        
+        // Adicionar active no passo atual
+        const stepElement = document.getElementById(`step${passo}`);
+        if (stepElement) {
+            stepElement.classList.add('active');
+            stepElement.style.display = 'block';
+            console.log(`✅ Passo ${passo} ativado`);
+            console.log('Display do elemento:', window.getComputedStyle(stepElement).display);
+            console.log('Classes do elemento:', stepElement.className);
+        } else {
+            console.error(`❌ Elemento step${passo} não encontrado!`);
+        }
+        
+        window.scrollTo(0, 0);
+    }
+
+    function voltarPasso1() {
+        mudarPasso(1);
+        postsExtraidos = [];
+        materiasGeradas = [];
+    }
+
+    function voltarPasso2() {
+        mudarPasso(2);
+    }
+
+    // Loading
+    function showLoading(text, subtext) {
+        document.getElementById('loadingText').textContent = text;
+        document.getElementById('loadingSubtext').textContent = subtext || '';
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Utilitários
+    function formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+
+    // ========== GERENCIAMENTO DE PERFIS FAVORITOS ==========
+    
+    // Carregar perfis salvos do banco de dados
+    async function carregarPerfisSalvos() {
+        try {
+            const response = await fetch('/api/ia/perfis');
+            const data = await response.json();
+            return data.success ? data.perfis : [];
+        } catch (error) {
+            console.error('Erro ao carregar perfis:', error);
+            return [];
+        }
+    }
+
+    // Extrair nome do usuário da URL
+    function extrairNomeUsuario(url) {
+        try {
+            const match = url.match(/instagram\.com\/([^\/\?]+)/);
+            return match ? match[1] : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Salvar perfil atual
+    async function salvarPerfil() {
+        const input = document.getElementById('profileUrl');
+        const url = input.value.trim();
+        
+        if (!url) {
+            alert('Por favor, insira uma URL do Instagram primeiro');
+            return;
+        }
+
+        const username = extrairNomeUsuario(url);
+        if (!username) {
+            alert('URL inválida. Use o formato: https://www.instagram.com/usuario/');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/ia/perfis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, url })
+            });
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                alert(data.error || 'Erro ao salvar perfil');
+                return;
+            }
+
+            await mostrarPerfisSalvos();
+            
+            // Feedback visual
+            const btn = event.target.closest('button');
+            const iconOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.style.background = '#10B981';
+            setTimeout(() => {
+                btn.innerHTML = iconOriginal;
+                btn.style.background = '';
+            }, 1500);
+        } catch (error) {
+            console.error('Erro ao salvar perfil:', error);
+            alert('Erro ao salvar perfil');
+        }
+    }
+
+    // Usar perfil salvo
+    function usarPerfil(url) {
+        document.getElementById('profileUrl').value = url;
+        document.getElementById('profileUrl').focus();
+    }
+
+    // Remover perfil
+    async function removerPerfil(id, username) {
+        if (!confirm(`Remover "${username}" dos favoritos?`)) return;
+        
+        try {
+            const response = await fetch(`/api/ia/perfis/${id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                alert(data.error || 'Erro ao remover perfil');
+                return;
+            }
+
+            await mostrarPerfisSalvos();
+        } catch (error) {
+            console.error('Erro ao remover perfil:', error);
+            alert('Erro ao remover perfil');
+        }
+    }
+
+    // Mostrar perfis salvos
+    async function mostrarPerfisSalvos() {
+        const container = document.getElementById('perfisSalvos');
+        const perfis = await carregarPerfisSalvos();
+
+        if (perfis.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="margin-top: 12px; padding: 12px; background: #F9FAFB; border-radius: 8px; border: 1px solid #E5E7EB;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <strong style="font-size: 13px; color: #374151;">
+                        <i class="fas fa-star" style="color: #F59E0B;"></i> Perfis Favoritos (${perfis.length})
+                    </strong>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    ${perfis.map(perfil => `
+                        <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #E5E7EB;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fab fa-instagram" style="color: #E1306C; font-size: 16px;"></i>
+                                    <span style="font-weight: 600; font-size: 14px;">@${perfil.username}</span>
+                                    ${perfil.autoPostEnabled ? '<span style="background: #10B981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;"><i class="fas fa-robot"></i> AUTO</span>' : ''}
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button 
+                                        onclick="usarPerfil('${perfil.url}')" 
+                                        class="btn-icon-small" 
+                                        title="Usar este perfil"
+                                        style="padding: 4px 10px; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-arrow-right"></i> Usar
+                                    </button>
+                                    <button 
+                                        onclick="toggleAutoPost(${perfil.id})" 
+                                        class="btn-icon-small" 
+                                        title="Configurar postagem automática"
+                                        style="padding: 4px 10px; background: #8B5CF6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <button 
+                                        onclick="removerPerfil(${perfil.id}, '${perfil.username}')" 
+                                        class="btn-icon-small" 
+                                        title="Remover"
+                                        style="padding: 4px 10px; background: #EF4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Configurações de Auto-Post -->
+                            <div id="autopost-config-${perfil.id}" style="display: ${perfil.autoPostEnabled ? 'block' : 'none'}; margin-top: 10px; padding: 10px; background: #F0FDF4; border-radius: 6px; border: 1px solid #BBF7D0;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: #065F46; display: block; margin-bottom: 4px;">
+                                            <i class="fas fa-clock"></i> Horário
+                                        </label>
+                                        <input 
+                                            type="time" 
+                                            id="autopost-time-${perfil.id}" 
+                                            value="${perfil.autoPostTime || '09:00'}"
+                                            style="width: 100%; padding: 6px; border: 1px solid #BBF7D0; border-radius: 4px; font-size: 12px;"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 600; color: #065F46; display: block; margin-bottom: 4px;">
+                                            <i class="fas fa-list-ol"></i> Posts/dia
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            id="autopost-count-${perfil.id}" 
+                                            value="${perfil.postsPerExecution || 3}"
+                                            min="1" 
+                                            max="12"
+                                            style="width: 100%; padding: 6px; border: 1px solid #BBF7D0; border-radius: 4px; font-size: 12px;"
+                                        >
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button 
+                                        onclick="salvarAutoPostConfig(${perfil.id})"
+                                        style="flex: 1; padding: 6px 12px; background: #10B981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                        <i class="fas fa-save"></i> Salvar Configurações
+                                    </button>
+                                    <button 
+                                        onclick="desativarAutoPost(${perfil.id})"
+                                        style="padding: 6px 12px; background: #EF4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-stop"></i> Desativar
+                                    </button>
+                                    <button 
+                                        onclick="processarPerfilManual(${perfil.id})"
+                                        style="padding: 6px 12px; background: #F59E0B; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;"
+                                        title="Processar agora">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                ${perfil.lastAutoPost ? `<div style="margin-top: 8px; font-size: 11px; color: #065F46;"><i class="fas fa-info-circle"></i> Última execução: ${new Date(perfil.lastAutoPost).toLocaleString('pt-BR')}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Toggle configurações de auto-post
+    async function toggleAutoPost(perfilId) {
+        const config = document.getElementById(`autopost-config-${perfilId}`);
+        const isVisible = config.style.display !== 'none';
+        
+        if (isVisible) {
+            config.style.display = 'none';
+        } else {
+            config.style.display = 'block';
+            
+            // Se estava desativado, ativar
+            const perfis = await carregarPerfisSalvos();
+            const perfil = perfis.find(p => p.id === perfilId);
+            
+            if (perfil && !perfil.autoPostEnabled) {
+                await salvarAutoPostConfig(perfilId, true);
+            }
+        }
+    }
+    
+    // Salvar configurações de auto-post
+    async function salvarAutoPostConfig(perfilId, ativar = true) {
+        const time = document.getElementById(`autopost-time-${perfilId}`).value;
+        const count = document.getElementById(`autopost-count-${perfilId}`).value;
+        
+        try {
+            const response = await fetch(`/api/ia/perfis/${perfilId}/auto-post`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    autoPostEnabled: ativar,
+                    autoPostTime: time,
+                    postsPerExecution: parseInt(count)
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Configurações salvas! O sistema processará automaticamente todos os dias às ' + time);
+                await mostrarPerfisSalvos();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao salvar configurações');
+        }
+    }
+    
+    // Desativar auto-post
+    async function desativarAutoPost(perfilId) {
+        if (!confirm('Desativar postagem automática para este perfil?')) return;
+        
+        try {
+            const response = await fetch(`/api/ia/perfis/${perfilId}/auto-post`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoPostEnabled: false })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                await mostrarPerfisSalvos();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao desativar');
+        }
+    }
+    
+    // Processar perfil manualmente
+    async function processarPerfilManual(perfilId) {
+        if (!confirm('Processar este perfil agora? Isso irá extrair posts e gerar matérias automaticamente.')) return;
+        
+        showLoading('Processando perfil...', 'Isso pode levar alguns minutos');
+        
+        try {
+            const response = await fetch(`/api/ia/perfis/${perfilId}/processar-manual`, {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ ' + data.message + '\n\nVerifique a lista de posts para ver os rascunhos gerados.');
+                await mostrarPerfisSalvos();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao processar perfil');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Carregar perfis ao iniciar a página
+    document.addEventListener('DOMContentLoaded', function() {
+        mostrarPerfisSalvos();
+    });
+
+    // ========== MODAL DE VISUALIZAÇÃO DE POST ==========
+    
+    function openPostModal(postUrl) {
+        const modal = document.getElementById('postModal');
+        const iframe = document.getElementById('postIframe');
+        
+        // Converter URL do post para embed
+        const embedUrl = postUrl.replace(/\/$/, '') + '/embed';
+        
+        iframe.src = embedUrl;
+        modal.style.display = 'flex';
+        
+        // Prevenir scroll do body
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePostModal(event) {
+        // Se event existe e não é o backdrop, não fechar
+        if (event && event.target.id !== 'postModal') {
+            return;
+        }
+        
+        const modal = document.getElementById('postModal');
+        const iframe = document.getElementById('postIframe');
+        
+        modal.style.display = 'none';
+        iframe.src = '';
+        
+        // Restaurar scroll do body
+        document.body.style.overflow = '';
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePostModal();
+        }
+    });
+</script>
+
+<%- include('../partials/footer') %>

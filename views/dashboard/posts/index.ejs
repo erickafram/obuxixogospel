@@ -1,0 +1,1048 @@
+<%- include('../partials/header', { title: 'Posts' , user: user }) %>
+
+    <div class="dashboard-content">
+        <div class="content-header">
+            <div>
+                <h1>Posts</h1>
+                <p>Gerencie todos os artigos do portal</p>
+            </div>
+            <div class="header-actions">
+                <button id="btnDeleteSelected" class="btn btn-danger" style="display: none;" onclick="deleteSelected()">
+                    <i class="fas fa-trash"></i> Excluir Selecionados
+                </button>
+                <a href="/dashboard/posts/novo" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Post
+                </a>
+            </div>
+        </div>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="alert alert-success">
+                <%= success %>
+            </div>
+        <% } %>
+
+        <!-- Filtros e Busca -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="Buscar por título, descrição ou autor..." 
+                       value="<%= filters.search || '' %>"
+                       onkeypress="if(event.key === 'Enter') performSearch()">
+                <% if (filters.search) { %>
+                    <button class="clear-search" onclick="clearSearch()" title="Limpar busca">
+                        <i class="fas fa-times"></i>
+                    </button>
+                <% } %>
+            </div>
+            <div class="filters-row">
+                <select id="filterStatus" onchange="applyFilters()" class="filter-select">
+                    <option value="">Todos os Status</option>
+                    <option value="published" <%= filters.status === 'published' ? 'selected' : '' %>>Publicados</option>
+                    <option value="draft" <%= filters.status === 'draft' ? 'selected' : '' %>>Rascunhos</option>
+                </select>
+                <select id="filterCategoria" onchange="applyFilters()" class="filter-select">
+                    <option value="">Todas as Categorias</option>
+                    <% if (typeof categories !== 'undefined' && categories) { %>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat.slug %>" <%= filters.categoria === cat.slug ? 'selected' : '' %>>
+                                <%= cat.nome %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-redo"></i> Limpar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Informações de Resultados -->
+        <% if (typeof pagination !== 'undefined' && pagination) { %>
+            <div class="results-info">
+                <p>
+                    Mostrando <%= articles.length %> de <%= pagination.totalPosts %> post(s)
+                    <% if (filters.search) { %>
+                        - Buscando por: "<strong><%= filters.search %></strong>"
+                    <% } %>
+                </p>
+            </div>
+        <% } %>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="40">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="sortable" onclick="sortTable('titulo')">
+                        Título
+                        <% if (sort.sortBy === 'titulo') { %>
+                            <i class="fas fa-sort-<%= sort.sortOrder === 'ASC' ? 'up' : 'down' %> sort-icon active"></i>
+                        <% } else { %>
+                            <i class="fas fa-sort sort-icon"></i>
+                        <% } %>
+                    </th>
+                    <th>Categoria</th>
+                    <th>Autor</th>
+                    <th class="sortable" onclick="sortTable('visualizacoes')">
+                        Visualizações
+                        <% if (sort.sortBy === 'visualizacoes') { %>
+                            <i class="fas fa-sort-<%= sort.sortOrder === 'ASC' ? 'up' : 'down' %> sort-icon active"></i>
+                        <% } else { %>
+                            <i class="fas fa-sort sort-icon"></i>
+                        <% } %>
+                    </th>
+                    <th class="sortable" onclick="sortTable('dataPublicacao')">
+                        Data
+                        <% if (sort.sortBy === 'dataPublicacao') { %>
+                            <i class="fas fa-sort-<%= sort.sortOrder === 'ASC' ? 'up' : 'down' %> sort-icon active"></i>
+                        <% } else { %>
+                            <i class="fas fa-sort sort-icon"></i>
+                        <% } %>
+                    </th>
+                    <th class="sortable" onclick="sortTable('publicado')">
+                        Status
+                        <% if (sort.sortBy === 'publicado') { %>
+                            <i class="fas fa-sort-<%= sort.sortOrder === 'ASC' ? 'up' : 'down' %> sort-icon active"></i>
+                        <% } else { %>
+                            <i class="fas fa-sort sort-icon"></i>
+                        <% } %>
+                    </th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (articles && articles.length > 0) { %>
+                    <% 
+                    // Criar mapa de nomes de categorias a partir das categorias carregadas 
+                    const categoryNames = {}; 
+                    if (typeof categories !== 'undefined' && categories) {
+                        categories.forEach(cat => {
+                            categoryNames[cat.slug] = cat.nome;
+                        });
+                    }
+                %>
+                <% articles.forEach(article => { %>
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="post-checkbox" value="<%= article.id %>"
+                                onchange="updateDeleteButton()">
+                        </td>
+                        <td>
+                            <div class="post-title">
+                                <% if (article.destaque) { %>
+                                    <span class="badge badge-warning">Destaque</span>
+                                <% } %>
+                                <%= article.titulo %>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-<%= article.categoria %>">
+                                <%= categoryNames[article.categoria] || article.categoria %>
+                            </span></td>
+                        <td>
+                            <%= article.autor %>
+                        </td>
+                        <td><i class="fas fa-eye"></i>
+                            <%= article.visualizacoes %>
+                        </td>
+                        <td>
+                            <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                        </td>
+                        <td>
+                            <% if (article.publicado) { %>
+                                <span class="badge badge-success">Publicado</span>
+                            <% } else { 
+                                // Verificar se é agendado (data futura)
+                                const dataPublicacao = new Date(article.dataPublicacao);
+                                const agora = new Date();
+                                const isAgendado = dataPublicacao > agora;
+                            %>
+                                <% if (isAgendado) { 
+                                    // Formatar horário: HH:MM
+                                    const horario = dataPublicacao.toLocaleTimeString('pt-BR', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit',
+                                        timeZone: 'America/Sao_Paulo'
+                                    });
+                                %>
+                                    <span class="badge badge-warning" style="background: #FFC107; color: #000; font-size: 10px;">
+                                        ⏰ <%= horario %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge badge-secondary">Rascunho</span>
+                                <% } %>
+                            <% } %>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <% if (article.publicado) { %>
+                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>"
+                                        target="_blank" class="btn-icon" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                <% } %>
+                                <a href="/dashboard/posts/editar/<%= article.id %>" class="btn-icon"
+                                    title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="deletePost(<%= article.id %>)"
+                                    class="btn-icon btn-danger" title="Deletar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center">Nenhum post encontrado</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+
+        <!-- Paginação -->
+        <% if (typeof pagination !== 'undefined' && pagination && pagination.totalPages > 1) { %>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Página <%= pagination.currentPage %> de <%= pagination.totalPages %>
+                </div>
+                <div class="pagination-buttons">
+                    <% 
+                        // Função helper para construir query string de paginação
+                        const buildPaginationUrl = (page) => {
+                            const params = [];
+                            params.push(`page=${page}`);
+                            if (filters.status) params.push(`status=${filters.status}`);
+                            if (filters.categoria) params.push(`categoria=${filters.categoria}`);
+                            if (filters.search) params.push(`search=${encodeURIComponent(filters.search)}`);
+                            if (sort.sortBy) params.push(`sortBy=${sort.sortBy}`);
+                            if (sort.sortOrder) params.push(`sortOrder=${sort.sortOrder}`);
+                            return '?' + params.join('&');
+                        };
+                    %>
+                    <% if (pagination.hasPrev) { %>
+                        <a href="<%= buildPaginationUrl(1) %>" 
+                           class="pagination-btn" title="Primeira página">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="<%= buildPaginationUrl(pagination.currentPage - 1) %>" 
+                           class="pagination-btn" title="Página anterior">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    <% } else { %>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-double-left"></i>
+                        </span>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-left"></i>
+                        </span>
+                    <% } %>
+
+                    <!-- Números de página -->
+                    <% 
+                        const startPage = Math.max(1, pagination.currentPage - 2);
+                        const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+                        for (let i = startPage; i <= endPage; i++) { 
+                    %>
+                        <% if (i === pagination.currentPage) { %>
+                            <span class="pagination-btn active"><%= i %></span>
+                        <% } else { %>
+                            <a href="<%= buildPaginationUrl(i) %>" 
+                               class="pagination-btn"><%= i %></a>
+                        <% } %>
+                    <% } %>
+
+                    <% if (pagination.hasNext) { %>
+                        <a href="<%= buildPaginationUrl(pagination.currentPage + 1) %>" 
+                           class="pagination-btn" title="Próxima página">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="<%= buildPaginationUrl(pagination.totalPages) %>" 
+                           class="pagination-btn" title="Última página">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    <% } else { %>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-right"></i>
+                        </span>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-angle-double-right"></i>
+                        </span>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+    </div>
+    </div>
+
+    <style>
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .content-header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1A202C;
+            letter-spacing: -0.5px;
+        }
+
+        .content-header p {
+            color: #718096;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .post-checkbox,
+        #selectAll {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E8E8E8;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid #E2E8F0;
+            background: #FAFBFC;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input,
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.15s;
+            background: white;
+        }
+
+        .search-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+        }
+
+        .search-input {
+            flex: 1;
+        }
+
+        .filter-select {
+            min-width: 180px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 11px;
+            color: #4A5568;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            background: #F7FAFC;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #E2E8F0;
+            font-size: 13px;
+            color: #2D3748;
+        }
+
+        .data-table tr:hover {
+            background: #F7FAFC;
+        }
+
+        .post-title {
+            font-weight: 500;
+            font-size: 13px;
+            color: #1A202C;
+            line-height: 1.4;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-success {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .badge-secondary {
+            background: #E2E3E5;
+            color: #383D41;
+        }
+
+        .badge-warning {
+            background: #FFF3CD;
+            color: #856404;
+            margin-right: 8px;
+        }
+
+        .badge-noticias {
+            background: #FFE5E5;
+            color: #C1121F;
+        }
+
+        .badge-musica {
+            background: #D4EDDA;
+            color: #28A745;
+        }
+
+        .badge-eventos {
+            background: #FFE8D6;
+            color: #FF8C42;
+        }
+
+        .badge-ministerio {
+            background: #F3E5F5;
+            color: #8B3A62;
+        }
+
+        .badge-estudo-biblico {
+            background: #E3F2FD;
+            color: #1F4788;
+        }
+
+        .badge-testemunhos {
+            background: #FFF0F0;
+            color: #DC2626;
+        }
+
+        .badge-familia {
+            background: #FCE7F3;
+            color: #BE185D;
+        }
+
+        .badge-jovens {
+            background: #CCFBF1;
+            color: #0F766E;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: #F7FAFC;
+            color: #718096;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .btn-icon:hover {
+            background: #EDF2F7;
+            color: #2D3748;
+            transform: scale(1.05);
+        }
+
+        .btn-icon.btn-danger:hover {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .text-center {
+            text-align: center;
+            padding: 32px !important;
+            color: #9CA3AF;
+            font-size: 13px;
+        }
+
+        @media (max-width: 1024px) {
+            .content-header {
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .search-filter {
+                flex-direction: column;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-header h1 {
+                font-size: 18px;
+            }
+
+            .content-header p {
+                font-size: 12px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .card-header {
+                padding: 12px;
+            }
+
+            .search-input,
+            .filter-select {
+                font-size: 14px;
+            }
+
+            /* Mobile table - hide less important columns */
+            .data-table th:nth-child(4),
+            .data-table td:nth-child(4),
+            .data-table th:nth-child(5),
+            .data-table td:nth-child(5) {
+                display: none;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+
+            .post-title {
+                font-size: 12px;
+            }
+
+            .badge {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .btn-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-header h1 {
+                font-size: 16px;
+            }
+
+            /* Mobile table - show only essential columns */
+            .data-table th:nth-child(3),
+            .data-table td:nth-child(3),
+            .data-table th:nth-child(6),
+            .data-table td:nth-child(6) {
+                display: none;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+
+            .post-title {
+                font-size: 11px;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
+        /* Filtros e Busca */
+        .filters-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E8E8E8;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-box i.fa-search {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            font-size: 14px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 40px 11px 40px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #F3F4F6;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #6B7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .clear-search:hover {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 14px;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #0669de;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        }
+
+        .btn-secondary {
+            background: #F3F4F6;
+            color: #4B5563;
+            padding: 10px 16px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #E5E7EB;
+            color: #1F2937;
+        }
+
+        .results-info {
+            padding: 12px 0;
+            color: #6B7280;
+            font-size: 13px;
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 16px;
+        }
+
+        .results-info strong {
+            color: #0669de;
+        }
+
+        /* Paginação */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #F9FAFB;
+            border-top: 1px solid #E2E8F0;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pagination-info {
+            color: #6B7280;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #E2E8F0;
+            background: white;
+            color: #4B5563;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .pagination-btn:hover:not(.disabled):not(.active) {
+            background: #F9FAFB;
+            border-color: #0669de;
+            color: #0669de;
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            color: white;
+            border-color: #0669de;
+            font-weight: 600;
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Estilos para ordenação */
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .sortable:hover {
+            background: #EDF2F7;
+            color: #0669de;
+        }
+
+        .sort-icon {
+            margin-left: 6px;
+            font-size: 11px;
+            opacity: 0.3;
+            transition: all 0.2s;
+        }
+
+        .sortable:hover .sort-icon {
+            opacity: 0.6;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #0669de;
+        }
+    </style>
+
+    <script>
+        // Deletar post individual
+        function deletePost(id) {
+            if (confirm('⚠️ ATENÇÃO!\n\nTem certeza que deseja EXCLUIR este post?\n\nEsta ação não pode ser desfeita!')) {
+                fetch(`/dashboard/posts/deletar/${id}`, {
+                    method: 'DELETE'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Post excluído com sucesso!');
+                            location.reload();
+                        } else {
+                            alert('❌ Erro ao deletar post: ' + (data.message || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        alert('❌ Erro ao deletar post: ' + error.message);
+                    });
+            }
+        }
+
+        // Selecionar/desselecionar todos
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.post-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateDeleteButton();
+        }
+
+        // Atualizar visibilidade do botão de excluir
+        function updateDeleteButton() {
+            const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+            const btnDelete = document.getElementById('btnDeleteSelected');
+
+            if (checkboxes.length > 0) {
+                btnDelete.style.display = 'inline-flex';
+                btnDelete.innerHTML = `<i class="fas fa-trash"></i> Excluir Selecionados (${checkboxes.length})`;
+            } else {
+                btnDelete.style.display = 'none';
+            }
+
+            // Atualizar checkbox "selecionar todos"
+            const allCheckboxes = document.querySelectorAll('.post-checkbox');
+            const selectAll = document.getElementById('selectAll');
+            selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+        }
+
+        // Deletar posts selecionados
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.post-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+
+            if (ids.length === 0) {
+                alert('⚠️ Nenhum post selecionado!');
+                return;
+            }
+
+            const confirmMsg = `⚠️ ATENÇÃO!\n\nVocê está prestes a EXCLUIR ${ids.length} post(s)!\n\nEsta ação não pode ser desfeita!\n\nDeseja continuar?`;
+
+            if (confirm(confirmMsg)) {
+                // Mostrar loading
+                const btnDelete = document.getElementById('btnDeleteSelected');
+                const originalText = btnDelete.innerHTML;
+                btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+                btnDelete.disabled = true;
+
+                // Deletar cada post
+                let deletedCount = 0;
+                let errorCount = 0;
+
+                Promise.all(ids.map(id =>
+                    fetch(`/dashboard/posts/deletar/${id}`, { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                deletedCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        })
+                        .catch(() => errorCount++)
+                ))
+                    .then(() => {
+                        if (deletedCount > 0) {
+                            alert(`✅ ${deletedCount} post(s) excluído(s) com sucesso!${errorCount > 0 ? `\n⚠️ ${errorCount} erro(s) encontrado(s).` : ''}`);
+                            location.reload();
+                        } else {
+                            alert('❌ Erro ao excluir posts!');
+                            btnDelete.innerHTML = originalText;
+                            btnDelete.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        // Aplicar filtros
+        function applyFilters() {
+            const categoria = document.getElementById('filterCategoria').value;
+            const status = document.getElementById('filterStatus').value;
+
+            const params = new URLSearchParams(window.location.search);
+
+            if (categoria) params.set('categoria', categoria);
+            else params.delete('categoria');
+
+            if (status) params.set('status', status);
+            else params.delete('status');
+
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        // Busca (server-side)
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const params = new URLSearchParams(window.location.search);
+            
+            if (searchTerm) {
+                params.set('search', searchTerm);
+            } else {
+                params.delete('search');
+            }
+            
+            // Resetar para página 1 ao buscar
+            params.set('page', '1');
+            
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        // Limpar busca
+        function clearSearch() {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('search');
+            params.set('page', '1');
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+
+        // Limpar todos os filtros
+        function clearFilters() {
+            window.location.href = window.location.pathname;
+        }
+
+        // Buscar ao pressionar Enter
+        document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Função de ordenação
+        function sortTable(field) {
+            const params = new URLSearchParams(window.location.search);
+            const currentSortBy = params.get('sortBy') || 'dataPublicacao';
+            const currentSortOrder = params.get('sortOrder') || 'DESC';
+
+            // Se clicar no mesmo campo, inverte a ordem
+            if (currentSortBy === field) {
+                params.set('sortOrder', currentSortOrder === 'ASC' ? 'DESC' : 'ASC');
+            } else {
+                // Se for um campo novo, define ordem padrão
+                params.set('sortBy', field);
+                if (field === 'visualizacoes') {
+                    params.set('sortOrder', 'DESC'); // Mais views primeiro
+                } else if (field === 'dataPublicacao') {
+                    params.set('sortOrder', 'DESC'); // Mais recentes primeiro
+                } else if (field === 'titulo') {
+                    params.set('sortOrder', 'ASC'); // A-Z
+                } else if (field === 'publicado') {
+                    params.set('sortOrder', 'DESC'); // Publicados primeiro
+                }
+            }
+
+            // Resetar para página 1 ao ordenar
+            params.set('page', '1');
+
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+    </script>
+
+    <%- include('../partials/footer') %>

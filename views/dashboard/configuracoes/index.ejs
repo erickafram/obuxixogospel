@@ -1,0 +1,997 @@
+<%- include('../partials/header', { title: 'Configurações', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Configurações do Sistema</h1>
+            <p>Gerencie as configurações gerais do portal</p>
+        </div>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success">
+        <%= success %>
+    </div>
+    <% } %>
+
+    <form method="POST" action="/dashboard/configuracoes" id="configForm">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button type="button" class="tab-button active" onclick="switchTab('site')">
+                <i class="fas fa-globe"></i> Site
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('seo')">
+                <i class="fas fa-search"></i> SEO
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('redirects')">
+                <i class="fas fa-directions"></i> Redirecionamentos
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('ia')">
+                <i class="fas fa-robot"></i> Inteligência Artificial
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('analytics')">
+                <i class="fas fa-chart-line"></i> Analytics
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('redes')">
+                <i class="fas fa-share-alt"></i> Redes Sociais
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('amp')">
+                <i class="fas fa-bolt"></i> AMP
+            </button>
+        </div>
+
+        <!-- Tab Content: Site -->
+        <div id="tab-site" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-globe"></i> Informações do Site</h3>
+                </div>
+                <div class="card-body">
+                    <% if (configs.site && configs.site.length > 0) { %>
+                        <% configs.site.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="<%= config.chave %>" 
+                                name="<%= config.chave %>" 
+                                value="<%= config.valor || '' %>" 
+                                class="form-control"
+                                placeholder="<%= config.descricao || '' %>"
+                            >
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração de site encontrada.</p>
+                    <% } %>
+                    
+                    <!-- Favicon -->
+                    <div class="form-group">
+                        <label for="favicon">
+                            <i class="fas fa-image"></i> Favicon (Ícone do Site)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="favicon" 
+                            name="favicon" 
+                            value="<%= configs.site.find(c => c.chave === 'favicon')?.valor || '/images/favicon.svg' %>" 
+                            class="form-control"
+                            placeholder="/images/favicon.svg"
+                        >
+                        <small>
+                            Caminho do ícone que aparece na aba do navegador. 
+                            <a href="/images/favicon.svg" target="_blank">Ver favicon atual</a>
+                        </small>
+                        <div style="margin-top: 12px; padding: 16px; background: #F7FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
+                            <strong style="display: block; margin-bottom: 8px; color: #2D3748;">
+                                <i class="fas fa-eye"></i> Preview do Favicon:
+                            </strong>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img 
+                                    id="faviconPreview" 
+                                    src="<%= configs.site.find(c => c.chave === 'favicon')?.valor || '/images/favicon.svg' %>" 
+                                    alt="Favicon" 
+                                    style="width: 32px; height: 32px; border: 1px solid #CBD5E0; border-radius: 4px; background: white;"
+                                    onerror="this.src='/images/favicon.svg'"
+                                >
+                                <span style="color: #718096; font-size: 13px;">
+                                    Este ícone aparecerá na aba do navegador
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: SEO -->
+        <div id="tab-seo" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-search"></i> Otimização para Mecanismos de Busca</h3>
+                </div>
+                <div class="card-body">
+                    <% if (configs.seo && configs.seo.length > 0) { %>
+                        <% configs.seo.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            <% if (config.chave.includes('descricao') || config.chave.includes('keywords')) { %>
+                                <textarea 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="<%= config.descricao || '' %>"
+                                ><%= config.valor || '' %></textarea>
+                            <% } else { %>
+                                <input 
+                                    type="text" 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    value="<%= config.valor || '' %>" 
+                                    class="form-control"
+                                    placeholder="<%= config.descricao || '' %>"
+                                >
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração de SEO encontrada.</p>
+                    <% } %>
+                    
+                    <!-- Sitemap e Robots.txt -->
+                    <div class="card" style="margin-top: 20px;">
+                        <div class="card-header">
+                            <h4><i class="fas fa-sitemap"></i> Sitemap e Robots.txt</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Sitemap gerado automaticamente!</strong>
+                                <p style="margin-top: 8px; margin-bottom: 0;">
+                                    O sitemap é gerado dinamicamente com todos os seus artigos publicados.
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-link"></i> URL do Sitemap</label>
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        value="https://www.obuxixogospel.com.br/sitemap.xml" 
+                                        readonly
+                                        id="sitemapUrl"
+                                    >
+                                    <button type="button" class="btn btn-secondary" onclick="copySitemapUrl()">
+                                        <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                    <a href="/sitemap.xml" target="_blank" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt"></i> Abrir
+                                    </a>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Use esta URL para enviar ao Google Search Console e Bing Webmaster Tools
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-robot"></i> Robots.txt</label>
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        value="https://www.obuxixogospel.com.br/robots.txt" 
+                                        readonly
+                                        id="robotsUrl"
+                                    >
+                                    <button type="button" class="btn btn-secondary" onclick="copyRobotsUrl()">
+                                        <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                    <a href="/robots.txt" target="_blank" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt"></i> Abrir
+                                    </a>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Arquivo robots.txt configurado automaticamente
+                                </small>
+                            </div>
+                            
+                            <div class="alert alert-success">
+                                <strong><i class="fas fa-check-circle"></i> Como enviar ao Google:</strong>
+                                <ol style="margin-top: 10px; margin-bottom: 0; padding-left: 20px;">
+                                    <li>Acesse <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a></li>
+                                    <li>Selecione sua propriedade (site)</li>
+                                    <li>Vá em "Sitemaps" no menu lateral</li>
+                                    <li>Cole a URL do sitemap e clique em "Enviar"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            function copySitemapUrl() {
+                const input = document.getElementById('sitemapUrl');
+                input.select();
+                document.execCommand('copy');
+                alert('URL do sitemap copiada!');
+            }
+            
+            function copyRobotsUrl() {
+                const input = document.getElementById('robotsUrl');
+                input.select();
+                document.execCommand('copy');
+                alert('URL do robots.txt copiada!');
+            }
+        </script>
+
+        <!-- Tab Content: IA -->
+        <div id="tab-ia" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-robot"></i> Assistente de Inteligência Artificial</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Configure a integração com a API Together AI para usar recursos de IA na criação de conteúdo.
+                    </div>
+                    
+                    <% if (configs.ia && configs.ia.length > 0) { %>
+                        <% configs.ia.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            <% if (config.chave === 'ia_ativa') { %>
+                                <select id="<%= config.chave %>" name="<%= config.chave %>" class="form-control">
+                                    <option value="true" <%= config.valor === 'true' ? 'selected' : '' %>>Ativada</option>
+                                    <option value="false" <%= config.valor === 'false' || !config.valor ? 'selected' : '' %>>Desativada</option>
+                                </select>
+                            <% } else if (config.chave === 'ia_api_key') { %>
+                                <input 
+                                    type="password" 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    value="<%= config.valor || '' %>" 
+                                    class="form-control"
+                                    placeholder="<%= config.descricao || '' %>"
+                                >
+                                <small>Obtenha sua chave em: <a href="https://api.together.xyz" target="_blank">https://api.together.xyz</a></small>
+                            <% } else { %>
+                                <input 
+                                    type="text" 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    value="<%= config.valor || '' %>" 
+                                    class="form-control"
+                                    placeholder="<%= config.descricao || '' %>"
+                                >
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração de IA encontrada.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Analytics -->
+        <div id="tab-analytics" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Ferramentas de Analytics</h3>
+                </div>
+                <div class="card-body">
+                    <% if (configs.analytics && configs.analytics.length > 0) { %>
+                        <% configs.analytics.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="<%= config.chave %>" 
+                                name="<%= config.chave %>" 
+                                value="<%= config.valor || '' %>" 
+                                class="form-control"
+                                placeholder="<%= config.descricao || '' %>"
+                            >
+                            <% if (config.chave === 'analytics_google') { %>
+                                <small>Exemplo: G-XXXXXXXXXX</small>
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração de analytics encontrada.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Redes Sociais -->
+        <div id="tab-redes" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-share-alt"></i> Redes Sociais</h3>
+                </div>
+                <div class="card-body">
+                    <% if (configs.redes_sociais && configs.redes_sociais.length > 0) { %>
+                        <% configs.redes_sociais.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <% if (config.chave.includes('facebook')) { %>
+                                    <i class="fab fa-facebook"></i>
+                                <% } else if (config.chave.includes('instagram')) { %>
+                                    <i class="fab fa-instagram"></i>
+                                <% } else if (config.chave.includes('youtube')) { %>
+                                    <i class="fab fa-youtube"></i>
+                                <% } else if (config.chave.includes('twitter')) { %>
+                                    <i class="fab fa-twitter"></i>
+                                <% } %>
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            <input 
+                                type="url" 
+                                id="<%= config.chave %>" 
+                                name="<%= config.chave %>" 
+                                value="<%= config.valor || '' %>" 
+                                class="form-control"
+                                placeholder="<%= config.descricao || '' %>"
+                            >
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração de redes sociais encontrada.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Redirecionamentos -->
+        <div id="tab-redirects" class="tab-content">
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-directions"></i> Redirecionamentos SEO</h3>
+                    <button type="button" class="btn btn-primary" onclick="abrirModalNovoRedirect()">
+                        <i class="fas fa-plus"></i> Novo Redirecionamento
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" style="background: #E7F3FF; color: #014361; border: 1px solid #B8DAFF;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>O que são Redirecionamentos?</strong><br>
+                            Redirecionamentos 301/302 permitem que você redirecione URLs antigas ou quebradas para novas URLs. 
+                            Isso é essencial para SEO quando você muda a estrutura de URLs do site.
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                            <div style="font-size: 24px; font-weight: 700; color: #4CAF50;" id="totalRedirectsTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Total de Redirecionamentos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                            <div style="font-size: 24px; font-weight: 700; color: #2196F3;" id="redirectsAtivosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Ativos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #FF9800;">
+                            <div style="font-size: 24px; font-weight: 700; color: #FF9800;" id="redirectsInativosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Inativos</div>
+                        </div>
+                        <div class="stat-card" style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #9C27B0;">
+                            <div style="font-size: 24px; font-weight: 700; color: #9C27B0;" id="totalAcessosTab">0</div>
+                            <div style="color: #666; font-size: 14px;">Total de Acessos</div>
+                        </div>
+                    </div>
+
+                    <!-- Busca -->
+                    <div class="form-group">
+                        <input type="text" id="searchRedirectsTab" placeholder="Buscar redirecionamentos..." class="form-control">
+                    </div>
+
+                    <!-- Tabela de Redirecionamentos -->
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table" id="redirectsTable">
+                            <thead>
+                                <tr>
+                                    <th>URL Antiga</th>
+                                    <th>URL Nova</th>
+                                    <th>Tipo</th>
+                                    <th>Acessos</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="redirectsTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i><br>
+                                        Carregando redirecionamentos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info" style="background: #FFF3CD; color: #856404; border: 1px solid #FFEAA7; margin-top: 20px;">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Dica:</strong> Use redirecionamentos 301 (permanentes) para mudanças definitivas de URL. 
+                            Isso transfere a autoridade SEO da URL antiga para a nova.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: AMP -->
+        <div id="tab-amp" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> AMP (Accelerated Mobile Pages)</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" style="background: #E7F3FF; color: #014361; border: 1px solid #B8DAFF;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>O que é AMP?</strong><br>
+                            AMP (Accelerated Mobile Pages) são páginas otimizadas para carregamento ultra-rápido em dispositivos móveis. 
+                            Quando habilitado, o Google pode exibir suas páginas AMP nos resultados de busca, melhorando a experiência do usuário e o SEO.
+                        </div>
+                    </div>
+
+                    <% if (configs.amp && configs.amp.length > 0) { %>
+                        <% configs.amp.forEach(config => { %>
+                        <div class="form-group">
+                            <label for="<%= config.chave %>">
+                                <% if (config.chave === 'amp_habilitado') { %>
+                                    <i class="fas fa-toggle-on"></i>
+                                <% } else if (config.chave === 'amp_analytics_id') { %>
+                                    <i class="fas fa-chart-line"></i>
+                                <% } else if (config.chave === 'amp_adsense_id') { %>
+                                    <i class="fas fa-dollar-sign"></i>
+                                <% } %>
+                                <%= config.descricao || config.chave %>
+                            </label>
+                            
+                            <% if (config.chave === 'amp_habilitado') { %>
+                                <select 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    class="form-control"
+                                >
+                                    <option value="true" <%= config.valor === 'true' ? 'selected' : '' %>>Habilitado</option>
+                                    <option value="false" <%= config.valor === 'false' ? 'selected' : '' %>>Desabilitado</option>
+                                </select>
+                                <small>
+                                    Quando habilitado, todas as páginas de artigos terão uma versão AMP disponível em <code>/amp</code>
+                                </small>
+                            <% } else { %>
+                                <input 
+                                    type="text" 
+                                    id="<%= config.chave %>" 
+                                    name="<%= config.chave %>" 
+                                    value="<%= config.valor || '' %>" 
+                                    class="form-control"
+                                    placeholder="<%= config.descricao || '' %>"
+                                >
+                                <% if (config.chave === 'amp_analytics_id') { %>
+                                    <small>Ex: UA-XXXXXXXXX-X ou G-XXXXXXXXXX (deixe vazio se não usar)</small>
+                                <% } else if (config.chave === 'amp_adsense_id') { %>
+                                    <small>Ex: ca-pub-XXXXXXXXXXXXXXXX (deixe vazio se não usar)</small>
+                                <% } %>
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-muted">Nenhuma configuração AMP encontrada.</p>
+                    <% } %>
+
+                    <div class="alert alert-info" style="background: #FFF3CD; color: #856404; border: 1px solid #FFEAA7; margin-top: 20px;">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Como testar?</strong><br>
+                            Após habilitar, acesse qualquer artigo e adicione <code>/amp</code> no final da URL. 
+                            Exemplo: <code>/noticia/titulo-do-artigo/amp</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão de Salvar (fixo no rodapé) -->
+        <div class="form-footer">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save"></i> Salvar Todas as Configurações
+            </button>
+        </div>
+    </form>
+    
+    <!-- Modal Novo/Editar Redirecionamento -->
+    <div id="modalRedirect" class="modal-redirect" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; align-items: center; justify-content: center;">
+        <div style="background-color: white; margin: 5% auto; padding: 0; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee;">
+                <h2 id="modalRedirectTitle" style="margin: 0; font-size: 20px;">Novo Redirecionamento</h2>
+                <button onclick="fecharModalRedirect()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            <form id="formRedirect" onsubmit="salvarRedirectTab(event)" style="padding: 20px;">
+                <input type="hidden" id="redirectIdTab">
+                
+                <div class="form-group">
+                    <label for="urlAntigaTab">URL Antiga (quebrada) *</label>
+                    <input type="text" id="urlAntigaTab" class="form-control" placeholder="/noticia-antiga" required>
+                    <small style="color: #666; font-size: 12px;">Exemplo: /noticia-antiga ou /categoria/post-antigo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="urlNovaTab">URL Nova (destino) *</label>
+                    <input type="text" id="urlNovaTab" class="form-control" placeholder="/noticia-nova" required>
+                    <small style="color: #666; font-size: 12px;">Pode ser relativa (/nova-url) ou absoluta (https://site.com/url)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tipoRedirecionamentoTab">Tipo de Redirecionamento *</label>
+                    <select id="tipoRedirecionamentoTab" class="form-control" required>
+                        <option value="301">301 - Permanente (Recomendado para SEO)</option>
+                        <option value="302">302 - Temporário</option>
+                        <option value="307">307 - Temporário (mantém método POST)</option>
+                    </select>
+                    <small style="color: #666; font-size: 12px;">
+                        <strong>301:</strong> Use quando a mudança é permanente (melhor para SEO)<br>
+                        <strong>302:</strong> Use quando a mudança é temporária
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricaoTab">Descrição (opcional)</label>
+                    <textarea id="descricaoTab" class="form-control" rows="3" placeholder="Motivo do redirecionamento..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="ativoTab" checked style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Redirecionamento ativo</span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <button type="button" class="btn btn-outline" onclick="fecharModalRedirect()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        margin-bottom: 24px;
+    }
+
+    .content-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .content-header p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .alert {
+        padding: 14px 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-success {
+        background: #D4EDDA;
+        color: #155724;
+        border: 1px solid #C3E6CB;
+    }
+
+    .alert-info {
+        background: #D1ECF1;
+        color: #0C5460;
+        border: 1px solid #BEE5EB;
+    }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 2px solid #E0E0E0;
+        overflow-x: auto;
+    }
+
+    .tab-button {
+        padding: 12px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #666;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-button:hover {
+        color: #FF6B00;
+        background: rgba(255, 107, 0, 0.05);
+    }
+
+    .tab-button.active {
+        color: #FF6B00;
+        border-bottom-color: #FF6B00;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Cards */
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #E0E0E0;
+    }
+
+    .card-header h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    /* Form */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #E0E0E0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #FF6B00;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    select.form-control {
+        cursor: pointer;
+    }
+
+    small {
+        display: block;
+        margin-top: 6px;
+        color: #666;
+        font-size: 12px;
+    }
+
+    small a {
+        color: #FF6B00;
+        text-decoration: none;
+    }
+
+    small a:hover {
+        text-decoration: underline;
+    }
+
+    .text-muted {
+        color: #999;
+        font-style: italic;
+    }
+
+    /* Form Footer */
+    .form-footer {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 20px 24px;
+        border-top: 2px solid #E0E0E0;
+        margin: 0 -32px -32px;
+        display: flex;
+        justify-content: flex-end;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #FF6B00;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #E65C00;
+        transform: translateY(-1px);
+    }
+
+    .btn-lg {
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+
+    /* Icons */
+    .fab, .fas {
+        width: 20px;
+        text-align: center;
+    }
+</style>
+
+<script>
+    function switchTab(tabName) {
+        // Remover active de todos os botões e conteúdos
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Adicionar active ao botão e conteúdo selecionado
+        event.target.closest('.tab-button').classList.add('active');
+        document.getElementById('tab-' + tabName).classList.add('active');
+        
+        // Carregar redirecionamentos se for a aba redirects
+        if (tabName === 'redirects') {
+            carregarRedirecionamentos();
+        }
+    }
+    
+    // Carregar redirecionamentos
+    async function carregarRedirecionamentos() {
+        try {
+            const response = await fetch('/api/redirects/stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                const stats = data.estatisticas;
+                document.getElementById('totalRedirectsTab').textContent = stats.total;
+                document.getElementById('redirectsAtivosTab').textContent = stats.ativos;
+                document.getElementById('redirectsInativosTab').textContent = stats.inativos;
+                document.getElementById('totalAcessosTab').textContent = stats.maisUsados.reduce((sum, r) => sum + r.contadorAcessos, 0);
+                
+                // Renderizar tabela
+                const tbody = document.getElementById('redirectsTableBody');
+                if (stats.total === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Nenhum redirecionamento cadastrado</td></tr>';
+                } else {
+                    tbody.innerHTML = stats.maisUsados.map(r => `
+                        <tr>
+                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlAntiga}</code></td>
+                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlNova}</code></td>
+                            <td><span style="background: ${r.tipoRedirecionamento === '301' ? '#4CAF50' : '#FF9800'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${r.tipoRedirecionamento}</span></td>
+                            <td><strong>${r.contadorAcessos}</strong></td>
+                            <td>
+                                <label style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                                    <input type="checkbox" ${r.ativo ? 'checked' : ''} onchange="toggleRedirectStatus(${r.id})" style="opacity: 0; width: 0; height: 0;">
+                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${r.ativo ? '#4CAF50' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <button type="button" onclick="editarRedirectTab(${r.id})" style="background: none; border: none; color: #FF6B00; cursor: pointer;" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" onclick="deletarRedirectTab(${r.id})" style="background: none; border: none; color: #dc3545; cursor: pointer;" title="Deletar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao carregar redirecionamentos:', error);
+        }
+    }
+    
+    function abrirModalNovoRedirect() {
+        document.getElementById('modalRedirectTitle').textContent = 'Novo Redirecionamento';
+        document.getElementById('formRedirect').reset();
+        document.getElementById('redirectIdTab').value = '';
+        document.getElementById('ativoTab').checked = true;
+        document.getElementById('modalRedirect').style.display = 'flex';
+    }
+    
+    function fecharModalRedirect() {
+        document.getElementById('modalRedirect').style.display = 'none';
+    }
+    
+    async function toggleRedirectStatus(id) {
+        try {
+            const response = await fetch(`/api/redirects/${id}/toggle`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                carregarRedirecionamentos();
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+        }
+    }
+    
+    async function editarRedirectTab(id) {
+        try {
+            const response = await fetch(`/api/redirects/${id}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const redirect = data.redirect;
+                document.getElementById('modalRedirectTitle').textContent = 'Editar Redirecionamento';
+                document.getElementById('redirectIdTab').value = redirect.id;
+                document.getElementById('urlAntigaTab').value = redirect.urlAntiga;
+                document.getElementById('urlNovaTab').value = redirect.urlNova;
+                document.getElementById('tipoRedirecionamentoTab').value = redirect.tipoRedirecionamento;
+                document.getElementById('descricaoTab').value = redirect.descricao || '';
+                document.getElementById('ativoTab').checked = redirect.ativo;
+                document.getElementById('modalRedirect').style.display = 'flex';
+            }
+        } catch (error) {
+            alert('Erro ao carregar redirecionamento');
+        }
+    }
+    
+    async function salvarRedirectTab(event) {
+        event.preventDefault();
+        
+        const id = document.getElementById('redirectIdTab').value;
+        const data = {
+            urlAntiga: document.getElementById('urlAntigaTab').value,
+            urlNova: document.getElementById('urlNovaTab').value,
+            tipoRedirecionamento: document.getElementById('tipoRedirecionamentoTab').value,
+            descricao: document.getElementById('descricaoTab').value,
+            ativo: document.getElementById('ativoTab').checked
+        };
+        
+        try {
+            const url = id ? `/api/redirects/${id}` : '/api/redirects';
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                fecharModalRedirect();
+                carregarRedirecionamentos();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            alert('Erro ao salvar redirecionamento');
+        }
+    }
+    
+    async function deletarRedirectTab(id) {
+        if (!confirm('Tem certeza que deseja deletar este redirecionamento?')) return;
+        
+        try {
+            const response = await fetch(`/api/redirects/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                carregarRedirecionamentos();
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+        }
+    }
+
+    // Confirmação antes de salvar
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        const confirmed = confirm('Tem certeza que deseja salvar todas as configurações?');
+        if (!confirmed) {
+            e.preventDefault();
+        }
+    });
+
+    // Salvar estado da aba ativa
+    const activeTab = localStorage.getItem('activeConfigTab') || 'site';
+    if (activeTab !== 'site') {
+        document.querySelector('.tab-button.active').classList.remove('active');
+        document.querySelector('.tab-content.active').classList.remove('active');
+        
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabIndex = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'].indexOf(activeTab);
+        if (tabIndex >= 0 && tabButtons[tabIndex]) {
+            tabButtons[tabIndex].classList.add('active');
+            document.getElementById('tab-' + activeTab).classList.add('active');
+        }
+    }
+
+    // Salvar aba ativa ao trocar
+    document.querySelectorAll('.tab-button').forEach((btn, index) => {
+        btn.addEventListener('click', function() {
+            const tabs = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'];
+            localStorage.setItem('activeConfigTab', tabs[index]);
+        });
+    });
+    
+    // Atualizar preview do favicon em tempo real
+    const faviconInput = document.getElementById('favicon');
+    const faviconPreview = document.getElementById('faviconPreview');
+    
+    if (faviconInput && faviconPreview) {
+        faviconInput.addEventListener('input', function() {
+            const newPath = this.value.trim();
+            if (newPath) {
+                faviconPreview.src = newPath;
+            }
+        });
+    }
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,335 @@
+<%- include('../partials/header', { title: isEdit ? 'Editar Usuário' : 'Novo Usuário', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1><%= isEdit ? 'Editar' : 'Novo' %> Usuário</h1>
+            <p><%= isEdit ? 'Atualize os dados do usuário' : 'Cadastre um novo usuário no sistema' %></p>
+        </div>
+        <a href="/dashboard/usuarios" class="btn btn-secondary">
+            ← Voltar
+        </a>
+    </div>
+
+    <form id="userForm" onsubmit="salvarUsuario(event)">
+        <div class="form-grid">
+            <div class="form-main">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Informações do Usuário</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="nome">Nome Completo *</label>
+                            <input 
+                                type="text" 
+                                id="nome" 
+                                name="nome" 
+                                class="form-control" 
+                                value="<%= usuario ? usuario.nome : '' %>"
+                                placeholder="Digite o nome completo..."
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">E-mail *</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="form-control" 
+                                value="<%= usuario ? usuario.email : '' %>"
+                                placeholder="usuario@exemplo.com"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="senha">Senha <%= isEdit ? '' : '*' %></label>
+                            <input 
+                                type="password" 
+                                id="senha" 
+                                name="senha" 
+                                class="form-control" 
+                                value="<%= !isEdit && usuario && usuario.senha ? usuario.senha : '' %>"
+                                placeholder="<%= isEdit ? 'Deixe em branco para manter a senha atual' : 'Digite uma senha segura' %>"
+                                <%= isEdit ? '' : 'required' %>
+                                minlength="6"
+                            >
+                            <small class="form-text">Mínimo de 6 caracteres</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmarSenha">Confirmar Senha <%= isEdit ? '' : '*' %></label>
+                            <input 
+                                type="password" 
+                                id="confirmarSenha" 
+                                name="confirmarSenha" 
+                                class="form-control" 
+                                value="<%= !isEdit && usuario && usuario.confirmarSenha ? usuario.confirmarSenha : '' %>"
+                                placeholder="Digite a senha novamente"
+                                <%= isEdit ? '' : 'required' %>
+                                minlength="6"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-sidebar">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Configurações</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="role">Perfil *</label>
+                            <select id="role" name="role" class="form-control" required>
+                                <option value="">Selecione...</option>
+                                <option value="admin" <%= usuario && usuario.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                                <option value="editor" <%= usuario && usuario.role === 'editor' ? 'selected' : '' %>>Editor</option>
+                                <option value="autor" <%= usuario && usuario.role === 'autor' ? 'selected' : '' %>>Autor</option>
+                            </select>
+                            <small class="form-text">
+                                <strong>Admin:</strong> Acesso total ao sistema<br>
+                                <strong>Editor:</strong> Criar e editar posts (não pode deletar)<br>
+                                <strong>Autor:</strong> Criar e editar posts (não pode deletar)
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input 
+                                    type="checkbox" 
+                                    id="ativo" 
+                                    name="ativo" 
+                                    <%= usuario && usuario.ativo ? 'checked' : (!isEdit ? 'checked' : '') %>
+                                >
+                                Usuário ativo
+                            </label>
+                            <small class="form-text">Desmarque para desativar o acesso</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-save"></i> <%= isEdit ? 'Atualizar' : 'Cadastrar' %> Usuário
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+        letter-spacing: -0.5px;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .btn-secondary {
+        background: #F7FAFC;
+        color: #4A5568;
+        border: 1px solid #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+        background: #EDF2F7;
+    }
+
+    .btn-block {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 20px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .card-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .card-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1A202C;
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #2D3748;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #FF6B00;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    .form-text {
+        display: block;
+        font-size: 11px;
+        color: #718096;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    .form-actions {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .content-header {
+            flex-direction: column;
+            gap: 14px;
+        }
+    }
+</style>
+
+<script>
+    async function salvarUsuario(event) {
+        event.preventDefault();
+
+        const senha = document.getElementById('senha').value;
+        const confirmarSenha = document.getElementById('confirmarSenha').value;
+
+        if (senha && senha !== confirmarSenha) {
+            alert('As senhas não coincidem!');
+            return false;
+        }
+
+        const formData = {
+            nome: document.getElementById('nome').value,
+            email: document.getElementById('email').value,
+            role: document.getElementById('role').value,
+            ativo: document.getElementById('ativo').checked
+        };
+
+        if (senha) {
+            formData.senha = senha;
+        }
+
+        try {
+            const isEdit = <%= isEdit ? 'true' : 'false' %>;
+            const userId = <%= isEdit && usuario ? usuario.id : 'null' %>;
+            
+            const url = isEdit ? `/dashboard/usuarios/${userId}` : '/dashboard/usuarios';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message || 'Usuário salvo com sucesso!');
+                window.location.href = '/dashboard/usuarios';
+            } else {
+                alert('Erro: ' + (data.error || 'Erro ao salvar usuário'));
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao salvar usuário');
+        }
+
+        return false;
+    }
+</script>
+
+<%- include('../partials/footer') %>

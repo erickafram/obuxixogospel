@@ -1,0 +1,438 @@
+<!-- Barra de Administração (apenas para usuários logados) -->
+<% if (typeof user !== 'undefined' && user) { %>
+<div class="admin-bar">
+    <div class="container">
+        <div class="admin-bar-content">
+            <div class="admin-bar-left">
+                <i class="fas fa-user-shield"></i>
+                <span>Olá, <strong><%= user.nome || user.email %></strong></span>
+            </div>
+            <div class="admin-bar-right">
+                <% if (typeof article !== 'undefined' && article && article.id) { %>
+                <a href="/dashboard/posts/editar/<%= article.id %>" class="admin-bar-btn">
+                    <i class="fas fa-edit"></i> Editar Post
+                </a>
+                <% } %>
+                <button onclick="abrirModalRedirecionamento()" class="admin-bar-btn admin-bar-btn-redirect">
+                    <i class="fas fa-external-link-alt"></i> Redirecionar
+                </button>
+                <a href="/dashboard/posts/novo" class="admin-bar-btn">
+                    <i class="fas fa-plus"></i> Novo Post
+                </a>
+                <a href="/dashboard" class="admin-bar-btn">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="/logout" class="admin-bar-btn admin-bar-btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-bar {
+        background: linear-gradient(135deg, #0669de, #0050b3);
+        color: white;
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .admin-bar-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .admin-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
+    
+    .admin-bar-left i {
+        font-size: 18px;
+    }
+    
+    .admin-bar-right {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .admin-bar-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .admin-bar-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .admin-bar-btn i {
+        font-size: 12px;
+    }
+    
+    .admin-bar-btn-logout {
+        background: rgba(239, 68, 68, 0.3);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+    
+    .admin-bar-btn-logout:hover {
+        background: rgba(239, 68, 68, 0.5);
+    }
+    
+    .admin-bar-btn-redirect {
+        background: rgba(255, 165, 0, 0.3);
+        border-color: rgba(255, 165, 0, 0.5);
+        cursor: pointer;
+    }
+    
+    .admin-bar-btn-redirect:hover {
+        background: rgba(255, 165, 0, 0.5);
+    }
+    
+    /* Modal de Redirecionamento */
+    .redirect-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .redirect-modal.active {
+        display: flex;
+    }
+    
+    .redirect-modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .redirect-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .redirect-modal-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 20px;
+    }
+    
+    .redirect-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    
+    .redirect-modal-close:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .redirect-modal-body {
+        margin-bottom: 20px;
+    }
+    
+    .redirect-form-group {
+        margin-bottom: 20px;
+    }
+    
+    .redirect-form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .redirect-form-group input,
+    .redirect-form-group select,
+    .redirect-form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    
+    .redirect-form-group input:focus,
+    .redirect-form-group select:focus,
+    .redirect-form-group textarea:focus {
+        outline: none;
+        border-color: #0050b3;
+    }
+    
+    .redirect-form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+    
+    .redirect-form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 12px;
+    }
+    
+    .redirect-url-atual {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 13px;
+        color: #333;
+        word-break: break-all;
+    }
+    
+    .redirect-modal-footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .redirect-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .redirect-btn-primary {
+        background: #0050b3;
+        color: white;
+    }
+    
+    .redirect-btn-primary:hover {
+        background: #490092;
+    }
+    
+    .redirect-btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+    }
+    
+    .redirect-btn-secondary:hover {
+        background: #d0d0d0;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-bar-content {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .admin-bar-left,
+        .admin-bar-right {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .admin-bar-btn {
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        
+        .redirect-modal-content {
+            padding: 20px;
+        }
+        
+        .redirect-modal-footer {
+            flex-direction: column;
+        }
+        
+        .redirect-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Modal de Redirecionamento -->
+<div id="redirectModal" class="redirect-modal">
+    <div class="redirect-modal-content">
+        <div class="redirect-modal-header">
+            <h3><i class="fas fa-external-link-alt"></i> Criar Redirecionamento</h3>
+            <button class="redirect-modal-close" onclick="fecharModalRedirecionamento()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="redirect-modal-body">
+            <form id="redirectForm">
+                <div class="redirect-form-group">
+                    <label for="urlAntiga">URL Antiga (De): *</label>
+                    <input type="text" 
+                           id="urlAntiga" 
+                           name="urlAntiga" 
+                           <% if (typeof article !== 'undefined' && article && article.id) { %>
+                           value="/<%= article.categoria %>/<%= article.urlAmigavel %>"
+                           <% } else { %>
+                           placeholder="/noticias/url-antiga ou URL completa"
+                           <% } %>
+                           required>
+                    <small>Digite a URL que deve ser redirecionada (ex: /noticias/post-antigo)</small>
+                </div>
+                
+                <div class="redirect-form-group">
+                    <label for="urlNova">URL Nova (Para): *</label>
+                    <input type="text" 
+                           id="urlNova" 
+                           name="urlNova" 
+                           placeholder="https://www.obuxixogospel.com.br/noticias/novo-post"
+                           required>
+                    <small>Cole a URL completa de destino</small>
+                </div>
+                
+                <div class="redirect-form-group">
+                    <label for="tipoRedirecionamento">Tipo de Redirecionamento:</label>
+                    <select id="tipoRedirecionamento" name="tipoRedirecionamento">
+                        <option value="301">301 - Permanente (Recomendado para SEO)</option>
+                        <option value="302">302 - Temporário</option>
+                        <option value="307">307 - Temporário (mantém método HTTP)</option>
+                    </select>
+                    <small>Use 301 para redirecionamentos permanentes</small>
+                </div>
+                
+                <div class="redirect-form-group">
+                    <label for="descricao">Descrição (opcional):</label>
+                    <textarea id="descricao" 
+                              name="descricao" 
+                              placeholder="Ex: Post duplicado, conteúdo movido, página 404, etc."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="redirect-modal-footer">
+            <button class="redirect-btn redirect-btn-secondary" onclick="fecharModalRedirecionamento()">
+                Cancelar
+            </button>
+            <button class="redirect-btn redirect-btn-primary" onclick="salvarRedirecionamento()">
+                <i class="fas fa-save"></i> Criar Redirecionamento
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalRedirecionamento() {
+    const modal = document.getElementById('redirectModal');
+    modal.classList.add('active');
+    
+    // Se não estiver em um artigo, preencher com a URL atual
+    <% if (typeof article === 'undefined' || !article || !article.id) { %>
+    const urlAntigaInput = document.getElementById('urlAntiga');
+    if (!urlAntigaInput.value) {
+        urlAntigaInput.value = window.location.pathname;
+    }
+    <% } %>
+}
+
+function fecharModalRedirecionamento() {
+    document.getElementById('redirectModal').classList.remove('active');
+    document.getElementById('redirectForm').reset();
+}
+
+async function salvarRedirecionamento() {
+    const urlAntiga = document.getElementById('urlAntiga').value.trim();
+    const urlNova = document.getElementById('urlNova').value.trim();
+    const tipoRedirecionamento = document.getElementById('tipoRedirecionamento').value;
+    const descricao = document.getElementById('descricao').value.trim();
+    
+    if (!urlAntiga) {
+        alert('Por favor, informe a URL antiga!');
+        return;
+    }
+    
+    if (!urlNova) {
+        alert('Por favor, informe a URL de destino!');
+        return;
+    }
+    
+    // Validar URL de destino
+    try {
+        new URL(urlNova);
+    } catch (e) {
+        alert('URL de destino inválida! Use o formato completo: https://...');
+        return;
+    }
+    
+    const dados = {
+        urlAntiga: urlAntiga,
+        urlNova: urlNova,
+        tipoRedirecionamento: tipoRedirecionamento,
+        descricao: descricao || `Redirecionamento criado via admin-bar`
+    };
+    
+    try {
+        const response = await fetch('/dashboard/configuracoes/redirecionamentos/criar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Redirecionamento criado com sucesso!\n\nQuando alguém acessar:\n' + urlAntiga + '\n\nSerá redirecionado para:\n' + urlNova);
+            fecharModalRedirecionamento();
+        } else {
+            alert('❌ Erro: ' + (result.message || 'Não foi possível criar o redirecionamento'));
+        }
+    } catch (error) {
+        console.error('Erro ao criar redirecionamento:', error);
+        alert('❌ Erro ao criar redirecionamento. Tente novamente.');
+    }
+}
+
+// Fechar modal ao clicar fora
+document.getElementById('redirectModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalRedirecionamento();
+    }
+});
+</script>
+<% } %>

@@ -1,0 +1,454 @@
+<%- include('../partials/header', { title: 'Configurações da IA', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>🤖 Configurações da IA</h1>
+            <p>Gerencie o assistente de inteligência artificial</p>
+        </div>
+        <a href="/dashboard/posts" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> Configurações atualizadas com sucesso!
+    </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Configurações do Together AI</h2>
+        </div>
+        <div class="card-body">
+            <form action="/dashboard/ia/configuracoes" method="POST">
+                <%
+                const configMap = {};
+                if (configs && configs.length > 0) {
+                    configs.forEach(c => {
+                        configMap[c.chave] = c.valor;
+                    });
+                }
+                %>
+
+                <!-- Status da IA -->
+                <div class="status-toggle">
+                    <div class="status-info">
+                        <div class="status-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div>
+                            <label class="status-label">Status do Assistente de IA</label>
+                            <p class="status-description">Ative ou desative o assistente para criar e corrigir matérias</p>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="ia_ativa" value="true" <%= configMap.ia_ativa === 'true' ? 'checked' : '' %>>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label"><%= configMap.ia_ativa === 'true' ? 'Ativo' : 'Inativo' %></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="ia_api_key">
+                        <i class="fas fa-key"></i> API Key
+                    </label>
+                    <input 
+                        type="text" 
+                        name="ia_api_key" 
+                        id="ia_api_key" 
+                        class="form-control" 
+                        value="<%= configMap.ia_api_key || '' %>"
+                        required
+                    >
+                    <small class="form-text">Chave de API do Together AI</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ia_api_url">
+                        <i class="fas fa-link"></i> URL da API
+                    </label>
+                    <input 
+                        type="url" 
+                        name="ia_api_url" 
+                        id="ia_api_url" 
+                        class="form-control" 
+                        value="<%= configMap.ia_api_url || 'https://api.together.xyz/v1/chat/completions' %>"
+                        required
+                    >
+                    <small class="form-text">Endpoint da API do Together AI</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ia_model">
+                        <i class="fas fa-brain"></i> Modelo de IA
+                    </label>
+                    <select name="ia_model" id="ia_model" class="form-control" required>
+                        <option value="meta-llama/Llama-3-70b-chat-hf" <%= configMap.ia_model === 'meta-llama/Llama-3-70b-chat-hf' ? 'selected' : '' %>>
+                            Llama 3 70B (Recomendado)
+                        </option>
+                        <option value="meta-llama/Llama-3-8b-chat-hf" <%= configMap.ia_model === 'meta-llama/Llama-3-8b-chat-hf' ? 'selected' : '' %>>
+                            Llama 3 8B (Mais rápido)
+                        </option>
+                        <option value="mistralai/Mixtral-8x7B-Instruct-v0.1" <%= configMap.ia_model === 'mistralai/Mixtral-8x7B-Instruct-v0.1' ? 'selected' : '' %>>
+                            Mixtral 8x7B
+                        </option>
+                    </select>
+                    <small class="form-text">Modelo de linguagem utilizado</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="testarIA()">
+                        <i class="fas fa-vial"></i> Testar IA
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>📚 Funcionalidades da IA</h2>
+        </div>
+        <div class="card-body">
+            <div class="features-grid">
+                <div class="feature-item">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>Criar Matérias</h3>
+                    <p>Gere matérias completas a partir de um tema</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-spell-check"></i>
+                    <h3>Corrigir Textos</h3>
+                    <p>Corrija erros de português automaticamente</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-heading"></i>
+                    <h3>Sugerir Títulos</h3>
+                    <p>Receba sugestões de títulos atrativos</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-align-left"></i>
+                    <h3>Gerar Descrições</h3>
+                    <p>Crie descrições curtas automaticamente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+    }
+
+    .content-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .content-header p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #FF6B00;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #E65C00;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        padding: 20px;
+        border-bottom: 1px solid #E0E0E0;
+        background: #F9FAFB;
+    }
+
+    .card-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 2px solid #E0E0E0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #FF6B00;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .alert {
+        padding: 14px 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: #D4EDDA;
+        color: #155724;
+        border: 1px solid #C3E6CB;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .feature-item {
+        text-align: center;
+        padding: 20px;
+        border: 2px solid #E0E0E0;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .feature-item:hover {
+        border-color: #FF6B00;
+        transform: translateY(-2px);
+    }
+
+    .feature-item i {
+        font-size: 32px;
+        color: #FF6B00;
+        margin-bottom: 12px;
+    }
+
+    .feature-item h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .feature-item p {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+
+    .mt-4 {
+        margin-top: 24px;
+    }
+
+    /* Toggle Switch Moderno */
+    .status-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+        border: 2px solid #BAE6FD;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .status-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .status-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .status-label {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0C4A6E;
+        margin: 0;
+        display: block;
+    }
+
+    .status-description {
+        font-size: 13px;
+        color: #0369A1;
+        margin: 4px 0 0 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .toggle-switch input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: relative;
+        width: 56px;
+        height: 28px;
+        background: #CBD5E1;
+        border-radius: 34px;
+        transition: all 0.3s;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .toggle-slider::before {
+        content: "";
+        position: absolute;
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        top: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+        transform: translateX(28px);
+    }
+
+    .toggle-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1F2937;
+        min-width: 60px;
+    }
+
+    .toggle-switch input:checked ~ .toggle-label {
+        color: #059669;
+    }
+
+    /* Melhorias nos alertas */
+    .alert-success {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+        border: 2px solid #6EE7B7;
+        color: #065F46;
+    }
+
+    .alert-success i {
+        font-size: 20px;
+        color: #059669;
+    }
+</style>
+
+<script>
+    async function testarIA() {
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
+
+        try {
+            const response = await fetch('/api/ia/status');
+            const data = await response.json();
+
+            if (data.ativa) {
+                alert('✅ IA está ativa e funcionando!');
+            } else {
+                alert('⚠️ IA está desativada. Ative nas configurações acima.');
+            }
+        } catch (error) {
+            alert('❌ Erro ao testar IA: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

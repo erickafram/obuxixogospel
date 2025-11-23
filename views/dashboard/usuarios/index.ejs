@@ -1,0 +1,330 @@
+<%- include('../partials/header', { title: 'Usuários', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Usuários</h1>
+            <p>Gerencie os usuários do sistema</p>
+        </div>
+        <a href="/dashboard/usuarios/novo" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Usuário
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="search-filter">
+                <input type="text" id="searchUsuarios" placeholder="Buscar usuários..." class="search-input">
+                <select id="filterPerfil" class="filter-select">
+                    <option value="">Todos os perfis</option>
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="autor">Autor</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th>Status</th>
+                        <th>Último Login</th>
+                        <th>Cadastro</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (usuarios && usuarios.length > 0) { %>
+                        <% usuarios.forEach(usuario => { %>
+                        <tr>
+                            <td><%= usuario.nome %></td>
+                            <td><%= usuario.email %></td>
+                            <td>
+                                <% if (usuario.role === 'admin') { %>
+                                <span class="badge badge-danger">Admin</span>
+                                <% } else if (usuario.role === 'editor') { %>
+                                <span class="badge badge-warning">Editor</span>
+                                <% } else { %>
+                                <span class="badge badge-info">Autor</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (usuario.ativo) { %>
+                                <span class="badge badge-success">Ativo</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Inativo</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (usuario.ultimoLogin) { %>
+                                <%= new Date(usuario.ultimoLogin).toLocaleDateString('pt-BR') %>
+                                <% } else { %>
+                                Nunca
+                                <% } %>
+                            </td>
+                            <td><%= new Date(usuario.createdAt).toLocaleDateString('pt-BR') %></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/dashboard/usuarios/<%= usuario.id %>/editar" class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="deletarUsuario(<%= usuario.id %>, '<%= usuario.nome %>')" class="btn-icon btn-danger" title="Deletar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">Nenhum usuário encontrado</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+        letter-spacing: -0.5px;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-input, .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+    }
+
+    .search-input:focus, .filter-select:focus {
+        outline: none;
+        border-color: #FF6B00;
+        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
+    }
+
+    .search-input {
+        flex: 1;
+    }
+
+    .filter-select {
+        min-width: 180px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 11px;
+        color: #4A5568;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: #F7FAFC;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .data-table tr:hover {
+        background: #F7FAFC;
+    }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-success { background: #D4EDDA; color: #155724; }
+    .badge-secondary { background: #E2E3E5; color: #383D41; }
+    .badge-warning { background: #FFF3CD; color: #856404; }
+    .badge-danger { background: #FFE5E5; color: #C1121F; }
+    .badge-info { background: #E3F2FD; color: #1F4788; }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: #F7FAFC;
+        color: #718096;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    .btn-icon:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+        transform: scale(1.05);
+    }
+
+    .btn-icon.btn-danger:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .text-center {
+        text-align: center;
+        padding: 32px !important;
+        color: #9CA3AF;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1024px) {
+        .content-header {
+            flex-direction: column;
+            gap: 14px;
+        }
+        .search-filter {
+            flex-direction: column;
+        }
+        .filter-select {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    // Filtros
+    document.getElementById('searchUsuarios').addEventListener('input', filtrarUsuarios);
+    document.getElementById('filterPerfil').addEventListener('change', filtrarUsuarios);
+
+    function filtrarUsuarios() {
+        const searchTerm = document.getElementById('searchUsuarios').value.toLowerCase();
+        const filterPerfil = document.getElementById('filterPerfil').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        
+        rows.forEach(row => {
+            const nome = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
+            const email = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+            const perfil = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+            
+            const matchSearch = nome.includes(searchTerm) || email.includes(searchTerm);
+            const matchPerfil = !filterPerfil || perfil.includes(filterPerfil);
+            
+            if (matchSearch && matchPerfil) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function deletarUsuario(id, nome) {
+        if (confirm(`Tem certeza que deseja deletar o usuário "${nome}"?`)) {
+            fetch(`/dashboard/usuarios/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao deletar usuário');
+                }
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

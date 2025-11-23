@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Preconnect para recursos externos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.instagram.com">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
+    <!-- SEO Meta Tags -->
+    <title>
+        <%= article.titulo %> | Obuxixo Gospel
+    </title>
+    <meta name="description" content="<%= article.descricao %>">
+    <meta name="keywords"
+        content="<%= article.titulo %>, notícias gospel, <%= categoryNames[article.categoria] || article.categoria %>, <%= article.autor %>">
+    <meta name="author" content="<%= article.autor %>">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="googlebot" content="index, follow">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
+
+    <!-- AMP HTML Link (se AMP estiver habilitado) -->
+    <% if (typeof ampEnabled !=='undefined' && ampEnabled) { %>
+        <link rel="amphtml"
+            href="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>/amp">
+        <% } %>
+
+            <!-- Open Graph / Facebook / WhatsApp -->
+            <meta property="og:type" content="article">
+            <meta property="og:url"
+                content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
+            <meta property="og:title" content="<%= article.titulo %>">
+            <meta property="og:description" content="<%= article.descricao %>">
+            <meta property="og:image"
+                content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta property="og:image:secure_url"
+                content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+            <meta property="og:site_name" content="Obuxixo Gospel">
+            <meta property="og:locale" content="pt_BR">
+            <meta property="article:published_time" content="<%= new Date(article.dataPublicacao).toISOString() %>">
+            <meta property="article:modified_time" content="<%= new Date(article.updatedAt).toISOString() %>">
+            <meta property="article:author" content="<%= article.autor %>">
+            <meta property="article:section" content="<%= categoryNames[article.categoria] || article.categoria %>">
+
+            <!-- Google News Meta Tags -->
+            <meta name="news_keywords"
+                content="gospel, <%= categoryNames[article.categoria] || article.categoria %>, <%= article.titulo %>">
+            <meta name="syndication-source"
+                content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
+            <meta name="original-source"
+                content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
+            <meta name="date" content="<%= new Date(article.dataPublicacao).toISOString() %>">
+
+            <!-- Twitter Card -->
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:url"
+                content="https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>">
+            <meta name="twitter:title" content="<%= article.titulo %>">
+            <meta name="twitter:description" content="<%= article.descricao %>">
+            <meta name="twitter:image"
+                content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta name="twitter:site" content="@obuxixogospel">
+            <meta name="twitter:creator" content="@obuxixogospel">
+
+            <!-- WhatsApp Optimization -->
+            <meta property="og:image:alt" content="<%= article.titulo %>">
+            <meta property="og:image:type" content="image/jpeg">
+
+            <!-- Additional Social Media Meta Tags -->
+            <meta name="thumbnail" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta itemprop="image" content="<%= article.imagem.startsWith('http') ? article.imagem : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+            <meta itemprop="name" content="<%= article.titulo %>">
+            <meta itemprop="description" content="<%= article.descricao %>">
+
+            <!-- Favicon e Icons para Google News -->
+            <link rel="icon" type="image/png" sizes="512x512" href="https://www.obuxixogospel.com.br/images/logo.png">
+            <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
+            <link rel="alternate icon" href="/images/favicon.svg">
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.obuxixogospel.com.br/images/logo.png">
+            <link rel="shortcut icon" href="https://www.obuxixogospel.com.br/images/logo.png">
+            
+            <!-- Open Graph Image (para Google News) -->
+            <meta property="og:logo" content="https://www.obuxixogospel.com.br/images/logo.png">
+            <link rel="image_src" href="https://www.obuxixogospel.com.br/images/logo.png">
+
+            <!-- Performance -->
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+            <link
+                href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=Montserrat:wght@500;600;700&display=swap"
+                rel="stylesheet">
+
+            <!-- Stylesheets -->
+            <link rel="stylesheet" href="/css/style.css?v=<%= appVersion %>">
+            <link rel="stylesheet" href="/css/responsive.css?v=<%= appVersion %>">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+            <!-- Schema.org JSON-LD for NewsArticle - Google News Optimized -->
+            <script type="application/ld+json">
+    <%
+        // Função para decodificar entidades HTML
+        function decodeHTMLEntities(str) {
+            if (!str) return '';
+            return str
+                .replace(/&quot;/g, '"')
+                .replace(/&#34;/g, '"')
+                .replace(/&apos;/g, "'")
+                .replace(/&#39;/g, "'")
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&');
+        }
+        
+        // Função para escapar JSON corretamente
+        function escapeJSON(str) {
+            if (!str) return '';
+            // Primeiro decodifica entidades HTML, depois escapa para JSON
+            str = decodeHTMLEntities(str);
+            return str
+                .replace(/\\/g, '\\\\')
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/\t/g, '\\t')
+                .replace(/\f/g, '\\f');
+        }
+        
+        const imageUrl = article.imagem.startsWith('http') 
+            ? article.imagem 
+            : 'https://www.obuxixogospel.com.br' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem);
+        
+        const articleBodyText = article.conteudo 
+            ? escapeJSON(article.conteudo.replace(/<[^>]*>/g, '').substring(0, 500)) + '...'
+            : '';
+    %>
+    {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": "<%- escapeJSON(article.titulo) %>",
+        "alternativeHeadline": "<%- escapeJSON(article.descricao) %>",
+        "description": "<%- escapeJSON(article.descricao) %>",
+        "image": {
+            "@type": "ImageObject",
+            "url": "<%= imageUrl %>",
+            "width": 1200,
+            "height": 630,
+            "caption": "<%- escapeJSON(article.titulo) %>"
+        },
+        "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
+        "dateModified": "<%= new Date(article.updatedAt).toISOString() %>",
+        "dateCreated": "<%= new Date(article.createdAt || article.dataPublicacao).toISOString() %>",
+        "author": {
+            "@type": "Person",
+            "name": "<%- escapeJSON(article.autor) %>",
+            "url": "https://www.obuxixogospel.com.br/autor/<%= article.autor.toLowerCase().replace(/\s+/g, '-') %>"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Obuxixo Gospel",
+            "url": "https://www.obuxixogospel.com.br",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.obuxixogospel.com.br/images/logo.png",
+                "width": 600,
+                "height": 60
+            },
+            "sameAs": [
+                "https://www.facebook.com/obuxixogospel",
+                "https://www.instagram.com/obuxixogospel",
+                "https://twitter.com/obuxixogospel"
+            ]
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>"
+        },
+        "url": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>",
+        "articleSection": "<%- escapeJSON(categoryNames[article.categoria] || article.categoria) %>",
+        "articleBody": "<%- articleBodyText %>",
+        "wordCount": <%= article.conteudo ? article.conteudo.replace(/<[^>]*>/g, '').split(/\s+/).length : 0 %>,
+        "inLanguage": "pt-BR",
+        "copyrightYear": <%= new Date(article.dataPublicacao).getFullYear() %>,
+        "copyrightHolder": {
+            "@type": "Organization",
+            "name": "Obuxixo Gospel"
+        },
+        "isAccessibleForFree": true,
+        "isPartOf": {
+            "@type": "WebSite",
+            "name": "Obuxixo Gospel",
+            "url": "https://www.obuxixogospel.com.br"
+        },
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".article-title", ".article-description", ".article-content"]
+        }
+    }
+    </script>
+
+            <!-- Breadcrumb Schema -->
+            <script type="application/ld+json">
+    <%
+        function escapeBreadcrumbJSON(str) {
+            if (!str) return '';
+            return str
+                .replace(/\\/g, '\\\\')
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, ' ')
+                .replace(/\r/g, '')
+                .replace(/\t/g, ' ');
+        }
+    %>
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Início",
+                "item": "https://www.obuxixogospel.com.br"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "<%- escapeBreadcrumbJSON(categoryNames[article.categoria] || article.categoria) %>",
+                "item": "https://www.obuxixogospel.com.br/categoria/<%= article.categoria %>"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "<%- escapeBreadcrumbJSON(article.titulo) %>",
+                "item": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>"
+            }
+        ]
+    }
+    </script>
+
+            <!-- Organization Schema -->
+            <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Obuxixo Gospel",
+        "url": "https://www.obuxixogospel.com.br",
+        "logo": "https://www.obuxixogospel.com.br/images/logo.png",
+        "description": "Portal de notícias gospel com as últimas novidades do mundo cristão",
+        "sameAs": [
+            "https://www.facebook.com/obuxixogospel",
+            "https://www.instagram.com/obuxixogospel",
+            "https://twitter.com/obuxixogospel"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Service",
+            "email": "contato@obuxixogospel.com.br"
+        }
+    }
+    </script>
+
+            <!-- Google Analytics -->
+            <% if (typeof analyticsId !=='undefined' && analyticsId) { %>
+                <!-- Google tag (gtag.js) -->
+                <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
+                <script>
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag() { dataLayer.push(arguments); }
+                    gtag('js', new Date());
+                    gtag('config', '<%= analyticsId %>');
+                </script>
+                <% } %>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div class="container">
+                <button class="menu-hamburger" id="menuToggle" aria-label="Abrir menu de navegação">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <circle cx="3" cy="3" r="1.5" fill="currentColor" />
+                        <circle cx="10" cy="3" r="1.5" fill="currentColor" />
+                        <circle cx="17" cy="3" r="1.5" fill="currentColor" />
+                        <circle cx="3" cy="10" r="1.5" fill="currentColor" />
+                        <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+                        <circle cx="17" cy="10" r="1.5" fill="currentColor" />
+                        <circle cx="3" cy="17" r="1.5" fill="currentColor" />
+                        <circle cx="10" cy="17" r="1.5" fill="currentColor" />
+                        <circle cx="17" cy="17" r="1.5" fill="currentColor" />
+                    </svg>
+                    <span>Menu</span>
+                </button>
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">Obuxixo Gospel</span>
+                        <span class="logo-badge">10<br><small>anos</small></span>
+                    </a>
+                </div>
+                <div class="header-actions">
+                    <div class="conta-globo-wrapper">
+                        <a href="/login" class="login-btn" aria-label="Fazer login">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="search-container">
+                        <div class="busca-wrapper">
+                            <button class="search-toggle" id="searchToggle" aria-label="Abrir busca">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <form action="/busca" method="GET" class="search-form" id="searchForm">
+                            <button type="submit" class="search-btn-inline">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                    <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" fill="none" />
+                                    <path d="M12 12L17 17" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </button>
+                            <input type="text" name="q" placeholder="Busque no Obuxixo Gospel"
+                                class="search-input-inline">
+                            <button type="button" class="search-close-inline" id="searchCloseInline">
+                                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                                    <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu de Páginas -->
+        <div class="pages-menu">
+            <div class="container">
+                <nav class="pages-nav">
+                    <a href="/" class="page-link home-link">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                    </a>
+                    <% if (typeof pages !== 'undefined' && pages && pages.length > 0) { %>
+                        <% pages.filter(p => p.exibirMenu && p.ativo).sort((a, b) => a.ordem - b.ordem).forEach((page) => { %>
+                            <a href="/pagina/<%= page.slug %>" 
+                               class="page-link" 
+                               title="<%= page.descricao || page.titulo %>">
+                                <span><%= page.titulo %></span>
+                            </a>
+                        <% }); %>
+                    <% } %>
+                </nav>
+            </div>
+        </div>
+
+    </header>
+
+    <!-- Menu Mobile -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="close-menu" id="closeMenu" aria-label="Fechar menu">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+        <ul class="mobile-menu-links">
+            <% if (typeof categories !=='undefined' && categories.length> 0) { %>
+                <% categories.forEach(cat=> { %>
+                    <li>
+                        <a href="/categoria/<%= cat.slug %>">
+                            <%= cat.nome %>
+                        </a>
+                    </li>
+                    <% }); %>
+                        <% } else { %>
+                            <li><a href="/">Início</a></li>
+                            <% } %>
+        </ul>
+    </div>
+    <div class="mobile-menu-overlay" id="menuOverlay"></div>
+
+    <script>
+        // Header scroll effect
+        const headerTop = document.querySelector('.header-top');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll > 100) {
+                headerTop.classList.add('scrolled');
+            } else {
+                headerTop.classList.remove('scrolled');
+            }
+
+            lastScroll = currentScroll;
+        });
+    </script>

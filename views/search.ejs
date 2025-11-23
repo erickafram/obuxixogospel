@@ -1,0 +1,73 @@
+<%- include('partials/header') %>
+
+<main class="main-content search-page">
+    <div class="container">
+        <% 
+        // Criar mapa de nomes de categorias a partir das categorias carregadas
+        const categoryNames = {};
+        if (typeof categories !== 'undefined' && categories) {
+            categories.forEach(cat => {
+                categoryNames[cat.slug] = cat.nome;
+            });
+        }
+        %>
+        <div class="search-header">
+            <h1>Resultados da busca por: "<%= query %>"</h1>
+        </div>
+
+        <% if (articles && articles.length > 0) { %>
+        <div class="news-grid">
+            <% articles.forEach(article => { %>
+            <article class="news-card">
+                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
+                    <div class="news-image">
+                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>" loading="lazy" width="680" height="400">
+                        <span class="news-category <%= article.categoria %>">
+                            <%= categoryNames[article.categoria] || article.categoria %>
+                        </span>
+                    </div>
+                    <div class="news-content">
+                        <h3 class="news-title"><%= article.titulo %></h3>
+                        <p class="news-description"><%= article.descricao %></p>
+                        <div class="news-meta">
+                            <span class="news-date">
+                                <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </article>
+            <% }); %>
+        </div>
+
+        <!-- Paginação -->
+        <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="/busca?q=<%= query %>&page=<%= currentPage - 1 %>" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+            <% } %>
+            
+            <span class="pagination-info">
+                Página <%= currentPage %> de <%= totalPages %>
+            </span>
+            
+            <% if (currentPage < totalPages) { %>
+                <a href="/busca?q=<%= query %>&page=<%= currentPage + 1 %>" class="pagination-btn">
+                    Próxima <i class="fas fa-chevron-right"></i>
+                </a>
+            <% } %>
+        </div>
+        <% } %>
+        <% } else { %>
+        <div class="no-results">
+            <i class="fas fa-search" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
+            <p>Nenhum resultado encontrado para "<%= query %>"</p>
+            <p>Tente usar palavras-chave diferentes ou mais genéricas.</p>
+        </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

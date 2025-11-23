@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
+    <link rel="alternate icon" href="/images/favicon.svg">
+    <link rel="apple-touch-icon" href="/images/favicon.svg">
+    
+    <!-- SEO Meta Tags (do banco de dados) -->
+    <title><%= typeof seo !== 'undefined' && seo.title ? seo.title : (typeof seo !== 'undefined' && seo.site_title ? seo.site_title : 'Obuxixo Gospel - Portal de Notícias Gospel e Entretenimento Cristão') %></title>
+    <meta name="description" content="<%= typeof seo !== 'undefined' && seo.description ? seo.description : (typeof seo !== 'undefined' && seo.site_description ? seo.site_description : 'Portal de notícias gospel, música cristã, eventos evangélicos, testemunhos e conteúdo edificante para toda família cristã.') %>">
+    <meta name="keywords" content="<%= typeof seo !== 'undefined' && seo.keywords ? seo.keywords : (typeof seo !== 'undefined' && seo.site_keywords ? seo.site_keywords : 'notícias gospel, música gospel, eventos evangélicos, testemunhos, estudos bíblicos, louvor, adoração, igreja, cristão, evangélico') %>">
+    <meta name="author" content="Obuxixo Gospel">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="<%= typeof seo !== 'undefined' && seo.type ? seo.type : 'website' %>">
+    <meta property="og:url" content="<%= typeof seo !== 'undefined' && seo.url ? seo.url : 'https://www.obuxixogospel.com.br/' %>">
+    <meta property="og:title" content="<%= typeof seo !== 'undefined' && seo.title ? seo.title : (typeof seo !== 'undefined' && seo.site_title ? seo.site_title : 'Obuxixo Gospel - Portal de Notícias Gospel') %>">
+    <meta property="og:description" content="<%= typeof seo !== 'undefined' && seo.description ? seo.description : (typeof seo !== 'undefined' && seo.site_description ? seo.site_description : 'Portal de notícias gospel com as últimas novidades sobre música cristã, eventos, ministérios e estudos bíblicos.') %>">
+    <meta property="og:image" content="<%= typeof seo !== 'undefined' && seo.image ? seo.image : 'https://www.obuxixogospel.com.br/images/og-image.jpg' %>">
+    <meta property="og:locale" content="pt_BR">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="<%= typeof seo !== 'undefined' && seo.url ? seo.url : 'https://www.obuxixogospel.com.br/' %>">
+    <meta name="twitter:title" content="<%= typeof seo !== 'undefined' && seo.title ? seo.title : (typeof seo !== 'undefined' && seo.site_title ? seo.site_title : 'Obuxixo Gospel - Portal de Notícias Gospel') %>">
+    <meta name="twitter:description" content="<%= typeof seo !== 'undefined' && seo.description ? seo.description : (typeof seo !== 'undefined' && seo.site_description ? seo.site_description : 'Portal de notícias gospel com as últimas novidades sobre música cristã, eventos, ministérios e estudos bíblicos.') %>">
+    <meta name="twitter:image" content="<%= typeof seo !== 'undefined' && seo.image ? seo.image : 'https://www.obuxixogospel.com.br/images/twitter-image.jpg' %>">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="<%= typeof seo !== 'undefined' && seo.url ? seo.url : 'https://www.obuxixogospel.com.br/' %>">
+    
+    <!-- Performance - Preconnect to required origins -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.instagram.com">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    
+    <!-- Preload Critical CSS -->
+    <link rel="preload" href="/css/style.css?v=<%= appVersion %>" as="style">
+    <link rel="preload" href="/css/responsive.css?v=<%= appVersion %>" as="style">
+    
+    <!-- Critical Stylesheets -->
+    <link rel="stylesheet" href="/css/style.css?v=<%= appVersion %>">
+    <link rel="stylesheet" href="/css/responsive.css?v=<%= appVersion %>">
+    
+    <!-- Defer non-critical CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "NewsMediaOrganization",
+        "name": "Obuxixo Gospel",
+        "url": "https://www.obuxixogospel.com.br",
+        "logo": "https://www.obuxixogospel.com.br/images/logo.png",
+        "description": "Portal de notícias gospel com cobertura completa do universo cristão",
+        "sameAs": [
+            "https://facebook.com/obuxixogospel",
+            "https://instagram.com/obuxixogospel",
+            "https://twitter.com/obuxixogospel"
+        ],
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://www.obuxixogospel.com.br/busca?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    
+    <% if (typeof schemaData !== 'undefined' && schemaData) { %>
+    <script type="application/ld+json">
+    <%- JSON.stringify(schemaData) %>
+    </script>
+    <% } %>
+    
+    <!-- Google Analytics -->
+    <% if (typeof analyticsId !== 'undefined' && analyticsId) { %>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '<%= analyticsId %>');
+    </script>
+    <% } %>
+</head>
+<body>
+    <%- include('admin-bar') %>
+    
+    <header class="header">
+        <div class="header-top">
+            <div class="container">
+                <button class="menu-hamburger" id="menuToggle" aria-label="Abrir menu de navegação">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <circle cx="3" cy="3" r="1.5" fill="currentColor"/>
+                        <circle cx="10" cy="3" r="1.5" fill="currentColor"/>
+                        <circle cx="17" cy="3" r="1.5" fill="currentColor"/>
+                        <circle cx="3" cy="10" r="1.5" fill="currentColor"/>
+                        <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                        <circle cx="17" cy="10" r="1.5" fill="currentColor"/>
+                        <circle cx="3" cy="17" r="1.5" fill="currentColor"/>
+                        <circle cx="10" cy="17" r="1.5" fill="currentColor"/>
+                        <circle cx="17" cy="17" r="1.5" fill="currentColor"/>
+                    </svg>
+                    <span>Menu</span>
+                </button>
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">Obuxixo Gospel</span>
+                        <span class="logo-badge">10<br><small>anos</small></span>
+                    </a>
+                </div>
+                <div class="header-actions">
+                    <div class="conta-globo-wrapper">
+                        <a href="/login" class="login-btn" aria-label="Fazer login">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="search-container">
+                        <div class="busca-wrapper">
+                            <button class="search-toggle" id="searchToggle" aria-label="Abrir busca">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <form action="/busca" method="GET" class="search-form" id="searchForm">
+                            <button type="submit" class="search-btn-inline">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                    <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <path d="M12 12L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                            <input type="text" name="q" placeholder="Busque no Obuxixo Gospel" class="search-input-inline" aria-label="Campo de busca">
+                            <button type="button" class="search-close-inline" id="searchCloseInline" aria-label="Fechar busca">
+                                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                    <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu de Páginas -->
+        <div class="pages-menu">
+            <div class="container">
+                <nav class="pages-nav">
+                    <a href="/" class="page-link home-link">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                    </a>
+                    <% if (typeof pages !== 'undefined' && pages && pages.length > 0) { %>
+                        <% pages.filter(p => p.exibirMenu && p.ativo).sort((a, b) => a.ordem - b.ordem).forEach((page, index) => { 
+                            const colors = [
+                                { bg: '#FF6B6B', hover: '#FF5252' }, // Vermelho
+                                { bg: '#4ECDC4', hover: '#45B7AF' }, // Turquesa
+                                { bg: '#FFD93D', hover: '#FFC107' }, // Amarelo
+                                { bg: '#6C5CE7', hover: '#5F4FD1' }, // Roxo
+                                { bg: '#00B894', hover: '#00A884' }, // Verde
+                                { bg: '#FD79A8', hover: '#FC5C9C' }, // Rosa
+                                { bg: '#74B9FF', hover: '#5FA8FF' }, // Azul claro
+                                { bg: '#A29BFE', hover: '#8B83F8' }  // Lavanda
+                            ];
+                            const color = colors[index % colors.length];
+                        %>
+                            <a href="/pagina/<%= page.slug %>" 
+                               class="page-link" 
+                               style="--page-bg: <%= color.bg %>; --page-hover: <%= color.hover %>;"
+                               title="<%= page.descricao || page.titulo %>">
+                                <span><%= page.titulo %></span>
+                            </a>
+                        <% }); %>
+                    <% } %>
+                </nav>
+            </div>
+        </div>
+
+    </header>
+
+    <!-- Menu Mobile -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="close-menu" id="closeMenu" aria-label="Fechar menu">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        <ul class="mobile-menu-links">
+            <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                <% categories.forEach(cat => { %>
+                    <li>
+                        <a href="/categoria/<%= cat.slug %>">
+                            <%= cat.nome %>
+                        </a>
+                    </li>
+                <% }); %>
+            <% } else { %>
+                <li><a href="/">Início</a></li>
+            <% } %>
+        </ul>
+    </div>
+    <div class="mobile-menu-overlay" id="menuOverlay"></div>
+
+    <script>
+        // Header scroll effect
+        const headerTop = document.querySelector('.header-top');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll > 100) {
+                headerTop.classList.add('scrolled');
+            } else {
+                headerTop.classList.remove('scrolled');
+            }
+
+            lastScroll = currentScroll;
+        });
+    </script>

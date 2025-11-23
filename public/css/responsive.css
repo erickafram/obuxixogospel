@@ -1,0 +1,465 @@
+/* Tablet - 768px to 1199px */
+@media (max-width: 1199px) {
+    .container {
+        padding: 0 30px;
+    }
+
+    /* Layout com Sidebar - Tablet */
+    .content-with-sidebar {
+        grid-template-columns: 1fr 300px;
+        gap: 20px;
+    }
+
+    .sidebar {
+        top: 100px;
+    }
+
+    .news-item-image {
+        width: 220px;
+        height: 150px;
+    }
+
+    .news-item-title {
+        font-size: 20px;
+    }
+
+    .news-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .hero-title {
+        font-size: 32px;
+    }
+
+    .hero-description {
+        font-size: 16px;
+    }
+
+    .footer-content {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .article-title {
+        font-size: 36px;
+    }
+
+    .related-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile - up to 767px */
+@media (max-width: 767px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    /* Layout com Sidebar - Mobile */
+    .content-with-sidebar {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .sidebar {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        order: 2;
+    }
+
+    .main-news-column {
+        order: 1;
+    }
+
+    /* News Item Horizontal - Mobile */
+    .news-item-horizontal a {
+        flex-direction: column;
+    }
+
+    .news-item-image {
+        width: 100%;
+        height: 200px;
+    }
+
+    .news-item-title {
+        font-size: 18px;
+    }
+
+    .news-item-description {
+        font-size: 14px;
+    }
+
+    /* Header Mobile */
+    .menu-hamburger {
+        display: flex;
+    }
+
+    .logo {
+        position: static;
+        transform: none;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+
+    .logo-text {
+        font-size: 20px !important;
+        font-weight: 900 !important;
+    }
+
+    .logo-badge {
+        font-size: 11px !important;
+        padding: 5px 7px !important;
+    }
+
+    .logo-badge small {
+        font-size: 7px !important;
+    }
+    
+    /* Garantir que o logo fique centralizado em páginas de artigo */
+    .article-page .logo {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .article-page .logo-text {
+        font-size: 20px !important;
+        font-weight: 900 !important;
+    }
+    
+    .article-page .logo-badge {
+        font-size: 11px !important;
+        padding: 5px 7px !important;
+    }
+
+    .header-nav {
+        display: none;
+    }
+
+    .conta-globo span,
+    .search-toggle span,
+    .menu-hamburger span {
+        display: none;
+    }
+
+    /* Mobile Menu Responsive */
+    .mobile-menu {
+        width: 280px;
+        left: -280px;
+    }
+    
+    .mobile-menu-header {
+        padding: 16px;
+    }
+    
+    .mobile-menu-header h3 {
+        font-size: 16px;
+    }
+    
+    .close-menu {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .close-menu i {
+        font-size: 18px;
+    }
+    
+    .mobile-menu-links {
+        padding: 16px 12px;
+    }
+    
+    .mobile-menu-links a {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    /* Hero Mobile */
+    .hero-image {
+        height: 300px;
+    }
+    
+    .hero-overlay {
+        padding: 20px;
+    }
+
+    .hero-title {
+        font-size: 24px;
+    }
+
+    .hero-description {
+        font-size: 14px;
+    }
+
+    /* News Grid Mobile */
+    .news-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .news-section {
+        padding: 20px 15px;
+    }
+
+    .section-title {
+        font-size: 24px;
+    }
+
+    .see-more {
+        font-size: 12px;
+    }
+
+    /* Bottom Sections Mobile */
+    .bottom-sections {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .news-grid-small {
+        grid-template-columns: 1fr;
+    }
+
+    /* Breadcrumb Mobile */
+    .breadcrumb {
+        padding: 12px 0 8px 0;
+        font-size: 11px;
+    }
+
+    .breadcrumb-item.active {
+        max-width: 250px;
+    }
+
+    /* Article Mobile */
+    .article-container {
+        padding: 0 12px;
+    }
+    
+    .article-full {
+        padding: 8px 12px;
+    }
+
+    .article-title {
+        font-size: 24px;
+        line-height: 1.3;
+        margin-bottom: 12px;
+    }
+
+    .article-lead {
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+    }
+
+    .article-body {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    
+    .article-body p {
+        margin-bottom: 16px;
+    }
+    
+    .article-body h2 {
+        font-size: 20px;
+        margin: 24px 0 12px;
+    }
+    
+    .article-body h3 {
+        font-size: 18px;
+        margin: 20px 0 10px;
+    }
+
+    .article-meta {
+        flex-direction: column;
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    .article-share {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .article-share .share-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+
+    .related-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .related-articles h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    /* Footer Mobile */
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Pagination Mobile */
+    .pagination {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .pagination-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Category Page Mobile */
+    .category-header {
+        padding: 15px 0;
+    }
+
+    .category-title {
+        font-size: 24px;
+    }
+
+    /* Search Page Mobile */
+    .search-header {
+        padding: 20px 15px;
+    }
+
+    .search-header h1 {
+        font-size: 22px;
+    }
+}
+
+/* Small Mobile - up to 480px */
+@media (max-width: 480px) {
+    /* Mobile Menu - Extra Small */
+    .mobile-menu {
+        width: 260px;
+        left: -260px;
+    }
+    
+    .mobile-menu-header {
+        padding: 14px;
+    }
+    
+    .mobile-menu-header h3 {
+        font-size: 15px;
+    }
+    
+    .close-menu {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .close-menu i {
+        font-size: 16px;
+    }
+    
+    .mobile-menu-links {
+        padding: 14px 10px;
+    }
+    
+    .mobile-menu-links a {
+        padding: 11px 12px;
+        font-size: 13px;
+    }
+
+    .hero-image {
+        height: 250px;
+    }
+
+    .hero-title {
+        font-size: 20px;
+    }
+
+    .news-image {
+        height: 180px;
+    }
+
+    .news-title {
+        font-size: 16px;
+    }
+
+    .breadcrumb {
+        padding: 30px 0 6px 0;
+        font-size: 10px;
+    }
+
+    .breadcrumb-item.active {
+        max-width: 180px;
+    }
+
+    .article-title {
+        font-size: 24px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+    }
+
+    .search-input {
+        width: 120px;
+        font-size: 12px;
+    }
+    
+    /* Logo ainda menor em telas muito pequenas */
+    .logo-text {
+        font-size: 18px !important;
+    }
+    
+    .logo-badge {
+        font-size: 10px !important;
+        padding: 4px 6px !important;
+    }
+    
+    .article-page .logo-text {
+        font-size: 18px !important;
+    }
+    
+    .article-page .logo-badge {
+        font-size: 10px !important;
+        padding: 4px 6px !important;
+    }
+}
+
+/* Landscape Mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    .hero-image {
+        height: 250px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .header,
+    .footer,
+    .mobile-menu,
+    .article-share,
+    .related-articles,
+    .pagination {
+        display: none;
+    }
+
+    .article-full {
+        box-shadow: none;
+        padding: 0;
+    }
+
+    body {
+        background-color: white;
+    }
+}

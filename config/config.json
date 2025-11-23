@@ -1,0 +1,40 @@
+{
+  "development": {
+    "username": "root",
+    "password": "",
+    "database": "obuxixo_gospel",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "dialect": "mysql",
+    "timezone": "-03:00",
+    "define": {
+      "timestamps": true,
+      "underscored": true,
+      "underscoredAll": true
+    }
+  },
+  "test": {
+    "username": "root",
+    "password": "",
+    "database": "obuxixo_gospel_test",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "dialect": "mysql",
+    "timezone": "-03:00"
+  },
+  "production": {
+    "username": "obuxixogospel",
+    "password": "@@2025@@Ekb",
+    "database": "obuxixogospel",
+    "host": "localhost",
+    "port": 3306,
+    "dialect": "mysql",
+    "timezone": "-03:00",
+    "logging": false,
+    "define": {
+      "timestamps": true,
+      "underscored": true,
+      "underscoredAll": true
+    }
+  }
+}
