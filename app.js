@@ -332,7 +332,7 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
     // Validar campos de ordenação
     const validSortFields = ['dataPublicacao', 'visualizacoes', 'publicado', 'titulo'];
     const validSortOrders = ['ASC', 'DESC'];
-    
+
     const orderField = validSortFields.includes(sortBy) ? sortBy : 'dataPublicacao';
     const orderDirection = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 

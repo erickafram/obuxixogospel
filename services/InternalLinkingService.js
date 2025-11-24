@@ -95,15 +95,24 @@ class InternalLinkingService {
       }
 
       // Busca artigos que contenham essas palavras-chave
+      // Melhoria: Exige que pelo menos uma palavra-chave esteja no título para maior relevância
+      // ou que múltiplas palavras-chave estejam no conteúdo
       const whereConditions = {
         publicado: 1,
-        [Op.or]: palavrasChave.map(palavra => ({
-          [Op.or]: [
-            { titulo: { [Op.like]: `%${palavra}%` } },
-            { descricao: { [Op.like]: `%${palavra}%` } },
-            { conteudo: { [Op.like]: `%${palavra}%` } }
-          ]
-        }))
+        [Op.or]: [
+          // Prioridade: Palavra-chave no título (muito relevante)
+          {
+            [Op.or]: palavrasChave.map(palavra => ({
+              titulo: { [Op.like]: `%${palavra}%` }
+            }))
+          },
+          // Secundário: Palavra-chave na descrição
+          {
+            [Op.or]: palavrasChave.map(palavra => ({
+              descricao: { [Op.like]: `%${palavra}%` }
+            }))
+          }
+        ]
       };
 
       // Exclui o artigo atual
@@ -114,7 +123,7 @@ class InternalLinkingService {
       const artigos = await Article.findAll({
         where: whereConditions,
         attributes: ['id', 'titulo', 'descricao', 'categoria', 'urlAmigavel'],
-        limit: 10,
+        limit: 15, // Aumentei o limite para dar mais opções para a IA filtrar
         order: [['dataPublicacao', 'DESC']]
       });
 
@@ -135,19 +144,30 @@ class InternalLinkingService {
    * Extrai palavras-chave relevantes do texto
    */
   static extractKeywords(texto) {
-    // Remove palavras comuns (stop words)
+    // Remove palavras comuns (stop words) gerais
     const stopWords = [
       'o', 'a', 'os', 'as', 'um', 'uma', 'de', 'do', 'da', 'dos', 'das',
       'em', 'no', 'na', 'nos', 'nas', 'por', 'para', 'com', 'sem', 'sob',
       'e', 'ou', 'mas', 'que', 'se', 'como', 'quando', 'onde', 'porque',
-      'é', 'são', 'foi', 'foram', 'ser', 'estar', 'ter', 'haver', 'fazer'
+      'é', 'são', 'foi', 'foram', 'ser', 'estar', 'ter', 'haver', 'fazer',
+      'sobre', 'pelo', 'pela', 'entre', 'após', 'antes', 'durante'
     ];
+
+    // Remove termos muito genéricos do nicho gospel que geram falsos positivos
+    const gospelStopWords = [
+      'igreja', 'deus', 'jesus', 'cristo', 'senhor', 'pastor', 'bispo', 'gospel',
+      'evangelho', 'biblia', 'culto', 'fiéis', 'religião', 'sagrado', 'divino',
+      'oração', 'louvor', 'adoração', 'ministério', 'altar', 'templo', 'mundo',
+      'brasil', 'hoje', 'agora', 'notícia', 'polêmica', 'famoso', 'cantor', 'cantora'
+    ];
+
+    const allStopWords = [...stopWords, ...gospelStopWords];
 
     const palavras = texto
       .toLowerCase()
       .replace(/[^\wáàâãéèêíïóôõöúçñ\s]/gi, '')
       .split(/\s+/)
-      .filter(p => p.length > 3 && !stopWords.includes(p));
+      .filter(p => p.length > 4 && !allStopWords.includes(p)); // Aumentei para > 4 chars
 
     // Conta frequência
     const frequencia = {};
@@ -167,7 +187,7 @@ class InternalLinkingService {
    */
   static async identifyLinkOpportunities(conteudo, artigosRelacionados, maxLinks) {
     try {
-      const prompt = `Você é um especialista em SEO. Sua tarefa é encontrar BOAS oportunidades de linkagem interna.
+      const prompt = `Você é um especialista Sênior em SEO e Semântica. Sua tarefa é encontrar oportunidades de linkagem interna EXTREMAMENTE RELEVANTES.
 Analise o conteúdo e os artigos disponíveis.
 
 CONTEÚDO DO ARTIGO:
@@ -179,12 +199,14 @@ ${artigosRelacionados.map((a, i) => `${i + 1}. "${a.titulo}" - ${a.descricao} (U
 OBJETIVO:
 Encontrar trechos no texto que possam servir de âncora para os artigos relacionados.
 
-REGRAS:
-1. O link deve ser ÚTIL para o leitor.
-2. O texto âncora deve ser natural.
-3. Se o artigo fala sobre "Gusttavo Lima", e você tem uma notícia sobre ele, linke o nome "Gusttavo Lima".
-4. Se o artigo fala sobre "política", e você tem uma notícia sobre "Bolsonaro", NÃO linke a palavra "política", mas se tiver "Bolsonaro" no texto, linke.
-5. Identifique até ${maxLinks} links.
+REGRAS CRÍTICAS (SIGA RIGOROSAMENTE):
+1. RELEVÂNCIA TOTAL: Só crie um link se o artigo de destino for DIRETAMENTE relacionado ao assunto do trecho.
+2. EVITE ASSOCIAÇÕES GENÉRICAS:
+   - NÃO linke "Igreja Universal" para uma notícia sobre "Igreja Batista" ou "Nova Igreja" só porque ambas são igrejas.
+   - NÃO linke "crise financeira" para uma notícia sobre "perda de seguidores" a menos que a notícia fale explicitamente de dinheiro.
+3. ENTIDADES ESPECÍFICAS: Se o texto cita uma pessoa ou instituição específica (ex: "Andressa Urach"), dê preferência absoluta a artigos sobre ESSA pessoa.
+4. TEXTO ÂNCORA NATURAL: O link deve fluir naturalmente no texto.
+5. LIMITE: Identifique no MÁXIMO ${maxLinks} links. Se não houver nenhum link PERFEITO, retorne lista vazia. Melhor nenhum link do que um link ruim.
 
 RESPONDA APENAS EM JSON:
 [
@@ -195,15 +217,15 @@ RESPONDA APENAS EM JSON:
   }
 ]
 
-Se não houver links bons, retorne: []`;
+Se não houver links de alta qualidade, retorne: []`;
 
       const messages = [
-        { role: 'system', content: 'Você é um assistente de SEO útil. Responda APENAS com JSON válido.' },
+        { role: 'system', content: 'Você é um assistente de SEO rigoroso. Responda APENAS com JSON válido. Se tiver dúvida sobre a relevância, NÃO faça o link.' },
         { role: 'user', content: prompt }
       ];
 
-      // Aumentando temperatura para 0.2 para permitir mais conexões sem alucinar
-      const resposta = await AIService.makeRequest(messages, 0.2, 1000);
+      // Temperatura baixa para ser mais conservador e preciso
+      const resposta = await AIService.makeRequest(messages, 0.1, 1000);
 
       // Parse da resposta
       let links = [];
@@ -226,8 +248,8 @@ Se não houver links bons, retorne: []`;
         links = links.filter(link =>
           link.texto &&
           link.url &&
-          link.texto.length > 5 &&
-          link.texto.length < 150
+          link.texto.length > 3 &&
+          link.texto.length < 100
         );
 
       } catch (parseError) {
@@ -255,8 +277,6 @@ Se não houver links bons, retorne: []`;
       const textoEscapado = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
       // Cria regex para encontrar o texto (case insensitive, fora de tags HTML)
-      // Removendo \b do início/fim para permitir flexibilidade em termos compostos, mas mantendo verificação de contexto
-      // A regex anterior era muito estrita com \b e falhava em alguns casos de pontuação ou plural
       const regex = new RegExp(`(?<![">\\w])${textoEscapado}(?![\\w<])`, 'i');
 
       // Verifica se o texto já está linkado
@@ -270,9 +290,9 @@ Se não houver links bons, retorne: []`;
       if (!match) {
         console.log(`Texto "${texto}" não encontrado no conteúdo (Regex falhou). Tentando busca simples...`);
 
-        // Fallback para busca simples se regex falhar (pode ser menos preciso, mas garante o link)
+        // Fallback para busca simples se regex falhar
         if (conteudo.toLowerCase().includes(texto.toLowerCase())) {
-          const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link">${texto}</a>`;
+          const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link" style="color: #e63946; text-decoration: underline; font-weight: 500;">${texto}</a>`;
           // Substitui apenas a primeira ocorrência case-insensitive
           const conteudoAtualizado = conteudo.replace(new RegExp(textoEscapado, 'i'), linkHtml);
           console.log(`✓ Link adicionado (Busca Simples): "${texto}" -> ${url}`);
@@ -283,7 +303,7 @@ Se não houver links bons, retorne: []`;
       }
 
       // Substitui apenas a primeira ocorrência
-      const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link">${match[0]}</a>`;
+      const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link" style="color: #e63946; text-decoration: underline; font-weight: 500;">${match[0]}</a>`;
       const conteudoAtualizado = conteudo.replace(regex, linkHtml);
 
       if (conteudoAtualizado === conteudo) {
