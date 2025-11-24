@@ -1084,18 +1084,6 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
   }
 });
 
-// Redirect Controller
-const redirectController = require('./controllers/redirectController');
-
-// Rotas de Redirecionamentos (Dashboard)
-app.get('/dashboard/configuracoes/redirecionamentos', isAuthenticated, redirectController.listar);
-app.post('/dashboard/configuracoes/redirecionamentos/criar', isAuthenticated, redirectController.criar);
-app.get('/dashboard/configuracoes/redirecionamentos/estatisticas', isAuthenticated, redirectController.estatisticas);
-app.get('/dashboard/configuracoes/redirecionamentos/:id', isAuthenticated, redirectController.buscarPorId);
-app.put('/dashboard/configuracoes/redirecionamentos/:id', isAuthenticated, redirectController.atualizar);
-app.delete('/dashboard/configuracoes/redirecionamentos/:id', isAuthenticated, redirectController.deletar);
-app.post('/dashboard/configuracoes/redirecionamentos/:id/toggle', isAuthenticated, redirectController.toggleAtivo);
-
 // Sitemap e Robots.txt
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
