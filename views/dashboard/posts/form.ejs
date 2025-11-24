@@ -15,9 +15,6 @@
                 </p>
             </div>
             <div class="header-actions">
-                <button type="button" class="btn btn-ai" onclick="openAIModal()">
-                    🤖 Criar com IA
-                </button>
                 <a href="/dashboard/posts" class="btn btn-secondary">
                     ← Voltar
                 </a>
@@ -131,6 +128,11 @@
 
                 <!-- Sidebar -->
                 <div class="form-sidebar">
+                    <!-- Botão Criar com IA -->
+                    <button type="button" class="btn btn-ai-sidebar" onclick="openAIModal()">
+                        🤖 Criar com IA
+                    </button>
+
                     <!-- Publicação -->
                     <div class="card">
                         <div class="card-header">
@@ -1603,6 +1605,18 @@
         @media (max-width: 1024px) {
             .form-grid {
                 grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Reordenar: sidebar primeiro, depois main */
+            .form-sidebar {
+                order: -1;
+                margin-bottom: 20px;
+            }
+
+            .form-main {
+                order: 1;
             }
 
             .modal-content {
@@ -1616,10 +1630,29 @@
             .bing-results-grid {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
+
+            /* Botão IA na sidebar em tablets */
+            .btn-ai-sidebar {
+                font-size: 15px;
+                padding: 14px 20px;
+            }
         }
 
         /* Melhorias para celular */
         @media (max-width: 768px) {
+            /* Botão IA mais destacado no mobile */
+            .btn-ai-sidebar {
+                font-size: 16px;
+                padding: 16px 20px;
+                margin-bottom: 16px;
+                box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+            }
+
+            /* Sidebar no topo em mobile */
+            .form-sidebar {
+                margin-bottom: 16px;
+            }
+
             .bing-search-box {
                 flex-direction: column;
                 gap: 10px;
@@ -1889,6 +1922,36 @@
         .btn-ai:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Botão Criar com IA na Sidebar - Maior e destacado */
+        .btn-ai-sidebar {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .btn-ai-sidebar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+        }
+
+        .btn-ai-sidebar:active {
+            transform: translateY(0);
         }
 
         .input-with-ai {
@@ -3463,6 +3526,61 @@
             } catch (error) {
                 console.error('Erro:', error);
                 alert('❌ Erro ao expandir conteúdo: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Criar matéria por tema (aba "Por Tema")
+        async function criarComIA() {
+            const tema = document.getElementById('aiTema').value.trim();
+            const categoria = document.getElementById('aiCategoria').value;
+            const palavrasChave = document.getElementById('aiPalavrasChave').value;
+            const pesquisarInternet = document.getElementById('aiPesquisarInternet').checked;
+            const linksText = document.getElementById('aiLinks').value.trim();
+            const modoAutomatico = document.getElementById('aiModoAutomatico').checked;
+
+            if (!tema) {
+                alert('Por favor, digite o tema da matéria');
+                document.getElementById('aiTema').focus();
+                return;
+            }
+
+            // Processar links (um por linha)
+            const links = linksText ? linksText.split('\n').map(l => l.trim()).filter(l => l) : [];
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando matéria...';
+
+            try {
+                const response = await fetch('/api/ia/criar-materia', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tema,
+                        categoria,
+                        palavrasChave,
+                        pesquisarInternet,
+                        links
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await processarRespostaMateria(data, modoAutomatico);
+                } else {
+                    alert('❌ Erro ao criar matéria: ' + (data.error || 'Erro desconhecido'));
+                }
+
+            } catch (error) {
+                console.error('Erro ao criar matéria:', error);
+                alert('❌ Erro ao criar matéria: ' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;

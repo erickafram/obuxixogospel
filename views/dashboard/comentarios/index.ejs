@@ -15,54 +15,54 @@
 
     <!-- Filtros e Busca -->
     <div class="filters-container">
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" 
-                   id="searchInput" 
-                   placeholder="Buscar por nome, email ou comentário..."
-                   onkeyup="applyFilters()">
-        </div>
         <div class="filters-row">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="Buscar por nome, email ou comentário..."
+                       onkeyup="applyFilters()">
+            </div>
             <select id="statusFilter" onchange="applyFilters()" class="filter-select">
-                <option value="all">Todos os Status</option>
-                <option value="pending" selected>Pendentes</option>
+                <option value="all" selected>Todos</option>
+                <option value="pending">Pendentes</option>
                 <option value="approved">Aprovados</option>
             </select>
             <button class="btn btn-secondary" onclick="clearFilters()">
-                <i class="fas fa-redo"></i> Limpar Filtros
+                <i class="fas fa-redo"></i> Limpar
             </button>
         </div>
     </div>
 
     <!-- Estatísticas -->
-    <div class="stats-grid" style="margin-bottom: 24px;">
-        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <div class="stats-grid" style="margin-bottom: 16px;">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Total</div>
-                    <div style="font-size: 32px; font-weight: 700;" id="totalComments">0</div>
+                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Total</div>
+                    <div style="font-size: 24px; font-weight: 700;" id="totalComments">0</div>
                 </div>
-                <i class="fas fa-comments" style="font-size: 40px; opacity: 0.3;"></i>
+                <i class="fas fa-comments" style="font-size: 28px; opacity: 0.25;"></i>
             </div>
         </div>
         
-        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Pendentes</div>
-                    <div style="font-size: 32px; font-weight: 700;" id="pendingComments">0</div>
+                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Pendentes</div>
+                    <div style="font-size: 24px; font-weight: 700;" id="pendingComments">0</div>
                 </div>
-                <i class="fas fa-clock" style="font-size: 40px; opacity: 0.3;"></i>
+                <i class="fas fa-clock" style="font-size: 28px; opacity: 0.25;"></i>
             </div>
         </div>
         
-        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Aprovados</div>
-                    <div style="font-size: 32px; font-weight: 700;" id="approvedComments">0</div>
+                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Aprovados</div>
+                    <div style="font-size: 24px; font-weight: 700;" id="approvedComments">0</div>
                 </div>
-                <i class="fas fa-check-circle" style="font-size: 40px; opacity: 0.3;"></i>
+                <i class="fas fa-check-circle" style="font-size: 28px; opacity: 0.25;"></i>
             </div>
         </div>
     </div>
@@ -76,13 +76,13 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th width="60">Avatar</th>
-                <th width="180">Nome</th>
+                <th width="50">Avatar</th>
+                <th width="160">Nome</th>
                 <th>Comentário</th>
-                <th width="200">Post</th>
-                <th width="120">Data</th>
-                <th width="100">Status</th>
-                <th width="120">Ações</th>
+                <th width="180">Post</th>
+                <th width="110">Data</th>
+                <th width="90">Status</th>
+                <th width="110">Ações</th>
             </tr>
         </thead>
         <tbody id="commentsTableBody">
@@ -106,54 +106,54 @@
     /* Filtros e Busca */
     .filters-container {
         background: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         border: 1px solid #E8E8E8;
     }
 
     .search-box {
         position: relative;
-        margin-bottom: 16px;
+        flex: 1;
+        min-width: 200px;
     }
 
     .search-box i.fa-search {
         position: absolute;
-        left: 14px;
+        left: 12px;
         top: 50%;
         transform: translateY(-50%);
         color: #9CA3AF;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .search-box input {
         width: 100%;
-        padding: 11px 40px 11px 40px;
+        padding: 8px 12px 8px 36px;
         border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        font-size: 14px;
+        border-radius: 6px;
+        font-size: 13px;
         transition: all 0.2s;
     }
 
     .search-box input:focus {
         outline: none;
         border-color: #FF6B00;
-        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.08);
     }
 
     .filters-row {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
     }
 
     .filter-select {
-        flex: 1;
-        min-width: 180px;
-        padding: 10px 14px;
+        min-width: 140px;
+        padding: 8px 12px;
         border: 1px solid #E2E8F0;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 13px;
         background: white;
         cursor: pointer;
@@ -163,22 +163,23 @@
     .filter-select:focus {
         outline: none;
         border-color: #FF6B00;
-        box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.08);
     }
 
     .btn-secondary {
         background: #F3F4F6;
         color: #4B5563;
-        padding: 10px 16px;
+        padding: 8px 14px;
         border: 1px solid #E5E7EB;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        white-space: nowrap;
     }
 
     .btn-secondary:hover {
@@ -187,11 +188,11 @@
     }
 
     .results-info {
-        padding: 12px 0;
+        padding: 8px 0;
         color: #6B7280;
-        font-size: 13px;
+        font-size: 12px;
         border-bottom: 1px solid #E2E8F0;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .results-info strong {
@@ -201,14 +202,14 @@
     /* Stats Grid */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
     }
     
     /* Avatar */
     .comment-avatar {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: inline-flex;
@@ -216,14 +217,14 @@
         justify-content: center;
         color: white;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
     }
     
     .comment-text {
-        max-width: 350px;
+        max-width: 400px;
         color: #4A5568;
         font-size: 13px;
-        line-height: 1.5;
+        line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -239,9 +240,9 @@
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 10px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -260,8 +261,8 @@
     .post-link {
         color: #4299e1;
         text-decoration: none;
-        font-size: 13px;
-        max-width: 200px;
+        font-size: 12px;
+        max-width: 180px;
         display: inline-block;
         white-space: nowrap;
         overflow: hidden;
@@ -273,10 +274,10 @@
     }
     
     .action-btn {
-        padding: 6px 12px;
+        padding: 5px 10px;
         border: none;
         border-radius: 5px;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
@@ -287,7 +288,7 @@
     }
     
     .action-btn i {
-        font-size: 11px;
+        font-size: 10px;
     }
     
     .btn-approve {
@@ -296,6 +297,7 @@
     
     .btn-approve:hover {
         background: #38A169;
+        transform: translateY(-1px);
     }
     
     .btn-delete {
@@ -304,6 +306,7 @@
     
     .btn-delete:hover {
         background: #E53E3E;
+        transform: translateY(-1px);
     }
     
     .btn-view {
@@ -312,6 +315,42 @@
     
     .btn-view:hover {
         background: #3182CE;
+        transform: translateY(-1px);
+    }
+
+    /* Melhorias na tabela */
+    .data-table {
+        font-size: 13px;
+    }
+
+    .data-table thead th {
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .data-table tbody td {
+        padding: 10px 12px;
+        vertical-align: middle;
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .filters-row {
+            flex-direction: column;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .filter-select {
+            width: 100%;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -460,8 +499,8 @@ function renderComments(comments) {
                     <div class="comment-avatar">${initial}</div>
                 </td>
                 <td>
-                    <div style="font-weight: 500; color: #2D3748; margin-bottom: 2px;">${escapeHtml(comment.nome)}</div>
-                    <div style="font-size: 12px; color: #718096;">${escapeHtml(comment.email)}</div>
+                    <div style="font-weight: 500; color: #2D3748; margin-bottom: 1px; font-size: 13px;">${escapeHtml(comment.nome)}</div>
+                    <div style="font-size: 11px; color: #718096;">${escapeHtml(comment.email)}</div>
                 </td>
                 <td>
                     <div class="comment-text" title="${escapeHtml(comment.comentario)}">
@@ -476,26 +515,26 @@ function renderComments(comments) {
                            title="${escapeHtml(comment.article.titulo)}">
                             ${escapeHtml(comment.article.titulo)}
                         </a>
-                    ` : '<span style="color: #999;">-</span>'}
+                    ` : '<span style="color: #999; font-size: 12px;">-</span>'}
                 </td>
-                <td style="font-size: 13px; color: #4A5568;">${formattedDate}</td>
+                <td style="font-size: 12px; color: #4A5568;">${formattedDate}</td>
                 <td>
                     ${(comment.aprovado === true || comment.aprovado === 1) ? 
-                        '<span class="badge badge-success">Aprovado</span>' : 
-                        '<span class="badge badge-warning">Pendente</span>'}
+                        '<span class="badge badge-success">✓ Aprovado</span>' : 
+                        '<span class="badge badge-warning">⏱ Pendente</span>'}
                 </td>
                 <td>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                         ${(!comment.aprovado || comment.aprovado === 0) ? `
                             <button onclick="approveComment(${comment.id})" 
                                     class="action-btn btn-approve"
-                                    title="Aprovar comentário">
+                                    title="Aprovar">
                                 <i class="fas fa-check"></i>
                             </button>
                         ` : ''}
                         <button onclick="deleteComment(${comment.id})" 
                                 class="action-btn btn-delete"
-                                title="Deletar comentário">
+                                title="Deletar">
                             <i class="fas fa-trash"></i>
                         </button>
                         ${comment.article ? `
@@ -503,7 +542,7 @@ function renderComments(comments) {
                                target="_blank" 
                                class="action-btn btn-view"
                                title="Ver post">
-                                <i class="fas fa-external-link-alt"></i>
+                                <i class="fas fa-eye"></i>
                             </a>
                         ` : ''}
                     </div>
