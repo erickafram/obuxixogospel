@@ -42,6 +42,7 @@ class RedirectController {
         totalPages,
         totalRedirects: count,
         search,
+        limit,
         user: req.session.user
       });
       
@@ -231,11 +232,12 @@ class RedirectController {
       const ativos = await Redirect.count({ where: { ativo: true } });
       const inativos = total - ativos;
       
-      const maisUsados = await Redirect.findAll({
-        where: { ativo: true },
-        order: [['contadorAcessos', 'DESC']],
-        limit: 10
+      // Buscar TODOS os redirecionamentos ordenados por acessos
+      const todosRedirecionamentos = await Redirect.findAll({
+        order: [['contadorAcessos', 'DESC'], ['createdAt', 'DESC']]
       });
+      
+      const maisUsados = todosRedirecionamentos.slice(0, 10);
       
       const recentes = await Redirect.findAll({
         order: [['createdAt', 'DESC']],
@@ -248,7 +250,7 @@ class RedirectController {
           total,
           ativos,
           inativos,
-          maisUsados,
+          maisUsados: todosRedirecionamentos, // Retornar TODOS ao invés de apenas 10
           recentes
         }
       });
@@ -258,6 +260,34 @@ class RedirectController {
       res.status(500).json({
         success: false,
         message: 'Erro ao buscar estatísticas'
+      });
+    }
+  }
+  
+  // Buscar um redirecionamento específico
+  static async buscarPorId(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const redirect = await Redirect.findByPk(id);
+      
+      if (!redirect) {
+        return res.status(404).json({
+          success: false,
+          message: 'Redirecionamento não encontrado'
+        });
+      }
+      
+      res.json({
+        success: true,
+        redirect
+      });
+      
+    } catch (error) {
+      console.error('Erro ao buscar redirecionamento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar redirecionamento'
       });
     }
   }

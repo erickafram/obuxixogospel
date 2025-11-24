@@ -787,17 +787,7 @@ app.get('/dashboard/configuracoes/redirects', isAuthenticated, canAccessSettings
 app.get('/api/redirects/stats', isAuthenticated, canAccessSettings, redirectController.estatisticas);
 app.post('/api/redirects', isAuthenticated, canAccessSettings, redirectController.criar);
 app.post('/api/redirects/import', isAuthenticated, canAccessSettings, redirectController.importarCSV);
-app.get('/api/redirects/:id', isAuthenticated, canAccessSettings, async (req, res) => {
-  try {
-    const redirect = await Redirect.findByPk(req.params.id);
-    if (!redirect) {
-      return res.status(404).json({ success: false, message: 'Não encontrado' });
-    }
-    res.json({ success: true, redirect });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+app.get('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.buscarPorId);
 app.put('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.atualizar);
 app.delete('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.deletar);
 app.post('/api/redirects/:id/toggle', isAuthenticated, canAccessSettings, redirectController.toggleAtivo);

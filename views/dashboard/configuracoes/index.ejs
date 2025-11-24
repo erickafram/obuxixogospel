@@ -395,29 +395,33 @@
                         </div>
                     </div>
 
-                    <!-- Busca -->
-                    <div class="form-group">
-                        <input type="text" id="searchRedirectsTab" placeholder="Buscar redirecionamentos..." class="form-control">
+                    <!-- Busca e Ações -->
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                        <input type="text" id="searchRedirectsTab" placeholder="Buscar por URL antiga ou nova..." class="form-control" style="flex: 1;" onkeyup="filtrarRedirecionamentos()">
+                        <a href="/dashboard/configuracoes/redirects" class="btn btn-primary" style="white-space: nowrap;">
+                            <i class="fas fa-list"></i> Ver Todos
+                        </a>
                     </div>
 
                     <!-- Tabela de Redirecionamentos -->
-                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                        <table class="data-table" id="redirectsTable">
-                            <thead>
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #E0E0E0; border-radius: 8px;">
+                        <table class="data-table" id="redirectsTable" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                            <thead style="position: sticky; top: 0; background: #F7FAFC; z-index: 10;">
                                 <tr>
-                                    <th>URL Antiga</th>
-                                    <th>URL Nova</th>
-                                    <th>Tipo</th>
-                                    <th>Acessos</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 50px;">ID</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 30%;">URL Antiga</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 30%;">URL Nova</th>
+                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 60px;">Tipo</th>
+                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 70px;">Acessos</th>
+                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 70px;">Status</th>
+                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 90px;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="redirectsTableBody">
                                 <tr>
-                                    <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
-                                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i><br>
-                                        Carregando redirecionamentos...
+                                    <td colspan="7" style="text-align: center; padding: 60px 20px; color: #999;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 32px; margin-bottom: 16px; display: block;"></i>
+                                        <div style="font-size: 14px;">Carregando redirecionamentos...</div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -823,27 +827,40 @@
                 // Renderizar tabela
                 const tbody = document.getElementById('redirectsTableBody');
                 if (stats.total === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Nenhum redirecionamento cadastrado</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 60px 20px; color: #999;"><i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3;"></i><div style="font-size: 14px;">Nenhum redirecionamento cadastrado</div></td></tr>';
                 } else {
-                    tbody.innerHTML = stats.maisUsados.map(r => `
-                        <tr>
-                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlAntiga}</code></td>
-                            <td><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${r.urlNova}</code></td>
-                            <td><span style="background: ${r.tipoRedirecionamento === '301' ? '#4CAF50' : '#FF9800'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${r.tipoRedirecionamento}</span></td>
-                            <td><strong>${r.contadorAcessos}</strong></td>
-                            <td>
-                                <label style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                    tbody.innerHTML = stats.maisUsados.map((r, index) => `
+                        <tr style="border-bottom: 1px solid #F0F0F0; transition: background 0.2s;" onmouseover="this.style.background='#F9FAFB'" onmouseout="this.style.background='white'">
+                            <td style="padding: 8px; color: #718096; font-weight: 600; font-size: 12px;">#${r.id}</td>
+                            <td style="padding: 8px; word-break: break-all;">
+                                <code style="background: #EDF2F7; padding: 4px 6px; border-radius: 4px; font-size: 11px; color: #2D3748; display: block; line-height: 1.4;">${r.urlAntiga}</code>
+                            </td>
+                            <td style="padding: 8px; word-break: break-all;">
+                                <code style="background: #E6FFFA; padding: 4px 6px; border-radius: 4px; font-size: 11px; color: #047857; display: block; line-height: 1.4;">${r.urlNova}</code>
+                            </td>
+                            <td style="padding: 8px; text-align: center;">
+                                <span style="background: ${r.tipoRedirecionamento === '301' ? '#10B981' : '#F59E0B'}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-block;">${r.tipoRedirecionamento}</span>
+                            </td>
+                            <td style="padding: 8px; text-align: center;">
+                                <span style="background: #EBF8FF; color: #2C5282; padding: 3px 8px; border-radius: 8px; font-weight: 600; font-size: 12px; display: inline-block;">${r.contadorAcessos}</span>
+                            </td>
+                            <td style="padding: 8px; text-align: center;">
+                                <label style="position: relative; display: inline-block; width: 44px; height: 22px; cursor: pointer;">
                                     <input type="checkbox" ${r.ativo ? 'checked' : ''} onchange="toggleRedirectStatus(${r.id})" style="opacity: 0; width: 0; height: 0;">
-                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${r.ativo ? '#4CAF50' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                                    <span style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: ${r.ativo ? '#10B981' : '#CBD5E0'}; transition: .3s; border-radius: 22px;">
+                                        <span style="position: absolute; content: ''; height: 16px; width: 16px; left: ${r.ativo ? '25px' : '3px'}; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
+                                    </span>
                                 </label>
                             </td>
-                            <td>
-                                <button type="button" onclick="editarRedirectTab(${r.id})" style="background: none; border: none; color: #FF6B00; cursor: pointer;" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" onclick="deletarRedirectTab(${r.id})" style="background: none; border: none; color: #dc3545; cursor: pointer;" title="Deletar">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                            <td style="padding: 8px; text-align: center;">
+                                <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                                    <button type="button" onclick="editarRedirectTab(${r.id})" style="background: #EBF8FF; border: 1px solid #90CDF4; color: #2C5282; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" onclick="deletarRedirectTab(${r.id})" style="background: #FFF5F5; border: 1px solid #FED7D7; color: #C53030; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Deletar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `).join('');
@@ -948,6 +965,21 @@
         } catch (error) {
             console.error('Erro:', error);
         }
+    }
+    
+    // Filtrar redirecionamentos na tabela
+    function filtrarRedirecionamentos() {
+        const searchTerm = document.getElementById('searchRedirectsTab').value.toLowerCase();
+        const rows = document.querySelectorAll('#redirectsTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
 
     // Confirmação antes de salvar
