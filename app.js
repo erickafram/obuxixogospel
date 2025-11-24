@@ -1998,6 +1998,11 @@ app.use(async (req, res) => {
       // 2. Tentar Redirecionamento Inteligente para URLs de posts antigos
       // Ex: /2019/08/21/titulo-do-post/ -> Busca por "titulo do post"
       try {
+        // Redirecionar feeds antigos para evitar 404
+        if (req.url.endsWith('/feed') || req.url.endsWith('/feed/') || req.url.endsWith('/rss') || req.url.endsWith('/rss/')) {
+          return res.redirect(301, '/');
+        }
+
         const urlParts = req.path.split('/').filter(p => p.trim() !== '');
         // Pegar o último segmento que pareça um slug (não numérico)
         let possibleSlug = '';
