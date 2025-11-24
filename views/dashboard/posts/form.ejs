@@ -1498,10 +1498,29 @@
         .bing-search-box {
             display: flex;
             gap: 12px;
+            align-items: stretch;
         }
 
         .bing-search-box .form-control {
             flex: 1;
+            font-size: 15px;
+            padding: 10px 14px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .bing-search-box .form-control:focus {
+            border-color: #0669de;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(6, 105, 222, 0.1);
+        }
+
+        .bing-search-box .btn {
+            padding: 10px 20px;
+            white-space: nowrap;
+            border-radius: 8px;
+            font-weight: 600;
         }
 
         .bing-results-grid {
@@ -1597,6 +1616,83 @@
             .bing-results-grid {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
+        }
+
+        /* Melhorias para celular */
+        @media (max-width: 768px) {
+            .bing-search-box {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .bing-search-box .form-control {
+                width: 100%;
+                font-size: 16px; /* Evita zoom automático no iOS */
+                padding: 12px 16px;
+                min-height: 48px; /* Melhor área de toque */
+            }
+
+            .bing-search-box .btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+                min-height: 48px;
+            }
+
+            .bing-results-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .bing-image-overlay {
+                padding: 8px 6px;
+            }
+
+            .bing-image-info {
+                font-size: 9px;
+            }
+
+            .bing-image-select {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+
+            .modal-content {
+                width: 100%;
+                max-height: 90vh;
+                margin: 5vh auto;
+            }
+
+            .modal-body {
+                max-height: calc(90vh - 120px);
+                overflow-y: auto;
+            }
+        }
+
+        /* Melhorias para telas muito pequenas */
+        @media (max-width: 480px) {
+            .bing-results-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .bing-search-box .form-control {
+                font-size: 16px;
+                padding: 14px 16px;
+            }
+
+            .bing-placeholder {
+                padding: 40px 15px;
+            }
+
+            .bing-placeholder i {
+                font-size: 36px !important;
+            }
+
+            .bing-placeholder p {
+                font-size: 14px;
+            }
+        }
 
             .content-header {
                 flex-direction: column;
@@ -2921,17 +3017,28 @@
 
         // Buscar imagens no Bing
         async function buscarImagensBing() {
-            const query = document.getElementById('bingSearchInput').value.trim();
+            const inputElement = document.getElementById('bingSearchInput');
+            const query = inputElement.value.trim();
+            
             if (!query) {
                 alert('Por favor, digite uma palavra-chave para buscar');
+                inputElement.focus();
                 return;
             }
 
             const resultsDiv = document.getElementById('bingSearchResults');
             const loadingDiv = document.getElementById('bingSearchLoading');
 
+            // Limpar resultados anteriores
             resultsDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
+
+            // Desabilitar botão durante a busca
+            const searchBtn = event?.target || document.querySelector('[onclick="buscarImagensBing()"]');
+            if (searchBtn) {
+                searchBtn.disabled = true;
+                searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+            }
 
             try {
                 const response = await fetch('/api/ia/buscar-imagens-bing', {
@@ -2945,6 +3052,7 @@
 
                 if (data.success && data.imagens && data.imagens.length > 0) {
                     renderBingImages(data.imagens);
+                    console.log(`✅ ${data.imagens.length} imagens encontradas no Bing`);
                 } else {
                     resultsDiv.innerHTML = `
                     <div class="bing-placeholder">
@@ -2955,7 +3063,7 @@
                 `;
                 }
             } catch (error) {
-                console.error('Erro ao buscar imagens:', error);
+                console.error('Erro ao buscar imagens no Bing:', error);
                 loadingDiv.style.display = 'none';
                 resultsDiv.innerHTML = `
                 <div class="bing-placeholder">
@@ -2964,6 +3072,12 @@
                     <p style="color: #999; font-size: 13px;">${error.message}</p>
                 </div>
             `;
+            } finally {
+                // Reabilitar botão
+                if (searchBtn) {
+                    searchBtn.disabled = false;
+                    searchBtn.innerHTML = '<i class="fas fa-search"></i> Buscar Imagens';
+                }
             }
         }
 
@@ -3012,17 +3126,28 @@
 
         // Buscar imagens no Google
         async function buscarImagensGoogle() {
-            const query = document.getElementById('googleSearchInput').value.trim();
+            const inputElement = document.getElementById('googleSearchInput');
+            const query = inputElement.value.trim();
+            
             if (!query) {
                 alert('Por favor, digite uma palavra-chave para buscar');
+                inputElement.focus();
                 return;
             }
 
             const resultsDiv = document.getElementById('googleSearchResults');
             const loadingDiv = document.getElementById('googleSearchLoading');
 
+            // Limpar resultados anteriores
             resultsDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
+
+            // Desabilitar botão durante a busca
+            const searchBtn = event?.target || document.querySelector('[onclick="buscarImagensGoogle()"]');
+            if (searchBtn) {
+                searchBtn.disabled = true;
+                searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+            }
 
             try {
                 const response = await fetch('/api/ia/buscar-imagens-google', {
@@ -3036,6 +3161,7 @@
 
                 if (data.success && data.imagens && data.imagens.length > 0) {
                     renderGoogleImages(data.imagens);
+                    console.log(`✅ ${data.imagens.length} imagens encontradas no Google`);
                 } else {
                     resultsDiv.innerHTML = `
                     <div class="bing-placeholder">
@@ -3055,6 +3181,12 @@
                     <p style="color: #999; font-size: 13px;">${error.message}</p>
                 </div>
             `;
+            } finally {
+                // Reabilitar botão
+                if (searchBtn) {
+                    searchBtn.disabled = false;
+                    searchBtn.innerHTML = '<i class="fab fa-google"></i> Buscar Imagens';
+                }
             }
         }
 
