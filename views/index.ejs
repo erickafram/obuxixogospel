@@ -10,22 +10,24 @@
                             <img src="<%= destaque.imagem %>" alt="<%= destaque.titulo %>" fetchpriority="high"
                                 width="1200" height="630">
                             <div class="hero-overlay">
-                                <% // Criar mapa de nomes de categorias a partir das categorias carregadas const
-                                    categoryNames={}; if (typeof categories !=='undefined' && categories) {
-                                    categories.forEach(cat=> {
-                                    categoryNames[cat.slug] = cat.nome;
+                                <% 
+                                // Criar mapa de nomes de categorias a partir das categorias carregadas
+                                const categoryNames = {};
+                                if (typeof categories !== 'undefined' && categories) {
+                                    categories.forEach(cat => {
+                                        categoryNames[cat.slug] = cat.nome;
                                     });
-                                    }
-                                    %>
-                                    <span class="hero-category <%= destaque.categoria %>">
-                                        <%= categoryNames[destaque.categoria] || destaque.categoria %>
-                                    </span>
-                                    <h1 class="hero-title">
-                                        <%= destaque.titulo %>
-                                    </h1>
-                                    <p class="hero-description">
-                                        <%= destaque.descricao %>
-                                    </p>
+                                }
+                                %>
+                                <span class="hero-category <%= destaque.categoria %>">
+                                    <%= categoryNames[destaque.categoria] || destaque.categoria %>
+                                </span>
+                                <h1 class="hero-title">
+                                    <%= destaque.titulo %>
+                                </h1>
+                                <p class="hero-description">
+                                    <%= destaque.descricao %>
+                                </p>
                             </div>
                         </div>
                     </a>
@@ -39,54 +41,55 @@
                             <!-- Todas as Notícias -->
                             <section class="news-section all-news-section">
                                 <div class="news-list" id="newsList">
-                                    <% // Combinar todos os artigos let allArticles=[]; if (g1Articles &&
-                                        g1Articles.length> 0) {
+                                    <% 
+                                    // Combinar todos os artigos 
+                                    let allArticles = [];
+                                    if (g1Articles && g1Articles.length > 0) {
                                         g1Articles.forEach(a => {
-                                        a.categoryName = 'Notícias';
-                                        a.categoryClass = 'obuxixo';
-                                        allArticles.push(a);
+                                            a.categoryName = 'Notícias';
+                                            a.categoryClass = 'obuxixo';
+                                            allArticles.push(a);
                                         });
-                                        }
-                                        if (geArticles && geArticles.length > 0) {
+                                    }
+                                    if (geArticles && geArticles.length > 0) {
                                         geArticles.forEach(a => {
-                                        a.categoryName = 'Música';
-                                        a.categoryClass = 'musica';
-                                        allArticles.push(a);
+                                            a.categoryName = 'Música';
+                                            a.categoryClass = 'musica';
+                                            allArticles.push(a);
                                         });
-                                        }
-                                        if (gshowArticles && gshowArticles.length > 0) {
+                                    }
+                                    if (gshowArticles && gshowArticles.length > 0) {
                                         gshowArticles.forEach(a => {
-                                        a.categoryName = 'Eventos';
-                                        a.categoryClass = 'eventos';
-                                        allArticles.push(a);
+                                            a.categoryName = 'Eventos';
+                                            a.categoryClass = 'eventos';
+                                            allArticles.push(a);
                                         });
-                                        }
-                                        if (quemArticles && quemArticles.length > 0) {
+                                    }
+                                    if (quemArticles && quemArticles.length > 0) {
                                         quemArticles.forEach(a => {
-                                        a.categoryName = 'Ministérios';
-                                        a.categoryClass = 'ministerios';
-                                        allArticles.push(a);
+                                            a.categoryName = 'Ministérios';
+                                            a.categoryClass = 'ministerios';
+                                            allArticles.push(a);
                                         });
-                                        }
-                                        if (valorArticles && valorArticles.length > 0) {
+                                    }
+                                    if (valorArticles && valorArticles.length > 0) {
                                         valorArticles.forEach(a => {
-                                        a.categoryName = 'Estudos';
-                                        a.categoryClass = 'estudos';
-                                        allArticles.push(a);
+                                            a.categoryName = 'Estudos';
+                                            a.categoryClass = 'estudos';
+                                            allArticles.push(a);
                                         });
-                                        }
+                                    }
 
-                                        // Filtrar notícia em destaque para não duplicar
-                                        if (destaque) {
+                                    // Filtrar notícia em destaque para não duplicar
+                                    if (destaque) {
                                         allArticles = allArticles.filter(a => a.id !== destaque.id);
-                                        }
+                                    }
 
-                                        // Ordenar por data (mais recentes primeiro)
-                                        allArticles.sort((a, b) => new Date(b.dataPublicacao) - new
-                                        Date(a.dataPublicacao));
+                                    // Ordenar por data (mais recentes primeiro)
+                                    allArticles.sort((a, b) => new Date(b.dataPublicacao) - new Date(a.dataPublicacao));
 
-                                        // Mostrar apenas os primeiros 10
-                                        const displayArticles = allArticles.slice(0, 10);
+                                    // Mostrar apenas os primeiros 10
+                                    const displayArticles = allArticles.slice(0, 10);
 
                                         if (displayArticles.length === 0) { %>
                                         <div style="padding: 40px; text-align: center; color: #666;">
@@ -135,7 +138,7 @@
 
                             <!-- Script para scroll infinito -->
                             <script>
-                                let allArticlesData = <% - JSON.stringify(allArticles) %>;
+                                let allArticlesData = <%- JSON.stringify(allArticles) %>;
                                 let currentIndex = 10;
                                 let isLoading = false;
 
@@ -158,7 +161,7 @@
                                         <article class="news-item-horizontal">
                                             <a href="/${article.categoria}/${article.urlAmigavel}">
                                                 <div class="news-item-image">
-                                                    <img src="${article.imagem}" alt="${article.titulo}" loading="lazy" width="280" height="180">
+                                                    <img src="${article.imagem}" alt="${article.titulo}">
                                                 </div>
                                                 <div class="news-item-content">
                                                     <span class="news-item-category ${article.categoryClass}">${article.subcategoria || article.categoryName}</span>
@@ -193,16 +196,17 @@
                                     </h2>
                                 </div>
                                 <div class="most-read-list">
-                                    <% // Combinar todos os artigos e pegar os mais visualizados let
-                                        mostReadArticles=[]; if (g1Articles)
-                                        mostReadArticles=mostReadArticles.concat(g1Articles); if (geArticles)
-                                        mostReadArticles=mostReadArticles.concat(geArticles); if (gshowArticles)
-                                        mostReadArticles=mostReadArticles.concat(gshowArticles); if (quemArticles)
-                                        mostReadArticles=mostReadArticles.concat(quemArticles); if (valorArticles)
-                                        mostReadArticles=mostReadArticles.concat(valorArticles); // Ordenar por
-                                        visualizações e pegar top 5 const mostRead=mostReadArticles .sort((a, b)=>
-                                        (b.visualizacoes || 0) - (a.visualizacoes || 0))
-                                        .slice(0, 5);
+                                    <% 
+                                    // Combinar todos os artigos e pegar os mais visualizados
+                                    let mostReadArticles = [];
+                                    if (g1Articles) mostReadArticles = mostReadArticles.concat(g1Articles);
+                                    if (geArticles) mostReadArticles = mostReadArticles.concat(geArticles);
+                                    if (gshowArticles) mostReadArticles = mostReadArticles.concat(gshowArticles);
+                                    if (quemArticles) mostReadArticles = mostReadArticles.concat(quemArticles);
+                                    if (valorArticles) mostReadArticles = mostReadArticles.concat(valorArticles);
+                                    
+                                    // Ordenar por visualizações e pegar top 5
+                                    const mostRead = mostReadArticles.sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0)).slice(0, 5);
 
                                         mostRead.forEach((article, index) => { %>
                                         <article class="most-read-item">
@@ -215,20 +219,22 @@
                                                         <%= article.titulo %>
                                                     </h3>
                                                     <div class="most-read-meta">
-                                                        <% // Criar mapa de nomes de categorias a partir das categorias
-                                                            carregadas const catNames={}; if (typeof categories
-                                                            !=='undefined' && categories) { categories.forEach(cat=> {
-                                                            catNames[cat.slug] = cat.nome;
+                                                        <% 
+                                                        // Criar mapa de nomes de categorias
+                                                        const catNames = {};
+                                                        if (typeof categories !== 'undefined' && categories) {
+                                                            categories.forEach(cat => {
+                                                                catNames[cat.slug] = cat.nome;
                                                             });
-                                                            }
-                                                            %>
-                                                            <span class="most-read-category <%= article.categoria %>">
-                                                                <%= catNames[article.categoria] || article.categoria %>
-                                                            </span>
-                                                            <span class="most-read-views">
-                                                                <i class="fas fa-eye"></i>
-                                                                <%= article.visualizacoes || 0 %>
-                                                            </span>
+                                                        }
+                                                        %>
+                                                        <span class="most-read-category <%= article.categoria %>">
+                                                            <%= catNames[article.categoria] || article.categoria %>
+                                                        </span>
+                                                        <span class="most-read-views">
+                                                            <i class="fas fa-eye"></i>
+                                                            <%= article.visualizacoes || 0 %>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </a>
