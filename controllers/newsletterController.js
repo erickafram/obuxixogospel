@@ -46,20 +46,25 @@ class NewsletterController {
         nome: nome || null
       });
 
-      // Enviar email de confirmação
-      const emailResult = await EmailService.enviarEmailConfirmacao(
-        subscriber.email,
-        subscriber.nome,
-        subscriber.token_confirmacao
-      );
+      // Tentar enviar email de confirmação (não bloquear se falhar)
+      try {
+        const emailResult = await EmailService.enviarEmailConfirmacao(
+          subscriber.email,
+          subscriber.nome,
+          subscriber.token_confirmacao
+        );
 
-      if (!emailResult.success) {
-        console.error('Erro ao enviar email:', emailResult.error);
+        if (!emailResult.success) {
+          console.error('Erro ao enviar email de confirmação:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('Erro ao enviar email de confirmação:', emailError.message);
+        // Continua mesmo se o email falhar
       }
 
       res.json({
         success: true,
-        message: 'Inscrição realizada! Verifique seu email para confirmar.'
+        message: 'Inscrição realizada com sucesso! Em breve você receberá um email de confirmação.'
       });
 
     } catch (error) {

@@ -12,7 +12,10 @@ class EmailService {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      connectionTimeout: 10000, // 10 segundos
+      greetingTimeout: 10000,
+      socketTimeout: 10000
     });
 
     this.from = process.env.SMTP_FROM || 'Obuxixo Gospel <noreply@obuxixogospel.com.br>';
