@@ -279,12 +279,25 @@
 
     .article-share {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 10px;
     }
     
-    .article-share .share-btn {
-        padding: 8px 14px;
-        font-size: 13px;
+    .share-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .share-box {
+        padding: 24px 20px;
+    }
+
+    .share-box-header h3 {
+        font-size: 18px;
+    }
+
+    .share-box-header i {
+        font-size: 24px;
     }
 
     .related-grid {
@@ -297,21 +310,77 @@
         margin-bottom: 16px;
     }
 
+    /* Newsletter Article Mobile */
+    .newsletter-article-box {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 20px;
+    }
+
+    .newsletter-article-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .newsletter-article-icon i {
+        font-size: 28px;
+    }
+
+    .newsletter-article-content h3 {
+        font-size: 18px;
+    }
+
+    .newsletter-article-content p {
+        font-size: 13px;
+    }
+
+    .newsletter-article-form {
+        flex-direction: column;
+    }
+
+    .newsletter-article-form button {
+        width: 100%;
+        justify-content: center;
+    }
+
     /* Footer Mobile */
+    .newsletter-form-footer {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .newsletter-label {
+        width: 100%;
+        justify-content: center;
+        font-size: 13px;
+    }
+
+    .newsletter-form-footer input {
+        max-width: 100%;
+        font-size: 13px;
+        padding: 10px 16px;
+    }
+
+    .newsletter-form-footer button {
+        padding: 10px 16px;
+    }
+
     .footer-content {
         grid-template-columns: repeat(2, 1fr);
         gap: 30px;
     }
 
-    .footer-bottom {
-        flex-direction: column;
-        gap: 20px;
+    .footer-about {
+        grid-column: 1 / -1;
         text-align: center;
     }
 
-    .footer-links {
-        flex-direction: column;
-        gap: 10px;
+    .footer-about .social-links-footer {
+        justify-content: center;
+    }
+
+    .footer-bottom {
+        text-align: center;
     }
 
     /* Pagination Mobile */

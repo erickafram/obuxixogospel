@@ -69,24 +69,45 @@
 
                                 <%- article.conteudo %>
 
-                                    <div class="article-footer-share"
-                                        style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-                                        <h3 style="margin-bottom: 15px; font-size: 1.2rem; color: #333;">Gostou da
-                                            notícia?
-                                            Compartilhe!</h3>
-                                        <div class="article-share" style="justify-content: center;">
-                                            <a href="#" class="share-btn facebook" title="Facebook">
-                                                <i class="fab fa-facebook-f"></i>
-                                            </a>
-                                            <a href="#" class="share-btn twitter" title="Twitter">
-                                                <i class="fab fa-twitter"></i>
-                                            </a>
-                                            <a href="#" class="share-btn whatsapp" title="WhatsApp">
-                                                <i class="fab fa-whatsapp"></i>
-                                            </a>
-                                            <a href="#" class="share-btn linkedin" title="LinkedIn">
-                                                <i class="fab fa-linkedin-in"></i>
-                                            </a>
+                                    <div class="article-footer-share">
+                                        <div class="share-box">
+                                            <div class="share-box-header">
+                                                <i class="fas fa-share-alt"></i>
+                                                <h3>Gostou da notícia? Compartilhe!</h3>
+                                            </div>
+                                            <div class="article-share">
+                                                <a href="#" class="share-btn facebook" title="Compartilhar no Facebook" aria-label="Facebook">
+                                                    <i class="fab fa-facebook-f"></i>
+                                                </a>
+                                                <a href="#" class="share-btn twitter" title="Compartilhar no Twitter" aria-label="Twitter">
+                                                    <i class="fab fa-twitter"></i>
+                                                </a>
+                                                <a href="#" class="share-btn whatsapp" title="Compartilhar no WhatsApp" aria-label="WhatsApp">
+                                                    <i class="fab fa-whatsapp"></i>
+                                                </a>
+                                                <a href="#" class="share-btn linkedin" title="Compartilhar no LinkedIn" aria-label="LinkedIn">
+                                                    <i class="fab fa-linkedin-in"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Newsletter Article -->
+                                    <div class="article-newsletter">
+                                        <div class="newsletter-article-box">
+                                            <div class="newsletter-article-icon">
+                                                <i class="fas fa-envelope"></i>
+                                            </div>
+                                            <div class="newsletter-article-content">
+                                                <h3>📧 Receba mais notícias</h3>
+                                                <p>Cadastre-se na nossa newsletter e fique por dentro das últimas novidades gospel</p>
+                                                <form class="newsletter-article-form" onsubmit="return subscribeNewsletter(event)">
+                                                    <input type="email" name="email" placeholder="Seu melhor e-mail" required>
+                                                    <button type="submit">
+                                                        <i class="fas fa-paper-plane"></i> Inscrever-se
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
 

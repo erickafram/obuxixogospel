@@ -196,6 +196,13 @@ app.locals.appVersion = packageJson.version || Date.now();
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/categorias', require('./routes/categories'));
 
+// Rotas de Newsletter
+const newsletterController = require('./controllers/newsletterController');
+app.post('/api/newsletter/subscribe', newsletterController.subscribe);
+app.get('/newsletter/confirmar/:token', newsletterController.confirmar);
+app.get('/newsletter/cancelar/:token', newsletterController.cancelar);
+app.get('/api/newsletter/test-email', newsletterController.testarEmail);
+
 // Rotas de autenticação
 app.get('/login', (req, res) => {
   if (req.session.userId) {
@@ -759,6 +766,11 @@ app.get('/dashboard/usuarios/:id/editar', isAuthenticated, canAccessUsers, userC
 app.put('/dashboard/usuarios/:id', isAuthenticated, canAccessUsers, userController.atualizarUsuario);
 app.delete('/dashboard/usuarios/:id', isAuthenticated, canAccessUsers, userController.deletarUsuario);
 app.post('/dashboard/usuarios/:id/toggle-status', isAuthenticated, canAccessUsers, userController.toggleStatus);
+
+// NEWSLETTER (Admin)
+app.get('/dashboard/newsletter', isAuthenticated, isAdmin, newsletterController.listar);
+app.post('/dashboard/newsletter/enviar', isAuthenticated, isAdmin, newsletterController.enviarManual);
+app.get('/dashboard/newsletter/stats', isAuthenticated, isAdmin, newsletterController.estatisticas);
 
 // CONFIGURAÇÕES
 const configController = require('./controllers/configController');

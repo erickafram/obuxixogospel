@@ -195,6 +195,69 @@ const createBackToTop = () => {
 // Initialize Back to Top
 createBackToTop();
 
+// Newsletter Subscription
+async function subscribeNewsletter(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const email = form.querySelector('input[type="email"]').value;
+    const button = form.querySelector('button');
+    const originalHTML = button.innerHTML;
+    
+    // Validação básica
+    if (!email || !email.includes('@')) {
+        alert('⚠️ Por favor, insira um e-mail válido');
+        return false;
+    }
+    
+    // Mostrar loading
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inscrevendo...';
+    
+    try {
+        const response = await fetch('/api/newsletter/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Sucesso
+            button.innerHTML = '<i class="fas fa-check"></i> Inscrito!';
+            button.style.background = '#4CAF50';
+            
+            // Limpar formulário
+            form.reset();
+            
+            // Mostrar mensagem
+            alert('✅ ' + data.message);
+            
+            // Restaurar botão após 3 segundos
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = originalHTML;
+                button.style.background = '';
+            }, 3000);
+        } else {
+            // Erro
+            alert('⚠️ ' + data.message);
+            button.disabled = false;
+            button.innerHTML = originalHTML;
+        }
+    } catch (error) {
+        console.error('Erro ao inscrever:', error);
+        alert('❌ Erro ao processar inscrição. Tente novamente.');
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    }
+    
+    return false;
+}
+
 // Console Log
 console.log('%c🌐 Obuxixo Gospel', 'color: #FF6B00; font-size: 20px; font-weight: bold;');
 console.log('%cDesenvolvido com Node.js + Express + Mysql / Erick Vinciius', 'color: #666; font-size: 12px;');

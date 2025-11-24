@@ -1,95 +1,84 @@
     <footer class="footer">
         <div class="container">
+            <!-- Main Footer Content -->
             <div class="footer-content">
+                <!-- About Section -->
+                <div class="footer-section footer-about">
+                    <h4>Obuxixo Gospel</h4>
+                    <p class="footer-description">Seu portal de notícias gospel com as últimas novidades sobre música, eventos, ministérios e muito mais do universo cristão.</p>
+                    <div class="footer-contact">
+                        <p><i class="fas fa-envelope"></i> contato@obuxixogospel.com.br</p>
+                        <p><i class="fas fa-phone"></i> (11) 9999-9999</p>
+                    </div>
+                    <div class="social-links-footer">
+                        <a href="#" target="_blank" title="Facebook" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" target="_blank" title="Instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" target="_blank" title="YouTube" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="#" target="_blank" title="Twitter" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" target="_blank" title="TikTok" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+
+                <!-- Categories -->
                 <div class="footer-section">
                     <h4>Categorias</h4>
                     <ul>
                         <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
                             <% categories.slice(0, 6).forEach(cat => { %>
-                                <li><a href="/categoria/<%= cat.slug %>"><%= cat.nome %></a></li>
+                                <li><a href="/categoria/<%= cat.slug %>"><i class="fas fa-angle-right"></i> <%= cat.nome %></a></li>
                             <% }); %>
                         <% } else { %>
-                            <li><a href="/">Início</a></li>
+                            <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
                         <% } %>
                     </ul>
                 </div>
                 
+                <!-- Quick Links -->
                 <div class="footer-section">
-                    <h4>Conteúdo</h4>
+                    <h4>Links Rápidos</h4>
                     <ul>
-                        <li><a href="#">Testemunhos</a></li>
-                        <li><a href="#">Devocionais</a></li>
-                        <li><a href="#">Pregações</a></li>
-                        <li><a href="#">Estudos Bíblicos</a></li>
-                        <li><a href="#">Louvor e Adoração</a></li>
-                        <li><a href="#">Juventude</a></li>
+                        <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
+                        <li><a href="/pagina/sobre-nos"><i class="fas fa-angle-right"></i> Sobre Nós</a></li>
+                        <li><a href="/pagina/contato"><i class="fas fa-angle-right"></i> Contato</a></li>
+                        <li><a href="/pagina/anuncie-conosco"><i class="fas fa-angle-right"></i> Anuncie Conosco</a></li>
+                        <li><a href="/pagina/trabalhe-conosco"><i class="fas fa-angle-right"></i> Trabalhe Conosco</a></li>
                     </ul>
                 </div>
                 
+                <!-- Legal -->
                 <div class="footer-section">
-                    <h4>Ministérios</h4>
+                    <h4>Informações Legais</h4>
                     <ul>
-                        <li><a href="#">Infantil</a></li>
-                        <li><a href="#">Adolescentes</a></li>
-                        <li><a href="#">Jovens</a></li>
-                        <li><a href="#">Casais</a></li>
-                        <li><a href="#">Mulheres</a></li>
-                        <li><a href="#">Homens</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Eventos</h4>
-                    <ul>
-                        <li><a href="#">Conferências</a></li>
-                        <li><a href="#">Congressos</a></li>
-                        <li><a href="#">Shows</a></li>
-                        <li><a href="#">Festivais</a></li>
-                        <li><a href="#">Retiros</a></li>
-                        <li><a href="#">Encontros</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Missões</h4>
-                    <ul>
-                        <li><a href="#">Missões Nacionais</a></li>
-                        <li><a href="#">Missões Internacionais</a></li>
-                        <li><a href="#">Ação Social</a></li>
-                        <li><a href="#">Projetos</a></li>
-                        <li><a href="#">Voluntariado</a></li>
-                        <li><a href="#">Doações</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Institucional</h4>
-                    <ul>
-                        <li><a href="#">Sobre Nós</a></li>
-                        <li><a href="#">Contato</a></li>
-                        <li><a href="#">Equipe</a></li>
-                        <li><a href="#">Parceiros</a></li>
-                        <li><a href="#">Anuncie</a></li>
+                        <li><a href="/pagina/termos-de-uso"><i class="fas fa-angle-right"></i> Termos de Uso</a></li>
+                        <li><a href="/pagina/politica-de-privacidade"><i class="fas fa-angle-right"></i> Política de Privacidade</a></li>
+                        <li><a href="/pagina/politica-de-cookies"><i class="fas fa-angle-right"></i> Política de Cookies</a></li>
+                        <li><a href="/sitemap.xml"><i class="fas fa-angle-right"></i> Mapa do Site</a></li>
                     </ul>
                 </div>
             </div>
             
+            <!-- Newsletter Section (Clean & Compact) -->
+            <div class="footer-newsletter-section">
+                <form class="newsletter-form-footer" id="newsletterForm" onsubmit="return subscribeNewsletter(event)">
+                    <span class="newsletter-label">
+                        <i class="fas fa-envelope"></i> Newsletter
+                    </span>
+                    <input type="email" name="email" placeholder="Seu e-mail" required>
+                    <button type="submit">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer Bottom -->
             <div class="footer-bottom">
-                <div class="footer-info">
-                    <p>&copy; 2025 Obuxixo Gospel - Todos os direitos reservados</p>
-                    <div class="footer-links">
-                        <a href="/pagina/termos-de-uso">Termos de Uso</a>
-                        <a href="/pagina/politica-de-privacidade">Política de Privacidade</a>
-                        <a href="/pagina/anuncie-conosco">Anuncie Conosco</a>
-                        <a href="/pagina/trabalhe-conosco">Trabalhe Conosco</a>
-                    </div>
-                </div>
-                <div class="social-links">
-                    <a href="#" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
-                    <a href="#" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
-                    <a href="#" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" target="_blank" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                <div class="footer-bottom-content">
+                    <p class="copyright">
+                        <i class="fas fa-copyright"></i> 2025 <strong>Obuxixo Gospel</strong> - Todos os direitos reservados
+                    </p>
+                    <p class="footer-credits">
+                        Desenvolvido com <i class="fas fa-heart"></i> para a comunidade gospel
+                    </p>
                 </div>
             </div>
         </div>
