@@ -408,7 +408,9 @@
                         <table class="data-table" id="redirectsTable" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                             <thead style="position: sticky; top: 0; background: #F7FAFC; z-index: 10;">
                                 <tr>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 50px;">ID</th>
+                                    <th onclick="ordenarPorId()" style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 50px; cursor: pointer; user-select: none; transition: all 0.2s; position: relative;" onmouseover="this.style.background='#EDF2F7'; this.style.color='#FF6B00';" onmouseout="this.style.background='transparent'; this.style.color='#2D3748';" title="Clique para ordenar">
+                                        ID <i class="fas fa-sort-down" id="sortIconId" style="font-size: 10px; margin-left: 2px; color: #FF6B00;"></i>
+                                    </th>
                                     <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 30%;">URL Antiga</th>
                                     <th style="padding: 8px; text-align: left; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 30%;">URL Nova</th>
                                     <th style="padding: 8px; text-align: center; border-bottom: 2px solid #E0E0E0; font-weight: 600; color: #2D3748; width: 60px;">Tipo</th>
@@ -811,6 +813,10 @@
         }
     }
     
+    // Variáveis globais para ordenação
+    let redirectsData = [];
+    let sortOrder = 'desc'; // 'asc' ou 'desc'
+    
     // Carregar redirecionamentos
     async function carregarRedirecionamentos() {
         try {
@@ -819,17 +825,28 @@
             
             if (data.success) {
                 const stats = data.estatisticas;
+                redirectsData = stats.maisUsados; // Armazenar dados globalmente
+                
                 document.getElementById('totalRedirectsTab').textContent = stats.total;
                 document.getElementById('redirectsAtivosTab').textContent = stats.ativos;
                 document.getElementById('redirectsInativosTab').textContent = stats.inativos;
                 document.getElementById('totalAcessosTab').textContent = stats.maisUsados.reduce((sum, r) => sum + r.contadorAcessos, 0);
                 
                 // Renderizar tabela
-                const tbody = document.getElementById('redirectsTableBody');
-                if (stats.total === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 60px 20px; color: #999;"><i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3;"></i><div style="font-size: 14px;">Nenhum redirecionamento cadastrado</div></td></tr>';
-                } else {
-                    tbody.innerHTML = stats.maisUsados.map((r, index) => `
+                renderizarTabela(redirectsData);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar redirecionamentos:', error);
+        }
+    }
+    
+    // Função para renderizar a tabela
+    function renderizarTabela(data) {
+        const tbody = document.getElementById('redirectsTableBody');
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 60px 20px; color: #999;"><i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3;"></i><div style="font-size: 14px;">Nenhum redirecionamento cadastrado</div></td></tr>';
+        } else {
+            tbody.innerHTML = data.map((r, index) => `
                         <tr style="border-bottom: 1px solid #F0F0F0; transition: background 0.2s;" onmouseover="this.style.background='#F9FAFB'" onmouseout="this.style.background='white'">
                             <td style="padding: 8px; color: #718096; font-weight: 600; font-size: 12px;">#${r.id}</td>
                             <td style="padding: 8px; word-break: break-all;">
@@ -864,11 +881,34 @@
                             </td>
                         </tr>
                     `).join('');
-                }
-            }
-        } catch (error) {
-            console.error('Erro ao carregar redirecionamentos:', error);
         }
+    }
+    
+    // Função para ordenar por ID
+    function ordenarPorId() {
+        const sortIcon = document.getElementById('sortIconId');
+        
+        // Alternar ordem
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        
+        // Atualizar ícone
+        if (sortOrder === 'asc') {
+            sortIcon.className = 'fas fa-sort-up';
+        } else {
+            sortIcon.className = 'fas fa-sort-down';
+        }
+        
+        // Ordenar dados
+        const sortedData = [...redirectsData].sort((a, b) => {
+            if (sortOrder === 'asc') {
+                return a.id - b.id;
+            } else {
+                return b.id - a.id;
+            }
+        });
+        
+        // Renderizar tabela ordenada
+        renderizarTabela(sortedData);
     }
     
     function abrirModalNovoRedirect() {
@@ -970,16 +1010,23 @@
     // Filtrar redirecionamentos na tabela
     function filtrarRedirecionamentos() {
         const searchTerm = document.getElementById('searchRedirectsTab').value.toLowerCase();
-        const rows = document.querySelectorAll('#redirectsTableBody tr');
         
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            if (text.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+        if (!searchTerm) {
+            // Se não houver busca, mostrar todos os dados
+            renderizarTabela(redirectsData);
+            return;
+        }
+        
+        // Filtrar dados
+        const filteredData = redirectsData.filter(r => {
+            return r.urlAntiga.toLowerCase().includes(searchTerm) ||
+                   r.urlNova.toLowerCase().includes(searchTerm) ||
+                   (r.descricao && r.descricao.toLowerCase().includes(searchTerm)) ||
+                   r.id.toString().includes(searchTerm);
         });
+        
+        // Renderizar dados filtrados
+        renderizarTabela(filteredData);
     }
 
     // Confirmação antes de salvar
