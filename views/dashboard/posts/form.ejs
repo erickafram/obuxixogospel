@@ -555,12 +555,14 @@
                     <label for="instrucaoAcrescentar">O que você quer acrescentar ou modificar? *</label>
                     <textarea id="instrucaoAcrescentar" class="form-control" rows="4"
                         placeholder="Ex: Adicione informações sobre a biografia do cantor&#10;Ex: Mude o título para ficar mais chamativo&#10;Ex: Acrescente detalhes sobre o evento&#10;Ex: Reescreva o segundo parágrafo de forma mais clara"></textarea>
-                    <small class="form-text">💡 Seja específico sobre o que deseja modificar no título ou conteúdo</small>
+                    <small class="form-text">💡 Seja específico sobre o que deseja modificar no título ou
+                        conteúdo</small>
                 </div>
 
                 <div class="ai-info" style="margin-top: 16px;">
                     <i class="fas fa-info-circle"></i>
-                    <p><strong>Como funciona:</strong> A IA vai analisar seu conteúdo atual e fazer as modificações que você pediu, mantendo o estilo e estrutura da matéria.</p>
+                    <p><strong>Como funciona:</strong> A IA vai analisar seu conteúdo atual e fazer as modificações que
+                        você pediu, mantendo o estilo e estrutura da matéria.</p>
                 </div>
 
                 <div class="modal-footer">
@@ -2462,7 +2464,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
+                let conteudoCarregado = <% - JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 

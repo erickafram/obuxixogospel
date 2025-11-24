@@ -1608,11 +1608,28 @@ Retorne APENAS um objeto JSON válido:
       'conteudo': 'conteúdo'
     }[tipo] || 'texto';
 
+    // 🔹 PRESERVAR EMBEDS DO INSTAGRAM (apenas para conteúdo)
+    let embedsInstagram = [];
+    let textoSemEmbeds = texto;
+    
+    if (tipo === 'conteudo') {
+      const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
+      
+      let match;
+      while ((match = embedRegex.exec(texto)) !== null) {
+        embedsInstagram.push(match[0]);
+        console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado (corrigir texto)`);
+      }
+      
+      textoSemEmbeds = texto.replace(embedRegex, '');
+      console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s) (corrigir texto)`);
+    }
+
     const prompt = `Você é um revisor de textos especializado em português brasileiro.
 
           Corrija o seguinte ${tipoTexto}, mantendo o sentido original:
 
-          ${texto}
+          ${textoSemEmbeds}
 
           REGRAS:
           - Corrija erros de ortografia, gramática e pontuação
@@ -1635,7 +1652,18 @@ Retorne APENAS um objeto JSON válido:
       }
     ];
 
-    return await this.makeRequest(messages, 0.3, 2000);
+    let resultado = await this.makeRequest(messages, 0.3, 2000);
+    
+    // 🔹 REINSERIR EMBEDS DO INSTAGRAM NO FINAL
+    if (embedsInstagram.length > 0) {
+      console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram (corrigir texto)`);
+      embedsInstagram.forEach((embed, index) => {
+        resultado += `<br><br>${embed}`;
+        console.log(`✅ Embed #${index + 1} reinserido (corrigir texto)`);
+      });
+    }
+    
+    return resultado;
   }
 
   /**
@@ -1939,6 +1967,21 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
 
     console.log('🔄 Expandindo conteúdo com IA...');
 
+    // 🔹 PRESERVAR EMBEDS DO INSTAGRAM
+    const embedsInstagram = [];
+    let conteudoSemEmbeds = conteudo;
+    
+    const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
+    
+    let match;
+    while ((match = embedRegex.exec(conteudo)) !== null) {
+      embedsInstagram.push(match[0]);
+      console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado (expandir conteúdo)`);
+    }
+    
+    conteudoSemEmbeds = conteudo.replace(embedRegex, '');
+    console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s) (expandir conteúdo)`);
+
     const messages = [
       {
         role: 'system',
@@ -1948,7 +1991,7 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
         role: 'user',
         content: `Você recebeu as seguintes informações sobre uma matéria:
 
-${conteudo}
+${conteudoSemEmbeds}
 
 Sua tarefa é REORGANIZAR e MELHORAR a estrutura dessas informações, tornando-as mais claras e organizadas para criar uma matéria jornalística.
 
@@ -1991,7 +2034,17 @@ Agora reorganize o conteúdo fornecido acima:`
         throw new Error('IA retornou resposta vazia');
       }
 
-      const conteudoExpandido = response.trim();
+      let conteudoExpandido = response.trim();
+      
+      // 🔹 REINSERIR EMBEDS DO INSTAGRAM NO FINAL
+      if (embedsInstagram.length > 0) {
+        console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram (expandir conteúdo)`);
+        embedsInstagram.forEach((embed, index) => {
+          conteudoExpandido += `\n\n${embed}`;
+          console.log(`✅ Embed #${index + 1} reinserido (expandir conteúdo)`);
+        });
+      }
+      
       console.log('✅ Conteúdo reorganizado com sucesso');
       return conteudoExpandido;
     } catch (error) {
@@ -2234,8 +2287,26 @@ Retorne APENAS um objeto JSON válido:
   static async reescreverMateriaG1(conteudoHTML) {
     console.log('📝 Reescrevendo matéria no estilo G1...');
 
-    // Extrair texto do HTML
-    const textoLimpo = conteudoHTML
+    // 🔹 PRESERVAR EMBEDS DO INSTAGRAM
+    const embedsInstagram = [];
+    let conteudoSemEmbeds = conteudoHTML;
+    
+    // Regex para capturar blockquote do Instagram
+    const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
+    
+    // Extrair e guardar todos os embeds
+    let match;
+    while ((match = embedRegex.exec(conteudoHTML)) !== null) {
+      embedsInstagram.push(match[0]);
+      console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado`);
+    }
+    
+    // Remover embeds temporariamente do conteúdo
+    conteudoSemEmbeds = conteudoHTML.replace(embedRegex, '');
+    console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s)`);
+
+    // Extrair texto do HTML (agora sem os embeds)
+    const textoLimpo = conteudoSemEmbeds
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -2342,6 +2413,15 @@ RETORNE APENAS O HTML (sem título ou descrição):`
         .replace(/<\/p><p>/gi, '</p><br><p>')
         .replace(/<\/h3><p>/gi, '</h3><br><p>')
         .replace(/<\/blockquote><p>/gi, '</blockquote><br><p>');
+
+      // 🔹 REINSERIR EMBEDS DO INSTAGRAM NO FINAL
+      if (embedsInstagram.length > 0) {
+        console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram no final do conteúdo`);
+        embedsInstagram.forEach((embed, index) => {
+          conteudoLimpo += `<br><br>${embed}`;
+          console.log(`✅ Embed #${index + 1} reinserido`);
+        });
+      }
 
       console.log('✅ Matéria reescrita com sucesso no estilo G1');
       return conteudoLimpo;
