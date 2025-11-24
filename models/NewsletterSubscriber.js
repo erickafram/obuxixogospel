@@ -59,7 +59,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     token_confirmacao: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: true,
+      defaultValue: () => crypto.randomBytes(32).toString('hex')
     },
     confirmado: {
       type: DataTypes.BOOLEAN,
@@ -73,26 +74,15 @@ module.exports = (sequelize, DataTypes) => {
     token_unsubscribe: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true
+      unique: true,
+      defaultValue: () => crypto.randomBytes(32).toString('hex')
     }
   }, {
     sequelize,
     modelName: 'NewsletterSubscriber',
     tableName: 'newsletter_subscribers',
     timestamps: true,
-    underscored: true,
-    hooks: {
-      beforeCreate: (subscriber) => {
-        // Gerar token de confirmação
-        if (!subscriber.token_confirmacao) {
-          subscriber.token_confirmacao = crypto.randomBytes(32).toString('hex');
-        }
-        // Gerar token de unsubscribe
-        if (!subscriber.token_unsubscribe) {
-          subscriber.token_unsubscribe = crypto.randomBytes(32).toString('hex');
-        }
-      }
-    }
+    underscored: true
   });
 
   return NewsletterSubscriber;
