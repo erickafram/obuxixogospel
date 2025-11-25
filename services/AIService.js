@@ -1221,31 +1221,8 @@ Retorne APENAS um objeto JSON válido:
     let imagensSugeridas = [];
     console.log('📋 Variáveis inicializadas');
 
-    // Pesquisar na internet se solicitado
+    // Buscar imagens sugeridas iniciais (baseadas no tema)
     if (pesquisarInternet) {
-      console.log('Pesquisando notícias atuais:', tema);
-
-      // Buscar notícias atuais do Google News
-      const noticias = await this.buscarNoticiasAtuais(tema + ' gospel evangélico');
-      if (noticias.length > 0) {
-        informacoesAdicionais += '\n\nNOTÍCIAS ATUAIS (Google News):\n';
-        noticias.forEach((n, i) => {
-          informacoesAdicionais += `${i + 1}. ${n.titulo}\n`;
-          informacoesAdicionais += `   ${n.descricao}\n`;
-          informacoesAdicionais += `   Data: ${n.data}\n\n`;
-        });
-      }
-
-      // Buscar também no DuckDuckGo como fallback
-      const resultados = await this.pesquisarInternet(tema + ' gospel evangélico');
-      if (resultados.length > 0) {
-        informacoesAdicionais += '\n\nINFORMAÇÕES ADICIONAIS:\n';
-        resultados.forEach((r, i) => {
-          informacoesAdicionais += `${i + 1}. ${r.titulo}\n${r.snippet}\n\n`;
-        });
-      }
-
-      // Buscar imagens sugeridas
       console.log('Buscando imagens sugeridas:', tema);
       const imagensGoogle = await this.buscarImagensGoogle(tema);
       if (imagensGoogle.length > 0) {
@@ -1258,6 +1235,9 @@ Retorne APENAS um objeto JSON válido:
         }
       }
     }
+    
+    // NOTA: A pesquisa na internet será feita APÓS extrair o conteúdo do link
+    // para usar o conteúdo real como base da pesquisa
 
     // Extrair conteúdo dos links fornecidos
     let conteudoExtraido = '';
@@ -1336,6 +1316,61 @@ Retorne APENAS um objeto JSON válido:
     console.log('🖼️ Imagem extraída:', imagemExtraida ? 'SIM' : 'NÃO');
     console.log('📸 Imagens sugeridas até agora:', imagensSugeridas.length);
 
+    // 🌐 PESQUISAR NA INTERNET APÓS EXTRAIR O CONTEÚDO
+    // Usar o conteúdo extraído como base da pesquisa (não o tema genérico)
+    let informacoesPesquisaInternet = '';
+    if (pesquisarInternet && conteudoExtraido && conteudoExtraido.length > 100) {
+      console.log('🌐 Pesquisando informações complementares na internet...');
+      
+      // Limpar o conteúdo extraído para usar como query de pesquisa
+      let queryPesquisa = conteudoExtraido
+        .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
+        .replace(/TEXTO DA POSTAGEM:/g, '')
+        .replace(/🎥 TRANSCRIÇÃO DO VÍDEO:/g, '')
+        .replace(/AUTOR:/g, '')
+        .replace(/COMENTÁRIOS DESTACADOS:/g, '')
+        .replace(/\d+,?\d* likes,/g, '')
+        .replace(/\d+,?\d* comments/g, '')
+        .replace(/@\w+/g, '')
+        .replace(/https?:\/\/[^\s]+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 200); // Primeiros 200 caracteres para a query
+      
+      console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
+      
+      try {
+        // Buscar notícias atuais do Google News
+        const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
+        if (noticias.length > 0) {
+          informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS RELACIONADAS (Google News):\n';
+          noticias.forEach((n, i) => {
+            informacoesPesquisaInternet += `${i + 1}. ${n.titulo}\n`;
+            informacoesPesquisaInternet += `   ${n.descricao || ''}\n`;
+          });
+          console.log(`✅ Encontradas ${noticias.length} notícias relacionadas`);
+        }
+
+        // Buscar também no DuckDuckGo
+        const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
+        if (resultadosDDG.length > 0) {
+          informacoesPesquisaInternet += '\n\n📚 INFORMAÇÕES ADICIONAIS DA INTERNET:\n';
+          resultadosDDG.forEach((r, i) => {
+            informacoesPesquisaInternet += `${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
+          });
+          console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais no DuckDuckGo`);
+        }
+        
+        // Adicionar ao informacoesAdicionais
+        if (informacoesPesquisaInternet) {
+          informacoesAdicionais += '\n\n🌐 INFORMAÇÕES COMPLEMENTARES DA INTERNET (use para enriquecer a matéria com contexto):' + informacoesPesquisaInternet;
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao pesquisar na internet:', error.message);
+        // Continua sem as informações adicionais
+      }
+    }
+
     // Ajustar prompt baseado se tem conteúdo extraído ou não
     let promptInstrucao = '';
     console.log('🔨 Construindo prompt...');
@@ -1343,7 +1378,10 @@ Retorne APENAS um objeto JSON válido:
     const systemRole = 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.';
 
     if (conteudoExtraido) {
-      promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada EXCLUSIVAMENTE no conteúdo fornecido abaixo.
+      // Verificar se tem informações da internet para enriquecer
+      const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
+      
+      promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada ${temInfoInternet ? 'no conteúdo fornecido, ENRIQUECIDA com as informações complementares da internet' : 'EXCLUSIVAMENTE no conteúdo fornecido abaixo'}.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
 - ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
@@ -1358,16 +1396,17 @@ Retorne APENAS um objeto JSON válido:
 - ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
 
 ✅ O QUE VOCÊ DEVE FAZER (ESTILO METRÓPOLES):
-1. ✅ Use APENAS as informações que estão no texto original
-2. ✅ Reorganize essas informações em estrutura jornalística profissional
-3. ✅ Melhore a fluidez e conectivos entre as frases
-4. ✅ Use sinônimos mantendo o sentido exato
-5. ✅ Torne o texto informativo e direto
-6. ✅ Se houver citações no original, mantenha-as exatamente como estão
-7. ✅ Se NÃO houver citações, NÃO invente nenhuma
+1. ✅ Use as informações que estão no texto original como BASE PRINCIPAL
+2. ✅ ${temInfoInternet ? 'Use as informações da internet para ENRIQUECER com contexto (quem é a pessoa, histórico, etc)' : 'Use APENAS as informações do texto original'}
+3. ✅ Reorganize essas informações em estrutura jornalística profissional
+4. ✅ Melhore a fluidez e conectivos entre as frases
+5. ✅ Use sinônimos mantendo o sentido exato
+6. ✅ Torne o texto informativo e direto
+7. ✅ Se houver citações no original, mantenha-as exatamente como estão
+8. ✅ Se NÃO houver citações, NÃO invente nenhuma
 
 📏 TAMANHO DO CONTEÚDO:
-- Escreva APENAS com base no que foi fornecido
+- ${temInfoInternet ? 'A matéria pode ser mais completa usando as informações da internet' : 'Escreva APENAS com base no que foi fornecido'}
 - Se o texto original é curto, a matéria será curta (200-300 palavras está OK)
 - Se o texto original é longo, a matéria será mais longa
 - NÃO force expansão artificial do conteúdo`;
