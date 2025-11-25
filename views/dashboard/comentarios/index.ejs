@@ -1,215 +1,345 @@
 <%- include('../partials/header', { title: 'Comentários', user: user }) %>
 
 <div class="dashboard-content">
-    <div class="content-header">
-        <div>
-            <h1>Comentários</h1>
-            <p>Gerencie e modere os comentários do portal</p>
+    <!-- Header Compacto -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1><i class="fas fa-comments"></i> Comentários</h1>
+            <p>Gerencie e modere os comentários</p>
         </div>
-        <div class="header-actions">
-            <button onclick="loadComments()" class="btn btn-secondary">
-                <i class="fas fa-sync-alt"></i> Atualizar
+        <div class="header-right">
+            <button onclick="loadComments()" class="btn-icon" title="Atualizar">
+                <i class="fas fa-sync-alt"></i>
             </button>
         </div>
     </div>
 
-    <!-- Filtros e Busca -->
-    <div class="filters-container">
-        <div class="filters-row">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" 
-                       id="searchInput" 
-                       placeholder="Buscar por nome, email ou comentário..."
-                       onkeyup="applyFilters()">
+    <!-- Stats Cards Compactos -->
+    <div class="stats-row">
+        <div class="mini-stat purple">
+            <div class="mini-stat-icon"><i class="fas fa-comments"></i></div>
+            <div class="mini-stat-info">
+                <span class="mini-stat-value" id="totalComments">0</span>
+                <span class="mini-stat-label">Total</span>
             </div>
-            <select id="statusFilter" onchange="applyFilters()" class="filter-select">
-                <option value="all" selected>Todos</option>
+        </div>
+        <div class="mini-stat orange">
+            <div class="mini-stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="mini-stat-info">
+                <span class="mini-stat-value" id="pendingComments">0</span>
+                <span class="mini-stat-label">Pendentes</span>
+            </div>
+        </div>
+        <div class="mini-stat green">
+            <div class="mini-stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="mini-stat-info">
+                <span class="mini-stat-value" id="approvedComments">0</span>
+                <span class="mini-stat-label">Aprovados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Compactos -->
+    <div class="filters-bar">
+        <div class="search-input">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Buscar comentários..." onkeyup="applyFilters()">
+        </div>
+        <div class="filter-group">
+            <select id="statusFilter" onchange="applyFilters()">
+                <option value="all">Todos</option>
                 <option value="pending">Pendentes</option>
                 <option value="approved">Aprovados</option>
             </select>
-            <button class="btn btn-secondary" onclick="clearFilters()">
-                <i class="fas fa-redo"></i> Limpar
+            <button class="btn-text" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Limpar
             </button>
         </div>
     </div>
 
-    <!-- Estatísticas -->
-    <div class="stats-grid" style="margin-bottom: 16px;">
-        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Total</div>
-                    <div style="font-size: 24px; font-weight: 700;" id="totalComments">0</div>
-                </div>
-                <i class="fas fa-comments" style="font-size: 28px; opacity: 0.25;"></i>
-            </div>
-        </div>
-        
-        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Pendentes</div>
-                    <div style="font-size: 24px; font-weight: 700;" id="pendingComments">0</div>
-                </div>
-                <i class="fas fa-clock" style="font-size: 28px; opacity: 0.25;"></i>
-            </div>
-        </div>
-        
-        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 11px; opacity: 0.85; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Aprovados</div>
-                    <div style="font-size: 24px; font-weight: 700;" id="approvedComments">0</div>
-                </div>
-                <i class="fas fa-check-circle" style="font-size: 28px; opacity: 0.25;"></i>
-            </div>
-        </div>
+    <!-- Info de Resultados -->
+    <div class="results-bar" id="resultsInfo" style="display: none;">
+        <span id="resultsText"></span>
     </div>
 
-    <!-- Informações de Resultados -->
-    <div class="results-info" id="resultsInfo" style="display: none;">
-        <p id="resultsText"></p>
+    <!-- Card da Tabela -->
+    <div class="table-card">
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th width="40"></th>
+                    <th>Autor</th>
+                    <th>Comentário</th>
+                    <th width="150">Post</th>
+                    <th width="90">Data</th>
+                    <th width="80">Status</th>
+                    <th width="100">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="commentsTableBody">
+                <tr id="commentsLoading">
+                    <td colspan="7" class="loading-cell">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Carregando...</span>
+                    </td>
+                </tr>
+                <tr id="noComments" style="display: none;">
+                    <td colspan="7" class="empty-cell">
+                        <i class="fas fa-inbox"></i>
+                        <span>Nenhum comentário encontrado</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-
-    <!-- Tabela de Comentários -->
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th width="50">Avatar</th>
-                <th width="160">Nome</th>
-                <th>Comentário</th>
-                <th width="180">Post</th>
-                <th width="110">Data</th>
-                <th width="90">Status</th>
-                <th width="110">Ações</th>
-            </tr>
-        </thead>
-        <tbody id="commentsTableBody">
-            <tr id="commentsLoading">
-                <td colspan="7" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #0153b9;"></i>
-                    <p style="margin-top: 15px; color: #666;">Carregando comentários...</p>
-                </td>
-            </tr>
-            <tr id="noComments" style="display: none;">
-                <td colspan="7" style="text-align: center; padding: 60px 20px;">
-                    <i class="fas fa-inbox" style="font-size: 64px; color: #ddd; margin-bottom: 20px;"></i>
-                    <p style="color: #999; font-size: 16px;">Nenhum comentário encontrado</p>
-                </td>
-            </tr>
-        </tbody>
-    </table>
 </div>
 
 <style>
-    /* Filtros e Busca */
-    .filters-container {
-        background: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border: 1px solid #E8E8E8;
+    /* ========== ESTILOS COMPACTOS COMENTÁRIOS ========== */
+    .dashboard-content {
+        font-size: 0.8rem;
+        max-width: 1400px;
+        margin: 0 auto;
     }
 
-    .search-box {
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .page-header h1 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .page-header h1 i {
+        color: #667eea;
+    }
+
+    .page-header p {
+        font-size: 0.75rem;
+        color: #718096;
+        margin: 2px 0 0 0;
+    }
+
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4a5568;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #3182ce;
+        color: #3182ce;
+    }
+
+    /* Stats Row */
+    .stats-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .mini-stat {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #edf2f7;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .mini-stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .mini-stat.purple .mini-stat-icon { background: #EDE9FE; color: #7C3AED; }
+    .mini-stat.orange .mini-stat-icon { background: #FEF3C7; color: #D97706; }
+    .mini-stat.green .mini-stat-icon { background: #D1FAE5; color: #059669; }
+
+    .mini-stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mini-stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a202c;
+        line-height: 1;
+    }
+
+    .mini-stat-label {
+        font-size: 0.65rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-top: 2px;
+    }
+
+    /* Filters Bar */
+    .filters-bar {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
         position: relative;
         flex: 1;
         min-width: 200px;
     }
 
-    .search-box i.fa-search {
+    .search-input i {
         position: absolute;
-        left: 12px;
+        left: 10px;
         top: 50%;
         transform: translateY(-50%);
-        color: #9CA3AF;
-        font-size: 13px;
+        color: #a0aec0;
+        font-size: 0.75rem;
     }
 
-    .search-box input {
+    .search-input input {
         width: 100%;
-        padding: 8px 12px 8px 36px;
-        border: 1px solid #E2E8F0;
+        padding: 0.5rem 0.75rem 0.5rem 2rem;
+        border: 1px solid #e2e8f0;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 0.8rem;
         transition: all 0.2s;
     }
 
-    .search-box input:focus {
+    .search-input input:focus {
         outline: none;
-        border-color: #FF6B00;
-        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.08);
+        border-color: #3182ce;
+        box-shadow: 0 0 0 2px rgba(49,130,206,0.1);
     }
 
-    .filters-row {
+    .filter-group {
         display: flex;
-        gap: 8px;
+        gap: 0.5rem;
         align-items: center;
     }
 
-    .filter-select {
-        min-width: 140px;
-        padding: 8px 12px;
-        border: 1px solid #E2E8F0;
+    .filter-group select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 0.8rem;
         background: white;
         cursor: pointer;
-        transition: all 0.2s;
     }
 
-    .filter-select:focus {
-        outline: none;
-        border-color: #FF6B00;
-        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.08);
-    }
-
-    .btn-secondary {
-        background: #F3F4F6;
-        color: #4B5563;
-        padding: 8px 14px;
-        border: 1px solid #E5E7EB;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 500;
+    .btn-text {
+        background: none;
+        border: none;
+        color: #718096;
+        font-size: 0.75rem;
         cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 6px;
-        white-space: nowrap;
+        gap: 4px;
+        padding: 0.5rem;
     }
 
-    .btn-secondary:hover {
-        background: #E5E7EB;
-        color: #1F2937;
+    .btn-text:hover {
+        color: #e53e3e;
     }
 
-    .results-info {
-        padding: 8px 0;
-        color: #6B7280;
-        font-size: 12px;
-        border-bottom: 1px solid #E2E8F0;
-        margin-bottom: 12px;
+    /* Results Bar */
+    .results-bar {
+        font-size: 0.7rem;
+        color: #718096;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #edf2f7;
+        margin-bottom: 0.5rem;
     }
 
-    .results-info strong {
-        color: #FF6B00;
+    /* Table Card */
+    .table-card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #edf2f7;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
+
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
     }
-    
+
+    .compact-table thead {
+        background: #f7fafc;
+    }
+
+    .compact-table th {
+        padding: 0.6rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .compact-table td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #f7fafc;
+        vertical-align: middle;
+    }
+
+    .compact-table tbody tr:hover {
+        background: #fafbfc;
+    }
+
+    .loading-cell, .empty-cell {
+        text-align: center;
+        padding: 2rem !important;
+        color: #a0aec0;
+    }
+
+    .loading-cell i, .empty-cell i {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
     /* Avatar */
     .comment-avatar {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: inline-flex;
@@ -217,140 +347,97 @@
         justify-content: center;
         color: white;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 0.7rem;
     }
-    
+
+    /* Comment Text */
     .comment-text {
-        max-width: 400px;
-        color: #4A5568;
-        font-size: 13px;
+        max-width: 300px;
+        color: #4a5568;
+        font-size: 0.8rem;
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    
-    .comment-text-full {
-        white-space: normal;
-        max-width: none;
-    }
-    
-    /* Badges de Status */
+
+    /* Badges */
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 3px 8px;
-        border-radius: 10px;
-        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.6rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.02em;
     }
-    
-    .badge-success {
-        background: #D1FAE5;
-        color: #065F46;
-    }
-    
-    .badge-warning {
-        background: #FEF3C7;
-        color: #92400E;
-    }
-    
+
+    .badge-success { background: #D1FAE5; color: #065F46; }
+    .badge-warning { background: #FEF3C7; color: #92400E; }
+
+    /* Post Link */
     .post-link {
-        color: #4299e1;
+        color: #3182ce;
         text-decoration: none;
-        font-size: 12px;
-        max-width: 180px;
+        font-size: 0.75rem;
+        max-width: 140px;
         display: inline-block;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    
-    .post-link:hover {
-        text-decoration: underline;
-    }
-    
+
+    .post-link:hover { text-decoration: underline; }
+
+    /* Action Buttons */
     .action-btn {
-        padding: 5px 10px;
+        padding: 4px 8px;
         border: none;
-        border-radius: 5px;
-        font-size: 11px;
+        border-radius: 4px;
+        font-size: 0.65rem;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
         text-decoration: none;
         color: white;
     }
-    
-    .action-btn i {
-        font-size: 10px;
-    }
-    
-    .btn-approve {
-        background: #48BB78;
-    }
-    
-    .btn-approve:hover {
-        background: #38A169;
-        transform: translateY(-1px);
-    }
-    
-    .btn-delete {
-        background: #F56565;
-    }
-    
-    .btn-delete:hover {
-        background: #E53E3E;
-        transform: translateY(-1px);
-    }
-    
-    .btn-view {
-        background: #4299E1;
-    }
-    
-    .btn-view:hover {
-        background: #3182CE;
-        transform: translateY(-1px);
+
+    .btn-approve { background: #48BB78; }
+    .btn-approve:hover { background: #38A169; }
+    .btn-delete { background: #F56565; }
+    .btn-delete:hover { background: #E53E3E; }
+    .btn-view { background: #4299E1; }
+    .btn-view:hover { background: #3182CE; }
+
+    /* Author Info */
+    .author-name {
+        font-weight: 500;
+        color: #2d3748;
+        font-size: 0.8rem;
     }
 
-    /* Melhorias na tabela */
-    .data-table {
-        font-size: 13px;
+    .author-email {
+        font-size: 0.7rem;
+        color: #a0aec0;
     }
 
-    .data-table thead th {
-        padding: 10px 12px;
-        font-size: 12px;
-        font-weight: 600;
+    /* Date */
+    .date-text {
+        font-size: 0.7rem;
+        color: #718096;
     }
 
-    .data-table tbody td {
-        padding: 10px 12px;
-        vertical-align: middle;
-    }
-
-    /* Responsivo */
+    /* Responsive */
     @media (max-width: 768px) {
-        .filters-row {
-            flex-direction: column;
-        }
-
-        .search-box {
-            width: 100%;
-        }
-
-        .filter-select {
-            width: 100%;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
+        .stats-row { flex-direction: column; }
+        .filters-bar { flex-direction: column; }
+        .search-input { width: 100%; }
+        .filter-group { width: 100%; justify-content: space-between; }
     }
 </style>
 

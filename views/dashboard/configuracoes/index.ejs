@@ -1,42 +1,43 @@
 <%- include('../partials/header', { title: 'Configurações', user: user }) %>
 
-<div class="dashboard-content">
-    <div class="content-header">
-        <div>
-            <h1>Configurações do Sistema</h1>
-            <p>Gerencie as configurações gerais do portal</p>
+<div class="dashboard-content config-page">
+    <!-- Header Compacto -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1><i class="fas fa-cog"></i> Configurações</h1>
+            <p>Gerencie as configurações do portal</p>
         </div>
     </div>
 
     <% if (typeof success !== 'undefined' && success) { %>
-    <div class="alert alert-success">
-        <%= success %>
+    <div class="alert alert-success compact">
+        <i class="fas fa-check-circle"></i> <%= success %>
     </div>
     <% } %>
 
     <form method="POST" action="/dashboard/configuracoes" id="configForm">
-        <!-- Tabs -->
-        <div class="tabs">
-            <button type="button" class="tab-button active" onclick="switchTab('site')">
-                <i class="fas fa-globe"></i> Site
+        <!-- Tabs Compactas -->
+        <div class="tabs-nav">
+            <button type="button" class="tab-btn active" onclick="switchTab('site')">
+                <i class="fas fa-globe"></i><span>Site</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('seo')">
-                <i class="fas fa-search"></i> SEO
+            <button type="button" class="tab-btn" onclick="switchTab('seo')">
+                <i class="fas fa-search"></i><span>SEO</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('redirects')">
-                <i class="fas fa-directions"></i> Redirecionamentos
+            <button type="button" class="tab-btn" onclick="switchTab('redirects')">
+                <i class="fas fa-directions"></i><span>Redirects</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('ia')">
-                <i class="fas fa-robot"></i> Inteligência Artificial
+            <button type="button" class="tab-btn" onclick="switchTab('ia')">
+                <i class="fas fa-robot"></i><span>IA</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('analytics')">
-                <i class="fas fa-chart-line"></i> Analytics
+            <button type="button" class="tab-btn" onclick="switchTab('analytics')">
+                <i class="fas fa-chart-line"></i><span>Analytics</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('redes')">
-                <i class="fas fa-share-alt"></i> Redes Sociais
+            <button type="button" class="tab-btn" onclick="switchTab('redes')">
+                <i class="fas fa-share-alt"></i><span>Social</span>
             </button>
-            <button type="button" class="tab-button" onclick="switchTab('amp')">
-                <i class="fas fa-bolt"></i> AMP
+            <button type="button" class="tab-btn" onclick="switchTab('amp')">
+                <i class="fas fa-bolt"></i><span>AMP</span>
             </button>
         </div>
 
@@ -581,222 +582,257 @@
 </div>
 
 <style>
-    .content-header {
-        margin-bottom: 24px;
+    /* ========== ESTILOS COMPACTOS CONFIGURAÇÕES ========== */
+    .config-page {
+        font-size: 0.8rem;
+        max-width: 1200px;
+        margin: 0 auto;
     }
 
-    .content-header h1 {
-        font-size: 28px;
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .page-header h1 {
+        font-size: 1.1rem;
         font-weight: 700;
-        margin-bottom: 4px;
-    }
-
-    .content-header p {
-        color: #666;
-        font-size: 14px;
-    }
-
-    .alert {
-        padding: 14px 16px;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        font-size: 14px;
+        color: #2d3748;
+        margin: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
-    }
-
-    .alert-success {
-        background: #D4EDDA;
-        color: #155724;
-        border: 1px solid #C3E6CB;
-    }
-
-    .alert-info {
-        background: #D1ECF1;
-        color: #0C5460;
-        border: 1px solid #BEE5EB;
-    }
-
-    /* Tabs */
-    .tabs {
-        display: flex;
         gap: 8px;
-        margin-bottom: 24px;
-        border-bottom: 2px solid #E0E0E0;
+    }
+
+    .page-header h1 i { color: #667eea; }
+
+    .page-header p {
+        font-size: 0.75rem;
+        color: #718096;
+        margin: 2px 0 0 0;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 0.6rem 0.9rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .alert.compact { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+    .alert-success { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+    .alert-info { background: #DBEAFE; color: #1E40AF; border: 1px solid #BFDBFE; }
+
+    /* Tabs Navigation */
+    .tabs-nav {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 1rem;
+        background: #f7fafc;
+        padding: 4px;
+        border-radius: 8px;
         overflow-x: auto;
     }
 
-    .tab-button {
-        padding: 12px 20px;
-        background: none;
+    .tab-btn {
+        padding: 0.5rem 0.75rem;
+        background: transparent;
         border: none;
-        border-bottom: 3px solid transparent;
-        color: #666;
-        font-weight: 600;
+        border-radius: 6px;
+        color: #64748b;
+        font-weight: 500;
+        font-size: 0.75rem;
         cursor: pointer;
         transition: all 0.2s;
         white-space: nowrap;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
 
-    .tab-button:hover {
-        color: #FF6B00;
-        background: rgba(255, 107, 0, 0.05);
-    }
+    .tab-btn i { font-size: 0.7rem; }
+    .tab-btn:hover { background: #e2e8f0; color: #334155; }
+    .tab-btn.active { background: white; color: #FF6B00; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    .tab-button.active {
-        color: #FF6B00;
-        border-bottom-color: #FF6B00;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     /* Cards */
     .card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        margin-bottom: 24px;
+        border-radius: 8px;
+        border: 1px solid #edf2f7;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
     .card-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid #E0E0E0;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #edf2f7;
+        background: #f8fafc;
     }
 
     .card-header h3 {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1a1a1a;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         margin: 0;
     }
 
-    .card-body {
-        padding: 24px;
-    }
+    .card-header h3 i { color: #64748b; font-size: 0.8rem; }
+    .card-header h4 { font-size: 0.8rem; font-weight: 600; margin: 0; }
+
+    .card-body { padding: 1rem; }
 
     /* Form */
-    .form-group {
-        margin-bottom: 24px;
-    }
+    .form-group { margin-bottom: 1rem; }
 
     .form-group label {
         display: block;
-        font-weight: 600;
-        margin-bottom: 8px;
-        font-size: 14px;
-        color: #333;
+        font-weight: 500;
+        margin-bottom: 0.4rem;
+        font-size: 0.75rem;
+        color: #374151;
     }
 
     .form-control {
         width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #E0E0E0;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.2s;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        transition: all 0.2s;
         font-family: inherit;
     }
 
     .form-control:focus {
         outline: none;
-        border-color: #FF6B00;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
     }
 
-    textarea.form-control {
-        resize: vertical;
-        min-height: 80px;
-    }
-
-    select.form-control {
-        cursor: pointer;
-    }
+    textarea.form-control { resize: vertical; min-height: 60px; }
+    select.form-control { cursor: pointer; }
 
     small {
         display: block;
-        margin-top: 6px;
-        color: #666;
-        font-size: 12px;
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.7rem;
     }
 
-    small a {
-        color: #FF6B00;
-        text-decoration: none;
+    small a { color: #3b82f6; text-decoration: none; }
+    small a:hover { text-decoration: underline; }
+
+    .text-muted { color: #94a3b8; font-style: italic; font-size: 0.75rem; }
+
+    /* Input Group */
+    .input-group {
+        display: flex;
+        gap: 0.5rem;
     }
 
-    small a:hover {
-        text-decoration: underline;
-    }
-
-    .text-muted {
-        color: #999;
-        font-style: italic;
-    }
+    .input-group .form-control { flex: 1; }
 
     /* Form Footer */
     .form-footer {
         position: sticky;
         bottom: 0;
         background: white;
-        padding: 20px 24px;
-        border-top: 2px solid #E0E0E0;
-        margin: 0 -32px -32px;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid #e2e8f0;
+        margin: 0 -1.5rem -1.5rem;
         display: flex;
         justify-content: flex-end;
-        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
     }
 
+    /* Buttons */
     .btn {
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.8rem;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         transition: all 0.2s;
         border: none;
         cursor: pointer;
     }
 
-    .btn-primary {
-        background: #FF6B00;
-        color: white;
+    .btn-primary { background: #FF6B00; color: white; }
+    .btn-primary:hover { background: #E65C00; }
+    .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-outline { background: transparent; color: #64748b; border: 1px solid #e2e8f0; }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-lg { padding: 0.6rem 1.25rem; font-size: 0.85rem; }
+
+    /* Stats Row */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
     }
 
-    .btn-primary:hover {
-        background: #E65C00;
-        transform: translateY(-1px);
+    .stat-card {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 3px solid;
     }
 
-    .btn-lg {
-        padding: 14px 28px;
-        font-size: 16px;
+    .stat-card div:first-child {
+        font-size: 1.25rem;
+        font-weight: 700;
     }
+
+    .stat-card div:last-child {
+        font-size: 0.7rem;
+        color: #64748b;
+    }
+
+    /* Table */
+    .data-table { font-size: 0.75rem; }
+    .data-table th { font-size: 0.7rem; padding: 0.5rem !important; }
+    .data-table td { padding: 0.5rem !important; }
+
+    /* Modal */
+    .modal-redirect .form-group { margin-bottom: 0.75rem; }
+    .modal-redirect label { font-size: 0.75rem; }
+    .modal-redirect small { font-size: 0.65rem; }
 
     /* Icons */
-    .fab, .fas {
-        width: 20px;
-        text-align: center;
+    .fab, .fas { width: 16px; text-align: center; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .tabs-nav { flex-wrap: nowrap; }
+        .tab-btn span { display: none; }
+        .tab-btn { padding: 0.5rem; }
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
 </style>
 
 <script>
     function switchTab(tabName) {
         // Remover active de todos os botões e conteúdos
-        document.querySelectorAll('.tab-button').forEach(btn => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         document.querySelectorAll('.tab-content').forEach(content => {
@@ -804,7 +840,7 @@
         });
 
         // Adicionar active ao botão e conteúdo selecionado
-        event.target.closest('.tab-button').classList.add('active');
+        event.target.closest('.tab-btn').classList.add('active');
         document.getElementById('tab-' + tabName).classList.add('active');
         
         // Carregar redirecionamentos se for a aba redirects
@@ -1040,21 +1076,22 @@
     // Salvar estado da aba ativa
     const activeTab = localStorage.getItem('activeConfigTab') || 'site';
     if (activeTab !== 'site') {
-        document.querySelector('.tab-button.active').classList.remove('active');
-        document.querySelector('.tab-content.active').classList.remove('active');
+        document.querySelector('.tab-btn.active')?.classList.remove('active');
+        document.querySelector('.tab-content.active')?.classList.remove('active');
         
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabIndex = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'].indexOf(activeTab);
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabIndex = ['site', 'seo', 'redirects', 'ia', 'analytics', 'redes', 'amp'].indexOf(activeTab);
         if (tabIndex >= 0 && tabButtons[tabIndex]) {
             tabButtons[tabIndex].classList.add('active');
-            document.getElementById('tab-' + activeTab).classList.add('active');
+            document.getElementById('tab-' + activeTab)?.classList.add('active');
+            if (activeTab === 'redirects') carregarRedirecionamentos();
         }
     }
 
     // Salvar aba ativa ao trocar
-    document.querySelectorAll('.tab-button').forEach((btn, index) => {
+    document.querySelectorAll('.tab-btn').forEach((btn, index) => {
         btn.addEventListener('click', function() {
-            const tabs = ['site', 'seo', 'ia', 'analytics', 'redes', 'amp'];
+            const tabs = ['site', 'seo', 'redirects', 'ia', 'analytics', 'redes', 'amp'];
             localStorage.setItem('activeConfigTab', tabs[index]);
         });
     });
