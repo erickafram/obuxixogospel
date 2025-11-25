@@ -111,7 +111,7 @@
             "caption": "<%- escapeJSON(article.titulo) %>"
         },
         "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
-        "dateModified": "<%= new Date(article.updatedAt).toISOString() %>",
+        "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "dateCreated": "<%= new Date(article.createdAt || article.dataPublicacao).toISOString() %>",
         "author": {
             "@type": "Person",
@@ -320,15 +320,16 @@
                         <span>Início</span>
                     </a>
                     <% if (typeof pages !=='undefined' && pages && pages.length> 0) { %>
-                        <% pages.filter(p => p.exibirMenu && p.ativo).sort((a, b) => a.ordem - b.ordem).forEach(page => { %>
+                        <% pages.filter(p=> p.exibirMenu && p.ativo).sort((a, b) => a.ordem - b.ordem).forEach(page => {
+                            %>
                             <a href="/pagina/<%= page.slug %>" class="page-link"
                                 title="<%= page.descricao || page.titulo %>">
                                 <span>
                                     <%= page.titulo %>
                                 </span>
                             </a>
-                        <% }); %>
-                    <% } %>
+                            <% }); %>
+                                <% } %>
                 </nav>
             </div>
         </div>

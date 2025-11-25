@@ -47,7 +47,7 @@
         "description": "<%= article.descricao %>",
         "image": "<%= article.imagem %>",
         "datePublished": "<%= article.dataPublicacao %>",
-        "dateModified": "<%= article.updatedAt %>",
+        "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "author": {
             "@type": "Person",
             "name": "<%= article.autor %>",
@@ -336,10 +336,10 @@
             background: #fff;
             padding: 30px 20px;
             border-radius: 8px;
-                line-height: 1.5;
-    font-size: 19px;
-    font-weight: 400;
-    color: #141414;
+            line-height: 1.5;
+            font-size: 19px;
+            font-weight: 400;
+            color: #141414;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -523,13 +523,15 @@
                 <li class="menu-item">
                     <a href="<%= siteUrl %>">Início</a>
                 </li>
-                <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-                    <% categories.forEach(cat => { %>
+                <% if (typeof categories !=='undefined' && categories.length> 0) { %>
+                    <% categories.forEach(cat=> { %>
                         <li class="menu-item">
-                            <a href="<%= siteUrl %>/categoria/<%= cat.slug %>"><%= cat.nome %></a>
+                            <a href="<%= siteUrl %>/categoria/<%= cat.slug %>">
+                                <%= cat.nome %>
+                            </a>
                         </li>
-                    <% }); %>
-                <% } %>
+                        <% }); %>
+                            <% } %>
             </ul>
         </div>
     </amp-sidebar>
@@ -553,8 +555,12 @@
                 <%= article.titulo %>
             </h1>
             <div class="article-meta">
-                <span><%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %></span>
-                <span><%= article.autor %></span>
+                <span>
+                    <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                </span>
+                <span>
+                    <%= article.autor %>
+                </span>
             </div>
             <p class="article-description">
                 <%= article.descricao %>

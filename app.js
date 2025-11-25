@@ -1076,7 +1076,6 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
 app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
-app.get('/news_sitemap.xml', sitemapController.generateNewsSitemap); // Rota alternativa com underline
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
 
 // Rotas de páginas públicas
@@ -1102,68 +1101,39 @@ app.get('/', async (req, res) => {
       order: [['dataPublicacao', 'DESC']]
     });
 
-    // ID do destaque para excluir das listas (apenas o que está sendo exibido)
+    // Buscar todas as categorias ordenadas
+    const categories = await Category.findAll({
+      order: [['ordem', 'ASC']]
+    });
+
+    // ID do destaque para excluir das listas
     const destaqueId = destaque ? destaque.id : null;
 
-    // Buscar TODOS os artigos publicados, excluindo apenas o destaque que está sendo exibido
-    // Buscar por 'g1' OU 'noticias' (compatibilidade)
-    const g1Articles = await Article.findAll({
-      where: {
-        categoria: { [sequelize.Sequelize.Op.in]: ['g1', 'noticias'] },
-        publicado: true,
-        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 20
-    });
+    // Objeto para armazenar artigos por categoria
+    // Estrutura: { 'noticias': [artigos...], 'musica': [artigos...] }
+    const articlesByCategory = {};
 
-    const geArticles = await Article.findAll({
-      where: {
-        categoria: { [sequelize.Sequelize.Op.in]: ['ge', 'musica'] },
-        publicado: true,
-        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 20
-    });
+    // Buscar artigos para cada categoria
+    for (const cat of categories) {
+      const articles = await Article.findAll({
+        where: {
+          categoria: cat.slug,
+          publicado: true,
+          ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+        },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 6 // Limite de artigos por seção
+      });
 
-    const gshowArticles = await Article.findAll({
-      where: {
-        categoria: { [sequelize.Sequelize.Op.in]: ['gshow', 'eventos'] },
-        publicado: true,
-        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 20
-    });
-
-    const quemArticles = await Article.findAll({
-      where: {
-        categoria: { [sequelize.Sequelize.Op.in]: ['quem', 'ministerios'] },
-        publicado: true,
-        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 20
-    });
-
-    const valorArticles = await Article.findAll({
-      where: {
-        categoria: { [sequelize.Sequelize.Op.in]: ['valor', 'estudos'] },
-        publicado: true,
-        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 20
-    });
+      if (articles.length > 0) {
+        articlesByCategory[cat.slug] = articles;
+      }
+    }
 
     res.render('index', {
       destaque,
-      g1Articles,
-      geArticles,
-      gshowArticles,
-      quemArticles,
-      valorArticles,
+      categories, // Categorias do banco para menu e lookup
+      articlesByCategory, // Artigos organizados por categoria (dinâmico do banco)
       seo: seoData
     });
   } catch (error) {
