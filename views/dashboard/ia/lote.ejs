@@ -66,6 +66,22 @@
                         </select>
                     </div>
 
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="pesquisarInternet" style="width: 18px; height: 18px;">
+                            <span><i class="fas fa-globe"></i> 🌐 Pesquisar na Internet para Complementar</span>
+                        </label>
+                        <small>A IA pesquisará informações adicionais na internet sobre cada post para enriquecer as matérias (quem é a pessoa, contexto, etc)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="transcreverVideos" checked style="width: 18px; height: 18px;">
+                            <span><i class="fas fa-video"></i> 🎥 Transcrever Vídeos/Reels</span>
+                        </label>
+                        <small>Extrai o áudio de vídeos e reels e transcreve automaticamente para criar matérias mais completas</small>
+                    </div>
+
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         <strong>Como funciona:</strong> O sistema vai extrair os últimos posts do perfil e gerar automaticamente matérias completas com imagens do Bing para cada post.
@@ -1061,10 +1077,29 @@
             return;
         }
         
+        // Pegar opções de geração
+        const pesquisarInternet = document.getElementById('pesquisarInternet').checked;
+        const transcreverVideos = document.getElementById('transcreverVideos').checked;
+        
         console.log(`📝 Gerando matérias para ${postsSelecionados.length} posts selecionados`);
+        console.log(`🌐 Pesquisar na internet: ${pesquisarInternet}`);
+        console.log(`🎥 Transcrever vídeos: ${transcreverVideos}`);
+        
+        // Marcar posts de vídeo para transcrição
+        if (transcreverVideos) {
+            postsSelecionados.forEach(post => {
+                if (post.url && (post.url.includes('/reel/') || post.url.includes('/reels/'))) {
+                    post.isVideo = true;
+                }
+            });
+        }
+        
+        let loadingMsg = `Gerando ${postsSelecionados.length} matérias com IA...`;
+        if (pesquisarInternet) loadingMsg += '\n🌐 Pesquisando informações na internet...';
+        if (transcreverVideos) loadingMsg += '\n🎥 Transcrevendo vídeos/reels...';
         
         showLoading(
-            `Gerando ${postsSelecionados.length} matérias com IA...`,
+            loadingMsg,
             'Isso pode levar alguns minutos. Aguarde...'
         );
         
@@ -1074,7 +1109,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     posts: postsSelecionados,
-                    categoria: categoriaEscolhida
+                    categoria: categoriaEscolhida,
+                    pesquisarInternet: pesquisarInternet
                 })
             });
             
@@ -1369,6 +1405,11 @@
             return;
         }
 
+        const btn = event.target.closest('button');
+        const iconOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
         try {
             const response = await fetch('/api/ia/perfis', {
                 method: 'POST',
@@ -1382,16 +1423,21 @@
             
             if (!data.success) {
                 alert(data.error || 'Erro ao salvar perfil');
+                btn.innerHTML = iconOriginal;
+                btn.disabled = false;
                 return;
             }
 
             await mostrarPerfisSalvos();
             
-            // Feedback visual
-            const btn = event.target.closest('button');
-            const iconOriginal = btn.innerHTML;
+            // Feedback visual de sucesso
             btn.innerHTML = '<i class="fas fa-check"></i>';
             btn.style.background = '#10B981';
+            btn.disabled = false;
+            
+            // Verificar novas postagens do perfil
+            await verificarNovasPostagens(url, username);
+            
             setTimeout(() => {
                 btn.innerHTML = iconOriginal;
                 btn.style.background = '';
@@ -1399,7 +1445,91 @@
         } catch (error) {
             console.error('Erro ao salvar perfil:', error);
             alert('Erro ao salvar perfil');
+            btn.innerHTML = iconOriginal;
+            btn.disabled = false;
         }
+    }
+    
+    // Verificar novas postagens de um perfil
+    async function verificarNovasPostagens(url, username) {
+        try {
+            console.log('🔍 Verificando novas postagens de @' + username + '...');
+            
+            // Buscar últimos 6 posts do perfil
+            const response = await fetch('/api/ia/extrair-posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profileUrl: url, limit: 6 })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.posts && data.posts.length > 0) {
+                // Verificar quais posts já foram publicados
+                const postIds = data.posts.map(post => post.id || post.url);
+                
+                const checkResponse = await fetch('/api/ia/verificar-posts-publicados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ postIds })
+                });
+                
+                const checkData = await checkResponse.json();
+                
+                if (checkData.success) {
+                    const postsPublicados = checkData.postsPublicados || {};
+                    const postsNovos = data.posts.filter(post => {
+                        const postId = post.id || post.url;
+                        return !postsPublicados[postId];
+                    });
+                    
+                    if (postsNovos.length > 0) {
+                        // Mostrar alerta de novas postagens
+                        mostrarAlertaNovasPostagens(username, postsNovos.length, data.posts.length);
+                    } else {
+                        console.log('✅ Nenhuma postagem nova de @' + username);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao verificar novas postagens:', error);
+        }
+    }
+    
+    // Mostrar alerta de novas postagens
+    function mostrarAlertaNovasPostagens(username, novas, total) {
+        // Criar elemento de alerta
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success';
+        alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        alertDiv.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fas fa-bell" style="font-size: 24px; color: #10B981;"></i>
+                <div>
+                    <strong style="font-size: 14px;">🆕 Novas Postagens Detectadas!</strong>
+                    <p style="margin: 8px 0 0; font-size: 13px;">
+                        O perfil <strong>@${username}</strong> tem <strong>${novas}</strong> postagens novas (de ${total} verificadas) que ainda não foram publicadas.
+                    </p>
+                    <button onclick="this.closest('.alert').remove(); document.getElementById('profileUrl').value='https://www.instagram.com/${username}/'; extrairPosts(new Event('submit'));" 
+                        style="margin-top: 10px; padding: 6px 12px; background: #10B981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-magic"></i> Extrair e Gerar Matérias
+                    </button>
+                    <button onclick="this.closest('.alert').remove();" 
+                        style="margin-top: 10px; margin-left: 8px; padding: 6px 12px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Remover após 15 segundos
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 15000);
     }
 
     // Usar perfil salvo

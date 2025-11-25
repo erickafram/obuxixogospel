@@ -69,7 +69,7 @@ exports.extrairPosts = async (req, res) => {
  */
 exports.gerarMaterias = async (req, res) => {
   try {
-    const { posts, categoria } = req.body;
+    const { posts, categoria, pesquisarInternet } = req.body;
 
     if (!posts || !Array.isArray(posts) || posts.length === 0) {
       return res.status(400).json({
@@ -79,8 +79,9 @@ exports.gerarMaterias = async (req, res) => {
     }
 
     console.log(`🚀 Iniciando geração de ${posts.length} matérias...`);
+    console.log(`🌐 Pesquisar na internet: ${pesquisarInternet ? 'SIM' : 'NÃO'}`);
 
-    const resultado = await AIService.processarPostsEmLote(posts, categoria || 'Notícias');
+    const resultado = await AIService.processarPostsEmLote(posts, categoria || 'Notícias', pesquisarInternet || false);
 
     res.json({
       success: true,

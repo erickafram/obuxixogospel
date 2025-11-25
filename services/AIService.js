@@ -1856,14 +1856,16 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
   /**
    * Processa múltiplos posts do Instagram e gera matérias
    * @param {Array} posts - Array de posts do Instagram
-          * @param {string} categoria - Categoria das matérias
-          */
-  static async processarPostsEmLote(posts, categoria = 'Notícias') {
+   * @param {string} categoria - Categoria das matérias
+   * @param {boolean} pesquisarInternet - Se deve pesquisar informações adicionais na internet
+   */
+  static async processarPostsEmLote(posts, categoria = 'Notícias', pesquisarInternet = false) {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
 
     console.log(`🚀 Processando ${posts.length} posts em lote...`);
+    console.log('🌐 Pesquisar na internet:', pesquisarInternet);
     console.log('📊 Posts recebidos:', JSON.stringify(posts, null, 2));
     const materias = [];
     const erros = [];
@@ -1876,9 +1878,28 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
         console.log(`\n📝 Processando post ${i + 1}/${posts.length}: ${postId}`);
         console.log('📄 Dados do post:', JSON.stringify(post, null, 2));
 
+        // 🎥 EXTRAIR CONTEÚDO COMPLETO DO INSTAGRAM (incluindo transcrição de vídeo)
+        let conteudoCompleto = post.caption || '';
+        
+        // Se é um vídeo/reel, tentar transcrever
+        if (post.url && (post.url.includes('/reel/') || post.url.includes('/reels/') || post.isVideo)) {
+          console.log('🎥 Detectado vídeo/reel, tentando transcrever...');
+          try {
+            const conteudoExtraido = await this.extrairConteudoInstagram(post.url);
+            if (conteudoExtraido && !conteudoExtraido.includes('Não foi possível extrair')) {
+              // Combinar legenda com transcrição
+              conteudoCompleto = conteudoExtraido;
+              console.log('✅ Conteúdo extraído com transcrição:', conteudoCompleto.length, 'caracteres');
+            }
+          } catch (transcricaoError) {
+            console.log('⚠️ Erro na transcrição, usando apenas caption:', transcricaoError.message);
+          }
+        }
+
         // Verificar se o post tem conteúdo suficiente
-        if (!post.caption || post.caption.trim().length < 50) {
-          console.log(`⚠️ Post ${postId} ignorado: texto muito curto (${post.caption?.length || 0} caracteres)`);
+        const textoParaValidar = conteudoCompleto.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        if (textoParaValidar.length < 50) {
+          console.log(`⚠️ Post ${postId} ignorado: texto muito curto (${textoParaValidar.length} caracteres)`);
           erros.push({
             post: post,
             erro: 'Texto da postagem muito curto (mínimo 50 caracteres)'
@@ -1887,7 +1908,7 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
         }
 
         // Validar qualidade do caption (evitar apenas hashtags/emojis)
-        const captionLimpo = post.caption.replace(/[#@\u{1F300}-\u{1F9FF}]/gu, '').trim();
+        const captionLimpo = textoParaValidar.replace(/[#@\u{1F300}-\u{1F9FF}]/gu, '').trim();
         if (captionLimpo.length < 50) {
           console.log(`⚠️ Post ${postId} ignorado: caption sem conteúdo significativo (apenas hashtags/emojis)`);
           erros.push({
@@ -1898,15 +1919,48 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
         }
 
         // Log do conteúdo que será enviado para a IA
-        console.log('📋 Caption do post (primeiros 300 chars):', post.caption.substring(0, 300));
-        console.log('📏 Tamanho do caption:', post.caption.length, 'caracteres');
-        console.log('🧹 Caption limpo (sem hashtags/emojis):', captionLimpo.length, 'caracteres');
+        console.log('📋 Conteúdo do post (primeiros 300 chars):', conteudoCompleto.substring(0, 300));
+        console.log('📏 Tamanho do conteúdo:', conteudoCompleto.length, 'caracteres');
 
-        // Criar matéria usando o prompt do estilo G1 (mesmo usado em "Reescrever Matéria")
-        const materia = await this.gerarMateriaEstiloG1(
-          post.caption, // conteúdo do post
+        // 🌐 PESQUISAR NA INTERNET PARA COMPLEMENTAR (se habilitado)
+        let informacoesInternet = '';
+        if (pesquisarInternet) {
+          console.log('🌐 Pesquisando informações complementares na internet...');
+          try {
+            // Limpar texto para query de pesquisa
+            const queryPesquisa = captionLimpo.substring(0, 200);
+            console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
+            
+            // Buscar notícias relacionadas
+            const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
+            if (noticias.length > 0) {
+              informacoesInternet += '\n\n📰 NOTÍCIAS RELACIONADAS:\n';
+              noticias.forEach((n, idx) => {
+                informacoesInternet += `${idx + 1}. ${n.titulo}\n   ${n.descricao || ''}\n`;
+              });
+              console.log(`✅ Encontradas ${noticias.length} notícias relacionadas`);
+            }
+            
+            // Buscar no DuckDuckGo
+            const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
+            if (resultadosDDG.length > 0) {
+              informacoesInternet += '\n\n📚 INFORMAÇÕES ADICIONAIS:\n';
+              resultadosDDG.forEach((r, idx) => {
+                informacoesInternet += `${idx + 1}. ${r.titulo}\n   ${r.snippet}\n`;
+              });
+              console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais`);
+            }
+          } catch (pesquisaError) {
+            console.log('⚠️ Erro na pesquisa na internet:', pesquisaError.message);
+          }
+        }
+
+        // Criar matéria usando o prompt do estilo G1 com informações da internet
+        const materia = await this.gerarMateriaEstiloG1ComPesquisa(
+          conteudoCompleto, // conteúdo do post (com transcrição se houver)
           categoria,
-          post.url // link do post como referência
+          post.url, // link do post como referência
+          informacoesInternet // informações da internet
         );
 
         // Priorizar imagem do Instagram se disponível
@@ -2363,6 +2417,175 @@ Retorne APENAS um objeto JSON válido:
 
     } catch (error) {
       console.error('❌ Erro ao gerar matéria estilo G1:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gera matéria no estilo G1 COM informações da internet para enriquecer
+   * Usado pelo processamento em lote quando pesquisarInternet está ativo
+   */
+  static async gerarMateriaEstiloG1ComPesquisa(conteudoOriginal, categoria = 'Notícias', linkReferencia = null, informacoesInternet = '') {
+    console.log('📝 Gerando matéria no estilo G1 com pesquisa na internet...');
+    console.log('🌐 Informações da internet:', informacoesInternet ? 'SIM' : 'NÃO');
+
+    if (!conteudoOriginal || conteudoOriginal.trim().length < 50) {
+      throw new Error('Conteúdo muito curto para gerar matéria (mínimo 50 caracteres)');
+    }
+
+    // Extrair texto limpo se vier com HTML
+    const textoLimpo = conteudoOriginal
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Verificar se tem informações da internet
+    const temInfoInternet = informacoesInternet && informacoesInternet.length > 50;
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.'
+      },
+      {
+        role: 'user',
+        content: `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada ${temInfoInternet ? 'no conteúdo fornecido, ENRIQUECIDA com as informações complementares da internet' : 'EXCLUSIVAMENTE no conteúdo abaixo'}.
+
+🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
+- ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
+- ❌ NÃO adicione eventos, pessoas ou declarações que NÃO foram citados
+- ❌ NÃO especule quantidades ("500 pessoas", "milhares de fiéis", "centenas de comentários")
+- ❌ NÃO invente nomes de igrejas, cidades, bairros ou lugares
+- ❌ NÃO adicione citações ou falas que NÃO existem no texto original
+- ❌ NÃO invente contexto histórico ou background que NÃO foi mencionado
+- ❌ JAMAIS escreva: "O conteúdo foi publicado em...", "O post obteve X curtidas", "O perfil @tal publicou..."
+- ❌ JAMAIS use meta-linguagem: "Segundo o texto fornecido...", "Baseado nas informações..."
+- ⚠️ SE O TEXTO É VAGO (ex: "Descanse em paz"), NÃO invente detalhes - faça uma matéria curta e genérica
+
+✅ O QUE VOCÊ DEVE FAZER (ESTILO METRÓPOLES):
+1. ✅ Use as informações que estão no texto original como BASE PRINCIPAL
+2. ✅ ${temInfoInternet ? 'Use as informações da internet para ENRIQUECER com contexto (quem é a pessoa, histórico, etc)' : 'Use APENAS as informações do texto original'}
+3. ✅ Reorganize essas informações em estrutura jornalística profissional
+4. ✅ Melhore a fluidez e conectivos entre as frases
+5. ✅ Use sinônimos mantendo o sentido exato
+6. ✅ Torne o texto informativo e direto
+7. ✅ Se houver citações no original, mantenha-as exatamente como estão
+8. ✅ Se NÃO houver citações, NÃO invente nenhuma
+
+📏 TAMANHO DO CONTEÚDO:
+- ${temInfoInternet ? 'A matéria pode ser mais completa usando as informações da internet' : 'Escreva APENAS com base no que foi fornecido'}
+- Se o texto original é curto, a matéria será curta (200-300 palavras está OK)
+- Se o texto original é longo, a matéria será mais longa
+- NÃO force expansão artificial do conteúdo
+
+ESTRUTURA OBRIGATÓRIA:
+
+1. TÍTULO (máximo 80 caracteres):
+   - Impactante, jornalístico e direto (estilo Metrópoles)
+   - Baseado APENAS no fato principal mencionado
+   - Sem sensacionalismo exagerado, foco na notícia
+
+2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
+   - Breve introdução reforçando os principais fatos DO TEXTO ORIGINAL
+   - Linguagem simples e direta, resumindo o lide
+
+3. CONTEÚDO HTML:
+   a) LIDE (1-2 parágrafos): Fato principal de forma DIRETA
+   b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível)
+   c) CITAÇÕES (SE HOUVER no texto original) - Use <blockquote>
+   d) CONCLUSÃO (1 parágrafo)
+
+FORMATAÇÃO HTML:
+- Use <p>texto aqui</p> para CADA parágrafo
+- Use <h3>Subtítulo</h3> APENAS se necessário
+- Use <blockquote>citação</blockquote> APENAS para citações que JÁ EXISTEM
+- Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
+
+CONTEÚDO ORIGINAL (BASE PRINCIPAL):
+${textoLimpo}
+${temInfoInternet ? `
+
+🌐 INFORMAÇÕES COMPLEMENTARES DA INTERNET (use para enriquecer a matéria com contexto):
+${informacoesInternet}` : ''}
+
+CATEGORIA: ${categoria}
+
+⚠️ LEMBRE-SE: ${temInfoInternet ? 'Use as informações da internet para ENRIQUECER a matéria com contexto, mas mantenha o foco no conteúdo original!' : 'É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!'}
+
+IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
+
+Retorne APENAS um objeto JSON válido:
+{"titulo": "título da matéria", "descricao": "descrição curta", "conteudo": "HTML completo em uma linha"}`
+      }
+    ];
+
+    try {
+      console.log('📄 Conteúdo do post (primeiros 200 chars):', textoLimpo.substring(0, 200));
+      console.log('📏 Tamanho total do conteúdo:', textoLimpo.length, 'caracteres');
+
+      const response = await this.makeRequest(messages, 0.2, 3000);
+
+      if (!response || response.trim().length === 0) {
+        throw new Error('IA retornou resposta vazia');
+      }
+
+      let cleanResponse = response.trim();
+      cleanResponse = cleanResponse.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Resposta da IA não contém JSON válido');
+      }
+
+      let jsonStr = jsonMatch[0];
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+
+        if (!parsed.titulo || !parsed.descricao || !parsed.conteudo) {
+          throw new Error('JSON não contém todos os campos necessários');
+        }
+
+        // Limpar tags vazias
+        let conteudoLimpo = parsed.conteudo.trim()
+          .replace(/>\s+</g, '><')
+          .replace(/<p>\s*<\/p>/gi, '')
+          .replace(/<p><\/p>/gi, '')
+          .replace(/<\/p><p>/gi, '</p><br><p>')
+          .replace(/<\/h3><p>/gi, '</h3><br><p>');
+
+        // Adicionar embed do Instagram
+        if (linkReferencia && linkReferencia.includes('instagram.com')) {
+          const jaTemEmbed = conteudoLimpo.includes('instagram-media');
+          if (!jaTemEmbed) {
+            console.log('📱 Adicionando embed do Instagram:', linkReferencia);
+            const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${linkReferencia}" data-instgrm-version="14" style="margin: 30px auto; max-width: 540px;"></blockquote>`;
+            conteudoLimpo += embedCode;
+          }
+        }
+
+        // Buscar imagens
+        const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
+        console.log('🔍 Título:', parsed.titulo);
+        console.log('🔑 Palavras-chave:', palavrasChave);
+        const imagensSugeridas = await this.buscarImagensGoogle(palavrasChave);
+
+        console.log('✅ Matéria gerada com sucesso (com pesquisa na internet)');
+
+        return {
+          titulo: parsed.titulo,
+          descricao: parsed.descricao,
+          conteudo: conteudoLimpo,
+          imagensSugeridas: imagensSugeridas
+        };
+
+      } catch (parseError) {
+        console.error('Erro ao parsear JSON:', parseError.message);
+        throw new Error('Não foi possível processar a resposta da IA');
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao gerar matéria com pesquisa:', error);
       throw error;
     }
   }
