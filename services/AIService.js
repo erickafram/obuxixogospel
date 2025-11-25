@@ -1201,6 +1201,263 @@ Retorne APENAS um objeto JSON válido:
   }
 
   /**
+   * Cria uma matéria a partir de um link (Instagram, Facebook, YouTube, etc)
+   * Com suporte a transcrição de vídeo e pesquisa na internet
+   * @param {string} link - URL do post/vídeo
+   * @param {string} categoria - Categoria da matéria
+   * @param {boolean} pesquisarInternet - Se deve pesquisar informações adicionais
+   * @param {boolean} transcreverVideo - Se deve transcrever o áudio do vídeo
+   */
+  static async criarMateriaPorLink(link, categoria = 'Notícias', pesquisarInternet = true, transcreverVideo = true) {
+    console.log('🔗 Criando matéria por link...');
+    console.log('📎 Link:', link);
+    console.log('🌐 Pesquisar na internet:', pesquisarInternet);
+    console.log('🎥 Transcrever vídeo:', transcreverVideo);
+
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    // Detectar tipo de link
+    const isInstagram = link.includes('instagram.com');
+    const isFacebook = link.includes('facebook.com') || link.includes('fb.watch') || link.includes('fb.com');
+    const isYouTube = link.includes('youtube.com') || link.includes('youtu.be');
+    const isVideo = link.includes('/reel') || link.includes('/reels') || 
+                   link.includes('/watch') || link.includes('fb.watch') ||
+                   link.includes('/videos/') || isYouTube;
+
+    console.log('📱 Tipo de link - Instagram:', isInstagram, 'Facebook:', isFacebook, 'YouTube:', isYouTube, 'Vídeo:', isVideo);
+
+    let conteudoExtraido = '';
+    let imagemExtraida = null;
+
+    // 1. EXTRAIR CONTEÚDO DO LINK
+    if (isInstagram) {
+      console.log('📸 Extraindo conteúdo do Instagram...');
+      try {
+        // Usar função que já faz transcrição de vídeo
+        conteudoExtraido = await this.extrairConteudoInstagram(link);
+        console.log('✅ Conteúdo do Instagram extraído:', conteudoExtraido.length, 'caracteres');
+      } catch (error) {
+        console.error('⚠️ Erro ao extrair Instagram:', error.message);
+      }
+    } else if (isFacebook) {
+      console.log('📘 Extraindo conteúdo do Facebook...');
+      try {
+        conteudoExtraido = await this.extrairConteudoFacebook(link, transcreverVideo);
+        console.log('✅ Conteúdo do Facebook extraído:', conteudoExtraido.length, 'caracteres');
+      } catch (error) {
+        console.error('⚠️ Erro ao extrair Facebook:', error.message);
+      }
+    } else {
+      // Outros sites - usar extração genérica
+      console.log('🌐 Extraindo conteúdo de site genérico...');
+      try {
+        const resultado = await this.extrairConteudoURL(link);
+        if (resultado && resultado.texto) {
+          conteudoExtraido = resultado.texto;
+          imagemExtraida = resultado.imagem;
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao extrair conteúdo:', error.message);
+      }
+    }
+
+    // Verificar se conseguiu extrair conteúdo
+    if (!conteudoExtraido || conteudoExtraido.length < 50) {
+      throw new Error('Não foi possível extrair conteúdo suficiente do link. Por favor, cole o texto manualmente.');
+    }
+
+    // 2. PESQUISAR NA INTERNET (se habilitado)
+    let informacoesInternet = '';
+    if (pesquisarInternet) {
+      console.log('🌐 Pesquisando informações complementares na internet...');
+      
+      // Limpar texto para query de pesquisa
+      const queryPesquisa = conteudoExtraido
+        .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
+        .replace(/📘 CONTEÚDO DO FACEBOOK:/g, '')
+        .replace(/TEXTO DA POSTAGEM:/g, '')
+        .replace(/🎥 TRANSCRIÇÃO DO VÍDEO:/g, '')
+        .replace(/AUTOR:/g, '')
+        .replace(/COMENTÁRIOS DESTACADOS:/g, '')
+        .replace(/\d+,?\d* likes,/g, '')
+        .replace(/\d+,?\d* comments/g, '')
+        .replace(/@\w+/g, '')
+        .replace(/https?:\/\/[^\s]+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 200);
+      
+      console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
+      
+      try {
+        // Buscar notícias no Google News
+        const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
+        if (noticias.length > 0) {
+          informacoesInternet += '\n\n📰 NOTÍCIAS RELACIONADAS:\n';
+          noticias.forEach((n, i) => {
+            informacoesInternet += `${i + 1}. ${n.titulo}\n   ${n.descricao || ''}\n`;
+          });
+          console.log(`✅ Encontradas ${noticias.length} notícias`);
+        }
+
+        // Buscar no DuckDuckGo
+        const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
+        if (resultadosDDG.length > 0) {
+          informacoesInternet += '\n\n📚 INFORMAÇÕES ADICIONAIS:\n';
+          resultadosDDG.forEach((r, i) => {
+            informacoesInternet += `${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
+          });
+          console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais`);
+        }
+      } catch (error) {
+        console.error('⚠️ Erro na pesquisa:', error.message);
+      }
+    }
+
+    // 3. GERAR MATÉRIA COM IA
+    console.log('✨ Gerando matéria com IA...');
+    const materia = await this.gerarMateriaEstiloG1ComPesquisa(
+      conteudoExtraido,
+      categoria,
+      link,
+      informacoesInternet
+    );
+
+    // 4. BUSCAR IMAGENS
+    let imagensSugeridas = materia.imagensSugeridas || [];
+    
+    // Se extraiu imagem do link, adicionar como primeira opção
+    if (imagemExtraida) {
+      imagensSugeridas.unshift({
+        url: imagemExtraida,
+        descricao: 'Imagem do post original',
+        origem: isInstagram ? 'instagram' : isFacebook ? 'facebook' : 'link'
+      });
+    }
+
+    console.log('✅ Matéria criada com sucesso!');
+    console.log('📊 Título:', materia.titulo);
+    console.log('🖼️ Imagens sugeridas:', imagensSugeridas.length);
+
+    return {
+      ...materia,
+      imagensSugeridas
+    };
+  }
+
+  /**
+   * Extrai conteúdo do Facebook (posts e vídeos)
+   * @param {string} url - URL do Facebook
+   * @param {boolean} transcreverVideo - Se deve transcrever o vídeo
+   */
+  static async extrairConteudoFacebook(url, transcreverVideo = true) {
+    console.log('📘 Extraindo conteúdo do Facebook:', url);
+    
+    let conteudo = '';
+    let transcricao = '';
+    
+    // Verificar se é vídeo
+    const isVideo = url.includes('/watch') || url.includes('fb.watch') || url.includes('/videos/') || url.includes('/reel');
+    
+    // Se é vídeo e deve transcrever, usar yt-dlp diretamente
+    if (isVideo && transcreverVideo) {
+      console.log('🎥 Detectado vídeo do Facebook, usando yt-dlp para baixar e transcrever...');
+      
+      try {
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execPromise = util.promisify(exec);
+        const path = require('path');
+        const fs = require('fs');
+        
+        const tempDir = path.join(__dirname, '..', 'temp');
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        const timestamp = Date.now();
+        const audioPath = path.join(tempDir, `fb_audio_${timestamp}.mp3`);
+        
+        console.log('📥 Baixando áudio do Facebook com yt-dlp...');
+        
+        // Baixar apenas o áudio usando yt-dlp
+        const ytdlpCommand = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" "${url}" --no-warnings --quiet`;
+        
+        try {
+          await execPromise(ytdlpCommand, { timeout: 120000 });
+          console.log('✅ Áudio do Facebook baixado:', audioPath);
+          
+          // Verificar se o arquivo existe
+          if (fs.existsSync(audioPath)) {
+            // Transcrever usando Whisper (via Groq)
+            console.log('🎤 Transcrevendo áudio do Facebook...');
+            transcricao = await this.transcreverAudio(audioPath);
+            
+            // Limpar arquivo temporário
+            try { fs.unlinkSync(audioPath); } catch (e) {}
+            
+            if (transcricao && transcricao.length > 50) {
+              console.log('✅ Vídeo do Facebook transcrito:', transcricao.length, 'caracteres');
+            }
+          }
+        } catch (ytError) {
+          console.log('⚠️ yt-dlp falhou para Facebook:', ytError.message);
+        }
+      } catch (error) {
+        console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
+      }
+    }
+    
+    // Extrair texto/descrição do post via scraping
+    try {
+      const axios = require('axios');
+      const cheerio = require('cheerio');
+      
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+        },
+        timeout: 15000
+      });
+
+      const $ = cheerio.load(response.data);
+      
+      // Tentar extrair texto do post
+      const textoPost = $('meta[property="og:description"]').attr('content') ||
+                       $('meta[name="description"]').attr('content') ||
+                       $('.userContent').text() ||
+                       $('[data-testid="post_message"]').text();
+      
+      if (textoPost) {
+        conteudo = '📘 CONTEÚDO DO FACEBOOK:\n\nTEXTO DA POSTAGEM:\n' + textoPost;
+      }
+
+    } catch (error) {
+      console.log('⚠️ Erro ao extrair texto do Facebook:', error.message);
+    }
+    
+    // Adicionar transcrição se disponível
+    if (transcricao && transcricao.length > 50) {
+      conteudo += '\n\n🎥 TRANSCRIÇÃO DO VÍDEO:\n' + transcricao;
+    }
+
+    // Se não conseguiu extrair nada
+    if (!conteudo || conteudo.length < 50) {
+      if (transcricao && transcricao.length > 50) {
+        conteudo = '📘 CONTEÚDO DO FACEBOOK:\n\n🎥 TRANSCRIÇÃO DO VÍDEO:\n' + transcricao;
+      } else {
+        throw new Error('Não foi possível extrair conteúdo suficiente do Facebook. Tente colar o texto manualmente.');
+      }
+    }
+
+    return conteudo;
+  }
+
+  /**
    * Cria uma matéria completa baseada em um tema
    */
   static async criarMateria(tema, categoria = 'Notícias', palavrasChave = '', pesquisarInternet = false, links = []) {

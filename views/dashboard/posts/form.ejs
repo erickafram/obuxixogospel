@@ -493,9 +493,8 @@
                     <div class="form-group">
                         <label for="aiLinkUrl">Link da Postagem ou Matéria *</label>
                         <input type="url" id="aiLinkUrl" class="form-control"
-                            placeholder="Ex: https://www.instagram.com/p/ABC123/ ou https://site.com/noticia">
-                        <small class="form-text">✨ Cole o link do Instagram, Facebook, ou link de matéria de qualquer
-                            site</small>
+                            placeholder="Ex: https://www.instagram.com/p/ABC123/ ou https://facebook.com/watch?v=123">
+                        <small class="form-text">✨ Suporta: <strong>Instagram</strong> (posts, reels, vídeos), <strong>Facebook</strong> (posts, vídeos, watch), <strong>YouTube</strong>, ou qualquer site de notícias</small>
                     </div>
 
                     <div class="form-group">
@@ -515,11 +514,19 @@
                     </div>
 
                     <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="aiLinkPesquisarInternet">
-                            🌐 Pesquisar na Internet para Complementar
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="aiLinkTranscreverVideo" checked style="width: 18px; height: 18px;">
+                            <span>🎥 Transcrever Vídeos Automaticamente</span>
                         </label>
-                        <small class="form-text">A IA pesquisará informações adicionais na internet sobre o assunto para enriquecer a matéria (ex: quem é a pessoa, contexto, etc)</small>
+                        <small class="form-text" style="color: #059669;">Se o link for um vídeo (Instagram Reel, Facebook Watch, etc), o áudio será transcrito automaticamente para criar a matéria</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="aiLinkPesquisarInternet" checked style="width: 18px; height: 18px;">
+                            <span>🌐 Pesquisar na Internet para Complementar</span>
+                        </label>
+                        <small class="form-text" style="color: #059669;">A IA buscará notícias e informações adicionais na internet para enriquecer a matéria com contexto e fatos atualizados</small>
                     </div>
 
                     <div class="form-group">
@@ -533,10 +540,11 @@
                         </select>
                     </div>
 
-                    <div class="ai-info">
-                        <i class="fas fa-info-circle"></i>
-                        <p>📱 A IA extrairá automaticamente o texto do link e criará uma matéria completa. Se for link
-                            de matéria, tentará baixar a imagem destaque automaticamente.</p>
+                    <div class="ai-info" style="background: #ecfdf5; border-color: #10b981;">
+                        <i class="fas fa-info-circle" style="color: #10b981;"></i>
+                        <p style="color: #065f46;">📱 <strong>Instagram/Facebook com vídeo:</strong> Extrai legenda + transcreve o áudio do vídeo<br>
+                        🌐 <strong>Pesquisa na internet:</strong> Busca notícias relacionadas para enriquecer a matéria<br>
+                        🖼️ <strong>Imagem:</strong> Baixa automaticamente a imagem/thumbnail do post</p>
                     </div>
 
                     <div class="modal-footer">
@@ -3684,6 +3692,7 @@
             const categoria = document.getElementById('aiLinkCategoria').value;
             const modoAutomatico = document.getElementById('aiLinkModoAutomatico').checked;
             const pesquisarInternet = document.getElementById('aiLinkPesquisarInternet').checked;
+            const transcreverVideo = document.getElementById('aiLinkTranscreverVideo').checked;
 
             if (!linkUrl && !textoPostagem) {
                 alert('Por favor, cole o link da postagem OU o texto manualmente');
@@ -3728,22 +3737,34 @@
             }
 
             // Se tem apenas link, tentar extrair automaticamente
-            btn.innerHTML = pesquisarInternet 
-                ? '<i class="fas fa-spinner fa-spin"></i> Extraindo, pesquisando e gerando matéria...'
-                : '<i class="fas fa-spinner fa-spin"></i> Extraindo e gerando matéria...';
+            // Detectar tipo de link para mensagem apropriada
+            const isVideo = linkUrl.includes('/reel') || linkUrl.includes('/reels') || 
+                           linkUrl.includes('/watch') || linkUrl.includes('fb.watch') ||
+                           linkUrl.includes('/videos/');
+            
+            let loadingMsg = '<i class="fas fa-spinner fa-spin"></i> ';
+            if (isVideo && transcreverVideo) {
+                loadingMsg += '🎥 Transcrevendo vídeo';
+                if (pesquisarInternet) loadingMsg += ' → 🌐 Pesquisando';
+                loadingMsg += ' → ✨ Gerando matéria...';
+            } else if (pesquisarInternet) {
+                loadingMsg += '📱 Extraindo → 🌐 Pesquisando → ✨ Gerando matéria...';
+            } else {
+                loadingMsg += '📱 Extraindo e gerando matéria...';
+            }
+            btn.innerHTML = loadingMsg;
 
             try {
-                const response = await fetch('/api/ia/criar-materia', {
+                const response = await fetch('/api/ia/criar-por-link', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        tema: `Criar matéria baseada no conteúdo do link`,
+                        link: linkUrl,
                         categoria,
-                        palavrasChave: '',
-                        pesquisarInternet: pesquisarInternet,
-                        links: [linkUrl]
+                        pesquisarInternet,
+                        transcreverVideo
                     })
                 });
 

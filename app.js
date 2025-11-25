@@ -1550,6 +1550,27 @@ app.post('/api/ia/criar-por-texto', async (req, res) => {
   }
 });
 
+// Criar matéria por link (Instagram, Facebook, YouTube, etc) com transcrição de vídeo
+app.post('/api/ia/criar-por-link', async (req, res) => {
+  try {
+    const { link, categoria, pesquisarInternet, transcreverVideo } = req.body;
+
+    if (!link) {
+      return res.status(400).json({ error: 'Link é obrigatório' });
+    }
+
+    console.log('🔗 Criando matéria por link:', link);
+    console.log('🌐 Pesquisar na internet:', pesquisarInternet);
+    console.log('🎥 Transcrever vídeo:', transcreverVideo);
+
+    const materia = await AIService.criarMateriaPorLink(link, categoria, pesquisarInternet, transcreverVideo);
+    res.json({ success: true, materia });
+  } catch (error) {
+    console.error('Erro ao criar matéria por link:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Criar matéria por conteúdo/informações fornecidas
 app.post('/api/ia/criar-por-conteudo', async (req, res) => {
   try {
