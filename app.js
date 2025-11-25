@@ -1647,6 +1647,26 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
   }
 });
 
+// Assistente IA - Chat contextual para edição de posts
+app.post('/api/ia/assistente', async (req, res) => {
+  try {
+    const { mensagem, contexto } = req.body;
+
+    if (!mensagem) {
+      return res.status(400).json({ error: 'Mensagem é obrigatória' });
+    }
+
+    console.log('🤖 Assistente IA - Mensagem:', mensagem);
+    console.log('📋 Contexto:', contexto?.titulo ? 'Tem título' : 'Sem título');
+
+    const resultado = await AIService.processarAssistenteIA(mensagem, contexto);
+    res.json(resultado);
+  } catch (error) {
+    console.error('Erro no assistente IA:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Buscar imagens no Bing
 app.post('/api/ia/buscar-imagens-bing', async (req, res) => {
   try {

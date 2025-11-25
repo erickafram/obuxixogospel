@@ -2078,6 +2078,89 @@ Retorne APENAS um objeto JSON válido:
   }
 
   /**
+   * Processa mensagens do Assistente IA contextual
+   * Entende o que o usuário quer e gera sugestões apropriadas
+   */
+  static async processarAssistenteIA(mensagem, contexto = {}) {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    console.log('🤖 Processando assistente IA...');
+    console.log('📝 Mensagem:', mensagem);
+
+    const { titulo, descricao, conteudo } = contexto;
+    const temContexto = titulo || descricao || conteudo;
+
+    // Prompt para entender a intenção e gerar resposta
+    const prompt = `Você é um assistente de IA para criação de matérias jornalísticas gospel.
+
+CONTEXTO ATUAL DO POST:
+${titulo ? `- Título: "${titulo}"` : '- Título: (vazio)'}
+${descricao ? `- Descrição: "${descricao}"` : '- Descrição: (vazio)'}
+${conteudo ? `- Conteúdo: "${conteudo.substring(0, 500)}${conteudo.length > 500 ? '...' : ''}"` : '- Conteúdo: (vazio)'}
+
+PEDIDO DO USUÁRIO: "${mensagem}"
+
+ANALISE o pedido e responda em JSON com:
+1. "resposta": Uma mensagem amigável explicando o que você vai fazer
+2. "sugestoes": Array de sugestões (máximo 3), cada uma com:
+   - "texto": O texto sugerido
+   - "campo": "titulo", "descricao", "conteudo" ou "todos"
+   - Se campo="todos", inclua também: "titulo", "descricao", "conteudo"
+
+EXEMPLOS DE PEDIDOS:
+- "deixe o título mais polêmico" → gerar 3 opções de títulos polêmicos
+- "adicione informações sobre X no conteúdo" → gerar conteúdo expandido
+- "crie uma matéria sobre futebol" → gerar título, descrição e conteúdo completos
+- "reescreva a descrição" → gerar 3 opções de descrição
+
+REGRAS:
+- Seja criativo mas factual
+- Para títulos: máximo 100 caracteres, impactantes
+- Para descrições: máximo 200 caracteres
+- Para conteúdo: use HTML com <p>, <h3>, etc
+- Estilo jornalístico profissional (Metrópoles/G1)
+
+Responda APENAS com JSON válido:`;
+
+    const messages = [
+      {
+        role: 'system',
+        content: 'Você é um assistente de IA especializado em jornalismo gospel. Responda sempre em JSON válido.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ];
+
+    try {
+      const response = await this.makeRequest(messages, 0.7, 2000);
+      
+      // Parse do JSON
+      let jsonStr = response.trim();
+      if (jsonStr.includes('```')) {
+        jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      }
+      
+      const resultado = JSON.parse(jsonStr);
+      
+      return {
+        success: true,
+        resposta: resultado.resposta || 'Aqui estão minhas sugestões:',
+        sugestoes: resultado.sugestoes || []
+      };
+    } catch (error) {
+      console.error('Erro ao processar assistente:', error);
+      return {
+        success: false,
+        error: 'Não consegui processar seu pedido. Tente ser mais específico.'
+      };
+    }
+  }
+
+  /**
    * Torna título ou descrição mais polêmico e chamativo
    */
   static async tornarPolemico(texto, tipo = 'titulo') {

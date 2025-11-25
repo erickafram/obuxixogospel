@@ -106,6 +106,10 @@
                                             onclick="abrirModalAcrescentarInfo()">
                                             <i class="fas fa-plus-circle"></i> Acrescentar Informação
                                         </button>
+                                        <button type="button" class="btn-ai-assistant"
+                                            onclick="abrirAssistenteIA()">
+                                            <i class="fas fa-robot"></i> Assistente IA
+                                        </button>
                                     </div>
                                     <div class="editor-mode-toggle">
                                         <button type="button" class="mode-btn active" data-mode="visual"
@@ -589,9 +593,49 @@
                     <button type="button" class="btn btn-secondary" onclick="fecharModalAcrescentarInfo()">
                         Cancelar
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="aplicarAcrescentarInfo()">
-                        <i class="fas fa-magic"></i> Aplicar Modificações
-                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Assistente IA -->
+    <div id="modalAssistenteIA" class="modal">
+        <div class="modal-content modal-ai modal-assistente">
+            <div class="modal-header">
+                <h2><i class="fas fa-robot"></i> Assistente IA</h2>
+                <button type="button" class="modal-close" onclick="fecharAssistenteIA()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="assistente-chat">
+                    <div class="assistente-mensagens" id="assistenteMensagens">
+                        <div class="mensagem-ia">
+                            <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="mensagem-conteudo">
+                                <p>Olá! Sou seu assistente de IA. Posso ajudar você a:</p>
+                                <ul>
+                                    <li><strong>Deixar o título mais polêmico</strong> - "deixe o título mais chamativo"</li>
+                                    <li><strong>Adicionar informações</strong> - "adicione no conteúdo informações sobre..."</li>
+                                    <li><strong>Reescrever partes</strong> - "reescreva a descrição de forma mais..."</li>
+                                    <li><strong>Criar matéria completa</strong> - "crie uma matéria sobre futebol"</li>
+                                </ul>
+                                <p>O que você gostaria de fazer?</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="assistente-input-area">
+                        <textarea id="assistenteInput" class="form-control" rows="2" 
+                            placeholder="Digite o que você quer... Ex: 'deixe o título mais polêmico'"
+                            onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); enviarMensagemAssistente(); }"></textarea>
+                        <button type="button" class="btn-enviar-assistente" onclick="enviarMensagemAssistente()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="assistente-sugestoes" id="assistenteSugestoes" style="display: none;">
+                    <h4><i class="fas fa-lightbulb"></i> Sugestões da IA</h4>
+                    <div class="sugestoes-lista" id="sugestoesLista"></div>
                 </div>
             </div>
         </div>
@@ -2060,6 +2104,32 @@
             transform: scale(0.98);
         }
 
+        .btn-ai-assistant {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+            margin-left: 8px;
+        }
+
+        .btn-ai-assistant:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-ai-assistant:active {
+            transform: scale(0.98);
+        }
+
         .btn-ai-expand {
             background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
             color: white;
@@ -2542,6 +2612,33 @@
             background: #3d8bfd;
             transform: scale(1.08);
         }
+
+        /* Estilos do Modal Assistente IA */
+        .modal-assistente { max-width: 600px; }
+        .assistente-chat { display: flex; flex-direction: column; gap: 16px; }
+        .assistente-mensagens { max-height: 300px; overflow-y: auto; padding: 16px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; }
+        .mensagem-ia, .mensagem-usuario { display: flex; gap: 12px; }
+        .mensagem-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+        .mensagem-ia .mensagem-avatar { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white; }
+        .mensagem-usuario .mensagem-avatar { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; }
+        .mensagem-conteudo { flex: 1; background: white; padding: 12px 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .mensagem-conteudo p { margin: 0 0 8px 0; line-height: 1.5; }
+        .mensagem-conteudo p:last-child { margin-bottom: 0; }
+        .mensagem-conteudo ul { margin: 8px 0; padding-left: 20px; }
+        .mensagem-conteudo li { margin-bottom: 6px; }
+        .assistente-input-area { display: flex; gap: 10px; align-items: flex-end; }
+        .assistente-input-area textarea { flex: 1; resize: none; border-radius: 12px; }
+        .btn-enviar-assistente { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white; border: none; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; font-size: 18px; }
+        .btn-enviar-assistente:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+        .assistente-sugestoes { margin-top: 16px; padding: 16px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 12px; }
+        .assistente-sugestoes h4 { margin: 0 0 12px 0; color: #92400E; font-size: 14px; }
+        .sugestoes-lista { display: flex; flex-direction: column; gap: 8px; }
+        .sugestao-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+        .sugestao-item:hover { border-color: #F59E0B; background: #FFFEF5; }
+        .sugestao-texto { flex: 1; font-size: 14px; }
+        .sugestao-campo { font-size: 11px; color: #6B7280; background: #F3F4F6; padding: 2px 8px; border-radius: 4px; }
+        .btn-aplicar-sugestao { background: #10B981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .btn-aplicar-sugestao:hover { background: #059669; }
     </style>
 
     <!-- Cropper.js CSS e JS -->
@@ -4112,6 +4209,159 @@
                 closeAIModal();
             }
         });
+
+        // ==================== ASSISTENTE IA ====================
+        function abrirAssistenteIA() {
+            document.getElementById('modalAssistenteIA').style.display = 'flex';
+            document.getElementById('assistenteInput').focus();
+        }
+
+        function fecharAssistenteIA() {
+            document.getElementById('modalAssistenteIA').style.display = 'none';
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modalAssistenteIA').addEventListener('click', function (e) {
+            if (e.target === this) {
+                fecharAssistenteIA();
+            }
+        });
+
+        async function enviarMensagemAssistente() {
+            const input = document.getElementById('assistenteInput');
+            const mensagem = input.value.trim();
+            
+            if (!mensagem) return;
+            
+            // Adicionar mensagem do usuário ao chat
+            const mensagensDiv = document.getElementById('assistenteMensagens');
+            mensagensDiv.innerHTML += `
+                <div class="mensagem-usuario">
+                    <div class="mensagem-avatar"><i class="fas fa-user"></i></div>
+                    <div class="mensagem-conteudo"><p>${mensagem}</p></div>
+                </div>
+            `;
+            
+            input.value = '';
+            input.disabled = true;
+            
+            // Adicionar indicador de carregamento
+            mensagensDiv.innerHTML += `
+                <div class="mensagem-ia" id="msgLoading">
+                    <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="mensagem-conteudo"><p><i class="fas fa-spinner fa-spin"></i> Pensando...</p></div>
+                </div>
+            `;
+            mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
+            
+            try {
+                // Coletar contexto atual do post
+                const tituloAtual = document.getElementById('titulo').value;
+                const descricaoAtual = document.getElementById('descricao').value;
+                const conteudoAtual = quill.getText();
+                
+                const response = await fetch('/api/ia/assistente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mensagem,
+                        contexto: {
+                            titulo: tituloAtual,
+                            descricao: descricaoAtual,
+                            conteudo: conteudoAtual
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remover loading
+                document.getElementById('msgLoading').remove();
+                
+                if (data.success) {
+                    // Mostrar resposta da IA
+                    mensagensDiv.innerHTML += `
+                        <div class="mensagem-ia">
+                            <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="mensagem-conteudo"><p>${data.resposta}</p></div>
+                        </div>
+                    `;
+                    
+                    // Se tem sugestões, mostrar
+                    if (data.sugestoes && data.sugestoes.length > 0) {
+                        mostrarSugestoes(data.sugestoes);
+                    }
+                } else {
+                    mensagensDiv.innerHTML += `
+                        <div class="mensagem-ia">
+                            <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="mensagem-conteudo"><p>Desculpe, ocorreu um erro: ${data.error}</p></div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('msgLoading')?.remove();
+                mensagensDiv.innerHTML += `
+                    <div class="mensagem-ia">
+                        <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="mensagem-conteudo"><p>Erro ao processar: ${error.message}</p></div>
+                    </div>
+                `;
+            } finally {
+                input.disabled = false;
+                input.focus();
+                mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
+            }
+        }
+
+        function mostrarSugestoes(sugestoes) {
+            const sugestoesDiv = document.getElementById('assistenteSugestoes');
+            const listaDiv = document.getElementById('sugestoesLista');
+            
+            listaDiv.innerHTML = sugestoes.map((s, i) => `
+                <div class="sugestao-item" onclick="aplicarSugestao(${i})">
+                    <div class="sugestao-texto">${s.texto}</div>
+                    <span class="sugestao-campo">${s.campo}</span>
+                    <button type="button" class="btn-aplicar-sugestao">Aplicar</button>
+                </div>
+            `).join('');
+            
+            sugestoesDiv.style.display = 'block';
+            window.sugestoesAtuais = sugestoes;
+        }
+
+        function aplicarSugestao(index) {
+            const sugestao = window.sugestoesAtuais[index];
+            if (!sugestao) return;
+            
+            switch(sugestao.campo) {
+                case 'titulo':
+                    document.getElementById('titulo').value = sugestao.texto;
+                    break;
+                case 'descricao':
+                    document.getElementById('descricao').value = sugestao.texto;
+                    break;
+                case 'conteudo':
+                    quill.root.innerHTML = sugestao.texto;
+                    break;
+                case 'todos':
+                    if (sugestao.titulo) document.getElementById('titulo').value = sugestao.titulo;
+                    if (sugestao.descricao) document.getElementById('descricao').value = sugestao.descricao;
+                    if (sugestao.conteudo) quill.root.innerHTML = sugestao.conteudo;
+                    break;
+            }
+            
+            document.getElementById('assistenteSugestoes').style.display = 'none';
+            
+            const mensagensDiv = document.getElementById('assistenteMensagens');
+            mensagensDiv.innerHTML += `
+                <div class="mensagem-ia">
+                    <div class="mensagem-avatar"><i class="fas fa-check"></i></div>
+                    <div class="mensagem-conteudo"><p>✅ Sugestão aplicada com sucesso!</p></div>
+                </div>
+            `;
+            mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
+        }
 
         // ==================== EDITOR DE IMAGENS ====================
         let cropper = null;
