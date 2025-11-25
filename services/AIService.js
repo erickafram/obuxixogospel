@@ -938,11 +938,18 @@ class AIService {
 
   /**
    * Cria uma matéria baseada em texto colado (Instagram, Facebook, etc)
+   * @param {string} texto - Texto extraído do post/vídeo
+   * @param {string} categoria - Categoria da matéria
+   * @param {string} linkReferencia - Link original do conteúdo
+   * @param {boolean} pesquisarInternet - Se deve pesquisar informações adicionais na internet
    */
-  static async criarMateriaPorTexto(texto, categoria = 'Notícias', linkReferencia = '') {
+  static async criarMateriaPorTexto(texto, categoria = 'Notícias', linkReferencia = '', pesquisarInternet = false) {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
+
+    console.log('📝 Criando matéria por texto...');
+    console.log('🌐 Pesquisar na internet:', pesquisarInternet);
 
     // Buscar imagens baseadas no texto
     console.log('Buscando imagens baseadas no texto fornecido');
@@ -962,7 +969,46 @@ class AIService {
 
     const imagensSugeridas = await this.buscarImagensGoogle(palavrasParaImagem);
 
-    const prompt = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada EXCLUSIVAMENTE no texto fornecido abaixo.
+    // 🌐 PESQUISAR NA INTERNET PARA COMPLEMENTAR A MATÉRIA
+    let informacoesAdicionais = '';
+    if (pesquisarInternet) {
+      console.log('🌐 Pesquisando informações adicionais na internet...');
+      
+      // Extrair palavras-chave do texto para pesquisa
+      const palavrasChavePesquisa = textoLimpo.substring(0, 200);
+      
+      try {
+        // Buscar no DuckDuckGo
+        const resultadosDDG = await this.pesquisarInternet(palavrasChavePesquisa + ' gospel evangélico');
+        if (resultadosDDG.length > 0) {
+          informacoesAdicionais += '\n\n📚 INFORMAÇÕES ADICIONAIS DA INTERNET (use para enriquecer a matéria):\n';
+          resultadosDDG.forEach((r, i) => {
+            informacoesAdicionais += `\n${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
+          });
+          console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais no DuckDuckGo`);
+        }
+        
+        // Buscar também no Google News
+        const noticiasGoogle = await this.buscarNoticiasAtuais(palavrasChavePesquisa);
+        if (noticiasGoogle.length > 0) {
+          informacoesAdicionais += '\n\n📰 NOTÍCIAS RELACIONADAS:\n';
+          noticiasGoogle.forEach((n, i) => {
+            informacoesAdicionais += `\n${i + 1}. ${n.titulo}\n   ${n.descricao || ''}\n`;
+          });
+          console.log(`✅ Encontradas ${noticiasGoogle.length} notícias relacionadas`);
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao pesquisar na internet:', error.message);
+        // Continua sem as informações adicionais
+      }
+    }
+
+    // Construir prompt com ou sem informações adicionais
+    const instrucaoAdicional = pesquisarInternet && informacoesAdicionais 
+      ? `\n\n🌐 INFORMAÇÕES COMPLEMENTARES DA INTERNET:\nUse as informações abaixo para ENRIQUECER a matéria com contexto adicional (quem é a pessoa, histórico, etc). Mas mantenha o foco no conteúdo original.\n${informacoesAdicionais}`
+      : '';
+
+    const prompt = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada ${pesquisarInternet ? 'no texto fornecido, ENRIQUECIDA com as informações complementares da internet' : 'EXCLUSIVAMENTE no texto fornecido abaixo'}.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
 - ❌ NÃO invente números, datas, horários ou locais que NÃO foram mencionados
@@ -1044,10 +1090,11 @@ LINGUAGEM (ESTILO METRÓPOLES):
 CATEGORIA: ${categoria}
 ${linkReferencia ? `LINK DE REFERÊNCIA: ${linkReferencia}` : ''}
 
-TEXTO FORNECIDO (USE APENAS ISSO):
+TEXTO FORNECIDO (BASE PRINCIPAL):
 ${texto}
+${instrucaoAdicional}
 
-⚠️ LEMBRE-SE: É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!
+⚠️ LEMBRE-SE: ${pesquisarInternet ? 'Use as informações da internet para ENRIQUECER a matéria com contexto, mas mantenha o foco no conteúdo original!' : 'É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!'}
 
 IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
 

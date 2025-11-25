@@ -513,6 +513,14 @@
                     </div>
 
                     <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="aiLinkPesquisarInternet">
+                            🌐 Pesquisar na Internet para Complementar
+                        </label>
+                        <small class="form-text">A IA pesquisará informações adicionais na internet sobre o assunto para enriquecer a matéria (ex: quem é a pessoa, contexto, etc)</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="aiLinkCategoria">Categoria</label>
                         <select id="aiLinkCategoria" class="form-control">
                             <option value="Notícias">Notícias</option>
@@ -3668,6 +3676,7 @@
             const textoPostagem = document.getElementById('aiLinkTexto').value;
             const categoria = document.getElementById('aiLinkCategoria').value;
             const modoAutomatico = document.getElementById('aiLinkModoAutomatico').checked;
+            const pesquisarInternet = document.getElementById('aiLinkPesquisarInternet').checked;
 
             if (!linkUrl && !textoPostagem) {
                 alert('Por favor, cole o link da postagem OU o texto manualmente');
@@ -3680,7 +3689,9 @@
 
             // Se tem texto manual, usar direto
             if (textoPostagem) {
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando matéria do texto...';
+                btn.innerHTML = pesquisarInternet 
+                    ? '<i class="fas fa-spinner fa-spin"></i> Gerando matéria e pesquisando na internet...'
+                    : '<i class="fas fa-spinner fa-spin"></i> Gerando matéria do texto...';
 
                 try {
                     const response = await fetch('/api/ia/criar-por-texto', {
@@ -3691,7 +3702,8 @@
                         body: JSON.stringify({
                             texto: textoPostagem,
                             linkReferencia: linkUrl,
-                            categoria
+                            categoria,
+                            pesquisarInternet
                         })
                     });
 
@@ -3709,7 +3721,9 @@
             }
 
             // Se tem apenas link, tentar extrair automaticamente
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Extraindo e gerando matéria...';
+            btn.innerHTML = pesquisarInternet 
+                ? '<i class="fas fa-spinner fa-spin"></i> Extraindo, pesquisando e gerando matéria...'
+                : '<i class="fas fa-spinner fa-spin"></i> Extraindo e gerando matéria...';
 
             try {
                 const response = await fetch('/api/ia/criar-materia', {
@@ -3721,7 +3735,7 @@
                         tema: `Criar matéria baseada no conteúdo do link`,
                         categoria,
                         palavrasChave: '',
-                        pesquisarInternet: false,
+                        pesquisarInternet: pesquisarInternet,
                         links: [linkUrl]
                     })
                 });

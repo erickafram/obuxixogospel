@@ -1536,13 +1536,13 @@ app.post('/api/ia/criar-materia', async (req, res) => {
 // Criar matéria por texto colado
 app.post('/api/ia/criar-por-texto', async (req, res) => {
   try {
-    const { texto, linkReferencia, categoria } = req.body;
+    const { texto, linkReferencia, categoria, pesquisarInternet } = req.body;
 
     if (!texto) {
       return res.status(400).json({ error: 'Texto é obrigatório' });
     }
 
-    const materia = await AIService.criarMateriaPorTexto(texto, categoria, linkReferencia);
+    const materia = await AIService.criarMateriaPorTexto(texto, categoria, linkReferencia, pesquisarInternet);
     res.json({ success: true, materia });
   } catch (error) {
     console.error('Erro ao criar matéria por texto:', error);
