@@ -526,6 +526,13 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       googleSitemapService.refreshSitemaps().catch(err =>
         console.error('Background Sitemap Refresh Error:', err)
       );
+
+      // Trigger Indexing API
+      const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+      const url = `${baseUrl}/${article.categoria}/${article.urlAmigavel}`;
+      GoogleIndexingService.publishUrl(url).catch(err =>
+        console.error('Background Indexing API Error:', err)
+      );
     }
 
     // Se for requisição AJAX (rascunho), retornar JSON
@@ -676,6 +683,13 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       googleSitemapService.refreshSitemaps().catch(err =>
         console.error('Background Sitemap Refresh Error:', err)
       );
+
+      // Trigger Indexing API
+      const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+      const url = `${baseUrl}/${article.categoria}/${article.urlAmigavel}`;
+      GoogleIndexingService.publishUrl(url).catch(err =>
+        console.error('Background Indexing API Error:', err)
+      );
     }
 
     // Se for requisição AJAX (rascunho), retornar JSON
@@ -708,7 +722,24 @@ app.delete('/dashboard/posts/deletar/:id', isAuthenticated, canDeletePosts, asyn
       return res.json({ success: false, message: 'Post não encontrado' });
     }
 
+    // Capture data for SEO before destroying
+    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+    const url = `${baseUrl}/${article.categoria}/${article.urlAmigavel}`;
+    const wasPublished = article.publicado;
+
     await article.destroy();
+
+    // Trigger Sitemap Refresh
+    googleSitemapService.refreshSitemaps().catch(err =>
+      console.error('Background Sitemap Refresh Error:', err)
+    );
+
+    // Remove from Google Index if it was published
+    if (wasPublished) {
+      GoogleIndexingService.removeUrl(url).catch(err =>
+        console.error('Background Indexing API Remove Error:', err)
+      );
+    }
 
     res.json({ success: true, message: 'Post deletado com sucesso' });
   } catch (error) {
