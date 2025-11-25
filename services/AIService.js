@@ -1316,54 +1316,88 @@ Retorne APENAS um objeto JSON válido:
     console.log('🖼️ Imagem extraída:', imagemExtraida ? 'SIM' : 'NÃO');
     console.log('📸 Imagens sugeridas até agora:', imagensSugeridas.length);
 
-    // 🌐 PESQUISAR NA INTERNET APÓS EXTRAIR O CONTEÚDO
-    // Usar o conteúdo extraído como base da pesquisa (não o tema genérico)
+    // 🌐 PESQUISAR NA INTERNET - SEMPRE que pesquisarInternet estiver ativo
+    // Usar o conteúdo extraído OU o tema como base da pesquisa
     let informacoesPesquisaInternet = '';
-    if (pesquisarInternet && conteudoExtraido && conteudoExtraido.length > 100) {
-      console.log('🌐 Pesquisando informações complementares na internet...');
+    if (pesquisarInternet) {
+      console.log('🌐 Pesquisando informações na internet...');
       
-      // Limpar o conteúdo extraído para usar como query de pesquisa
-      let queryPesquisa = conteudoExtraido
-        .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
-        .replace(/TEXTO DA POSTAGEM:/g, '')
-        .replace(/🎥 TRANSCRIÇÃO DO VÍDEO:/g, '')
-        .replace(/AUTOR:/g, '')
-        .replace(/COMENTÁRIOS DESTACADOS:/g, '')
-        .replace(/\d+,?\d* likes,/g, '')
-        .replace(/\d+,?\d* comments/g, '')
-        .replace(/@\w+/g, '')
-        .replace(/https?:\/\/[^\s]+/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 200); // Primeiros 200 caracteres para a query
+      // Determinar query de pesquisa: usar conteúdo extraído se disponível, senão usar o tema
+      let queryPesquisa = '';
+      
+      if (conteudoExtraido && conteudoExtraido.length > 100) {
+        // Limpar o conteúdo extraído para usar como query de pesquisa
+        queryPesquisa = conteudoExtraido
+          .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
+          .replace(/TEXTO DA POSTAGEM:/g, '')
+          .replace(/🎥 TRANSCRIÇÃO DO VÍDEO:/g, '')
+          .replace(/AUTOR:/g, '')
+          .replace(/COMENTÁRIOS DESTACADOS:/g, '')
+          .replace(/\d+,?\d* likes,/g, '')
+          .replace(/\d+,?\d* comments/g, '')
+          .replace(/@\w+/g, '')
+          .replace(/https?:\/\/[^\s]+/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .substring(0, 200);
+        console.log('🔍 Query baseada no conteúdo extraído');
+      } else {
+        // Usar o tema diretamente
+        queryPesquisa = tema;
+        console.log('🔍 Query baseada no tema');
+      }
       
       console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
       
       try {
-        // Buscar notícias atuais do Google News
+        // 1. Buscar notícias atuais do Google News (mais recentes e relevantes)
+        console.log('📰 Buscando notícias no Google News...');
         const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
         if (noticias.length > 0) {
-          informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS RELACIONADAS (Google News):\n';
+          informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS ATUAIS (Google News) - USE ESTAS INFORMAÇÕES:\n';
           noticias.forEach((n, i) => {
-            informacoesPesquisaInternet += `${i + 1}. ${n.titulo}\n`;
-            informacoesPesquisaInternet += `   ${n.descricao || ''}\n`;
+            informacoesPesquisaInternet += `\n${i + 1}. ${n.titulo}`;
+            if (n.descricao) informacoesPesquisaInternet += `\n   Resumo: ${n.descricao}`;
+            if (n.data) informacoesPesquisaInternet += `\n   Data: ${n.data}`;
+            informacoesPesquisaInternet += '\n';
           });
-          console.log(`✅ Encontradas ${noticias.length} notícias relacionadas`);
+          console.log(`✅ Encontradas ${noticias.length} notícias no Google News`);
         }
 
-        // Buscar também no DuckDuckGo
+        // 2. Buscar no DuckDuckGo para informações gerais
+        console.log('🔎 Buscando informações no DuckDuckGo...');
         const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
         if (resultadosDDG.length > 0) {
           informacoesPesquisaInternet += '\n\n📚 INFORMAÇÕES ADICIONAIS DA INTERNET:\n';
           resultadosDDG.forEach((r, i) => {
-            informacoesPesquisaInternet += `${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
+            informacoesPesquisaInternet += `\n${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
           });
-          console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais no DuckDuckGo`);
+          console.log(`✅ Encontradas ${resultadosDDG.length} informações no DuckDuckGo`);
+        }
+        
+        // 3. Buscar notícias específicas sobre o tema (segunda pesquisa mais focada)
+        if (!conteudoExtraido || conteudoExtraido.length < 100) {
+          console.log('📰 Buscando notícias específicas sobre o tema...');
+          const noticiasTema = await this.buscarNoticiasAtuais(tema + ' últimas notícias');
+          if (noticiasTema.length > 0) {
+            informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS ESPECÍFICAS SOBRE O TEMA:\n';
+            noticiasTema.forEach((n, i) => {
+              if (!informacoesPesquisaInternet.includes(n.titulo)) { // Evitar duplicatas
+                informacoesPesquisaInternet += `\n${i + 1}. ${n.titulo}`;
+                if (n.descricao) informacoesPesquisaInternet += `\n   ${n.descricao}`;
+                informacoesPesquisaInternet += '\n';
+              }
+            });
+            console.log(`✅ Encontradas ${noticiasTema.length} notícias específicas`);
+          }
         }
         
         // Adicionar ao informacoesAdicionais
         if (informacoesPesquisaInternet) {
-          informacoesAdicionais += '\n\n🌐 INFORMAÇÕES COMPLEMENTARES DA INTERNET (use para enriquecer a matéria com contexto):' + informacoesPesquisaInternet;
+          informacoesAdicionais += '\n\n🌐 INFORMAÇÕES DA INTERNET (USE PARA CRIAR A MATÉRIA COM FATOS REAIS):' + informacoesPesquisaInternet;
+          console.log('✅ Total de informações da internet adicionadas ao prompt');
+        } else {
+          console.log('⚠️ Nenhuma informação encontrada na internet');
         }
       } catch (error) {
         console.error('⚠️ Erro ao pesquisar na internet:', error.message);
@@ -1411,7 +1445,40 @@ Retorne APENAS um objeto JSON válido:
 - Se o texto original é longo, a matéria será mais longa
 - NÃO force expansão artificial do conteúdo`;
     } else {
-      promptInstrucao = `⚠️ TAREFA: Crie uma matéria jornalística no estilo do portal Metrópoles sobre o tema abaixo.
+      // Verificar se tem informações da internet para usar
+      const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
+      
+      if (temInfoInternet) {
+        // TEM informações da internet - usar como base factual
+        promptInstrucao = `⚠️ TAREFA IMPORTANTE: Crie uma matéria jornalística COMPLETA no estilo do portal Metrópoles sobre o tema abaixo.
+
+📰 VOCÊ TEM INFORMAÇÕES REAIS DA INTERNET - USE-AS!
+As informações abaixo foram pesquisadas na internet e são FATOS REAIS. Use-as para criar uma matéria factual e atualizada.
+
+🚨 REGRAS IMPORTANTES:
+- ✅ USE as informações da internet fornecidas como BASE PRINCIPAL da matéria
+- ✅ Cite fatos, datas, declarações e eventos mencionados nas notícias
+- ✅ Mantenha um tom jornalístico profissional, direto e objetivo (Estilo Metrópoles)
+- ✅ Combine as informações de diferentes fontes de forma coerente
+- ✅ Priorize as informações mais recentes e relevantes
+- ❌ NÃO invente informações além do que foi fornecido
+- ❌ NÃO adicione citações que não existem nas fontes
+- ❌ JAMAIS use meta-linguagem: "Segundo informações...", "Baseado em..."
+
+✅ O QUE VOCÊ DEVE FAZER:
+1. ✅ Usar as informações da internet como base factual
+2. ✅ Organizar as informações em estrutura jornalística
+3. ✅ Manter tom profissional e sério
+4. ✅ Ser objetivo e direto
+5. ✅ Criar uma narrativa coerente com os fatos disponíveis
+
+📏 TAMANHO DO CONTEÚDO:
+- Matéria completa (400-600 palavras)
+- Use todas as informações relevantes disponíveis
+- Seja detalhado mas objetivo`;
+      } else {
+        // NÃO tem informações da internet - usar conhecimento geral
+        promptInstrucao = `⚠️ TAREFA: Crie uma matéria jornalística no estilo do portal Metrópoles sobre o tema abaixo.
 
 🚨 REGRAS IMPORTANTES:
 - ✅ Use informações gerais e conhecimento público VERIFICÁVEL sobre o tema
@@ -1434,6 +1501,7 @@ Retorne APENAS um objeto JSON válido:
 - Matéria de tamanho médio (300-500 palavras)
 - Não force expansão artificial
 - Seja conciso e direto`;
+      }
     }
 
     const prompt = `${promptInstrucao}

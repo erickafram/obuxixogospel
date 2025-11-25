@@ -319,11 +319,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="aiPesquisarInternet" checked>
-                            Pesquisar informações na internet
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="aiPesquisarInternet" checked style="width: 18px; height: 18px;">
+                            <span>🌐 Pesquisar Informações na Internet (Recomendado)</span>
                         </label>
-                        <small class="form-text">A IA buscará informações atualizadas sobre o tema</small>
+                        <small class="form-text" style="color: #059669; font-weight: 500;">
+                            <i class="fas fa-check-circle"></i> A IA buscará notícias atuais no Google News e informações no DuckDuckGo para criar uma matéria baseada em FATOS REAIS
+                        </small>
                     </div>
 
                     <div class="form-group">
@@ -3564,7 +3566,12 @@
             const btn = event.target;
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando matéria...';
+            // Mostrar mensagem de acordo com as opções selecionadas
+            if (pesquisarInternet) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 🌐 Pesquisando na internet e gerando matéria...';
+            } else {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando matéria...';
+            }
 
             try {
                 const response = await fetch('/api/ia/criar-materia', {
