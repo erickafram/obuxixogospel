@@ -624,9 +624,16 @@
                             </div>
                         </div>
                     </div>
+                    <div class="assistente-opcoes" style="margin-bottom: 12px; padding: 12px; background: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: #166534;">
+                            <input type="checkbox" id="assistentePesquisarInternet" style="width: 18px; height: 18px;">
+                            <i class="fas fa-globe" style="color: #22C55E;"></i>
+                            <span><strong>Pesquisar na internet</strong> para enriquecer a matéria com dados atualizados</span>
+                        </label>
+                    </div>
                     <div class="assistente-input-area">
                         <textarea id="assistenteInput" class="form-control" rows="2" 
-                            placeholder="Digite o que você quer... Ex: 'deixe o título mais polêmico'"
+                            placeholder="Digite o que você quer... Ex: 'crie uma matéria sobre divórcio entre evangélicos'"
                             onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); enviarMensagemAssistente(); }"></textarea>
                         <button type="button" class="btn-enviar-assistente" onclick="enviarMensagemAssistente()">
                             <i class="fas fa-paper-plane"></i>
@@ -4230,15 +4237,17 @@
         async function enviarMensagemAssistente() {
             const input = document.getElementById('assistenteInput');
             const mensagem = input.value.trim();
+            const pesquisarInternet = document.getElementById('assistentePesquisarInternet').checked;
             
             if (!mensagem) return;
             
             // Adicionar mensagem do usuário ao chat
             const mensagensDiv = document.getElementById('assistenteMensagens');
+            const pesquisaInfo = pesquisarInternet ? ' <span style="color: #22C55E; font-size: 11px;"><i class="fas fa-globe"></i> com pesquisa</span>' : '';
             mensagensDiv.innerHTML += `
                 <div class="mensagem-usuario">
                     <div class="mensagem-avatar"><i class="fas fa-user"></i></div>
-                    <div class="mensagem-conteudo"><p>${mensagem}</p></div>
+                    <div class="mensagem-conteudo"><p>${mensagem}${pesquisaInfo}</p></div>
                 </div>
             `;
             
@@ -4246,10 +4255,13 @@
             input.disabled = true;
             
             // Adicionar indicador de carregamento
+            const loadingMsg = pesquisarInternet 
+                ? '<i class="fas fa-spinner fa-spin"></i> Pesquisando na internet e gerando matéria...' 
+                : '<i class="fas fa-spinner fa-spin"></i> Pensando...';
             mensagensDiv.innerHTML += `
                 <div class="mensagem-ia" id="msgLoading">
                     <div class="mensagem-avatar"><i class="fas fa-robot"></i></div>
-                    <div class="mensagem-conteudo"><p><i class="fas fa-spinner fa-spin"></i> Pensando...</p></div>
+                    <div class="mensagem-conteudo"><p>${loadingMsg}</p></div>
                 </div>
             `;
             mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
@@ -4265,6 +4277,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         mensagem,
+                        pesquisarInternet,
                         contexto: {
                             titulo: tituloAtual,
                             descricao: descricaoAtual,
@@ -4318,13 +4331,21 @@
             const sugestoesDiv = document.getElementById('assistenteSugestoes');
             const listaDiv = document.getElementById('sugestoesLista');
             
-            listaDiv.innerHTML = sugestoes.map((s, i) => `
-                <div class="sugestao-item" onclick="aplicarSugestao(${i})">
-                    <div class="sugestao-texto">${s.texto}</div>
-                    <span class="sugestao-campo">${s.campo}</span>
-                    <button type="button" class="btn-aplicar-sugestao">Aplicar</button>
-                </div>
-            `).join('');
+            listaDiv.innerHTML = sugestoes.map((s, i) => {
+                // Para campo "todos", mostrar preview do título
+                let textoPreview = s.texto;
+                if (s.campo === 'todos') {
+                    textoPreview = s.titulo ? `<strong>${s.titulo}</strong><br><small style="color:#666;">${(s.descricao || '').substring(0, 100)}...</small>` : 'Matéria completa';
+                }
+                const campoLabel = s.campo === 'todos' ? 'Matéria Completa' : s.campo;
+                return `
+                    <div class="sugestao-item" onclick="aplicarSugestao(${i})">
+                        <div class="sugestao-texto">${textoPreview}</div>
+                        <span class="sugestao-campo">${campoLabel}</span>
+                        <button type="button" class="btn-aplicar-sugestao">Aplicar</button>
+                    </div>
+                `;
+            }).join('');
             
             sugestoesDiv.style.display = 'block';
             window.sugestoesAtuais = sugestoes;

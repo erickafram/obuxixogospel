@@ -1650,7 +1650,7 @@ app.post('/api/ia/criar-por-conteudo', async (req, res) => {
 // Assistente IA - Chat contextual para edição de posts
 app.post('/api/ia/assistente', async (req, res) => {
   try {
-    const { mensagem, contexto } = req.body;
+    const { mensagem, contexto, pesquisarInternet } = req.body;
 
     if (!mensagem) {
       return res.status(400).json({ error: 'Mensagem é obrigatória' });
@@ -1658,8 +1658,9 @@ app.post('/api/ia/assistente', async (req, res) => {
 
     console.log('🤖 Assistente IA - Mensagem:', mensagem);
     console.log('📋 Contexto:', contexto?.titulo ? 'Tem título' : 'Sem título');
+    console.log('🌐 Pesquisar Internet:', pesquisarInternet ? 'SIM' : 'NÃO');
 
-    const resultado = await AIService.processarAssistenteIA(mensagem, contexto);
+    const resultado = await AIService.processarAssistenteIA(mensagem, contexto, pesquisarInternet);
     res.json(resultado);
   } catch (error) {
     console.error('Erro no assistente IA:', error);
