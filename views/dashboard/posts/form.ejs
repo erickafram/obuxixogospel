@@ -1640,6 +1640,7 @@
 
         /* Melhorias para celular */
         @media (max-width: 768px) {
+
             /* Botão IA mais destacado no mobile */
             .btn-ai-sidebar {
                 font-size: 16px;
@@ -1660,9 +1661,11 @@
 
             .bing-search-box .form-control {
                 width: 100%;
-                font-size: 16px; /* Evita zoom automático no iOS */
+                font-size: 16px;
+                /* Evita zoom automático no iOS */
                 padding: 12px 16px;
-                min-height: 48px; /* Melhor área de toque */
+                min-height: 48px;
+                /* Melhor área de toque */
             }
 
             .bing-search-box .btn {
@@ -1727,33 +1730,33 @@
             }
         }
 
-            .content-header {
-                flex-direction: column;
-                gap: 16px;
-            }
+        .content-header {
+            flex-direction: column;
+            gap: 16px;
+        }
 
-            .content-header h1 {
-                font-size: 20px;
-            }
+        .content-header h1 {
+            font-size: 20px;
+        }
 
-            .header-actions {
-                width: 100%;
-                justify-content: flex-start;
-            }
+        .header-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
 
-            .editor-toolbar-custom {
-                flex-direction: column;
-                align-items: stretch;
-            }
+        .editor-toolbar-custom {
+            flex-direction: column;
+            align-items: stretch;
+        }
 
-            .editor-toolbar-left {
-                width: 100%;
-            }
+        .editor-toolbar-left {
+            width: 100%;
+        }
 
-            .editor-mode-toggle {
-                width: 100%;
-                justify-content: center;
-            }
+        .editor-mode-toggle {
+            width: 100%;
+            justify-content: center;
+        }
         }
 
         @media (max-width: 768px) {
@@ -2623,7 +2626,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <% - JSON.stringify(article.conteudo) %>;
+                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
@@ -3082,7 +3085,7 @@
         async function buscarImagensBing() {
             const inputElement = document.getElementById('bingSearchInput');
             const query = inputElement.value.trim();
-            
+
             if (!query) {
                 alert('Por favor, digite uma palavra-chave para buscar');
                 inputElement.focus();
@@ -3191,7 +3194,7 @@
         async function buscarImagensGoogle() {
             const inputElement = document.getElementById('googleSearchInput');
             const query = inputElement.value.trim();
-            
+
             if (!query) {
                 alert('Por favor, digite uma palavra-chave para buscar');
                 inputElement.focus();
