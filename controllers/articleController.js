@@ -1,5 +1,12 @@
 const Article = require('../models/Article');
 const googleSitemapService = require('../services/GoogleSitemapService');
+const googleIndexingService = require('../services/GoogleIndexingService');
+
+// Helper para construir URL completa
+const getFullUrl = (article) => {
+  const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+  return `${baseUrl}/${article.categoria}/${article.urlAmigavel}`;
+};
 
 // Listar todas as notícias com paginação
 exports.getAllArticles = async (req, res) => {
@@ -144,10 +151,18 @@ exports.createArticle = async (req, res) => {
     const article = new Article(req.body);
     await article.save();
 
-    // Trigger Sitemap Refresh in background (don't wait for response)
+    // Trigger Sitemap Refresh in background
     googleSitemapService.refreshSitemaps().catch(err =>
       console.error('Background Sitemap Refresh Error:', err)
     );
+
+    // Trigger Indexing API if published
+    if (article.publicado) {
+      const url = getFullUrl(article);
+      googleIndexingService.publishUrl(url).catch(err =>
+        console.error('Background Indexing API Error:', err)
+      );
+    }
 
     res.status(201).json({ success: true, data: article });
   } catch (error) {
@@ -173,6 +188,12 @@ exports.updateArticle = async (req, res) => {
       googleSitemapService.refreshSitemaps().catch(err =>
         console.error('Background Sitemap Refresh Error:', err)
       );
+
+      // Trigger Indexing API
+      const url = getFullUrl(article);
+      googleIndexingService.publishUrl(url).catch(err =>
+        console.error('Background Indexing API Error:', err)
+      );
     }
 
     res.json({ success: true, data: article });
@@ -188,6 +209,14 @@ exports.deleteArticle = async (req, res) => {
 
     if (!article) {
       return res.status(404).json({ success: false, message: 'Notícia não encontrada' });
+    }
+
+    // Remove from Google Index
+    if (article.publicado) {
+      const url = getFullUrl(article);
+      googleIndexingService.removeUrl(url).catch(err =>
+        console.error('Background Indexing API Remove Error:', err)
+      );
     }
 
     res.json({ success: true, message: 'Notícia deletada com sucesso' });
