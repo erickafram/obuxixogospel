@@ -1309,7 +1309,7 @@ body:not(:has(.admin-bar)) .hero-section {
     text-transform: uppercase;
 }
 
-.news-category.noticias { background-color: var(--color-g1); }
+.news-category.noticias { background-color: #f15d00; }
 .news-category.musica { background-color: var(--color-ge); }
 .news-category.eventos { background-color: var(--color-gshow); }
 .news-category.ministerio { background-color: var(--color-quem); }
@@ -1446,7 +1446,7 @@ body:not(:has(.admin-bar)) .hero-section {
     display: none;
 }
 
-.article-category.noticias { background-color: var(--color-g1); }
+.article-category.noticias { background-color:#f15d00;; }
 .article-category.musica { background-color: var(--color-ge); }
 .article-category.eventos { background-color: var(--color-gshow); }
 .article-category.ministerio { background-color: var(--color-quem); }
