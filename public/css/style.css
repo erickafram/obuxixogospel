@@ -31,6 +31,20 @@ body {
     background-color: var(--color-bg-gray);
 }
 
+blockquote{
+    border-left: 4px solid #e65100;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    margin: 20px 0;
+    padding: 20px 24px;
+    border-radius: 0 12px 12px 0;
+    font-style: italic;
+    color: #374151;
+    font-weight:bold;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);  
+    font-size:16px;
+}
+
 /* Barra Administrativa - SEMPRE NO TOPO */
 .admin-bar {
     background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%);
