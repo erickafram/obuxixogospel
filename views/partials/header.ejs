@@ -110,6 +110,27 @@
     ]
     </script>
 
+    <!-- SiteNavigationElement Schema for Categories (Sitelinks) -->
+    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": [
+            <% categories.forEach((cat, index) => { %>
+            {
+                "@type": "SiteNavigationElement",
+                "position": <%= index + 1 %>,
+                "name": "<%= cat.nome %>",
+                "description": "Notícias sobre <%= cat.nome %>",
+                "url": "https://www.obuxixogospel.com.br/categoria/<%= cat.slug %>"
+            }<%= index < categories.length - 1 ? ',' : '' %>
+            <% }); %>
+        ]
+    }
+    </script>
+    <% } %>
+
     <% if (typeof schemaData !=='undefined' && schemaData) { %>
         <script type="application/ld+json">
     <%- JSON.stringify(schemaData) %>
