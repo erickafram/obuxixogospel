@@ -269,6 +269,31 @@ app.get('/api/factcheck/:articleId', async (req, res) => {
   }
 });
 
+// Verificar fatos de conteúdo não salvo (para jornalistas verificarem antes de publicar)
+app.post('/api/factcheck/verificar', isAuthenticated, async (req, res) => {
+  try {
+    const { titulo, descricao, conteudo } = req.body;
+    
+    if (!titulo || !conteudo) {
+      return res.status(400).json({ success: false, error: 'Título e conteúdo são obrigatórios' });
+    }
+    
+    // Remover tags HTML do conteúdo para análise
+    const conteudoLimpo = conteudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    const resultado = await FactCheckService.verificarFatos(
+      titulo,
+      descricao || '',
+      conteudoLimpo
+    );
+    
+    res.json(resultado);
+  } catch (error) {
+    console.error('Erro na verificação de fatos:', error);
+    res.status(500).json({ success: false, error: 'Erro ao verificar fatos' });
+  }
+});
+
 // Rotas de comentários
 const commentController = require('./controllers/commentController');
 app.get('/api/comments/:articleId', commentController.getComments);

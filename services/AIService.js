@@ -546,39 +546,63 @@ class AIService {
    */
   static async buscarImagensPexels(query) {
     try {
-      console.log('Buscando imagens no Bing para:', query);
+      console.log('🔍 Buscando imagens no Bing para:', query);
 
-      // Bing Image Search - mais permissivo que Google
-      const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=1&count=10`;
+      // Limpar a query - manter apenas o termo de busca principal
+      let cleanQuery = query.trim();
+      
+      // Bing Image Search - URL otimizada para resultados precisos
+      // qft=+filterui:photo-photo - apenas fotos reais
+      // form=IRFLTR - formato de filtro
+      const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(cleanQuery)}&first=1&count=30&qft=+filterui:photo-photo&form=IRFLTR`;
+
+      console.log('📡 URL de busca Bing:', searchUrl);
 
       const response = await axios.get(searchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'pt-BR,pt;q=0.9',
-          'Referer': 'https://www.bing.com/'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Referer': 'https://www.bing.com/',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin'
         },
-        timeout: 15000
+        timeout: 20000
       });
 
       const $ = cheerio.load(response.data);
       const imagens = [];
+      const urlsAdicionadas = new Set();
 
-      // Método 1: Extrair de atributo m (metadata JSON do Bing)
+      // Método 1: Extrair de atributo m (metadata JSON do Bing) - MAIS CONFIAVEL
       $('a.iusc').each((i, elem) => {
-        if (imagens.length >= 5) return false;
+        if (imagens.length >= 20) return false;
 
         const m = $(elem).attr('m');
         if (m) {
           try {
             const metadata = JSON.parse(m);
-            if (metadata.murl) {
-              imagens.push({
-                url: metadata.murl,
-                thumbnail: metadata.turl || metadata.murl,
-                descricao: metadata.t || `Imagem relacionada a ${query}`,
-                fonte: 'Bing Images'
-              });
+            if (metadata.murl && !urlsAdicionadas.has(metadata.murl)) {
+              // Verificar se e uma URL de imagem valida
+              const isValidImage = /\.(jpg|jpeg|png|gif|webp|bmp)/i.test(metadata.murl) || 
+                                   metadata.murl.includes('bing.net') ||
+                                   metadata.murl.includes('bing.com');
+              
+              if (isValidImage) {
+                urlsAdicionadas.add(metadata.murl);
+                imagens.push({
+                  url: metadata.murl,
+                  thumbnail: metadata.turl || metadata.murl,
+                  descricao: metadata.t || `${cleanQuery}`,
+                  fonte: metadata.purl ? new URL(metadata.purl).hostname : 'Bing Images',
+                  largura: metadata.mw || 0,
+                  altura: metadata.mh || 0
+                });
+              }
             }
           } catch (e) {
             // Ignorar erros de parse
@@ -586,89 +610,89 @@ class AIService {
         }
       });
 
-      console.log('Imagens do Bing encontradas:', imagens.length);
+      console.log('✅ Imagens do Bing (metodo 1):', imagens.length);
 
-      if (imagens.length > 0) {
-        return imagens;
-      }
+      // Método 2: Extrair de data-m (alternativo)
+      if (imagens.length < 10) {
+        $('[data-m]').each((i, elem) => {
+          if (imagens.length >= 20) return false;
 
-      // Método 2: Fallback - extrair de tags img
-      $('img.mimg').each((i, elem) => {
-        if (imagens.length >= 5) return false;
-
-        const src = $(elem).attr('src');
-        if (src && src.startsWith('http')) {
-          imagens.push({
-            url: src,
-            thumbnail: src,
-            descricao: `Imagem relacionada a ${query}`,
-            fonte: 'Bing Images'
-          });
-        }
-      });
-
-      console.log('Total de imagens encontradas:', imagens.length);
-
-      if (imagens.length > 0) {
-        return imagens;
-      }
-
-      // Se não encontrou imagens do Google, usar fallback
-      console.log('Nenhuma imagem encontrada no Google, usando fallback...');
-
-      // Fallback: usar Picsum
-      const imagensFallback = [];
-      for (let i = 0; i < 5; i++) {
-        const randomId = 100 + Math.floor(Math.random() * 900);
-        imagensFallback.push({
-          url: `https://picsum.photos/800/600?random=${randomId}`,
-          thumbnail: `https://picsum.photos/200/150?random=${randomId}`,
-          descricao: `Imagem ${i + 1}`,
-          fonte: 'Picsum'
+          const dataM = $(elem).attr('data-m');
+          if (dataM) {
+            try {
+              const metadata = JSON.parse(dataM);
+              if (metadata.murl && !urlsAdicionadas.has(metadata.murl)) {
+                urlsAdicionadas.add(metadata.murl);
+                imagens.push({
+                  url: metadata.murl,
+                  thumbnail: metadata.turl || metadata.murl,
+                  descricao: metadata.t || `${cleanQuery}`,
+                  fonte: 'Bing Images'
+                });
+              }
+            } catch (e) {
+              // Ignorar erros de parse
+            }
+          }
         });
+        console.log('✅ Imagens do Bing (metodo 2):', imagens.length);
       }
-      return imagensFallback;
+
+      // Método 3: Extrair de tags img com classe mimg
+      if (imagens.length < 10) {
+        $('img.mimg, img.rms_img').each((i, elem) => {
+          if (imagens.length >= 20) return false;
+
+          let src = $(elem).attr('src') || $(elem).attr('data-src');
+          if (src && src.startsWith('http') && !urlsAdicionadas.has(src)) {
+            // Tentar obter URL de alta resolucao do atributo data-src-hq
+            const srcHq = $(elem).attr('data-src-hq');
+            if (srcHq) src = srcHq;
+            
+            urlsAdicionadas.add(src);
+            imagens.push({
+              url: src,
+              thumbnail: src,
+              descricao: $(elem).attr('alt') || `${cleanQuery}`,
+              fonte: 'Bing Images'
+            });
+          }
+        });
+        console.log('✅ Imagens do Bing (metodo 3):', imagens.length);
+      }
+
+      console.log('📊 Total de imagens encontradas no Bing:', imagens.length);
+
+      if (imagens.length > 0) {
+        // Ordenar por tamanho (maiores primeiro)
+        imagens.sort((a, b) => ((b.largura || 0) * (b.altura || 0)) - ((a.largura || 0) * (a.altura || 0)));
+        return imagens.slice(0, 15);
+      }
+
+      // Se nao encontrou imagens, retornar array vazio (sem fallback)
+      console.log('⚠️ Nenhuma imagem encontrada no Bing para:', cleanQuery);
+      return [];
 
     } catch (error) {
-      console.error('Erro ao buscar imagens do Google:', error.message);
-
-      // Fallback: retornar imagens do Picsum
-      try {
-        console.log('Usando imagens genéricas de fallback (Picsum)');
-        const imagens = [];
-
-        for (let i = 0; i < 5; i++) {
-          const randomId = 200 + Math.floor(Math.random() * 800);
-          imagens.push({
-            url: `https://picsum.photos/800/600?random=${randomId}`,
-            thumbnail: `https://picsum.photos/200/150?random=${randomId}`,
-            descricao: `Imagem ${i + 1}`,
-            fonte: 'Picsum'
-          });
-        }
-
-        console.log('Imagens fallback geradas:', imagens.length);
-        return imagens;
-      } catch (fallbackError) {
-        console.error('Erro no fallback:', fallbackError.message);
-        // Retornar array vazio como último recurso
-        return [];
-      }
+      console.error('❌ Erro ao buscar imagens no Bing:', error.message);
+      return [];
     }
   }
 
   /**
    * Busca imagens usando Google Custom Search API
+   * @param {string} query - Termo de busca
+   * @param {boolean} addContext - Se deve adicionar contexto gospel (default: false para buscas diretas)
    */
-  static async buscarImagensGoogle(query) {
+  static async buscarImagensGoogle(query, addContext = false) {
     try {
-      // Limpar e preparar a query
+      // Limpar e preparar a query - manter o termo original o maximo possivel
       let cleanQuery = query
         .replace(/TEXTO DA POSTAGEM \(LEGENDA\):/gi, '')
         .replace(/CONTEÚDO DO VÍDEO \(TRANSCRITO\):/gi, '')
         .replace(/📱/g, '')
         .replace(/AUTOR:/gi, '')
-        .replace(/-\s*\w+\s+no\s+\w+\s+\d+,\s+\d{4}:/gi, '') // Remove "- username no Month DD, YYYY:"
+        .replace(/-\s*\w+\s+no\s+\w+\s+\d+,\s+\d{4}:/gi, '')
         .replace(/\d+\s+(Likes|Comments|Followers|Following)/gi, '')
         .replace(/@\w+/g, '')
         .replace(/https?:\/\/[^\s]+/g, '')
@@ -676,47 +700,52 @@ class AIService {
         .replace(/\s+/g, ' ')
         .trim();
 
-      // Limitar a 100 caracteres (limite seguro para Google Custom Search)
-      if (cleanQuery.length > 100) {
-        cleanQuery = cleanQuery.substring(0, 100).trim();
+      // Limitar a 150 caracteres (aumentado para permitir buscas mais especificas)
+      if (cleanQuery.length > 150) {
+        cleanQuery = cleanQuery.substring(0, 150).trim();
       }
 
-      // Se ficou muito curto ou vazio, usar fallback genérico
-      if (cleanQuery.length < 3) {
-        cleanQuery = 'igreja gospel evangélico';
+      // Se ficou muito curto ou vazio, usar fallback generico
+      if (cleanQuery.length < 2) {
+        cleanQuery = 'imagem';
       }
 
-      console.log('Query limpa para Google:', cleanQuery.substring(0, 100));
+      console.log('🔍 Query limpa para Google:', cleanQuery);
 
       // Configurar credenciais do Google Custom Search
       const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
       const GOOGLE_CX = process.env.GOOGLE_CX;
 
       if (!GOOGLE_API_KEY || !GOOGLE_CX) {
-        console.log('⚠️ Google API não configurada, usando fallback Picsum');
-        throw new Error('GOOGLE_API_KEY ou GOOGLE_CX não configuradas');
+        console.log('⚠️ Google API nao configurada, tentando Bing...');
+        // Tentar Bing como fallback
+        return await this.buscarImagensPexels(cleanQuery);
       }
 
-      // Adicionar contexto gospel/evangélico se não estiver na query
+      // NAO adicionar contexto gospel automaticamente - buscar exatamente o que o usuario pediu
       let finalQuery = cleanQuery;
-      if (!cleanQuery.toLowerCase().includes('gospel') && 
-          !cleanQuery.toLowerCase().includes('evangélico') && 
-          !cleanQuery.toLowerCase().includes('igreja') &&
-          !cleanQuery.toLowerCase().includes('pastor') &&
-          !cleanQuery.toLowerCase().includes('cantor')) {
-        // Adicionar contexto apenas se for nome de pessoa ou termo genérico
-        const palavras = cleanQuery.toLowerCase().split(' ');
-        const temNomeProprio = cleanQuery.split(' ').some(p => p[0] === p[0].toUpperCase());
-        if (temNomeProprio || palavras.length <= 2) {
-          finalQuery = `${cleanQuery} gospel evangélico`;
+      
+      // Apenas adicionar contexto se explicitamente solicitado E se a query for muito generica
+      if (addContext && cleanQuery.length < 20) {
+        const termosBusca = cleanQuery.toLowerCase();
+        const jaTemContexto = termosBusca.includes('gospel') || 
+                              termosBusca.includes('evangélico') || 
+                              termosBusca.includes('evangelico') ||
+                              termosBusca.includes('igreja') ||
+                              termosBusca.includes('pastor') ||
+                              termosBusca.includes('cantor') ||
+                              termosBusca.includes('cristao') ||
+                              termosBusca.includes('cristão');
+        
+        if (!jaTemContexto) {
+          finalQuery = `${cleanQuery} gospel`;
         }
       }
       
-      console.log('Query final para Google:', finalQuery.substring(0, 100));
+      console.log('📡 Query final para Google:', finalQuery);
       
-      // Buscar imagens em alta resolução (xlarge) e apenas fotos (não clipart/lineart)
-      // Aumentado de 10 para 15 imagens
-      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(finalQuery)}&searchType=image&num=10&imgSize=xlarge&imgType=photo&safe=active`;
+      // Buscar imagens em alta resolucao - aumentado para 10 resultados
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(finalQuery)}&searchType=image&num=10&imgSize=large&imgType=photo&safe=active`;
 
       const response = await axios.get(searchUrl, {
         timeout: 15000
