@@ -2091,6 +2091,54 @@ Retorne APENAS um objeto JSON válido:
     console.log('🌐 Pesquisar Internet:', pesquisarInternet);
 
     const { titulo, descricao, conteudo } = contexto;
+    const mensagemLower = mensagem.toLowerCase();
+
+    // Detectar intenção do usuário
+    let intencao = 'completa'; // padrão
+    let campoAlvo = 'todos';
+    
+    // Detectar se quer alterar apenas o título
+    if ((mensagemLower.includes('título') || mensagemLower.includes('titulo')) && 
+        !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') && 
+        !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
+        !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
+        !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
+      intencao = 'titulo';
+      campoAlvo = 'titulo';
+    }
+    // Detectar se quer alterar apenas a descrição
+    else if ((mensagemLower.includes('descrição') || mensagemLower.includes('descricao')) && 
+             !mensagemLower.includes('título') && !mensagemLower.includes('titulo') && 
+             !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
+             !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
+             !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
+      intencao = 'descricao';
+      campoAlvo = 'descricao';
+    }
+    // Detectar se quer alterar apenas o conteúdo
+    else if ((mensagemLower.includes('conteúdo') || mensagemLower.includes('conteudo') || 
+              mensagemLower.includes('texto') || mensagemLower.includes('corpo')) && 
+             !mensagemLower.includes('título') && !mensagemLower.includes('titulo') && 
+             !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') &&
+             !mensagemLower.includes('matéria completa') && !mensagemLower.includes('materia completa') &&
+             !mensagemLower.includes('tudo')) {
+      intencao = 'conteudo';
+      campoAlvo = 'conteudo';
+    }
+    // Detectar se quer matéria completa
+    else if (mensagemLower.includes('matéria completa') || mensagemLower.includes('materia completa') ||
+             mensagemLower.includes('crie uma matéria') || mensagemLower.includes('crie uma materia') ||
+             mensagemLower.includes('faça uma matéria') || mensagemLower.includes('faca uma materia') ||
+             mensagemLower.includes('criar matéria') || mensagemLower.includes('criar materia') ||
+             mensagemLower.includes('gere uma matéria') || mensagemLower.includes('gere uma materia') ||
+             (mensagemLower.includes('crie') && mensagemLower.includes('sobre')) ||
+             (mensagemLower.includes('faça') && mensagemLower.includes('sobre')) ||
+             (mensagemLower.includes('escreva') && mensagemLower.includes('sobre'))) {
+      intencao = 'completa';
+      campoAlvo = 'todos';
+    }
+
+    console.log('🎯 Intenção detectada:', intencao, '| Campo alvo:', campoAlvo);
 
     // Se pesquisar na internet, buscar informações relevantes
     let informacoesInternet = '';
@@ -2110,6 +2158,53 @@ Retorne APENAS um objeto JSON válido:
       }
     }
 
+    // Montar prompt baseado na intenção
+    let promptInstrucao = '';
+    let formatoResposta = '';
+
+    if (intencao === 'titulo') {
+      promptInstrucao = `O usuário quer APENAS alterar o TÍTULO. NÃO mexa na descrição nem no conteúdo.
+Analise o pedido e crie um novo título baseado na instrução do usuário.`;
+      formatoResposta = `{
+  "resposta": "Mensagem explicando a alteração do título",
+  "sugestoes": [{
+    "campo": "titulo",
+    "texto": "Novo título aqui (máximo 100 caracteres)"
+  }]
+}`;
+    } else if (intencao === 'descricao') {
+      promptInstrucao = `O usuário quer APENAS alterar a DESCRIÇÃO. NÃO mexa no título nem no conteúdo.
+Analise o pedido e crie uma nova descrição baseada na instrução do usuário.`;
+      formatoResposta = `{
+  "resposta": "Mensagem explicando a alteração da descrição",
+  "sugestoes": [{
+    "campo": "descricao",
+    "texto": "Nova descrição aqui (máximo 200 caracteres)"
+  }]
+}`;
+    } else if (intencao === 'conteudo') {
+      promptInstrucao = `O usuário quer APENAS alterar o CONTEÚDO. NÃO mexa no título nem na descrição.
+Analise o pedido e modifique/acrescente ao conteúdo baseado na instrução do usuário.`;
+      formatoResposta = `{
+  "resposta": "Mensagem explicando a alteração do conteúdo",
+  "sugestoes": [{
+    "campo": "conteudo",
+    "texto": "Conteúdo em HTML com <p>, <h3>, <ul>, etc"
+  }]
+}`;
+    } else {
+      promptInstrucao = `O usuário quer criar uma MATÉRIA COMPLETA. Crie título, descrição e conteúdo.`;
+      formatoResposta = `{
+  "resposta": "Mensagem explicando o que foi criado",
+  "sugestoes": [{
+    "campo": "todos",
+    "titulo": "Título impactante (máximo 100 caracteres)",
+    "descricao": "Descrição atraente (máximo 200 caracteres)",
+    "conteudo": "Matéria completa em HTML com <p>, <h3>, <ul>, etc (mínimo 800 palavras)"
+  }]
+}`;
+    }
+
     // Prompt para entender a intenção e gerar resposta
     const prompt = `Você é um assistente de IA para criação de matérias jornalísticas gospel.
 
@@ -2121,26 +2216,22 @@ ${informacoesInternet}
 
 PEDIDO DO USUÁRIO: "${mensagem}"
 
-ANALISE o pedido e responda em JSON com:
-1. "resposta": Uma mensagem amigável explicando o que você vai fazer
-2. "sugestoes": Array com UMA sugestão completa contendo:
-   - "campo": "todos"
-   - "titulo": Título impactante (máximo 100 caracteres)
-   - "descricao": Descrição atraente (máximo 200 caracteres)
-   - "conteudo": Matéria completa em HTML com <p>, <h3>, <ul>, etc (mínimo 800 palavras)
+INSTRUÇÃO IMPORTANTE:
+${promptInstrucao}
 
-${pesquisarInternet ? 'IMPORTANTE: Use as informações encontradas na internet para criar uma matéria rica, factual e atualizada. Cite dados e estatísticas quando disponíveis.' : ''}
+${pesquisarInternet ? 'Use as informações encontradas na internet para enriquecer o conteúdo.' : ''}
 
-REGRAS PARA A MATÉRIA:
+REGRAS:
 - Estilo jornalístico profissional (Metrópoles/G1)
 - Linguagem clara e envolvente
-- Parágrafos curtos e bem estruturados
-- Use subtítulos <h3> para organizar o conteúdo
-- Inclua contexto, análise e diferentes perspectivas
 - Seja factual e evite sensacionalismo exagerado
-- Conteúdo mínimo de 800 palavras
+${intencao === 'titulo' ? '- Crie um título impactante e chamativo (máximo 100 caracteres)' : ''}
+${intencao === 'descricao' ? '- Crie uma descrição atraente e informativa (máximo 200 caracteres)' : ''}
+${intencao === 'conteudo' ? '- Modifique apenas o conteúdo conforme solicitado, mantendo a estrutura HTML' : ''}
+${intencao === 'completa' ? '- Crie uma matéria completa com mínimo de 800 palavras' : ''}
 
-Responda APENAS com JSON válido:`;
+Responda APENAS com JSON válido no formato:
+${formatoResposta}`;
 
     const messages = [
       {

@@ -615,12 +615,16 @@
                             <div class="mensagem-conteudo">
                                 <p>Olá! Sou seu assistente de IA. Posso ajudar você a:</p>
                                 <ul>
-                                    <li><strong>Deixar o título mais polêmico</strong> - "deixe o título mais chamativo"</li>
-                                    <li><strong>Adicionar informações</strong> - "adicione no conteúdo informações sobre..."</li>
-                                    <li><strong>Reescrever partes</strong> - "reescreva a descrição de forma mais..."</li>
-                                    <li><strong>Criar matéria completa</strong> - "crie uma matéria sobre futebol"</li>
+                                    <li><strong>Alterar só o título</strong> - "altere o título para ficar mais polêmico"</li>
+                                    <li><strong>Alterar só a descrição</strong> - "melhore a descrição"</li>
+                                    <li><strong>Alterar só o conteúdo</strong> - "acrescente no conteúdo informações sobre..."</li>
+                                    <li><strong>Criar matéria completa</strong> - "crie uma matéria sobre divórcio entre evangélicos"</li>
                                 </ul>
-                                <p>O que você gostaria de fazer?</p>
+                                <p style="margin-top: 10px; padding: 8px; background: #FEF3C7; border-radius: 6px; font-size: 12px;">
+                                    <i class="fas fa-lightbulb" style="color: #D97706;"></i> 
+                                    <strong>Dica:</strong> Seja específico! Se quiser alterar só o título, diga "altere o título". 
+                                    Se quiser uma matéria completa, diga "crie uma matéria sobre..."
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -859,25 +863,40 @@
         .content-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #E2E8F0;
+            align-items: center;
+            margin-bottom: 28px;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 16px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .content-header h1 {
-            font-size: 22px;
-            font-weight: 600;
+            font-size: 24px;
+            font-weight: 700;
             margin: 0 0 6px 0;
             color: #1A202C;
             letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .content-header h1::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            border-radius: 2px;
         }
 
         .content-header p {
-            font-size: 13px;
+            font-size: 14px;
             color: #718096;
             margin: 0;
             font-weight: 400;
+            padding-left: 16px;
         }
 
         .post-form {
@@ -901,37 +920,49 @@
 
         .card {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
             border: 1px solid #E8E8E8;
             overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
         .card-header {
-            padding: 14px 18px;
+            padding: 16px 20px;
             border-bottom: 1px solid #F0F0F0;
-            background: #FAFBFC;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
         }
 
         .card-header h3 {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             margin: 0;
             color: #2D3748;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.4px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h3::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            border-radius: 2px;
         }
 
         .card-body {
-            padding: 18px;
+            padding: 20px;
         }
 
         .form-group {
             margin-bottom: 18px;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
         }
 
         .form-group label {
@@ -946,12 +977,12 @@
 
         .form-control {
             width: 100%;
-            padding: 9px 12px;
-            border: 1px solid #E2E8F0;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: 12px 14px;
+            border: 2px solid #E2E8F0;
+            border-radius: 10px;
+            font-size: 14px;
             font-family: inherit;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
             background: white;
             color: #2D3748;
         }
@@ -959,12 +990,16 @@
         .form-control:focus {
             outline: none;
             border-color: #0669de;
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.06);
-            background: #FFFBF7;
+            box-shadow: 0 0 0 4px rgba(6, 105, 222, 0.1);
+            background: #f8faff;
         }
 
         .form-control:hover {
             border-color: #CBD5E0;
+        }
+
+        .form-control::placeholder {
+            color: #a0aec0;
         }
 
         textarea.form-control {
@@ -1006,29 +1041,29 @@
         }
 
         .btn {
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
             font-size: 13px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
             border: none;
             cursor: pointer;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
             color: white;
-            box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(6, 105, 222, 0.25);
         }
 
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 105, 222, 0.35);
         }
 
         .btn-primary:active {
@@ -1036,13 +1071,14 @@
         }
 
         .btn-secondary {
-            background: #718096;
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
         }
 
         .btn-secondary:hover {
-            background: #4A5568;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
         }
 
         .btn-block {
@@ -2628,7 +2664,7 @@
         .mensagem-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
         .mensagem-ia .mensagem-avatar { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white; }
         .mensagem-usuario .mensagem-avatar { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; }
-        .mensagem-conteudo { flex: 1; background: white; padding: 12px 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .mensagem-conteudo { flex: 1; background: white; padding: 12px 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size:12px; }
         .mensagem-conteudo p { margin: 0 0 8px 0; line-height: 1.5; }
         .mensagem-conteudo p:last-child { margin-bottom: 0; }
         .mensagem-conteudo ul { margin: 8px 0; padding-left: 20px; }
