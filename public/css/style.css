@@ -1078,6 +1078,7 @@ body:not(:has(.admin-bar)) .hero-section {
     color: white;
     margin-bottom: 10px;
     align-self: flex-start;
+    background-color: var(--color-musica);
 }
 
 .news-item-category.obuxixo { background-color: var(--color-obuxixo); }
