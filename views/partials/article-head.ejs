@@ -222,6 +222,44 @@
     }
     </script>
 
+    <!-- Fact Check ClaimReview Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ClaimReview",
+      "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
+      "url": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>",
+      "itemReviewed": {
+        "@type": "Claim",
+        "author": {
+          "@type": "Organization",
+          "name": "Obuxixo Gospel",
+          "url": "https://www.obuxixogospel.com.br"
+        },
+        "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
+        "appearance": [
+          {
+            "@type": "CreativeWork",
+            "url": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>"
+          }
+        ]
+      },
+      "claimReviewed": "<%- escapeJSON(article.titulo) %>",
+      "author": {
+        "@type": "Organization",
+        "name": "Obuxixo Gospel",
+        "url": "https://www.obuxixogospel.com.br"
+      },
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5",
+        "worstRating": "1",
+        "alternateName": "Verdadeiro"
+      }
+    }
+    </script>
+
     <!-- Google Analytics -->
     <% if (typeof analyticsId !=='undefined' && analyticsId) { %>
         <!-- Google tag (gtag.js) -->

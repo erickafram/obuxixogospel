@@ -244,6 +244,31 @@ app.get('/logout', (req, res) => {
 // Rotas do Dashboard (protegidas)
 const { isAuthenticated, isAdmin, canDeletePosts, canAccessUsers, canAccessSettings, canAccessPages } = require('./middleware/auth');
 
+// Rotas de verificação de fatos
+const FactCheckService = require('./services/FactCheckService');
+app.get('/api/factcheck/:articleId', async (req, res) => {
+  try {
+    const article = await Article.findByPk(req.params.articleId);
+    if (!article) {
+      return res.status(404).json({ success: false, error: 'Artigo não encontrado' });
+    }
+    
+    // Remover tags HTML do conteúdo para análise
+    const conteudoLimpo = article.conteudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    const resultado = await FactCheckService.verificarFatos(
+      article.titulo,
+      article.descricao,
+      conteudoLimpo
+    );
+    
+    res.json(resultado);
+  } catch (error) {
+    console.error('Erro na verificação de fatos:', error);
+    res.status(500).json({ success: false, error: 'Erro ao verificar fatos' });
+  }
+});
+
 // Rotas de comentários
 const commentController = require('./controllers/commentController');
 app.get('/api/comments/:articleId', commentController.getComments);
