@@ -66,6 +66,14 @@ npx sequelize-cli db:migrate:status
 # 12. Se houver migrations pendentes, executá-las
 npx sequelize-cli db:migrate
 
+Para forçar o cache a ser invalidado
+# 2. No servidor SSH
+cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+git pull origin main
+
+# 3. Reiniciar o servidor Node.js
+pm2 restart obuxixogospel
+
 
 
 SEM MIGRATION
