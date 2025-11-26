@@ -1436,6 +1436,21 @@ body:not(:has(.admin-bar)) .hero-section {
     box-shadow: none;
     margin-bottom: 40px;
     border: none;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Quebrar links longos no conteúdo do artigo */
+.article-full a {
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+
+.article-full p,
+.article-full div {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .article-header {

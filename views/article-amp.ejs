@@ -342,10 +342,19 @@
             color: #141414;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .article-content a {
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
 
         .article-content p {
             margin: 0 0 0 0;
+            overflow-wrap: break-word;
         }
 
         .article-content p+p {
