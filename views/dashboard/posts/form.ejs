@@ -596,7 +596,10 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="fecharModalAcrescentarInfo()">
-                        Cancelar
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="gerarAcrescentarInfo()" id="btnGerarAcrescentar">
+                        <i class="fas fa-magic"></i> Gerar com IA
                     </button>
                 </div>
             </div>
@@ -1381,6 +1384,47 @@
             z-index: auto !important;
             margin: 20px auto !important;
             max-width: 540px !important;
+        }
+
+        /* Blockquote - Estilo de citação para posts */
+        .ql-editor blockquote:not(.instagram-media) {
+            border-left: 4px solid #0669de;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            margin: 20px 0;
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            font-style: italic;
+            color: #374151;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .ql-editor blockquote:not(.instagram-media)::before {
+            content: '"';
+            font-size: 60px;
+            font-family: Georgia, serif;
+            color: #0669de;
+            opacity: 0.3;
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            line-height: 1;
+        }
+
+        .ql-editor blockquote:not(.instagram-media) p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        /* Blockquote alternativo - estilo destaque */
+        .ql-editor blockquote.destaque {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .ql-editor blockquote.destaque::before {
+            color: #f59e0b;
         }
 
         /* Modal */
@@ -4451,6 +4495,64 @@
 
         function fecharModalAcrescentarInfo() {
             document.getElementById('modalAcrescentarInfo').style.display = 'none';
+        }
+
+        // Alias para o botao Gerar com IA
+        async function gerarAcrescentarInfo() {
+            const instrucao = document.getElementById('instrucaoAcrescentar').value;
+
+            if (!instrucao || instrucao.trim() === '') {
+                alert('⚠️ Por favor, descreva o que você quer acrescentar ou modificar');
+                document.getElementById('instrucaoAcrescentar').focus();
+                return;
+            }
+
+            const tituloAtual = document.getElementById('titulo').value;
+            const conteudoAtual = quill.root.innerHTML;
+
+            const btn = document.getElementById('btnGerarAcrescentar');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+
+            try {
+                const response = await fetch('/api/ia/acrescentar-informacao', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        titulo: tituloAtual,
+                        conteudo: conteudoAtual,
+                        instrucao: instrucao
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualizar título se foi modificado
+                    if (data.titulo && data.titulo !== tituloAtual) {
+                        document.getElementById('titulo').value = data.titulo;
+                    }
+
+                    // Atualizar conteúdo se foi modificado
+                    if (data.conteudo && data.conteudo !== conteudoAtual) {
+                        quill.root.innerHTML = data.conteudo;
+                    }
+
+                    fecharModalAcrescentarInfo();
+                    alert('✅ Modificações aplicadas com sucesso!');
+                } else {
+                    alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao processar: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         async function aplicarAcrescentarInfo() {
