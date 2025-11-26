@@ -267,52 +267,97 @@ Se não houver links de alta qualidade, retorne: []`;
   }
 
   /**
+   * Normaliza texto para comparação (remove acentos, lowercase)
+   */
+  static normalizeText(text) {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Encontra o texto original no conteúdo que corresponde ao texto buscado
+   */
+  static findOriginalText(conteudo, textoBuscado) {
+    const textoNormalizado = this.normalizeText(textoBuscado);
+    
+    // Remove tags HTML para buscar no texto puro
+    const textoSemHtml = conteudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+    
+    // Busca palavra por palavra para encontrar a sequência
+    const palavrasBuscadas = textoNormalizado.split(' ').filter(p => p.length > 0);
+    
+    if (palavrasBuscadas.length === 0) return null;
+    
+    // Tenta encontrar a sequência exata primeiro
+    const regexExato = new RegExp(
+      palavrasBuscadas.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'),
+      'i'
+    );
+    
+    const matchExato = textoSemHtml.match(regexExato);
+    if (matchExato) {
+      return matchExato[0].trim();
+    }
+    
+    return null;
+  }
+
+  /**
    * Insere um link no conteúdo HTML
    */
   static insertLink(conteudo, linkInfo) {
     try {
       const { texto, url, titulo_artigo } = linkInfo;
 
+      // Verifica se a URL já está linkada
+      if (conteudo.includes(`"${url}"`)) {
+        console.log(`URL "${url}" já está linkada, pulando...`);
+        return conteudo;
+      }
+
+      // Tenta encontrar o texto original no conteúdo
+      const textoOriginal = this.findOriginalText(conteudo, texto);
+      const textoParaBuscar = textoOriginal || texto;
+
       // Escapa caracteres especiais para regex
-      const textoEscapado = texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const textoEscapado = textoParaBuscar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      // Cria regex para encontrar o texto (case insensitive, fora de tags HTML)
-      const regex = new RegExp(`(?<![">\\w])${textoEscapado}(?![\\w<])`, 'i');
-
-      // Verifica se o texto já está linkado
-      if (conteudo.includes(`>${texto}<`) || conteudo.includes(`"${url}"`)) {
-        console.log(`Texto "${texto}" ou URL já está linkado, pulando...`);
+      // Verifica se o texto já está dentro de um link
+      const regexDentroDeLink = new RegExp(`<a[^>]*>[^<]*${textoEscapado}[^<]*</a>`, 'i');
+      if (regexDentroDeLink.test(conteudo)) {
+        console.log(`Texto "${textoParaBuscar}" já está dentro de um link, pulando...`);
         return conteudo;
       }
 
-      // Tenta encontrar no conteúdo
+      // Cria regex para encontrar o texto fora de tags HTML
+      // Busca o texto que NÃO está dentro de uma tag <a>
+      const regex = new RegExp(`(?<!<a[^>]*>)\\b(${textoEscapado})\\b(?![^<]*</a>)`, 'i');
+
       const match = conteudo.match(regex);
-      if (!match) {
-        console.log(`Texto "${texto}" não encontrado no conteúdo (Regex falhou). Tentando busca simples...`);
-
-        // Fallback para busca simples se regex falhar
-        if (conteudo.toLowerCase().includes(texto.toLowerCase())) {
-          const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link" style="color: #e63946; text-decoration: underline; font-weight: 500;">${texto}</a>`;
-          // Substitui apenas a primeira ocorrência case-insensitive
-          const conteudoAtualizado = conteudo.replace(new RegExp(textoEscapado, 'i'), linkHtml);
-          console.log(`✓ Link adicionado (Busca Simples): "${texto}" -> ${url}`);
-          return conteudoAtualizado;
-        }
-
-        return conteudo;
+      if (match) {
+        const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link">${match[1]}</a>`;
+        const conteudoAtualizado = conteudo.replace(regex, linkHtml);
+        console.log(`✓ Link adicionado: "${match[1]}" -> ${url}`);
+        return conteudoAtualizado;
       }
 
-      // Substitui apenas a primeira ocorrência
-      const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link" style="color: #e63946; text-decoration: underline; font-weight: 500;">${match[0]}</a>`;
-      const conteudoAtualizado = conteudo.replace(regex, linkHtml);
-
-      if (conteudoAtualizado === conteudo) {
-        console.log(`Texto "${texto}" não encontrado no conteúdo`);
-      } else {
-        console.log(`✓ Link adicionado: "${texto}" -> ${url}`);
+      // Fallback: busca simples case-insensitive
+      const regexSimples = new RegExp(`(${textoEscapado})`, 'i');
+      const matchSimples = conteudo.match(regexSimples);
+      
+      if (matchSimples) {
+        const linkHtml = `<a href="${url}" title="${titulo_artigo}" class="internal-link">${matchSimples[1]}</a>`;
+        const conteudoAtualizado = conteudo.replace(regexSimples, linkHtml);
+        console.log(`✓ Link adicionado (fallback): "${matchSimples[1]}" -> ${url}`);
+        return conteudoAtualizado;
       }
 
-      return conteudoAtualizado;
+      console.log(`Texto "${texto}" não encontrado no conteúdo`);
+      return conteudo;
 
     } catch (error) {
       console.error('Erro ao inserir link:', error);
