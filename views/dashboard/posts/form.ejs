@@ -2760,7 +2760,7 @@
         .media-item-edit-btn {
             position: absolute;
             top: 8px;
-            left: 8px;
+            right: 8px;
             width: 32px;
             height: 32px;
             background: rgba(255, 107, 0, 0.95);
@@ -2860,6 +2860,7 @@
         // Variáveis globais
         var quill;
         var editorMode = 'visual';
+        var embedInstagram = ''; // Guardar embed do Instagram durante edicao
 
         // Alternar entre modo visual e código (DECLARAR NO TOPO PARA ESTAR DISPONÍVEL)
         function toggleEditorMode(mode) {
@@ -2954,7 +2955,6 @@
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
                 // Extrair e guardar o embed do Instagram (se existir)
-                let embedInstagram = '';
 
                 // Primeiro, remover TODOS os iframes renderizados do Instagram (evitar duplicação)
                 // Regex mais agressiva para pegar qualquer iframe do Instagram
@@ -3195,15 +3195,24 @@
         let mediaLibraryData = [];
         let selectedMedia = [];
         let mediaLibraryMode = 'featured'; // 'featured' ou 'content'
+        let selectMode = false; // Modo de selecao multipla
 
         function openMediaLibrary(mode = 'featured') {
             mediaLibraryMode = mode;
             selectedMedia = [];
+            selectMode = false;
             const modal = document.getElementById('mediaLibraryModal');
             modal.classList.add('active');
             modal.style.display = 'flex';
             loadMediaLibrary();
             updateSelectedCount();
+            // Resetar botao de selecao
+            const btn = document.getElementById('btnSelectMode');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-check-square"></i> Selecionar';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            }
         }
 
         function closeMediaLibrary() {
@@ -3332,9 +3341,6 @@
             closeMediaLibrary();
             console.log('Biblioteca fechada!');
         }
-
-        // Modo de selecao multipla
-        let selectMode = false;
 
         function toggleSelectMode() {
             selectMode = !selectMode;
