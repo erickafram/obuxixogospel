@@ -1042,26 +1042,14 @@ body:not(:has(.admin-bar)) .hero-section {
     gap: 20px;
 }
 
-/* News Block - Container para notícia + destaque */
-.news-block {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.news-block:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
 .news-item-horizontal {
-    padding-bottom: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 20px;
 }
 
-/* Destaque em bullet point - Desktop */
-.news-highlight {
-    display: none; /* Escondido no desktop por padrão */
+.news-item-horizontal:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .news-item-horizontal a {
