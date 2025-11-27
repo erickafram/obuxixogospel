@@ -1,0 +1,869 @@
+<%- include('../partials/header', { title: isEdit ? 'Editar Formulário' : 'Novo Formulário', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1><%= isEdit ? 'Editar Formulário' : 'Novo Formulário' %></h1>
+            <p><%= isEdit ? 'Atualize as configurações do formulário' : 'Crie um novo formulário dinâmico' %></p>
+        </div>
+        <a href="/dashboard/formularios" class="btn btn-secondary">
+            ← Voltar
+        </a>
+    </div>
+
+    <form action="<%= isEdit ? `/dashboard/formularios/${form.id}/atualizar` : '/dashboard/formularios/criar' %>" method="POST" class="form-builder" onsubmit="return prepareSubmit()">
+        <div class="form-grid">
+            <!-- Coluna Principal -->
+            <div class="form-main">
+                <!-- Informações Básicas -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Informações Básicas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="nome">Nome do Formulário *</label>
+                            <input type="text" id="nome" name="nome" class="form-control"
+                                value="<%= isEdit ? form.nome : '' %>"
+                                placeholder="Ex: Formulário de Contato" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição</label>
+                            <textarea id="descricao" name="descricao" class="form-control" rows="2"
+                                placeholder="Descrição interna do formulário..."><%= isEdit && form.descricao ? form.descricao : '' %></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Construtor de Campos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-th-list"></i> Campos do Formulário</h3>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="adicionarCampo()">
+                            <i class="fas fa-plus"></i> Adicionar Campo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="camposContainer">
+                            <!-- Campos serão adicionados aqui via JavaScript -->
+                        </div>
+                        <div id="emptyState" class="empty-fields">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <p>Clique em "Adicionar Campo" para começar a construir seu formulário</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-eye"></i> Preview do Formulário</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="formPreview" class="form-preview">
+                            <p class="preview-empty">Adicione campos para ver o preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="form-sidebar">
+                <!-- Configurações -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Configurações</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="ativo" <%= !isEdit || form.ativo ? 'checked' : '' %>>
+                                <span>Formulário Ativo</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="textoBotao">Texto do Botão</label>
+                            <input type="text" id="textoBotao" name="textoBotao" class="form-control"
+                                value="<%= isEdit && form.textoBotao ? form.textoBotao : 'Enviar' %>"
+                                placeholder="Enviar">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="emailNotificacao">Email para Notificação</label>
+                            <input type="email" id="emailNotificacao" name="emailNotificacao" class="form-control"
+                                value="<%= isEdit && form.emailNotificacao ? form.emailNotificacao : '' %>"
+                                placeholder="email@exemplo.com">
+                            <small class="form-text">Opcional: receba notificações de novos envios</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensagem de Sucesso -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Mensagem de Sucesso</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea id="mensagemSucesso" name="mensagemSucesso" class="form-control" rows="3"
+                                placeholder="Mensagem exibida após envio..."><%= isEdit && form.mensagemSucesso ? form.mensagemSucesso : 'Formulário enviado com sucesso! Entraremos em contato em breve.' %></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="card">
+                    <div class="card-body">
+                        <input type="hidden" id="campos" name="campos" value="">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-save"></i> <%= isEdit ? 'Atualizar' : 'Criar' %> Formulário
+                        </button>
+                        <a href="/dashboard/formularios" class="btn btn-secondary btn-block">
+                            Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal para Editar Campo -->
+<div id="campoModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Adicionar Campo</h3>
+            <button type="button" class="modal-close" onclick="fecharModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Tipo de Campo *</label>
+                <select id="campoTipo" class="form-control" onchange="atualizarOpcoesModal()">
+                    <option value="text">Texto (uma linha)</option>
+                    <option value="textarea">Área de Texto (múltiplas linhas)</option>
+                    <option value="email">Email</option>
+                    <option value="tel">Telefone</option>
+                    <option value="number">Número</option>
+                    <option value="select">Lista de Seleção</option>
+                    <option value="radio">Opções (Radio)</option>
+                    <option value="checkbox">Caixas de Seleção</option>
+                    <option value="date">Data</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Rótulo (Label) *</label>
+                <input type="text" id="campoLabel" class="form-control" placeholder="Ex: Nome Completo">
+            </div>
+
+            <div class="form-group">
+                <label>Nome do Campo (identificador) *</label>
+                <input type="text" id="campoName" class="form-control" placeholder="Ex: nome_completo">
+                <small class="form-text">Use apenas letras, números e underline</small>
+            </div>
+
+            <div class="form-group">
+                <label>Placeholder</label>
+                <input type="text" id="campoPlaceholder" class="form-control" placeholder="Texto de exemplo...">
+            </div>
+
+            <div id="opcoesContainer" class="form-group" style="display: none;">
+                <label>Opções (uma por linha)</label>
+                <textarea id="campoOpcoes" class="form-control" rows="4" placeholder="Opção 1&#10;Opção 2&#10;Opção 3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="campoRequired">
+                    <span>Campo Obrigatório</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="salvarCampo()">
+                <i class="fas fa-check"></i> Salvar Campo
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(6, 105, 222, 0.3);
+    }
+
+    .btn-secondary {
+        background: #F7FAFC;
+        color: #4A5568;
+        border: 1px solid #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+        background: #EDF2F7;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn-block {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+
+    .btn-block:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        margin-bottom: 20px;
+    }
+
+    .card-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        color: #1A202C;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-body {
+        padding: 18px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #2D3748;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(6, 105, 222, 0.06);
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 4px;
+        font-size: 11px;
+        color: #718096;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-weight: 400;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .checkbox-label span {
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    /* Campos Container */
+    .empty-fields {
+        text-align: center;
+        padding: 40px 20px;
+        color: #718096;
+    }
+
+    .empty-fields i {
+        font-size: 40px;
+        color: #CBD5E0;
+        margin-bottom: 12px;
+    }
+
+    .empty-fields p {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .campo-item {
+        background: #F7FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: grab;
+    }
+
+    .campo-item:active {
+        cursor: grabbing;
+    }
+
+    .campo-drag {
+        color: #A0AEC0;
+        font-size: 14px;
+    }
+
+    .campo-info {
+        flex: 1;
+    }
+
+    .campo-label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .campo-meta {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .campo-meta span {
+        margin-right: 10px;
+    }
+
+    .campo-required {
+        color: #E53E3E;
+    }
+
+    .campo-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .campo-actions button {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 6px;
+        background: white;
+        color: #718096;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+
+    .campo-actions button:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+    }
+
+    .campo-actions button.btn-danger:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    /* Preview */
+    .form-preview {
+        background: #F7FAFC;
+        border-radius: 8px;
+        padding: 20px;
+        min-height: 100px;
+    }
+
+    .preview-empty {
+        text-align: center;
+        color: #A0AEC0;
+        font-size: 13px;
+        padding: 20px;
+    }
+
+    .preview-field {
+        margin-bottom: 16px;
+    }
+
+    .preview-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .preview-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #2D3748;
+        margin-bottom: 6px;
+    }
+
+    .preview-field .required-star {
+        color: #E53E3E;
+    }
+
+    .preview-field input,
+    .preview-field textarea,
+    .preview-field select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+    }
+
+    .preview-field textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .preview-radio-group,
+    .preview-checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .preview-radio-group label,
+    .preview-checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 400;
+        cursor: pointer;
+    }
+
+    .preview-radio-group input,
+    .preview-checkbox-group input {
+        width: auto;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #718096;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .modal-close:hover {
+        color: #2D3748;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    // Dados dos campos
+    let campos = [];
+    let editingIndex = -1;
+
+    // Carregar campos existentes
+    <% if (isEdit && form.campos) { %>
+    campos = <%- JSON.stringify(form.campos) %>;
+    <% } %>
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+        renderizarCampos();
+        atualizarPreview();
+    });
+
+    function adicionarCampo() {
+        editingIndex = -1;
+        document.getElementById('modalTitle').textContent = 'Adicionar Campo';
+        limparModal();
+        atualizarOpcoesModal();
+        document.getElementById('campoModal').style.display = 'flex';
+    }
+
+    function editarCampo(index) {
+        editingIndex = index;
+        const campo = campos[index];
+        
+        document.getElementById('modalTitle').textContent = 'Editar Campo';
+        document.getElementById('campoTipo').value = campo.type;
+        document.getElementById('campoLabel').value = campo.label;
+        document.getElementById('campoName').value = campo.name;
+        document.getElementById('campoPlaceholder').value = campo.placeholder || '';
+        document.getElementById('campoRequired').checked = campo.required || false;
+        
+        if (campo.options) {
+            document.getElementById('campoOpcoes').value = campo.options.join('\n');
+        }
+        
+        atualizarOpcoesModal();
+        document.getElementById('campoModal').style.display = 'flex';
+    }
+
+    function removerCampo(index) {
+        if (confirm('Tem certeza que deseja remover este campo?')) {
+            campos.splice(index, 1);
+            renderizarCampos();
+            atualizarPreview();
+        }
+    }
+
+    function limparModal() {
+        document.getElementById('campoTipo').value = 'text';
+        document.getElementById('campoLabel').value = '';
+        document.getElementById('campoName').value = '';
+        document.getElementById('campoPlaceholder').value = '';
+        document.getElementById('campoOpcoes').value = '';
+        document.getElementById('campoRequired').checked = false;
+    }
+
+    function fecharModal() {
+        document.getElementById('campoModal').style.display = 'none';
+    }
+
+    function atualizarOpcoesModal() {
+        const tipo = document.getElementById('campoTipo').value;
+        const opcoesContainer = document.getElementById('opcoesContainer');
+        
+        if (['select', 'radio', 'checkbox'].includes(tipo)) {
+            opcoesContainer.style.display = 'block';
+        } else {
+            opcoesContainer.style.display = 'none';
+        }
+    }
+
+    function salvarCampo() {
+        const tipo = document.getElementById('campoTipo').value;
+        const label = document.getElementById('campoLabel').value.trim();
+        const name = document.getElementById('campoName').value.trim();
+        const placeholder = document.getElementById('campoPlaceholder').value.trim();
+        const required = document.getElementById('campoRequired').checked;
+        const opcoesText = document.getElementById('campoOpcoes').value.trim();
+
+        if (!label) {
+            alert('O rótulo é obrigatório');
+            return;
+        }
+
+        if (!name) {
+            alert('O nome do campo é obrigatório');
+            return;
+        }
+
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+            alert('O nome do campo deve começar com letra ou underscore e conter apenas letras, números e underscores');
+            return;
+        }
+
+        // Verificar nome duplicado
+        const isDuplicate = campos.some((c, i) => c.name === name && i !== editingIndex);
+        if (isDuplicate) {
+            alert('Já existe um campo com este nome');
+            return;
+        }
+
+        const campo = {
+            type: tipo,
+            label: label,
+            name: name,
+            placeholder: placeholder,
+            required: required
+        };
+
+        if (['select', 'radio', 'checkbox'].includes(tipo)) {
+            const opcoes = opcoesText.split('\n').filter(o => o.trim());
+            if (opcoes.length === 0) {
+                alert('Adicione pelo menos uma opção');
+                return;
+            }
+            campo.options = opcoes;
+        }
+
+        if (editingIndex >= 0) {
+            campos[editingIndex] = campo;
+        } else {
+            campos.push(campo);
+        }
+
+        fecharModal();
+        renderizarCampos();
+        atualizarPreview();
+    }
+
+    function renderizarCampos() {
+        const container = document.getElementById('camposContainer');
+        const emptyState = document.getElementById('emptyState');
+
+        if (campos.length === 0) {
+            container.innerHTML = '';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        emptyState.style.display = 'none';
+
+        const tipoLabels = {
+            text: 'Texto',
+            textarea: 'Área de Texto',
+            email: 'Email',
+            tel: 'Telefone',
+            number: 'Número',
+            select: 'Lista de Seleção',
+            radio: 'Opções (Radio)',
+            checkbox: 'Caixas de Seleção',
+            date: 'Data'
+        };
+
+        container.innerHTML = campos.map((campo, index) => `
+            <div class="campo-item" data-index="${index}">
+                <div class="campo-drag">
+                    <i class="fas fa-grip-vertical"></i>
+                </div>
+                <div class="campo-info">
+                    <div class="campo-label">${campo.label}</div>
+                    <div class="campo-meta">
+                        <span><i class="fas fa-tag"></i> ${tipoLabels[campo.type] || campo.type}</span>
+                        <span><i class="fas fa-code"></i> ${campo.name}</span>
+                        ${campo.required ? '<span class="campo-required"><i class="fas fa-asterisk"></i> Obrigatório</span>' : ''}
+                    </div>
+                </div>
+                <div class="campo-actions">
+                    <button type="button" onclick="editarCampo(${index})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn-danger" onclick="removerCampo(${index})" title="Remover">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        // Inicializar drag and drop
+        initSortable();
+    }
+
+    function initSortable() {
+        const container = document.getElementById('camposContainer');
+        if (typeof Sortable !== 'undefined') {
+            new Sortable(container, {
+                handle: '.campo-drag',
+                animation: 150,
+                onEnd: function(evt) {
+                    const item = campos.splice(evt.oldIndex, 1)[0];
+                    campos.splice(evt.newIndex, 0, item);
+                    atualizarPreview();
+                }
+            });
+        }
+    }
+
+    function atualizarPreview() {
+        const preview = document.getElementById('formPreview');
+
+        if (campos.length === 0) {
+            preview.innerHTML = '<p class="preview-empty">Adicione campos para ver o preview</p>';
+            return;
+        }
+
+        preview.innerHTML = campos.map(campo => {
+            const requiredStar = campo.required ? '<span class="required-star">*</span>' : '';
+            let input = '';
+
+            switch (campo.type) {
+                case 'textarea':
+                    input = `<textarea placeholder="${campo.placeholder || ''}" ${campo.required ? 'required' : ''}></textarea>`;
+                    break;
+                case 'select':
+                    const options = (campo.options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+                    input = `<select ${campo.required ? 'required' : ''}><option value="">Selecione...</option>${options}</select>`;
+                    break;
+                case 'radio':
+                    input = `<div class="preview-radio-group">${(campo.options || []).map((o, i) => 
+                        `<label><input type="radio" name="preview_${campo.name}" value="${o}"> ${o}</label>`
+                    ).join('')}</div>`;
+                    break;
+                case 'checkbox':
+                    input = `<div class="preview-checkbox-group">${(campo.options || []).map((o, i) => 
+                        `<label><input type="checkbox" name="preview_${campo.name}" value="${o}"> ${o}</label>`
+                    ).join('')}</div>`;
+                    break;
+                default:
+                    input = `<input type="${campo.type}" placeholder="${campo.placeholder || ''}" ${campo.required ? 'required' : ''}>`;
+            }
+
+            return `
+                <div class="preview-field">
+                    <label>${campo.label} ${requiredStar}</label>
+                    ${input}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function prepareSubmit() {
+        if (campos.length === 0) {
+            alert('Adicione pelo menos um campo ao formulário');
+            return false;
+        }
+
+        document.getElementById('campos').value = JSON.stringify(campos);
+        return true;
+    }
+
+    // Auto-gerar nome do campo a partir do label
+    document.getElementById('campoLabel').addEventListener('input', function() {
+        if (editingIndex < 0) {
+            const name = this.value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_|_$/g, '');
+            
+            document.getElementById('campoName').value = name;
+        }
+    });
+</script>
+
+<!-- SortableJS para drag and drop -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+<%- include('../partials/footer') %>

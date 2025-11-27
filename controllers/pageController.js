@@ -1,4 +1,4 @@
-const { Page } = require('../models');
+const { Page, Form } = require('../models');
 
 // Listar todas as páginas (Dashboard)
 exports.index = async (req, res) => {
@@ -18,12 +18,24 @@ exports.index = async (req, res) => {
 };
 
 // Exibir formulário de nova página
-exports.novo = (req, res) => {
-  res.render('dashboard/paginas/form', {
-    user: req.session.user,
-    isEdit: false,
-    page: {}
-  });
+exports.novo = async (req, res) => {
+  try {
+    const forms = await Form.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+      order: [['nome', 'ASC']]
+    });
+    
+    res.render('dashboard/paginas/form', {
+      user: req.session.user,
+      isEdit: false,
+      page: {},
+      forms
+    });
+  } catch (error) {
+    console.error('Erro ao carregar formulário:', error);
+    res.status(500).send('Erro ao carregar formulário');
+  }
 };
 
 // Exibir formulário de edição
@@ -35,10 +47,17 @@ exports.editar = async (req, res) => {
       return res.status(404).send('Página não encontrada');
     }
     
+    const forms = await Form.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+      order: [['nome', 'ASC']]
+    });
+    
     res.render('dashboard/paginas/form', {
       user: req.session.user,
       isEdit: true,
-      page
+      page,
+      forms
     });
   } catch (error) {
     console.error('Erro ao carregar página:', error);
@@ -49,7 +68,7 @@ exports.editar = async (req, res) => {
 // Criar nova página
 exports.criar = async (req, res) => {
   try {
-    const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu } = req.body;
+    const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu, formId } = req.body;
     
     await Page.create({
       titulo,
@@ -59,7 +78,8 @@ exports.criar = async (req, res) => {
       ativo: ativo === 'on' || ativo === true,
       ordem: parseInt(ordem) || 0,
       exibirFooter: exibirFooter === 'on' || exibirFooter === true,
-      exibirMenu: exibirMenu === 'on' || exibirMenu === true
+      exibirMenu: exibirMenu === 'on' || exibirMenu === true,
+      formId: formId ? parseInt(formId) : null
     });
     
     res.redirect('/dashboard/paginas?success=Página criada com sucesso');
@@ -72,7 +92,7 @@ exports.criar = async (req, res) => {
 // Atualizar página
 exports.atualizar = async (req, res) => {
   try {
-    const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu } = req.body;
+    const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu, formId } = req.body;
     
     const page = await Page.findByPk(req.params.id);
     
@@ -88,7 +108,8 @@ exports.atualizar = async (req, res) => {
       ativo: ativo === 'on' || ativo === true,
       ordem: parseInt(ordem) || 0,
       exibirFooter: exibirFooter === 'on' || exibirFooter === true,
-      exibirMenu: exibirMenu === 'on' || exibirMenu === true
+      exibirMenu: exibirMenu === 'on' || exibirMenu === true,
+      formId: formId ? parseInt(formId) : null
     });
     
     res.redirect('/dashboard/paginas?success=Página atualizada com sucesso');
@@ -145,7 +166,12 @@ exports.reordenar = async (req, res) => {
 exports.exibir = async (req, res) => {
   try {
     const page = await Page.findOne({
-      where: { slug: req.params.slug, ativo: true }
+      where: { slug: req.params.slug, ativo: true },
+      include: [{
+        model: Form,
+        as: 'form',
+        required: false
+      }]
     });
     
     if (!page) {
@@ -154,6 +180,7 @@ exports.exibir = async (req, res) => {
     
     res.render('page', {
       page,
+      form: page.form || null,
       user: req.user || null
     });
   } catch (error) {

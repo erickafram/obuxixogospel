@@ -1,0 +1,373 @@
+<%- include('../partials/header', { title: 'Formulários', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Formulários</h1>
+            <p>Crie e gerencie formulários dinâmicos para suas páginas</p>
+        </div>
+        <a href="/dashboard/formularios/novo" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Formulário
+        </a>
+    </div>
+
+    <% if (typeof success !== 'undefined' || (typeof req !== 'undefined' && req.query && req.query.success)) { %>
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> <%= typeof success !== 'undefined' ? success : req.query.success %>
+    </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="search-filter">
+                <input type="text" id="searchForms" placeholder="Buscar formulários..." class="search-input">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" id="formsTable">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Campos</th>
+                        <th>Registros</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (forms && forms.length > 0) { %>
+                        <% forms.forEach(form => { %>
+                        <tr>
+                            <td>
+                                <strong><%= form.nome %></strong>
+                                <% if (form.descricao) { %>
+                                <br><small class="text-muted"><%= form.descricao.substring(0, 50) %><%= form.descricao.length > 50 ? '...' : '' %></small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge badge-info"><%= form.campos ? form.campos.length : 0 %> campos</span>
+                            </td>
+                            <td>
+                                <% const submissionCount = form.submissions ? form.submissions.length : 0; %>
+                                <a href="/dashboard/formularios/<%= form.id %>/submissoes" class="submission-count <%= submissionCount > 0 ? 'has-submissions' : '' %>">
+                                    <i class="fas fa-inbox"></i> <%= submissionCount %> registro<%= submissionCount !== 1 ? 's' : '' %>
+                                </a>
+                            </td>
+                            <td>
+                                <% if (form.ativo) { %>
+                                <span class="badge badge-success">Ativo</span>
+                                <% } else { %>
+                                <span class="badge badge-secondary">Inativo</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <small><%= new Date(form.createdAt).toLocaleDateString('pt-BR') %></small>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/dashboard/formularios/<%= form.id %>/submissoes" class="btn-icon" title="Ver Registros">
+                                        <i class="fas fa-inbox"></i>
+                                    </a>
+                                    <a href="/dashboard/formularios/<%= form.id %>/editar" class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="deletarFormulario(<%= form.id %>, '<%= form.nome %>')" class="btn-icon btn-danger" title="Deletar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    <p>Nenhum formulário criado ainda</p>
+                                    <a href="/dashboard/formularios/novo" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus"></i> Criar Primeiro Formulário
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+        letter-spacing: -0.5px;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(6, 105, 222, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(6, 105, 222, 0.3);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+    }
+
+    .alert-success {
+        background: #D4EDDA;
+        color: #155724;
+        border: 1px solid #C3E6CB;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FAFBFC;
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-input {
+        flex: 1;
+        max-width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.15s;
+        background: white;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(6, 105, 222, 0.06);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 11px;
+        color: #4A5568;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: #F7FAFC;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .data-table tr:hover {
+        background: #F7FAFC;
+    }
+
+    .text-muted {
+        color: #718096;
+    }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-success { background: #D4EDDA; color: #155724; }
+    .badge-secondary { background: #E2E3E5; color: #383D41; }
+    .badge-info { background: #D1ECF1; color: #0C5460; }
+
+    .submission-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        background: #F7FAFC;
+        border-radius: 6px;
+        color: #718096;
+        text-decoration: none;
+        font-size: 12px;
+        transition: all 0.15s;
+    }
+
+    .submission-count:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+    }
+
+    .submission-count.has-submissions {
+        background: #DBEAFE;
+        color: #1E40AF;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: #F7FAFC;
+        color: #718096;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    .btn-icon:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+        transform: scale(1.05);
+    }
+
+    .btn-icon.btn-danger:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: #CBD5E0;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        color: #718096;
+        margin-bottom: 16px;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+</style>
+
+<script>
+    // Filtro de busca
+    document.getElementById('searchForms').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        
+        rows.forEach(row => {
+            const nome = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
+            
+            if (nome.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    function deletarFormulario(id, nome) {
+        if (confirm(`Tem certeza que deseja deletar o formulário "${nome}"?\n\nTodos os registros de submissão também serão deletados!`)) {
+            fetch(`/dashboard/formularios/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao deletar formulário: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao deletar formulário');
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

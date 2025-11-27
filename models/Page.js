@@ -5,7 +5,11 @@ const slugify = require('slugify');
 module.exports = (sequelize, DataTypes) => {
   class Page extends Model {
     static associate(models) {
-      // Definir associações aqui se necessário
+      // Uma página pode ter um formulário vinculado
+      Page.belongsTo(models.Form, {
+        foreignKey: 'formId',
+        as: 'form'
+      });
     }
 
     // Método para gerar slug
@@ -64,6 +68,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false
+    },
+    formId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'forms',
+        key: 'id'
+      }
     }
   }, {
     sequelize,

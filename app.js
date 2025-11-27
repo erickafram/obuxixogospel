@@ -932,6 +932,26 @@ app.delete('/dashboard/paginas/:id', isAuthenticated, canAccessPages, pageContro
 // Rota pública para exibir páginas
 app.get('/pagina/:slug', pageController.exibir);
 
+// FORMULÁRIOS DINÂMICOS
+const formController = require('./controllers/formController');
+// Dashboard - Gerenciamento de formulários
+app.get('/dashboard/formularios', isAuthenticated, canAccessPages, formController.index);
+app.get('/dashboard/formularios/novo', isAuthenticated, canAccessPages, formController.novo);
+app.get('/dashboard/formularios/:id/editar', isAuthenticated, canAccessPages, formController.editar);
+app.get('/dashboard/formularios/:id/submissoes', isAuthenticated, canAccessPages, formController.submissoes);
+app.post('/dashboard/formularios/criar', isAuthenticated, canAccessPages, formController.criar);
+app.post('/dashboard/formularios/:id/atualizar', isAuthenticated, canAccessPages, formController.atualizar);
+app.delete('/dashboard/formularios/:id', isAuthenticated, canAccessPages, formController.deletar);
+// Dashboard - Gerenciamento de submissões
+app.get('/api/formularios/:id/submissao/:submissionId', isAuthenticated, canAccessPages, formController.verSubmissao);
+app.put('/api/formularios/:id/submissao/:submissionId/status', isAuthenticated, canAccessPages, formController.atualizarStatusSubmissao);
+app.delete('/api/formularios/:id/submissao/:submissionId', isAuthenticated, canAccessPages, formController.deletarSubmissao);
+// API pública
+app.post('/api/formularios/submeter', formController.submeter);
+app.get('/api/formularios/:id', formController.obterFormulario);
+app.get('/api/formularios', isAuthenticated, formController.listarAtivos);
+app.get('/api/formularios/novos/count', isAuthenticated, formController.contarNovos);
+
 // BIBLIOTECA DE MÍDIA
 app.post('/dashboard/media/upload', isAuthenticated, upload.single('file'), async (req, res) => {
   try {

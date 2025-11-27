@@ -1,0 +1,666 @@
+<%- include('../partials/header', { title: 'Registros - ' + form.nome, user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1>Registros do Formulário</h1>
+            <p><%= form.nome %></p>
+        </div>
+        <div class="header-actions">
+            <a href="/dashboard/formularios/<%= form.id %>/editar" class="btn btn-secondary">
+                <i class="fas fa-edit"></i> Editar Formulário
+            </a>
+            <a href="/dashboard/formularios" class="btn btn-secondary">
+                ← Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros por Status -->
+    <div class="status-filters">
+        <a href="/dashboard/formularios/<%= form.id %>/submissoes" class="status-filter <%= currentStatus === 'todos' ? 'active' : '' %>">
+            <span class="count"><%= statusCounts.total %></span>
+            <span class="label">Todos</span>
+        </a>
+        <a href="/dashboard/formularios/<%= form.id %>/submissoes?status=novo" class="status-filter novo <%= currentStatus === 'novo' ? 'active' : '' %>">
+            <span class="count"><%= statusCounts.novo %></span>
+            <span class="label">Novos</span>
+        </a>
+        <a href="/dashboard/formularios/<%= form.id %>/submissoes?status=lido" class="status-filter lido <%= currentStatus === 'lido' ? 'active' : '' %>">
+            <span class="count"><%= statusCounts.lido %></span>
+            <span class="label">Lidos</span>
+        </a>
+        <a href="/dashboard/formularios/<%= form.id %>/submissoes?status=respondido" class="status-filter respondido <%= currentStatus === 'respondido' ? 'active' : '' %>">
+            <span class="count"><%= statusCounts.respondido %></span>
+            <span class="label">Respondidos</span>
+        </a>
+        <a href="/dashboard/formularios/<%= form.id %>/submissoes?status=arquivado" class="status-filter arquivado <%= currentStatus === 'arquivado' ? 'active' : '' %>">
+            <span class="count"><%= statusCounts.arquivado %></span>
+            <span class="label">Arquivados</span>
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="40"></th>
+                        <th>Resumo</th>
+                        <th>Página</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (submissions && submissions.length > 0) { %>
+                        <% submissions.forEach(sub => { %>
+                        <% const dados = sub.dados; %>
+                        <% const resumo = Object.values(dados).slice(0, 2).join(' - ').substring(0, 60); %>
+                        <tr class="<%= sub.status === 'novo' ? 'unread' : '' %>">
+                            <td>
+                                <% if (sub.status === 'novo') { %>
+                                <span class="new-indicator"></span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <div class="submission-summary" onclick="verSubmissao(<%= form.id %>, <%= sub.id %>)">
+                                    <strong><%= resumo || 'Sem dados' %><%= resumo && resumo.length >= 60 ? '...' : '' %></strong>
+                                </div>
+                            </td>
+                            <td>
+                                <% if (sub.paginaOrigem) { %>
+                                <a href="/pagina/<%= sub.paginaOrigem %>" target="_blank" class="page-link">
+                                    <i class="fas fa-external-link-alt"></i> <%= sub.paginaOrigem %>
+                                </a>
+                                <% } else { %>
+                                <span class="text-muted">-</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge badge-<%= sub.status %>"><%= sub.status %></span>
+                            </td>
+                            <td>
+                                <small><%= new Date(sub.createdAt).toLocaleString('pt-BR') %></small>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button onclick="verSubmissao(<%= form.id %>, <%= sub.id %>)" class="btn-icon" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn-icon" onclick="toggleDropdown(this)" title="Alterar Status">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <button onclick="alterarStatus(<%= form.id %>, <%= sub.id %>, 'novo')">
+                                                <i class="fas fa-circle text-novo"></i> Marcar como Novo
+                                            </button>
+                                            <button onclick="alterarStatus(<%= form.id %>, <%= sub.id %>, 'lido')">
+                                                <i class="fas fa-circle text-lido"></i> Marcar como Lido
+                                            </button>
+                                            <button onclick="alterarStatus(<%= form.id %>, <%= sub.id %>, 'respondido')">
+                                                <i class="fas fa-circle text-respondido"></i> Marcar como Respondido
+                                            </button>
+                                            <button onclick="alterarStatus(<%= form.id %>, <%= sub.id %>, 'arquivado')">
+                                                <i class="fas fa-circle text-arquivado"></i> Arquivar
+                                            </button>
+                                            <hr>
+                                            <button onclick="deletarSubmissao(<%= form.id %>, <%= sub.id %>)" class="text-danger">
+                                                <i class="fas fa-trash"></i> Deletar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>Nenhum registro encontrado</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes -->
+<div id="detalhesModal" class="modal" style="display: none;">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>Detalhes do Registro</h3>
+            <button type="button" class="modal-close" onclick="fecharModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="detalhesContent">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Carregando...
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .content-header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #1A202C;
+    }
+
+    .content-header p {
+        color: #718096;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background: #F7FAFC;
+        color: #4A5568;
+        border: 1px solid #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+        background: #EDF2F7;
+    }
+
+    /* Status Filters */
+    .status-filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .status-filter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 20px;
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: all 0.15s;
+        min-width: 80px;
+    }
+
+    .status-filter:hover {
+        border-color: #CBD5E0;
+        transform: translateY(-1px);
+    }
+
+    .status-filter.active {
+        border-color: #0669de;
+        background: #EBF5FF;
+    }
+
+    .status-filter .count {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1A202C;
+    }
+
+    .status-filter .label {
+        font-size: 11px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-filter.novo .count { color: #3B82F6; }
+    .status-filter.lido .count { color: #6B7280; }
+    .status-filter.respondido .count { color: #10B981; }
+    .status-filter.arquivado .count { color: #9CA3AF; }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        border: 1px solid #E8E8E8;
+        overflow: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 11px;
+        color: #4A5568;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: #F7FAFC;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+        color: #2D3748;
+    }
+
+    .data-table tr:hover {
+        background: #F7FAFC;
+    }
+
+    .data-table tr.unread {
+        background: #F0F9FF;
+    }
+
+    .data-table tr.unread:hover {
+        background: #E0F2FE;
+    }
+
+    .new-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #3B82F6;
+        border-radius: 50%;
+    }
+
+    .submission-summary {
+        cursor: pointer;
+    }
+
+    .submission-summary:hover strong {
+        color: #0669de;
+    }
+
+    .page-link {
+        color: #718096;
+        text-decoration: none;
+        font-size: 12px;
+    }
+
+    .page-link:hover {
+        color: #0669de;
+    }
+
+    .text-muted {
+        color: #A0AEC0;
+    }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .badge-novo { background: #DBEAFE; color: #1E40AF; }
+    .badge-lido { background: #E5E7EB; color: #374151; }
+    .badge-respondido { background: #D1FAE5; color: #065F46; }
+    .badge-arquivado { background: #F3F4F6; color: #6B7280; }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        background: #F7FAFC;
+        color: #718096;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+        background: #EDF2F7;
+        color: #2D3748;
+    }
+
+    /* Dropdown */
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        min-width: 180px;
+        z-index: 100;
+        display: none;
+    }
+
+    .dropdown-menu.show {
+        display: block;
+    }
+
+    .dropdown-menu button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        background: none;
+        font-size: 13px;
+        color: #2D3748;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .dropdown-menu button:hover {
+        background: #F7FAFC;
+    }
+
+    .dropdown-menu hr {
+        margin: 4px 0;
+        border: none;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .text-novo { color: #3B82F6; }
+    .text-lido { color: #6B7280; }
+    .text-respondido { color: #10B981; }
+    .text-arquivado { color: #9CA3AF; }
+    .text-danger { color: #DC2626; }
+
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: #CBD5E0;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        color: #718096;
+        margin: 0;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content.modal-lg {
+        max-width: 700px;
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #718096;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #718096;
+    }
+
+    .detail-row {
+        padding: 12px 0;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-size: 11px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        color: #1A202C;
+        word-break: break-word;
+    }
+
+    .detail-meta {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #E2E8F0;
+        font-size: 12px;
+        color: #718096;
+    }
+
+    .detail-meta p {
+        margin: 4px 0;
+    }
+</style>
+
+<script>
+    function toggleDropdown(btn) {
+        // Fechar outros dropdowns
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+            if (menu !== btn.nextElementSibling) {
+                menu.classList.remove('show');
+            }
+        });
+        
+        btn.nextElementSibling.classList.toggle('show');
+    }
+
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    function verSubmissao(formId, submissionId) {
+        document.getElementById('detalhesModal').style.display = 'flex';
+        document.getElementById('detalhesContent').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+        fetch(`/api/formularios/${formId}/submissao/${submissionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const sub = data.submission;
+                    const dados = sub.dados;
+                    const campos = sub.form.campos || [];
+
+                    let html = '';
+                    
+                    // Renderizar dados do formulário
+                    campos.forEach(campo => {
+                        const valor = dados[campo.name] || '-';
+                        html += `
+                            <div class="detail-row">
+                                <div class="detail-label">${campo.label}</div>
+                                <div class="detail-value">${Array.isArray(valor) ? valor.join(', ') : valor}</div>
+                            </div>
+                        `;
+                    });
+
+                    // Metadados
+                    html += `
+                        <div class="detail-meta">
+                            <p><strong>Data:</strong> ${new Date(sub.createdAt).toLocaleString('pt-BR')}</p>
+                            <p><strong>IP:</strong> ${sub.ip || 'Não registrado'}</p>
+                            <p><strong>Página:</strong> ${sub.paginaOrigem || 'Não informada'}</p>
+                        </div>
+                    `;
+
+                    document.getElementById('detalhesContent').innerHTML = html;
+
+                    // Atualizar badge na tabela se mudou para lido
+                    const row = document.querySelector(`tr.unread`);
+                    if (row) {
+                        row.classList.remove('unread');
+                    }
+                } else {
+                    document.getElementById('detalhesContent').innerHTML = '<p class="text-danger">Erro ao carregar dados</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                document.getElementById('detalhesContent').innerHTML = '<p class="text-danger">Erro ao carregar dados</p>';
+            });
+    }
+
+    function fecharModal() {
+        document.getElementById('detalhesModal').style.display = 'none';
+    }
+
+    function alterarStatus(formId, submissionId, status) {
+        fetch(`/api/formularios/${formId}/submissao/${submissionId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao alterar status');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao alterar status');
+        });
+    }
+
+    function deletarSubmissao(formId, submissionId) {
+        if (confirm('Tem certeza que deseja deletar este registro?')) {
+            fetch(`/api/formularios/${formId}/submissao/${submissionId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao deletar registro');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao deletar registro');
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>
