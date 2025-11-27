@@ -74,8 +74,8 @@
                                     // Ordenar por data (mais recentes primeiro)
                                     allArticles.sort((a, b) => new Date(b.dataPublicacao) - new Date(a.dataPublicacao));
 
-                                    // Mostrar apenas os primeiros 10
-                                    const displayArticles = allArticles.slice(0, 10);
+                                    // Mostrar apenas os primeiros 20 (carrega mais via scroll infinito)
+                                    const displayArticles = allArticles.slice(0, 20);
 
                                     if (displayArticles.length === 0) { %>
                                         <div style="padding: 40px; text-align: center; color: #666;">
@@ -137,7 +137,7 @@
                             <!-- Script para scroll infinito -->
                             <script>
                                 let allArticlesData = <%- JSON.stringify(allArticles) %>;
-                                let currentIndex = 10;
+                                let currentIndex = 20;
                                 let isLoading = false;
 
                                 window.addEventListener('scroll', function () {
