@@ -85,34 +85,46 @@
                                             <p style="font-size: 14px; margin-top: 10px;">Em breve teremos novidades!
                                             </p>
                                         </div>
-                                        <% } else { displayArticles.forEach(article=> { %>
-                                            <article class="news-item-horizontal">
-                                                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
-                                                    <div class="news-item-image">
-                                                        <img src="<%= article.imagem %>" alt="<%= article.titulo %>"
-                                                            loading="lazy" width="280" height="180">
-                                                    </div>
-                                                    <div class="news-item-content">
-                                                        <span class="news-item-category <%= article.categoryClass %>">
-                                                            <%= article.subcategoria || article.categoryName %>
-                                                        </span>
-                                                        <h3 class="news-item-title">
-                                                            <%= article.titulo %>
-                                                        </h3>
-                                                        <p class="news-item-description">
-                                                            <%= article.descricao %>
-                                                        </p>
-                                                        <div class="news-item-meta">
-                                                            <span class="news-date">
-                                                                <%= new
-                                                                    Date(article.dataPublicacao).toLocaleDateString('pt-BR')
-                                                                    %>
-                                                            </span>
+                                        <% } else { 
+                                            // Agrupar artigos: principal + destaque
+                                            for (let i = 0; i < displayArticles.length; i++) {
+                                                const article = displayArticles[i];
+                                                const nextArticle = displayArticles[i + 1];
+                                        %>
+                                            <div class="news-block">
+                                                <article class="news-item-horizontal">
+                                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
+                                                        <div class="news-item-image">
+                                                            <img src="<%= article.imagem %>" alt="<%= article.titulo %>"
+                                                                loading="lazy" width="280" height="180">
                                                         </div>
-                                                    </div>
-                                                </a>
-                                            </article>
-                                            <% }); } %>
+                                                        <div class="news-item-content">
+                                                            <span class="news-item-category <%= article.categoryClass %>">
+                                                                <%= article.subcategoria || article.categoryName %>
+                                                            </span>
+                                                            <h3 class="news-item-title">
+                                                                <%= article.titulo %>
+                                                            </h3>
+                                                            <p class="news-item-description">
+                                                                <%= article.descricao %>
+                                                            </p>
+                                                            <div class="news-item-meta">
+                                                                <span class="news-date">
+                                                                    <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </article>
+                                                <% if (nextArticle) { i++; %>
+                                                <div class="news-highlight">
+                                                    <a href="/<%= nextArticle.categoria %>/<%= nextArticle.urlAmigavel %>">
+                                                        <%= nextArticle.titulo %>
+                                                    </a>
+                                                </div>
+                                                <% } %>
+                                            </div>
+                                        <% } } %>
                                 </div>
                                 <div id="loadingIndicator" style="display: none; text-align: center; padding: 20px;">
                                     <i class="fas fa-spinner fa-spin"
@@ -142,26 +154,42 @@
                                             const newsList = document.getElementById('newsList');
                                             const nextArticles = allArticlesData.slice(currentIndex, currentIndex + 10);
 
-                                            nextArticles.forEach(article => {
-                                                const articleHTML = `
-                                        <article class="news-item-horizontal">
-                                            <a href="/${article.categoria}/${article.urlAmigavel}">
-                                                <div class="news-item-image">
-                                                    <img src="${article.imagem}" alt="${article.titulo}">
-                                                </div>
-                                                <div class="news-item-content">
-                                                    <span class="news-item-category ${article.categoryClass}">${article.subcategoria || article.categoryName}</span>
-                                                    <h3 class="news-item-title">${article.titulo}</h3>
-                                                    <p class="news-item-description">${article.descricao}</p>
-                                                    <div class="news-item-meta">
-                                                        <span class="news-date">${new Date(article.dataPublicacao).toLocaleDateString('pt-BR')}</span>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </article>
-                                    `;
-                                                newsList.insertAdjacentHTML('beforeend', articleHTML);
-                                            });
+                                            // Agrupar em pares: principal + destaque
+                                            for (let i = 0; i < nextArticles.length; i++) {
+                                                const article = nextArticles[i];
+                                                const nextArticle = nextArticles[i + 1];
+                                                
+                                                let blockHTML = `
+                                                    <div class="news-block">
+                                                        <article class="news-item-horizontal">
+                                                            <a href="/${article.categoria}/${article.urlAmigavel}">
+                                                                <div class="news-item-image">
+                                                                    <img src="${article.imagem}" alt="${article.titulo}" loading="lazy">
+                                                                </div>
+                                                                <div class="news-item-content">
+                                                                    <span class="news-item-category ${article.categoryClass}">${article.subcategoria || article.categoryName}</span>
+                                                                    <h3 class="news-item-title">${article.titulo}</h3>
+                                                                    <p class="news-item-description">${article.descricao}</p>
+                                                                    <div class="news-item-meta">
+                                                                        <span class="news-date">${new Date(article.dataPublicacao).toLocaleDateString('pt-BR')}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </article>`;
+                                                
+                                                if (nextArticle) {
+                                                    i++;
+                                                    blockHTML += `
+                                                        <div class="news-highlight">
+                                                            <a href="/${nextArticle.categoria}/${nextArticle.urlAmigavel}">
+                                                                ${nextArticle.titulo}
+                                                            </a>
+                                                        </div>`;
+                                                }
+                                                
+                                                blockHTML += `</div>`;
+                                                newsList.insertAdjacentHTML('beforeend', blockHTML);
+                                            }
 
                                             currentIndex += 10;
                                             isLoading = false;

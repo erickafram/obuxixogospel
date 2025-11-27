@@ -72,22 +72,95 @@
         order: 1;
     }
 
-    /* News Item Horizontal - Mobile */
+    /* News Block - Mobile */
+    .news-block {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .news-list {
+        gap: 0;
+    }
+
+    /* News Item Horizontal - Mobile - Layout lado a lado */
+    .news-item-horizontal {
+        padding: 16px 0;
+        border-bottom: none;
+    }
+
     .news-item-horizontal a {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 14px;
     }
 
     .news-item-image {
-        width: 100%;
-        height: 200px;
+        width: 120px;
+        min-width: 120px;
+        height: 80px;
+        border-radius: 8px;
+    }
+
+    .news-item-content {
+        flex: 1;
+        padding: 0;
+    }
+
+    .news-item-category {
+        display: none;
     }
 
     .news-item-title {
-        font-size: 18px;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.4;
+        margin-bottom: 0;
+        color: #161616;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .news-item-description {
+        display: none;
+    }
+
+    .news-item-meta {
+        display: none;
+    }
+
+    /* Destaque em bullet point - Mobile */
+    .news-highlight {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 0 16px 0;
         font-size: 14px;
+        line-height: 1.4;
+        color: #333;
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+    .news-highlight::before {
+        content: '•';
+        color: #0066cc;
+        font-size: 20px;
+        font-weight: bold;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .news-highlight a {
+        color: #333;
+        text-decoration: none;
+        font-weight: 400;
+    }
+
+    .news-highlight a:hover {
+        color: #0066cc;
     }
 
     /* Header Mobile */
