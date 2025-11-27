@@ -1281,7 +1281,7 @@ app.get('/', async (req, res) => {
           ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
         },
         order: [['dataPublicacao', 'DESC']],
-        limit: 6 // Limite de artigos por seção
+        limit: 50 // Limite de artigos por categoria para scroll infinito
       });
 
       if (articles.length > 0) {

@@ -73,21 +73,70 @@
     }
 
     /* News Item Horizontal - Mobile */
+    .news-item-horizontal {
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
     .news-item-horizontal a {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 15px;
     }
 
     .news-item-image {
-        width: 100%;
-        height: 200px;
+        width: 110px;
+        height: 80px;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .news-item-image img {
+        border-radius: 8px;
+    }
+
+    .news-item-content {
+        padding: 0;
+        justify-content: space-between;
     }
 
     .news-item-title {
-        font-size: 18px;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin-bottom: 6px;
+        color: #000; /* Fonte preta conforme pedido */
     }
 
+    /* Ocultar descrição no mobile para ficar mais limpo */
     .news-item-description {
-        font-size: 14px;
+        display: none;
+    }
+
+    /* Estilo bullet/categoria pequena */
+    .news-item-meta {
+        margin-top: 0;
+    }
+
+    .news-date {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        align-items: center;
+    }
+
+    .news-date::before {
+        content: "•";
+        color: #cc0000; /* Bullet vermelho conforme imagem */
+        margin-right: 6px;
+        font-size: 18px;
+        line-height: 0;
+    }
+
+    /* Ajustar categoria para parecer um subtítulo ou ocultar se preferir bullet */
+    .news-item-category {
+        display: none; /* Ocultando a badge colorida grande no mobile para ficar igual a ref */
     }
 
     /* Header Mobile */
