@@ -36,6 +36,46 @@
                     </div>
                 </div>
 
+                <!-- Modelos Pré-prontos (apenas para novo formulário) -->
+                <% if (!isEdit) { %>
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-magic"></i> Modelos Pré-prontos</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">
+                            Escolha um modelo para começar rapidamente ou crie do zero:
+                        </p>
+                        <div class="templates-grid">
+                            <button type="button" class="template-btn" onclick="carregarModelo('contato')">
+                                <i class="fas fa-envelope"></i>
+                                <span>Formulário de Contato</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="carregarModelo('anuncie')">
+                                <i class="fas fa-bullhorn"></i>
+                                <span>Anuncie Conosco</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="carregarModelo('remocao')">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Pedido de Remoção</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="carregarModelo('sugestao')">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Sugestão de Pauta</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="carregarModelo('denuncia')">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Denúncia/Reclamação</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="carregarModelo('parceria')">
+                                <i class="fas fa-handshake"></i>
+                                <span>Proposta de Parceria</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
                 <!-- Construtor de Campos -->
                 <div class="card">
                     <div class="card-header">
@@ -358,6 +398,50 @@
         color: #2D3748;
     }
 
+    /* Templates Grid */
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .template-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 10px;
+        background: #F7FAFC;
+        border: 2px solid #E2E8F0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+    }
+
+    .template-btn:hover {
+        border-color: #0669de;
+        background: #EBF4FF;
+        transform: translateY(-2px);
+    }
+
+    .template-btn i {
+        font-size: 24px;
+        color: #0669de;
+    }
+
+    .template-btn span {
+        font-size: 11px;
+        font-weight: 500;
+        color: #2D3748;
+        line-height: 1.3;
+    }
+
+    .template-btn.active {
+        border-color: #0669de;
+        background: #EBF4FF;
+    }
+
     /* Campos Container */
     .empty-fields {
         text-align: center;
@@ -597,6 +681,131 @@
     // Dados dos campos
     let campos = [];
     let editingIndex = -1;
+
+    // Modelos de formulários pré-prontos
+    const modelosFormulario = {
+        contato: {
+            nome: 'Formulário de Contato',
+            descricao: 'Formulário para visitantes entrarem em contato',
+            textoBotao: 'Enviar Mensagem',
+            mensagemSucesso: 'Mensagem enviada com sucesso! Responderemos em breve.',
+            campos: [
+                { type: 'text', name: 'nome', label: 'Nome Completo', placeholder: 'Digite seu nome...', required: true },
+                { type: 'email', name: 'email', label: 'E-mail', placeholder: 'seu@email.com', required: true },
+                { type: 'tel', name: 'telefone', label: 'Telefone/WhatsApp', placeholder: '(00) 00000-0000', required: false },
+                { type: 'select', name: 'assunto', label: 'Assunto', placeholder: '', required: true, options: ['Dúvida', 'Sugestão', 'Elogio', 'Reclamação', 'Outro'] },
+                { type: 'textarea', name: 'mensagem', label: 'Mensagem', placeholder: 'Escreva sua mensagem...', required: true }
+            ]
+        },
+        anuncie: {
+            nome: 'Anuncie Conosco',
+            descricao: 'Formulário para interessados em anunciar no portal',
+            textoBotao: 'Solicitar Orçamento',
+            mensagemSucesso: 'Solicitação recebida! Nossa equipe comercial entrará em contato em até 48 horas.',
+            campos: [
+                { type: 'text', name: 'empresa', label: 'Nome da Empresa/Ministério', placeholder: 'Nome da sua empresa ou ministério...', required: true },
+                { type: 'text', name: 'responsavel', label: 'Nome do Responsável', placeholder: 'Seu nome completo...', required: true },
+                { type: 'email', name: 'email', label: 'E-mail Comercial', placeholder: 'comercial@empresa.com', required: true },
+                { type: 'tel', name: 'telefone', label: 'Telefone/WhatsApp', placeholder: '(00) 00000-0000', required: true },
+                { type: 'text', name: 'site', label: 'Site/Redes Sociais', placeholder: 'www.seusite.com.br ou @instagram', required: false },
+                { type: 'select', name: 'tipo_anuncio', label: 'Tipo de Anúncio', placeholder: '', required: true, options: ['Banner no Site', 'Publieditorial', 'Patrocínio de Matéria', 'Divulgação de Evento', 'Outro'] },
+                { type: 'select', name: 'orcamento', label: 'Orçamento Estimado', placeholder: '', required: false, options: ['Até R$ 500', 'R$ 500 a R$ 1.000', 'R$ 1.000 a R$ 2.500', 'Acima de R$ 2.500', 'A definir'] },
+                { type: 'textarea', name: 'detalhes', label: 'Detalhes da Campanha', placeholder: 'Descreva o que deseja divulgar, período, público-alvo, etc...', required: true }
+            ]
+        },
+        remocao: {
+            nome: 'Pedido de Remoção de Conteúdo',
+            descricao: 'Formulário para solicitar remoção de conteúdo do portal',
+            textoBotao: 'Enviar Solicitação',
+            mensagemSucesso: 'Solicitação recebida! Analisaremos seu pedido em até 5 dias úteis e entraremos em contato.',
+            campos: [
+                { type: 'text', name: 'nome', label: 'Nome Completo', placeholder: 'Seu nome completo...', required: true },
+                { type: 'email', name: 'email', label: 'E-mail para Contato', placeholder: 'seu@email.com', required: true },
+                { type: 'tel', name: 'telefone', label: 'Telefone', placeholder: '(00) 00000-0000', required: false },
+                { type: 'text', name: 'url_conteudo', label: 'Link do Conteúdo', placeholder: 'Cole aqui o link da matéria ou página...', required: true },
+                { type: 'select', name: 'motivo', label: 'Motivo da Solicitação', placeholder: '', required: true, options: ['Informação incorreta', 'Violação de privacidade', 'Direito ao esquecimento', 'Direitos autorais', 'Difamação/Calúnia', 'Outro'] },
+                { type: 'text', name: 'relacao', label: 'Sua Relação com o Conteúdo', placeholder: 'Ex: Sou a pessoa citada na matéria...', required: true },
+                { type: 'textarea', name: 'justificativa', label: 'Justificativa Detalhada', placeholder: 'Explique detalhadamente o motivo do pedido de remoção...', required: true },
+                { type: 'text', name: 'documento', label: 'Documento de Identificação (CPF)', placeholder: '000.000.000-00', required: false }
+            ]
+        },
+        sugestao: {
+            nome: 'Sugestão de Pauta',
+            descricao: 'Formulário para enviar sugestões de matérias e reportagens',
+            textoBotao: 'Enviar Sugestão',
+            mensagemSucesso: 'Sugestão recebida! Nossa equipe editorial analisará sua proposta. Obrigado por contribuir!',
+            campos: [
+                { type: 'text', name: 'nome', label: 'Seu Nome', placeholder: 'Como podemos te chamar?', required: true },
+                { type: 'email', name: 'email', label: 'E-mail', placeholder: 'seu@email.com', required: true },
+                { type: 'tel', name: 'telefone', label: 'WhatsApp (opcional)', placeholder: '(00) 00000-0000', required: false },
+                { type: 'text', name: 'titulo_sugestao', label: 'Título da Sugestão', placeholder: 'Dê um título para sua pauta...', required: true },
+                { type: 'select', name: 'categoria', label: 'Categoria', placeholder: '', required: true, options: ['Notícia', 'Testemunho', 'Evento', 'Música Gospel', 'Entrevista', 'Denúncia', 'Outro'] },
+                { type: 'textarea', name: 'descricao', label: 'Descrição da Pauta', placeholder: 'Descreva sua sugestão com o máximo de detalhes possível...', required: true },
+                { type: 'text', name: 'fonte', label: 'Fonte/Contato (opcional)', placeholder: 'Indique uma fonte ou contato para a matéria...', required: false }
+            ]
+        },
+        denuncia: {
+            nome: 'Denúncia/Reclamação',
+            descricao: 'Formulário para denúncias e reclamações',
+            textoBotao: 'Enviar Denúncia',
+            mensagemSucesso: 'Denúncia recebida! Trataremos sua mensagem com total sigilo. Obrigado por nos ajudar.',
+            campos: [
+                { type: 'text', name: 'nome', label: 'Nome (opcional)', placeholder: 'Pode ser anônimo...', required: false },
+                { type: 'email', name: 'email', label: 'E-mail para Retorno', placeholder: 'seu@email.com', required: true },
+                { type: 'select', name: 'tipo', label: 'Tipo de Denúncia', placeholder: '', required: true, options: ['Erro em matéria', 'Fake News', 'Conteúdo ofensivo', 'Problema técnico no site', 'Comentário abusivo', 'Outro'] },
+                { type: 'text', name: 'url', label: 'Link Relacionado (se houver)', placeholder: 'Cole o link da página com problema...', required: false },
+                { type: 'textarea', name: 'descricao', label: 'Descrição Detalhada', placeholder: 'Descreva o problema com o máximo de detalhes...', required: true },
+                { type: 'checkbox', name: 'anonimo', label: 'Desejo permanecer anônimo', placeholder: '', required: false }
+            ]
+        },
+        parceria: {
+            nome: 'Proposta de Parceria',
+            descricao: 'Formulário para propostas de parceria e colaboração',
+            textoBotao: 'Enviar Proposta',
+            mensagemSucesso: 'Proposta recebida! Analisaremos e entraremos em contato em breve. Obrigado pelo interesse!',
+            campos: [
+                { type: 'text', name: 'organizacao', label: 'Nome da Organização/Igreja/Ministério', placeholder: 'Nome completo...', required: true },
+                { type: 'text', name: 'responsavel', label: 'Nome do Responsável', placeholder: 'Seu nome completo...', required: true },
+                { type: 'text', name: 'cargo', label: 'Cargo/Função', placeholder: 'Ex: Pastor, Diretor, Coordenador...', required: false },
+                { type: 'email', name: 'email', label: 'E-mail', placeholder: 'contato@organizacao.com', required: true },
+                { type: 'tel', name: 'telefone', label: 'Telefone/WhatsApp', placeholder: '(00) 00000-0000', required: true },
+                { type: 'text', name: 'site', label: 'Site/Redes Sociais', placeholder: 'www.site.com.br ou @instagram', required: false },
+                { type: 'select', name: 'tipo_parceria', label: 'Tipo de Parceria', placeholder: '', required: true, options: ['Cobertura de Eventos', 'Troca de Divulgação', 'Produção de Conteúdo', 'Parceria Institucional', 'Outro'] },
+                { type: 'textarea', name: 'proposta', label: 'Descreva sua Proposta', placeholder: 'Explique detalhadamente sua proposta de parceria, benefícios mútuos, etc...', required: true }
+            ]
+        }
+    };
+
+    // Função para carregar modelo
+    function carregarModelo(tipo) {
+        const modelo = modelosFormulario[tipo];
+        if (!modelo) return;
+
+        // Confirmar se já tem campos
+        if (campos.length > 0) {
+            if (!confirm('Isso substituirá os campos atuais. Deseja continuar?')) {
+                return;
+            }
+        }
+
+        // Preencher dados do formulário
+        document.getElementById('nome').value = modelo.nome;
+        document.getElementById('descricao').value = modelo.descricao;
+        document.getElementById('textoBotao').value = modelo.textoBotao;
+        document.getElementById('mensagemSucesso').value = modelo.mensagemSucesso;
+
+        // Carregar campos
+        campos = JSON.parse(JSON.stringify(modelo.campos));
+        renderizarCampos();
+        atualizarPreview();
+
+        // Destacar botão selecionado
+        document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.template-btn').classList.add('active');
+
+        // Scroll para os campos
+        document.getElementById('camposContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     // Carregar campos existentes
     <% if (isEdit && form.campos) { %>
