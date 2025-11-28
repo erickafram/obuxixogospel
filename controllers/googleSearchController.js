@@ -404,6 +404,316 @@ async function pesquisarGoogleNewsRSS(query) {
 }
 
 /**
+ * Busca palavras-chave em alta relacionadas a um tema
+ */
+exports.buscarPalavrasChave = async (req, res) => {
+    try {
+        const { tema = 'gospel' } = req.body;
+        
+        console.log(`🔑 Buscando palavras-chave em alta para: ${tema}`);
+        
+        let palavrasChave = [];
+        
+        // Termos base para buscar sugestões relacionadas
+        const termosBase = [
+            'pastor', 'igreja', 'gospel', 'evangélico', 'cantor gospel',
+            'pregador', 'louvor', 'adoração', 'cristão', 'bíblia'
+        ];
+        
+        // Método 1: Google Suggest (autocomplete) - funciona bem!
+        try {
+            for (const termo of termosBase.slice(0, 5)) {
+                const suggestUrl = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(termo)}&hl=pt-BR`;
+                
+                const response = await axios.get(suggestUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Accept': 'application/json'
+                    },
+                    timeout: 5000
+                });
+                
+                if (response.data && Array.isArray(response.data[1])) {
+                    response.data[1].forEach(sugestao => {
+                        if (sugestao && sugestao.length > 3 && !palavrasChave.includes(sugestao)) {
+                            palavrasChave.push(sugestao);
+                        }
+                    });
+                }
+            }
+            
+            console.log(`✅ Google Suggest: ${palavrasChave.length} sugestões`);
+        } catch (e) {
+            console.error('❌ Erro Google Suggest:', e.message);
+        }
+        
+        // Método 2: Buscar trends relacionados a gospel/evangélico
+        if (palavrasChave.length < 10) {
+            try {
+                const trendsUrl = `https://trends.google.com/trends/api/dailytrends?hl=pt-BR&tz=-180&geo=BR&ns=15`;
+                
+                const response = await axios.get(trendsUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Accept': 'application/json'
+                    },
+                    timeout: 10000
+                });
+                
+                let jsonData = response.data;
+                if (typeof jsonData === 'string' && jsonData.startsWith(')]}')) {
+                    jsonData = JSON.parse(jsonData.substring(5));
+                }
+                
+                if (jsonData?.default?.trendingSearchesDays) {
+                    jsonData.default.trendingSearchesDays.forEach(day => {
+                        day.trendingSearches?.forEach(trend => {
+                            const titulo = trend.title?.query;
+                            if (titulo && !palavrasChave.includes(titulo)) {
+                                // Filtrar por termos relacionados a religião/gospel
+                                const termoLower = titulo.toLowerCase();
+                                const relacionado = ['pastor', 'igreja', 'gospel', 'evangél', 'cristã', 'bíblia', 
+                                    'deus', 'jesus', 'oração', 'louvor', 'cantora', 'cantor', 'pregador',
+                                    'assembleia', 'batista', 'universal', 'mundial', 'renascer'].some(t => 
+                                    termoLower.includes(t)
+                                );
+                                if (relacionado) {
+                                    palavrasChave.push(titulo);
+                                }
+                            }
+                        });
+                    });
+                }
+                
+                console.log(`✅ Daily Trends filtrado: ${palavrasChave.length} palavras`);
+            } catch (e) {
+                console.error('❌ Erro Daily Trends:', e.message);
+            }
+        }
+        
+        // Método 3: Buscar notícias gospel recentes para extrair termos
+        if (palavrasChave.length < 15) {
+            try {
+                const newsUrl = `https://news.google.com/rss/search?q=gospel+OR+evangélico+OR+pastor&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+                
+                const response = await axios.get(newsUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
+                        'Accept': 'application/rss+xml, application/xml, text/xml'
+                    },
+                    timeout: 10000
+                });
+                
+                const $ = cheerio.load(response.data, { xmlMode: true });
+                
+                $('item').slice(0, 15).each((i, element) => {
+                    const titulo = $(element).find('title').text().trim();
+                    if (titulo) {
+                        // Extrair nomes próprios e termos relevantes
+                        const palavras = titulo.split(/[\s,\-:]+/);
+                        palavras.forEach(palavra => {
+                            // Palavras com mais de 4 letras e que começam com maiúscula (nomes)
+                            if (palavra.length > 4 && /^[A-ZÀ-Ú]/.test(palavra) && !palavrasChave.includes(palavra)) {
+                                palavrasChave.push(palavra);
+                            }
+                        });
+                        
+                        // Também adicionar frases curtas relevantes
+                        const frasesCurtas = titulo.match(/[A-ZÀ-Ú][a-zà-ú]+ [A-ZÀ-Ú][a-zà-ú]+/g);
+                        if (frasesCurtas) {
+                            frasesCurtas.forEach(frase => {
+                                if (!palavrasChave.includes(frase) && frase.length > 5) {
+                                    palavrasChave.push(frase);
+                                }
+                            });
+                        }
+                    }
+                });
+                
+                console.log(`✅ Google News: ${palavrasChave.length} termos extraídos`);
+            } catch (e) {
+                console.error('❌ Erro Google News:', e.message);
+            }
+        }
+        
+        // Remover duplicatas e limitar
+        palavrasChave = [...new Set(palavrasChave)]
+            .filter(p => p.length > 2 && p.length < 50)
+            .slice(0, 30);
+        
+        if (palavrasChave.length === 0) {
+            return res.json({
+                success: false,
+                error: 'Não foi possível buscar palavras-chave. Tente novamente.',
+                palavrasChave: []
+            });
+        }
+        
+        res.json({
+            success: true,
+            palavrasChave,
+            total: palavrasChave.length,
+            fonte: 'Google Suggest + Trends + News'
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar palavras-chave:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao buscar palavras-chave'
+        });
+    }
+};
+
+/**
+ * Busca Trends específicos do nicho Gospel
+ */
+exports.buscarTrendsGospel = async (req, res) => {
+    try {
+        console.log(`⛪ Buscando Trends Gospel...`);
+        
+        let trends = [];
+        
+        // Termos de busca para o nicho gospel
+        const termosGospel = [
+            'pastor evangélico',
+            'igreja evangélica',
+            'cantor gospel',
+            'música gospel',
+            'pregador',
+            'assembleia de deus',
+            'igreja universal',
+            'batista',
+            'pentecostal'
+        ];
+        
+        // Método 1: Buscar notícias gospel no Google News
+        try {
+            const queries = [
+                'gospel OR evangélico OR pastor',
+                'igreja evangélica OR pentecostal',
+                'cantor gospel OR louvor'
+            ];
+            
+            for (const query of queries) {
+                const newsUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+                
+                const response = await axios.get(newsUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
+                        'Accept': 'application/rss+xml, application/xml, text/xml'
+                    },
+                    timeout: 10000
+                });
+                
+                const $ = cheerio.load(response.data, { xmlMode: true });
+                
+                $('item').slice(0, 10).each((i, element) => {
+                    const tituloCompleto = $(element).find('title').text().trim();
+                    const link = $(element).find('link').text().trim();
+                    const pubDate = $(element).find('pubDate').text().trim();
+                    
+                    // Separar título e fonte
+                    const partes = tituloCompleto.split(' - ');
+                    const titulo = partes.slice(0, -1).join(' - ') || tituloCompleto;
+                    const fonte = partes.length > 1 ? partes[partes.length - 1] : '';
+                    
+                    // Evitar duplicatas
+                    if (titulo && !trends.find(t => t.titulo === titulo)) {
+                        trends.push({
+                            id: trends.length + 1,
+                            titulo,
+                            fonte,
+                            link,
+                            data: pubDate ? new Date(pubDate).toLocaleDateString('pt-BR') : ''
+                        });
+                    }
+                });
+                
+                if (trends.length >= 25) break;
+            }
+            
+            console.log(`✅ Google News Gospel: ${trends.length} notícias`);
+        } catch (e) {
+            console.error('❌ Erro Google News Gospel:', e.message);
+        }
+        
+        // Método 2: Buscar em sites gospel específicos
+        if (trends.length < 15) {
+            try {
+                const sitesGospel = [
+                    'site:gospelprime.com.br',
+                    'site:gospelmais.com.br',
+                    'site:guiame.com.br'
+                ];
+                
+                for (const site of sitesGospel) {
+                    const newsUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(site)}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+                    
+                    const response = await axios.get(newsUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
+                            'Accept': 'application/rss+xml, application/xml, text/xml'
+                        },
+                        timeout: 8000
+                    });
+                    
+                    const $ = cheerio.load(response.data, { xmlMode: true });
+                    
+                    $('item').slice(0, 5).each((i, element) => {
+                        const tituloCompleto = $(element).find('title').text().trim();
+                        const link = $(element).find('link').text().trim();
+                        const pubDate = $(element).find('pubDate').text().trim();
+                        
+                        const partes = tituloCompleto.split(' - ');
+                        const titulo = partes.slice(0, -1).join(' - ') || tituloCompleto;
+                        const fonte = partes.length > 1 ? partes[partes.length - 1] : '';
+                        
+                        if (titulo && !trends.find(t => t.titulo === titulo)) {
+                            trends.push({
+                                id: trends.length + 1,
+                                titulo,
+                                fonte,
+                                link,
+                                data: pubDate ? new Date(pubDate).toLocaleDateString('pt-BR') : ''
+                            });
+                        }
+                    });
+                }
+                
+                console.log(`✅ Sites Gospel: ${trends.length} notícias total`);
+            } catch (e) {
+                console.error('❌ Erro Sites Gospel:', e.message);
+            }
+        }
+        
+        // Ordenar por data (mais recentes primeiro) e limitar
+        trends = trends.slice(0, 30);
+        
+        if (trends.length === 0) {
+            return res.json({
+                success: false,
+                error: 'Não foi possível carregar notícias gospel.',
+                trends: []
+            });
+        }
+        
+        res.json({
+            success: true,
+            trends,
+            total: trends.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar trends gospel:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao buscar trends gospel'
+        });
+    }
+};
+
+/**
  * Busca Google Trends
  */
 exports.buscarTrends = async (req, res) => {
@@ -458,8 +768,16 @@ exports.buscarTrends = async (req, res) => {
             try {
                 console.log('📡 Tentando API alternativa...');
                 
-                // Usar Google Trends realtime
-                const realtimeUrl = `https://trends.google.com/trends/api/realtimetrends?hl=pt-BR&tz=-180&cat=all&fi=0&fs=0&geo=BR&ri=300&rs=20&sort=0`;
+                // Mapear região para idioma
+                const langMap = {
+                    'BR': 'pt-BR', 'PT': 'pt-PT', 'US': 'en-US', 'GB': 'en-GB',
+                    'ES': 'es-ES', 'MX': 'es-MX', 'AR': 'es-AR', 'FR': 'fr-FR',
+                    'DE': 'de-DE', 'IT': 'it-IT'
+                };
+                const hl = langMap[regiao] || 'pt-BR';
+                
+                // Usar Google Trends realtime com região dinâmica
+                const realtimeUrl = `https://trends.google.com/trends/api/realtimetrends?hl=${hl}&tz=-180&cat=all&fi=0&fs=0&geo=${regiao}&ri=300&rs=20&sort=0`;
                 
                 const response = await axios.get(realtimeUrl, {
                     headers: {
@@ -494,12 +812,27 @@ exports.buscarTrends = async (req, res) => {
             }
         }
 
-        // Método 3: Buscar notícias populares do Brasil como fallback
+        // Método 3: Buscar notícias populares como fallback (usando região)
         if (trends.length === 0) {
             try {
-                console.log('📰 Tentando Google News Brasil...');
+                console.log(`📰 Tentando Google News para região ${regiao}...`);
                 
-                const newsUrl = 'https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419';
+                // Mapear região para configuração do Google News
+                const newsConfig = {
+                    'BR': { hl: 'pt-BR', gl: 'BR', ceid: 'BR:pt-419' },
+                    'PT': { hl: 'pt-PT', gl: 'PT', ceid: 'PT:pt-150' },
+                    'US': { hl: 'en-US', gl: 'US', ceid: 'US:en' },
+                    'GB': { hl: 'en-GB', gl: 'GB', ceid: 'GB:en' },
+                    'ES': { hl: 'es-ES', gl: 'ES', ceid: 'ES:es' },
+                    'MX': { hl: 'es-MX', gl: 'MX', ceid: 'MX:es-419' },
+                    'AR': { hl: 'es-AR', gl: 'AR', ceid: 'AR:es-419' },
+                    'FR': { hl: 'fr-FR', gl: 'FR', ceid: 'FR:fr' },
+                    'DE': { hl: 'de-DE', gl: 'DE', ceid: 'DE:de' },
+                    'IT': { hl: 'it-IT', gl: 'IT', ceid: 'IT:it' }
+                };
+                const config = newsConfig[regiao] || newsConfig['BR'];
+                
+                const newsUrl = `https://news.google.com/rss?hl=${config.hl}&gl=${config.gl}&ceid=${config.ceid}`;
                 
                 const response = await axios.get(newsUrl, {
                     headers: {

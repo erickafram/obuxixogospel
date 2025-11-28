@@ -336,18 +336,55 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
       totalUsers = await User.count();
     }
 
-    // Buscar visualizações dos últimos 7 dias
+    // Buscar visualizações dos últimos 7 dias baseado nos artigos reais
     let dailyViews = [];
+    const { Op } = require('sequelize');
+    
     try {
-      if (PageView && typeof PageView.getViewsLastDays === 'function') {
-        dailyViews = await PageView.getViewsLastDays(7);
+      // Calcular data de 7 dias atrás
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+      
+      // Buscar artigos com visualizações, agrupados por data de publicação
+      const viewsByDate = await Article.findAll({
+        attributes: [
+          [sequelize.Sequelize.fn('DATE', sequelize.Sequelize.col('data_publicacao')), 'date'],
+          [sequelize.Sequelize.fn('SUM', sequelize.Sequelize.col('visualizacoes')), 'totalViews']
+        ],
+        where: {
+          dataPublicacao: {
+            [Op.gte]: startDate
+          },
+          publicado: true
+        },
+        group: [sequelize.Sequelize.fn('DATE', sequelize.Sequelize.col('data_publicacao'))],
+        order: [[sequelize.Sequelize.fn('DATE', sequelize.Sequelize.col('data_publicacao')), 'ASC']],
+        raw: true
+      });
+      
+      // Criar mapa de visualizações por data
+      const viewsMap = {};
+      viewsByDate.forEach(row => {
+        if (row.date) {
+          const dateStr = typeof row.date === 'string' ? row.date : new Date(row.date).toISOString().split('T')[0];
+          viewsMap[dateStr] = parseInt(row.totalViews) || 0;
+        }
+      });
+      
+      // Preencher os 7 dias (incluindo dias sem dados)
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        dailyViews.push({
+          date: dateStr,
+          views: viewsMap[dateStr] || 0
+        });
       }
     } catch (e) {
-      console.log('PageView ainda não disponível, usando dados simulados');
-    }
-
-    // Se não houver dados reais, usar dados baseados no total
-    if (dailyViews.length === 0) {
+      console.log('Erro ao buscar visualizações por data:', e.message);
+      // Fallback: usar dados baseados no total
       const avgDaily = Math.floor((totalViews || 0) / 30);
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
@@ -359,23 +396,30 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
       }
     }
 
-    // Buscar visualizações de hoje
-    let todayViews = 0;
-    try {
-      if (PageView && typeof PageView.getTodayViews === 'function') {
-        todayViews = await PageView.getTodayViews();
-      }
-    } catch (e) {
-      // Ignorar erro
-    }
-
-    // Posts publicados hoje
+    // Posts publicados hoje e visualizações de hoje
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    // Buscar visualizações de artigos publicados hoje
+    let todayViews = 0;
+    try {
+      const todayViewsResult = await Article.sum('visualizacoes', {
+        where: {
+          dataPublicacao: {
+            [Op.gte]: today
+          },
+          publicado: true
+        }
+      });
+      todayViews = todayViewsResult || 0;
+    } catch (e) {
+      console.log('Erro ao buscar visualizações de hoje:', e.message);
+    }
+    
     const postsToday = await Article.count({
       where: {
         createdAt: {
-          [sequelize.Sequelize.Op.gte]: today
+          [Op.gte]: today
         }
       }
     });
@@ -2094,6 +2138,8 @@ const googleSearchController = require('./controllers/googleSearchController');
 app.get('/dashboard/ia/google-search', isAuthenticated, googleSearchController.renderPage);
 app.post('/dashboard/ia/google-search/pesquisar', isAuthenticated, googleSearchController.pesquisar);
 app.post('/dashboard/ia/google-search/trends', isAuthenticated, googleSearchController.buscarTrends);
+app.post('/dashboard/ia/google-search/trends-gospel', isAuthenticated, googleSearchController.buscarTrendsGospel);
+app.post('/dashboard/ia/google-search/palavras-chave', isAuthenticated, googleSearchController.buscarPalavrasChave);
 app.post('/dashboard/ia/google-search/extrair', isAuthenticated, googleSearchController.extrairConteudo);
 app.post('/dashboard/ia/google-search/gerar', isAuthenticated, googleSearchController.gerarMateria);
 
