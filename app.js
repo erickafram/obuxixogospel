@@ -252,16 +252,16 @@ app.get('/api/factcheck/:articleId', async (req, res) => {
     if (!article) {
       return res.status(404).json({ success: false, error: 'Artigo não encontrado' });
     }
-    
+
     // Remover tags HTML do conteúdo para análise
     const conteudoLimpo = article.conteudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    
+
     const resultado = await FactCheckService.verificarFatos(
       article.titulo,
       article.descricao,
       conteudoLimpo
     );
-    
+
     res.json(resultado);
   } catch (error) {
     console.error('Erro na verificação de fatos:', error);
@@ -273,20 +273,20 @@ app.get('/api/factcheck/:articleId', async (req, res) => {
 app.post('/api/factcheck/verificar', isAuthenticated, async (req, res) => {
   try {
     const { titulo, descricao, conteudo } = req.body;
-    
+
     if (!titulo || !conteudo) {
       return res.status(400).json({ success: false, error: 'Título e conteúdo são obrigatórios' });
     }
-    
+
     // Remover tags HTML do conteúdo para análise
     const conteudoLimpo = conteudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    
+
     const resultado = await FactCheckService.verificarFatos(
       titulo,
       descricao || '',
       conteudoLimpo
     );
-    
+
     res.json(resultado);
   } catch (error) {
     console.error('Erro na verificação de fatos:', error);
@@ -326,16 +326,16 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     const totalPosts = await Article.count();
     const totalViews = await Article.sum('visualizacoes');
-    
+
     // Buscar total de categorias ativas
     const totalCategories = await Category.count();
-    
+
     // Buscar total de usuários (se admin)
     let totalUsers = 1;
     if (req.session.userRole === 'admin') {
       totalUsers = await User.count();
     }
-    
+
     // Buscar visualizações dos últimos 7 dias
     let dailyViews = [];
     try {
@@ -345,7 +345,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     } catch (e) {
       console.log('PageView ainda não disponível, usando dados simulados');
     }
-    
+
     // Se não houver dados reais, usar dados baseados no total
     if (dailyViews.length === 0) {
       const avgDaily = Math.floor((totalViews || 0) / 30);
@@ -358,7 +358,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         });
       }
     }
-    
+
     // Buscar visualizações de hoje
     let todayViews = 0;
     try {
@@ -368,7 +368,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     } catch (e) {
       // Ignorar erro
     }
-    
+
     // Posts publicados hoje
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -515,7 +515,8 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
 
     console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
 
@@ -612,6 +613,26 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       }
     }
 
+    // Processar dados de fact-check
+    let factCheckData = null;
+    if (isFactCheck === 'true' && factCheckClaim) {
+      const ratingNames = {
+        '1': 'Falso',
+        '2': 'Majoritariamente Falso',
+        '3': 'Parcialmente Verdadeiro',
+        '4': 'Majoritariamente Verdadeiro',
+        '5': 'Verdadeiro'
+      };
+      factCheckData = {
+        claim: factCheckClaim,
+        claimAuthor: factCheckAuthor || 'Desconhecido',
+        claimAuthorType: factCheckAuthorType || 'Organization',
+        rating: parseInt(factCheckRating) || 3,
+        ratingName: ratingNames[factCheckRating] || 'Parcialmente Verdadeiro'
+      };
+      console.log('📋 Fact-check configurado:', factCheckData);
+    }
+
     const article = await Article.create({
       titulo,
       descricao: descricao || 'Rascunho',
@@ -624,7 +645,8 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       destaque: destaque === 'true' || destaque === true,
       dataPublicacao: dataFinalParaSalvar,
       visualizacoes: 0,
-      urlAmigavel
+      urlAmigavel,
+      factCheck: factCheckData
     });
 
     console.log('Post criado com sucesso:', article.id);
@@ -714,7 +736,8 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 
 app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (req, res) => {
   try {
-    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao } = req.body;
+    const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
 
     const article = await Article.findByPk(req.params.id);
 
@@ -773,6 +796,26 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       }
     }
 
+    // Processar dados de fact-check
+    let factCheckData = null;
+    if (isFactCheck === 'true' && factCheckClaim) {
+      const ratingNames = {
+        '1': 'Falso',
+        '2': 'Majoritariamente Falso',
+        '3': 'Parcialmente Verdadeiro',
+        '4': 'Majoritariamente Verdadeiro',
+        '5': 'Verdadeiro'
+      };
+      factCheckData = {
+        claim: factCheckClaim,
+        claimAuthor: factCheckAuthor || 'Desconhecido',
+        claimAuthorType: factCheckAuthorType || 'Organization',
+        rating: parseInt(factCheckRating) || 3,
+        ratingName: ratingNames[factCheckRating] || 'Parcialmente Verdadeiro'
+      };
+      console.log('📋 Fact-check atualizado:', factCheckData);
+    }
+
     await article.update({
       titulo,
       descricao: descricao || article.descricao,
@@ -783,7 +826,8 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       autor: autor || 'Redação Obuxixo Gospel',
       publicado: statusPublicado,
       destaque: destaque === 'true',
-      dataPublicacao: dataFinalParaSalvar
+      dataPublicacao: dataFinalParaSalvar,
+      factCheck: factCheckData
     });
 
     // Trigger Sitemap Refresh in background if published
@@ -1467,7 +1511,7 @@ app.get('/artigo/:slug', async (req, res) => {
 
     // Incrementar visualizações
     await article.increment('visualizacoes');
-    
+
     // Registrar visualização no PageView para estatísticas diárias
     try {
       if (PageView && typeof PageView.recordView === 'function') {
@@ -1494,20 +1538,20 @@ app.get('/artigo/:slug', async (req, res) => {
       order: [['nome', 'ASC']]
     });
 
-    // Criar mapa de nomes de categorias
-    const categoryNames = {
-      'g1': 'Notícias',
-      'ge': 'Música',
-      'gshow': 'Eventos',
-      'quem': 'Ministérios',
-      'valor': 'Estudos'
-    };
+    // Criar mapa de nomes de categorias dinâmico
+    const categoryNames = {};
+    if (categories && categories.length > 0) {
+      categories.forEach(cat => {
+        categoryNames[cat.slug] = cat.nome;
+      });
+    }
 
     res.render('article', {
       article,
       related,
       categories,
       categoryNames,
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br',
       user: req.session.userId ? {
         nome: req.session.userName,
         email: req.session.userEmail,
@@ -1560,13 +1604,46 @@ app.get('/categoria/:categoria', async (req, res) => {
     });
 
     // Criar SEO específico para categoria
+    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
     const categorySeo = {
       title: `${category.nome} - ${seoData.site_title || 'Obuxixo Gospel'}`,
       description: category.descricao || `Últimas notícias e artigos sobre ${category.nome} no portal Obuxixo Gospel`,
       keywords: `${category.nome}, notícias ${category.nome}, ${seoData.site_keywords || 'gospel, evangélico'}`,
-      url: `${process.env.SITE_URL || 'https://www.obuxixogospel.com.br'}/categoria/${category.slug}`,
+      url: `${baseUrl}/categoria/${category.slug}`,
       type: 'website',
-      image: '/images/og-image.jpg'
+      image: `${baseUrl}/images/og-image.jpg`
+    };
+
+    // Schema.org CollectionPage para categoria
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": `${category.nome} - Obuxixo Gospel`,
+      "description": category.descricao || `Últimas notícias sobre ${category.nome}`,
+      "url": `${baseUrl}/categoria/${category.slug}`,
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Obuxixo Gospel",
+        "url": baseUrl
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Obuxixo Gospel",
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${baseUrl}/images/logo.png`
+        }
+      },
+      "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": count,
+        "itemListElement": articles.slice(0, 10).map((art, idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "url": `${baseUrl}/${art.categoria}/${art.urlAmigavel}`,
+          "name": art.titulo
+        }))
+      }
     };
 
     res.render('category', {
@@ -1577,7 +1654,8 @@ app.get('/categoria/:categoria', async (req, res) => {
       currentPage: page,
       totalPages: Math.ceil(count / limit),
       seo: categorySeo,
-      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br'
+      schemaData,
+      siteUrl: baseUrl
     });
   } catch (error) {
     console.error('Erro ao carregar categoria:', error);
@@ -2098,7 +2176,7 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
 
     // Incrementar visualizações
     await article.increment('visualizacoes');
-    
+
     // Registrar visualização no PageView para estatísticas diárias
     try {
       if (PageView && typeof PageView.recordView === 'function') {
@@ -2130,14 +2208,13 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
       order: [['nome', 'ASC']]
     });
 
-    // Criar mapa de nomes de categorias
-    const categoryNames = {
-      'g1': 'Notícias',
-      'ge': 'Música',
-      'gshow': 'Eventos',
-      'quem': 'Ministérios',
-      'valor': 'Estudos'
-    };
+    // Criar mapa de nomes de categorias dinâmico
+    const categoryNames = {};
+    if (categories && categories.length > 0) {
+      categories.forEach(cat => {
+        categoryNames[cat.slug] = cat.nome;
+      });
+    }
 
     res.render('article', {
       article,
@@ -2146,6 +2223,7 @@ app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
       categoryNames,
       ampEnabled: ampConfig && ampConfig.valor === 'true',
       isPreview: isPreview, // Passar flag de preview para o template
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br',
       user: req.session.userId ? {
         nome: req.session.userName,
         email: req.session.userEmail,

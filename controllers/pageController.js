@@ -177,11 +177,46 @@ exports.exibir = async (req, res) => {
     if (!page) {
       return res.status(404).send('Página não encontrada');
     }
+
+    // SEO específico para a página
+    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+    const seo = {
+      title: `${page.titulo} | Obuxixo Gospel`,
+      description: page.descricao || `${page.titulo} - Obuxixo Gospel`,
+      keywords: `${page.titulo}, obuxixo gospel, gospel`,
+      url: `${baseUrl}/pagina/${page.slug}`,
+      type: 'website',
+      image: `${baseUrl}/images/og-image.jpg`
+    };
+
+    // Schema.org para página
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": page.titulo,
+      "description": page.descricao || page.titulo,
+      "url": `${baseUrl}/pagina/${page.slug}`,
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Obuxixo Gospel",
+        "url": baseUrl
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Obuxixo Gospel",
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${baseUrl}/images/logo.png`
+        }
+      }
+    };
     
     res.render('page', {
       page,
       form: page.form || null,
-      user: req.user || null
+      user: req.user || null,
+      seo,
+      schemaData
     });
   } catch (error) {
     console.error('Erro ao exibir página:', error);

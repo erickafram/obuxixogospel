@@ -11,11 +11,11 @@ class GoogleSitemapService {
         this.auth = null;
         this.webmasters = null;
         this.enabled = false;
-        this.siteUrl = 'https://www.obuxixogospel.com.br/';
+        this.siteUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
         // Define sitemaps to manage
         this.sitemaps = [
-            'https://www.obuxixogospel.com.br/sitemap.xml',
-            'https://www.obuxixogospel.com.br/news-sitemap.xml'
+            `${this.siteUrl}/sitemap.xml`,
+            `${this.siteUrl}/news-sitemap.xml`
         ];
     }
 

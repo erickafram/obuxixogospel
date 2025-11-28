@@ -109,6 +109,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: true,
       field: 'instagram_post_id'
+    },
+    factCheck: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+      field: 'fact_check',
+      comment: 'Dados de fact-check: claim, claimAuthor, claimAuthorType, claimDate, rating, ratingName'
     }
   }, {
     sequelize,

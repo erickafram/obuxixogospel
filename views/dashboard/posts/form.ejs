@@ -281,6 +281,58 @@
                                 value="<%= isEdit ? article.autor : 'Redação Obuxixo Gospel' %>">
                         </div>
                     </div>
+
+                    <!-- Fact-Check -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-check-double"></i> Fact-Check</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check" style="margin-bottom: 12px;">
+                                <label>
+                                    <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
+                                        onchange="toggleFactCheckFields()"
+                                        <%= isEdit && article.factCheck && article.factCheck.claim ? 'checked' : '' %>>
+                                    <span>Este artigo é uma verificação de fatos</span>
+                                </label>
+                            </div>
+
+                            <div id="factCheckFields" style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
+                                <div class="form-group">
+                                    <label for="factCheckClaim">Afirmação verificada *</label>
+                                    <textarea id="factCheckClaim" name="factCheckClaim" class="form-control" rows="2"
+                                        placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
+                                    <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="factCheckAuthor">Quem fez a afirmação</label>
+                                    <input type="text" id="factCheckAuthor" name="factCheckAuthor" class="form-control"
+                                        placeholder="Ex: Pastor X, Site Y, WhatsApp..."
+                                        value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="factCheckAuthorType">Tipo do autor</label>
+                                    <select id="factCheckAuthorType" name="factCheckAuthorType" class="form-control">
+                                        <option value="Person" <%= isEdit && article.factCheck && article.factCheck.claimAuthorType === 'Person' ? 'selected' : '' %>>Pessoa</option>
+                                        <option value="Organization" <%= isEdit && article.factCheck && article.factCheck.claimAuthorType === 'Organization' ? 'selected' : '' %>>Organização/Site</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="factCheckRating">Veredito *</label>
+                                    <select id="factCheckRating" name="factCheckRating" class="form-control">
+                                        <option value="1" <%= isEdit && article.factCheck && article.factCheck.rating == 1 ? 'selected' : '' %>>❌ Falso</option>
+                                        <option value="2" <%= isEdit && article.factCheck && article.factCheck.rating == 2 ? 'selected' : '' %>>⚠️ Majoritariamente Falso</option>
+                                        <option value="3" <%= isEdit && article.factCheck && article.factCheck.rating == 3 ? 'selected' : '' %>>🔶 Parcialmente Verdadeiro</option>
+                                        <option value="4" <%= isEdit && article.factCheck && article.factCheck.rating == 4 ? 'selected' : '' %>>✅ Majoritariamente Verdadeiro</option>
+                                        <option value="5" <%= isEdit && article.factCheck && article.factCheck.rating == 5 ? 'selected' : '' %>>✅ Verdadeiro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -3233,6 +3285,17 @@
             }
 
             return true;
+        }
+
+        // FACT-CHECK - Toggle campos
+        function toggleFactCheckFields() {
+            const checkbox = document.getElementById('isFactCheck');
+            const fields = document.getElementById('factCheckFields');
+            if (checkbox.checked) {
+                fields.style.display = 'block';
+            } else {
+                fields.style.display = 'none';
+            }
         }
 
         // BIBLIOTECA DE MÍDIA
