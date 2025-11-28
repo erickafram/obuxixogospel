@@ -853,7 +853,11 @@ exports.gerarMateria = async (req, res) => {
         // Usar imagem extraída ou placeholder
         let imagemFinal = imagem || '/images/placeholder.jpg';
 
-        // Criar o artigo como RASCUNHO (dataPublicacao null para não ser publicado automaticamente)
+        // Criar o artigo como RASCUNHO (data futura para não ser publicado automaticamente)
+        // Usar data 1 ano no futuro para rascunhos - scheduler só publica datas passadas
+        const dataRascunho = new Date();
+        dataRascunho.setFullYear(dataRascunho.getFullYear() + 1);
+        
         const novoArtigo = await Article.create({
             titulo: resultado.titulo,
             descricao: resultado.descricao || '',
@@ -862,7 +866,7 @@ exports.gerarMateria = async (req, res) => {
             categoria: categoria || 'noticias',
             urlAmigavel,
             publicado: false,
-            dataPublicacao: null, // NULL = rascunho, não será publicado pelo scheduler
+            dataPublicacao: dataRascunho, // Data futura = rascunho, não será publicado pelo scheduler
             autor: req.session.userName || 'Sistema',
             visualizacoes: 0
         });
