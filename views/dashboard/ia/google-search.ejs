@@ -1,0 +1,1050 @@
+<%- include('../partials/header', { title: 'Pesquisa Google + Trends', user: user }) %>
+
+<div class="dashboard-content">
+    <div class="content-header">
+        <div>
+            <h1><i class="fab fa-google" style="color: #4285f4;"></i> Pesquisa Google + Trends</h1>
+            <p>Pesquise assuntos em alta e gere matérias automaticamente com IA</p>
+        </div>
+    </div>
+
+    <!-- Tabs de navegação -->
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('pesquisa')" id="tabPesquisa">
+            <i class="fab fa-google"></i> Pesquisa Google
+        </button>
+        <button class="tab-btn" onclick="switchTab('trends')" id="tabTrends">
+            <i class="fas fa-chart-line"></i> Google Trends
+        </button>
+    </div>
+
+    <!-- Tab: Pesquisa Google -->
+    <div id="tab-pesquisa" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fab fa-google"></i> Pesquisar no Google</h3>
+            </div>
+            <div class="card-body">
+                <form id="formPesquisa" onsubmit="realizarPesquisa(event)">
+                    <div class="form-group">
+                        <label for="termo">
+                            <i class="fas fa-search"></i> Termo de Pesquisa *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="termo" 
+                            name="termo" 
+                            class="form-control" 
+                            placeholder="Ex: Silas Malafaia, André Valadão, etc..."
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label for="plataforma">
+                                <i class="fas fa-globe"></i> Pesquisar em
+                            </label>
+                            <select id="plataforma" name="plataforma" class="form-control">
+                                <option value="todas">🌐 Todas as fontes</option>
+                                <optgroup label="Redes Sociais">
+                                    <option value="instagram">📸 Instagram</option>
+                                    <option value="twitter">🐦 Twitter/X</option>
+                                    <option value="youtube">▶️ YouTube</option>
+                                    <option value="facebook">📘 Facebook</option>
+                                    <option value="tiktok">🎵 TikTok</option>
+                                    <option value="threads">🧵 Threads</option>
+                                    <option value="linkedin">💼 LinkedIn</option>
+                                </optgroup>
+                                <optgroup label="Portais de Notícias">
+                                    <option value="g1">📰 G1 / Globo</option>
+                                    <option value="uol">📰 UOL</option>
+                                    <option value="folha">📰 Folha de SP</option>
+                                    <option value="estadao">📰 Estadão</option>
+                                    <option value="r7">📰 R7</option>
+                                    <option value="terra">📰 Terra</option>
+                                    <option value="ig">📰 iG</option>
+                                    <option value="metropoles">📰 Metrópoles</option>
+                                    <option value="cnn">📺 CNN Brasil</option>
+                                    <option value="band">📺 Band</option>
+                                    <option value="sbt">📺 SBT</option>
+                                    <option value="record">📺 Record</option>
+                                </optgroup>
+                                <optgroup label="Sites Gospel">
+                                    <option value="gospelprime">⛪ Gospel Prime</option>
+                                    <option value="gospelmais">⛪ Gospel Mais</option>
+                                    <option value="pleno">⛪ Pleno News</option>
+                                    <option value="guiame">⛪ Guiame</option>
+                                    <option value="conexao">⛪ Conexão Jornalismo</option>
+                                    <option value="verdadegospel">⛪ Verdade Gospel</option>
+                                    <option value="ofuxicogospel">⛪ Verdade Gospel</option>
+                                </optgroup>
+                                <optgroup label="Outros">
+                                    <option value="blogs">📝 Blogs (Medium, WordPress)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="periodo">
+                                <i class="fas fa-clock"></i> Período
+                            </label>
+                            <select id="periodo" name="periodo" class="form-control">
+                                <option value="ultimas-24h">🕐 Últimas 24 horas</option>
+                                <option value="ultima-semana">📅 Última semana</option>
+                                <option value="ultimo-mes">📆 Último mês</option>
+                                <option value="ultima-hora">⏰ Última hora</option>
+                                <option value="ultimo-ano">📅 Último ano</option>
+                                <option value="qualquer">🔄 Qualquer período</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoriaMateria">
+                                <i class="fas fa-folder"></i> Categoria
+                            </label>
+                            <select id="categoriaMateria" name="categoriaMateria" class="form-control">
+                                <% if (typeof categorias !== 'undefined' && categorias.length > 0) { %>
+                                    <% categorias.forEach(cat => { %>
+                                        <option value="<%= cat.slug %>"><%= cat.nome %></option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="noticias">Notícias</option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="btnPesquisar">
+                        <i class="fas fa-search"></i> Pesquisar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resultados da Pesquisa -->
+        <div id="resultadosPesquisa" class="card" style="display: none;">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-list"></i> Resultados (<span id="totalResultados">0</span>)</h3>
+                    <div>
+                        <span id="selecionadosCount" style="margin-right: 15px; color: #718096;">0 selecionados</span>
+                        <button onclick="gerarMateriasSelecionadas()" class="btn btn-success" id="btnGerarMaterias" disabled>
+                            <i class="fas fa-magic"></i> Gerar Matérias (<span id="btnGerarCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="listaResultados" class="resultados-lista"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Google Trends -->
+    <div id="tab-trends" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Assuntos em Alta</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-row-3" style="margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="trendsRegiao"><i class="fas fa-globe-americas"></i> Região</label>
+                        <select id="trendsRegiao" class="form-control">
+                            <option value="BR">🇧🇷 Brasil</option>
+                            <option value="US">🇺🇸 Estados Unidos</option>
+                            <option value="PT">🇵🇹 Portugal</option>
+                            <option value="AR">🇦🇷 Argentina</option>
+                            <option value="MX">🇲🇽 México</option>
+                            <option value="ES">🇪🇸 Espanha</option>
+                            <option value="GB">🇬🇧 Reino Unido</option>
+                            <option value="FR">🇫🇷 França</option>
+                            <option value="DE">🇩🇪 Alemanha</option>
+                            <option value="IT">🇮🇹 Itália</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="trendsCategoria"><i class="fas fa-filter"></i> Categoria</label>
+                        <select id="trendsCategoria" class="form-control">
+                            <option value="all">📊 Todas</option>
+                            <option value="entertainment">🎬 Entretenimento</option>
+                            <option value="sports">⚽ Esportes</option>
+                            <option value="business">💼 Negócios</option>
+                            <option value="technology">💻 Tecnologia</option>
+                            <option value="health">🏥 Saúde</option>
+                            <option value="science">🔬 Ciência</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; display: flex; align-items: flex-end;">
+                        <button onclick="buscarTrends()" class="btn btn-primary" id="btnTrends" style="width: 100%;">
+                            <i class="fas fa-sync"></i> Buscar Trends
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="trendsList" class="trends-lista"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Geração -->
+    <div id="modalGeracao" class="modal" style="display: none;">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-magic"></i> Gerando Matérias</h3>
+                <button onclick="fecharModal()" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="progressoGeracao"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Content Header */
+.content-header {
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.content-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #1A202C;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.content-header p {
+    color: #718096;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Card */
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    border: 1px solid #E8E8E8;
+    margin-bottom: 24px;
+}
+
+.card-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid #E2E8F0;
+    background: #FAFBFC;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #2D3748;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    margin-bottom: 7px;
+    font-size: 12px;
+    color: #2D3748;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #FF6B00;
+    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background: #f7fafc;
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.tab-btn.active {
+    background: #FF6B00;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Form Row 3 columns */
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+@media (max-width: 768px) {
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.btn-success:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Resultados */
+.resultados-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.resultado-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.resultado-item:hover {
+    background: #edf2f7;
+}
+
+.resultado-item.selected {
+    border-color: #FF6B00;
+    background: #fff5eb;
+}
+
+.resultado-checkbox {
+    width: 22px;
+    height: 22px;
+    margin-top: 3px;
+    cursor: pointer;
+}
+
+.resultado-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.resultado-titulo {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.resultado-titulo a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.resultado-titulo a:hover {
+    color: #FF6B00;
+}
+
+.resultado-descricao {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.resultado-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 12px;
+    color: #a0aec0;
+}
+
+.resultado-plataforma {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    background: #e2e8f0;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.resultado-plataforma.instagram { background: #fce7f3; color: #be185d; }
+.resultado-plataforma.twitter { background: #dbeafe; color: #1d4ed8; }
+.resultado-plataforma.youtube { background: #fee2e2; color: #dc2626; }
+.resultado-plataforma.facebook { background: #dbeafe; color: #2563eb; }
+.resultado-plataforma.g1 { background: #fef3c7; color: #d97706; }
+
+.resultado-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Trends */
+.trends-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.trend-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.trend-item:hover {
+    background: #edf2f7;
+    border-color: #FF6B00;
+}
+
+.trend-numero {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #FF6B00, #E65100);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.trend-info {
+    flex: 1;
+}
+
+.trend-titulo {
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 3px;
+}
+
+.trend-trafego {
+    font-size: 12px;
+    color: #FF6B00;
+    font-weight: 500;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #718096;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Progress Item */
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.progress-item.success {
+    background: #d1fae5;
+}
+
+.progress-item.error {
+    background: #fee2e2;
+}
+
+.progress-item.loading {
+    background: #fef3c7;
+}
+
+.progress-icon {
+    font-size: 20px;
+}
+
+.progress-text {
+    flex: 1;
+}
+
+/* Loading */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #FF6B00;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .tabs-container {
+        flex-wrap: wrap;
+    }
+    
+    .trends-lista {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+let resultadosSelecionados = [];
+
+// Alternar tabs
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    if (tab === 'trends') {
+        buscarTrends();
+    }
+}
+
+// Realizar pesquisa no Google
+async function realizarPesquisa(event) {
+    event.preventDefault();
+    
+    const termo = document.getElementById('termo').value;
+    const plataforma = document.getElementById('plataforma').value;
+    const periodo = document.getElementById('periodo').value;
+    
+    const btn = document.getElementById('btnPesquisar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Pesquisando...';
+    
+    try {
+        const response = await fetch('/dashboard/ia/google-search/pesquisar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ termo, plataforma, periodo })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            exibirResultados(data.resultados, data.googleUrl, data.abrirManualmente);
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao realizar pesquisa');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-search"></i> Pesquisar';
+    }
+}
+
+// Exibir resultados
+function exibirResultados(resultados, googleUrl, abrirManualmente) {
+    const container = document.getElementById('listaResultados');
+    const card = document.getElementById('resultadosPesquisa');
+    
+    document.getElementById('totalResultados').textContent = resultados.length;
+    resultadosSelecionados = [];
+    atualizarContadores();
+    
+    if (resultados.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #718096;">
+                <i class="fas fa-search" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px; display: block;"></i>
+                <p style="margin-bottom: 20px;">O Google pode estar bloqueando a pesquisa automática.</p>
+                <p style="margin-bottom: 20px;">Clique no botão abaixo para abrir a pesquisa diretamente no Google:</p>
+                <a href="${googleUrl}" target="_blank" class="btn btn-primary" style="text-decoration: none;">
+                    <i class="fab fa-google"></i> Abrir no Google
+                </a>
+            </div>
+        `;
+    } else {
+        container.innerHTML = resultados.map(r => `
+            <div class="resultado-item" onclick="toggleResultado(${r.id}, this)" data-id="${r.id}">
+                <input type="checkbox" class="resultado-checkbox" id="check-${r.id}" onclick="event.stopPropagation()">
+                <div class="resultado-info">
+                    <div class="resultado-titulo">
+                        <a href="${r.link}" target="_blank" onclick="event.stopPropagation()">${r.titulo}</a>
+                    </div>
+                    ${r.descricao ? `<div class="resultado-descricao">${r.descricao}</div>` : ''}
+                    <div class="resultado-meta">
+                        <span class="resultado-plataforma ${r.plataforma}">${getPlataformaIcon(r.plataforma)} ${r.plataforma}</span>
+                        ${r.data ? `<span><i class="fas fa-clock"></i> ${r.data}</span>` : ''}
+                    </div>
+                </div>
+                <div class="resultado-actions">
+                    <button onclick="event.stopPropagation(); gerarMateriaUnica('${encodeURIComponent(r.link)}', '${encodeURIComponent(r.titulo)}')" class="btn btn-sm btn-primary">
+                        <i class="fas fa-magic"></i> Gerar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Guardar dados dos resultados
+        window.resultadosData = resultados;
+    }
+    
+    card.style.display = 'block';
+}
+
+// Toggle seleção de resultado
+function toggleResultado(id, element) {
+    const checkbox = document.getElementById(`check-${id}`);
+    checkbox.checked = !checkbox.checked;
+    element.classList.toggle('selected', checkbox.checked);
+    
+    if (checkbox.checked) {
+        const resultado = window.resultadosData.find(r => r.id === id);
+        if (resultado && !resultadosSelecionados.find(r => r.id === id)) {
+            resultadosSelecionados.push(resultado);
+        }
+    } else {
+        resultadosSelecionados = resultadosSelecionados.filter(r => r.id !== id);
+    }
+    
+    atualizarContadores();
+}
+
+// Atualizar contadores
+function atualizarContadores() {
+    const count = resultadosSelecionados.length;
+    document.getElementById('selecionadosCount').textContent = count + ' selecionados';
+    document.getElementById('btnGerarCount').textContent = count;
+    document.getElementById('btnGerarMaterias').disabled = count === 0;
+}
+
+// Ícone da plataforma
+function getPlataformaIcon(plataforma) {
+    const icons = {
+        instagram: '📸',
+        twitter: '🐦',
+        youtube: '▶️',
+        facebook: '📘',
+        tiktok: '🎵',
+        g1: '📰',
+        uol: '📰',
+        gospelprime: '⛪',
+        gospelmais: '⛪',
+        pleno: '⛪',
+        web: '🌐'
+    };
+    return icons[plataforma] || '🌐';
+}
+
+// Gerar matéria única
+async function gerarMateriaUnica(urlEncoded, tituloEncoded) {
+    const url = decodeURIComponent(urlEncoded);
+    const titulo = decodeURIComponent(tituloEncoded);
+    const categoria = document.getElementById('categoriaMateria').value;
+    
+    if (!confirm(`Gerar matéria para:\n"${titulo}"?`)) return;
+    
+    document.getElementById('modalGeracao').style.display = 'flex';
+    document.getElementById('progressoGeracao').innerHTML = `
+        <div class="progress-item loading">
+            <span class="loading-spinner"></span>
+            <span class="progress-text">Extraindo conteúdo de ${url}...</span>
+        </div>
+    `;
+    
+    try {
+        // 1. Extrair conteúdo
+        const extractRes = await fetch('/dashboard/ia/google-search/extrair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, titulo })
+        });
+        
+        const extractData = await extractRes.json();
+        
+        if (!extractData.success) {
+            throw new Error(extractData.error);
+        }
+        
+        document.getElementById('progressoGeracao').innerHTML += `
+            <div class="progress-item success">
+                <span class="progress-icon">✅</span>
+                <span class="progress-text">Conteúdo extraído (${extractData.conteudo.length} caracteres)</span>
+            </div>
+            <div class="progress-item loading">
+                <span class="loading-spinner"></span>
+                <span class="progress-text">Gerando matéria com IA...</span>
+            </div>
+        `;
+        
+        // 2. Gerar matéria
+        const genRes = await fetch('/dashboard/ia/google-search/gerar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                titulo: extractData.titulo,
+                conteudo: extractData.conteudo,
+                url: extractData.url,
+                imagem: extractData.imagem,
+                categoria
+            })
+        });
+        
+        const genData = await genRes.json();
+        
+        if (genData.success) {
+            document.getElementById('progressoGeracao').innerHTML += `
+                <div class="progress-item success">
+                    <span class="progress-icon">✅</span>
+                    <span class="progress-text">Matéria gerada com sucesso!</span>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="/dashboard/posts/${genData.materia.id}/editar" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Matéria
+                    </a>
+                    <button onclick="fecharModal()" class="btn btn-secondary">Fechar</button>
+                </div>
+            `;
+        } else {
+            throw new Error(genData.error);
+        }
+        
+    } catch (error) {
+        document.getElementById('progressoGeracao').innerHTML += `
+            <div class="progress-item error">
+                <span class="progress-icon">❌</span>
+                <span class="progress-text">Erro: ${error.message}</span>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="fecharModal()" class="btn btn-secondary">Fechar</button>
+            </div>
+        `;
+    }
+}
+
+// Gerar matérias selecionadas
+async function gerarMateriasSelecionadas() {
+    if (resultadosSelecionados.length === 0) return;
+    
+    if (!confirm(`Gerar ${resultadosSelecionados.length} matérias?`)) return;
+    
+    document.getElementById('modalGeracao').style.display = 'flex';
+    const progressContainer = document.getElementById('progressoGeracao');
+    progressContainer.innerHTML = '';
+    
+    const categoria = document.getElementById('categoriaMateria').value;
+    let sucessos = 0;
+    let erros = 0;
+    
+    for (let i = 0; i < resultadosSelecionados.length; i++) {
+        const resultado = resultadosSelecionados[i];
+        const itemId = `progress-${i}`;
+        
+        progressContainer.innerHTML += `
+            <div id="${itemId}" class="progress-item loading">
+                <span class="loading-spinner"></span>
+                <span class="progress-text">[${i+1}/${resultadosSelecionados.length}] ${resultado.titulo.substring(0, 50)}...</span>
+            </div>
+        `;
+        
+        try {
+            // Extrair e gerar
+            const extractRes = await fetch('/dashboard/ia/google-search/extrair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: resultado.link, titulo: resultado.titulo })
+            });
+            
+            const extractData = await extractRes.json();
+            
+            if (extractData.success) {
+                const genRes = await fetch('/dashboard/ia/google-search/gerar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        titulo: extractData.titulo,
+                        conteudo: extractData.conteudo,
+                        url: extractData.url,
+                        imagem: extractData.imagem,
+                        categoria
+                    })
+                });
+                
+                const genData = await genRes.json();
+                
+                if (genData.success) {
+                    document.getElementById(itemId).className = 'progress-item success';
+                    document.getElementById(itemId).innerHTML = `
+                        <span class="progress-icon">✅</span>
+                        <span class="progress-text">[${i+1}/${resultadosSelecionados.length}] ${resultado.titulo.substring(0, 50)}...</span>
+                    `;
+                    sucessos++;
+                } else {
+                    throw new Error(genData.error);
+                }
+            } else {
+                throw new Error(extractData.error);
+            }
+        } catch (error) {
+            document.getElementById(itemId).className = 'progress-item error';
+            document.getElementById(itemId).innerHTML = `
+                <span class="progress-icon">❌</span>
+                <span class="progress-text">[${i+1}/${resultadosSelecionados.length}] Erro: ${error.message}</span>
+            `;
+            erros++;
+        }
+        
+        // Pequeno delay entre requisições
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    
+    progressContainer.innerHTML += `
+        <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; text-align: center;">
+            <p><strong>Concluído!</strong></p>
+            <p>✅ ${sucessos} matérias geradas | ❌ ${erros} erros</p>
+            <a href="/dashboard/posts" class="btn btn-primary" style="margin-top: 10px;">
+                <i class="fas fa-list"></i> Ver Matérias
+            </a>
+            <button onclick="fecharModal()" class="btn btn-secondary" style="margin-top: 10px;">Fechar</button>
+        </div>
+    `;
+}
+
+// Buscar Google Trends
+async function buscarTrends() {
+    const btn = document.getElementById('btnTrends');
+    const container = document.getElementById('trendsList');
+    const regiao = document.getElementById('trendsRegiao').value;
+    const categoria = document.getElementById('trendsCategoria').value;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Buscando...';
+    container.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="loading-spinner"></span></div>';
+    
+    try {
+        const response = await fetch('/dashboard/ia/google-search/trends', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ regiao, categoria })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.trends.length > 0) {
+            container.innerHTML = data.trends.map((t, i) => `
+                <div class="trend-item" onclick="pesquisarTrend('${encodeURIComponent(t.titulo)}')">
+                    <div class="trend-numero">${i + 1}</div>
+                    <div class="trend-info">
+                        <div class="trend-titulo">${t.titulo}</div>
+                        ${t.trafego ? `<div class="trend-trafego">🔥 ${t.trafego}</div>` : ''}
+                        ${t.descricao ? `<div class="trend-descricao">${t.descricao}</div>` : ''}
+                    </div>
+                    <i class="fas fa-search" style="color: #a0aec0;"></i>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-chart-line" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px; display: block;"></i>
+                    <p>Não foi possível carregar os trends para esta região.</p>
+                    <p style="font-size: 12px;">Tente outra região ou aguarde alguns segundos.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        container.innerHTML = '<p style="color: red; text-align: center;">Erro ao buscar trends. Tente novamente.</p>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Buscar Trends';
+    }
+}
+
+// Pesquisar trend
+function pesquisarTrend(termoEncoded) {
+    const termo = decodeURIComponent(termoEncoded);
+    document.getElementById('termo').value = termo;
+    switchTab('pesquisa');
+    document.getElementById('formPesquisa').dispatchEvent(new Event('submit'));
+}
+
+// Fechar modal
+function fecharModal() {
+    document.getElementById('modalGeracao').style.display = 'none';
+}
+
+// Fechar modal ao clicar fora
+document.getElementById('modalGeracao')?.addEventListener('click', function(e) {
+    if (e.target === this) fecharModal();
+});
+</script>
+
+<%- include('../partials/footer') %>

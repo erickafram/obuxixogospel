@@ -59,7 +59,7 @@ class AIService {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          timeout: 60000 // 60 segundos
+          timeout: 120000 // 120 segundos (2 minutos)
         }
       );
 

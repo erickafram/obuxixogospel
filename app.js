@@ -2011,6 +2011,14 @@ app.put('/api/ia/perfis/:id/auto-post', isAuthenticated, iaLoteController.atuali
 app.post('/api/ia/perfis/:id/processar-manual', isAuthenticated, iaLoteController.processarPerfilManual);
 app.get('/api/ia/auto-post/status', isAuthenticated, iaLoteController.getAutoPostStatus);
 
+// Pesquisa Google + Trends
+const googleSearchController = require('./controllers/googleSearchController');
+app.get('/dashboard/ia/google-search', isAuthenticated, googleSearchController.renderPage);
+app.post('/dashboard/ia/google-search/pesquisar', isAuthenticated, googleSearchController.pesquisar);
+app.post('/dashboard/ia/google-search/trends', isAuthenticated, googleSearchController.buscarTrends);
+app.post('/dashboard/ia/google-search/extrair', isAuthenticated, googleSearchController.extrairConteudo);
+app.post('/dashboard/ia/google-search/gerar', isAuthenticated, googleSearchController.gerarMateria);
+
 // Notificações
 const notificationController = require('./controllers/notificationController');
 app.get('/api/notifications/unread', isAuthenticated, notificationController.getUnreadNotifications);
