@@ -1102,7 +1102,7 @@ exports.extrairConteudo = async (req, res) => {
 };
 
 /**
- * Gera matéria a partir do conteúdo extraído
+ * Gera matéria a partir do conteúdo extraído - SEM PLÁGIO
  */
 exports.gerarMateria = async (req, res) => {
     try {
@@ -1115,58 +1115,112 @@ exports.gerarMateria = async (req, res) => {
             });
         }
 
-        console.log(`🤖 Gerando matéria: "${titulo}"`);
+        console.log(`🤖 Gerando matéria ORIGINAL: "${titulo}"`);
 
-        // Limitar conteúdo para evitar timeout (máximo 2500 caracteres)
-        const conteudoLimitado = conteudo.substring(0, 2500);
+        // Limitar conteúdo para evitar timeout (máximo 3000 caracteres)
+        const conteudoLimitado = conteudo.substring(0, 3000);
+        const tituloOriginal = titulo.replace(/\.\.\.$/, '').replace(/ - [^-]+$/, '').trim();
 
-        console.log(`📄 Conteúdo extraído (${conteudoLimitado.length} chars): ${conteudoLimitado.substring(0, 100)}...`);
+        console.log(`📄 Conteúdo extraído (${conteudoLimitado.length} chars)`);
 
-        // SEMPRE usar o título original da notícia (limpo)
-        let tituloFinal = titulo
-            .replace(/\.\.\.$/, '')  // Remover reticências
-            .replace(/ - [^-]+$/, '') // Remover " - Nome do Site"
-            .trim();
-        
-        // Se título muito curto, usar os primeiros 80 chars do conteúdo
-        if (tituloFinal.length < 20) {
-            tituloFinal = conteudoLimitado.split('\n')[0].substring(0, 80).trim();
-        }
-
-        // Usar o AIService para reescrever no estilo G1 (mesmo método do dashboard)
-        let conteudoReescrito;
+        let tituloFinal = '';
         let descricaoFinal = '';
+        let conteudoReescrito = '';
 
         try {
-            // Usar reescreverMateriaG1 - mesmo método do "Reescrever Matéria (Estilo G1)"
-            conteudoReescrito = await AIService.reescreverMateriaG1(
-                `<p>${conteudoLimitado.replace(/\n\n/g, '</p><p>')}</p>`
-            );
+            // Prompt especial para reescrever TUDO de forma original (anti-plágio)
+            const promptAntiPlagio = `Você é um jornalista especializado em notícias gospel/evangélicas. 
+Reescreva a notícia abaixo de forma COMPLETAMENTE ORIGINAL, sem copiar frases ou estruturas do texto original.
+
+REGRAS IMPORTANTES:
+1. CRIE UM NOVO TÍTULO - diferente do original, mas sobre o mesmo assunto
+2. CRIE UMA NOVA DESCRIÇÃO - resumo original de 1-2 frases (máximo 160 caracteres)
+3. REESCREVA TODO O CONTEÚDO - use suas próprias palavras, mude a ordem das informações
+4. NÃO COPIE frases do original - reformule tudo
+5. Mantenha o tom jornalístico profissional
+6. Use parágrafos curtos (2-3 frases cada)
+7. Formate em HTML com tags <p>
+
+TÍTULO ORIGINAL: ${tituloOriginal}
+
+CONTEÚDO ORIGINAL:
+${conteudoLimitado}
+
+Responda EXATAMENTE neste formato JSON:
+{
+  "titulo": "Novo título criativo e original aqui",
+  "descricao": "Nova descrição resumida original aqui (máximo 160 caracteres)",
+  "conteudo": "<p>Primeiro parágrafo reescrito...</p><p>Segundo parágrafo...</p>"
+}`;
+
+            // Chamar IA para reescrever tudo
+            const resposta = await AIService.gerarConteudo(promptAntiPlagio);
             
-            // Extrair descrição do primeiro parágrafo
-            const descMatch = conteudoReescrito.match(/<p[^>]*>([^<]+)<\/p>/i);
-            if (descMatch) {
-                descricaoFinal = descMatch[1].substring(0, 160).trim();
-            } else {
-                descricaoFinal = conteudoLimitado.substring(0, 160).trim();
+            // Tentar extrair JSON da resposta
+            let jsonMatch = resposta.match(/\{[\s\S]*"titulo"[\s\S]*"descricao"[\s\S]*"conteudo"[\s\S]*\}/);
+            
+            if (jsonMatch) {
+                try {
+                    const dados = JSON.parse(jsonMatch[0]);
+                    tituloFinal = dados.titulo || '';
+                    descricaoFinal = dados.descricao || '';
+                    conteudoReescrito = dados.conteudo || '';
+                    
+                    console.log(`✅ Matéria reescrita com sucesso (anti-plágio)`);
+                    console.log(`📰 Novo título: ${tituloFinal}`);
+                } catch (parseError) {
+                    console.error('❌ Erro ao parsear JSON:', parseError.message);
+                }
             }
             
-            console.log(`✅ Conteúdo reescrito com sucesso`);
-            console.log(`📰 Título final: ${tituloFinal}`);
+            // Se não conseguiu extrair JSON, tentar método alternativo
+            if (!tituloFinal || !conteudoReescrito) {
+                console.log('⚠️ Tentando método alternativo de extração...');
+                
+                // Usar reescreverMateriaG1 para o conteúdo
+                conteudoReescrito = await AIService.reescreverMateriaG1(
+                    `<p>${conteudoLimitado.replace(/\n\n/g, '</p><p>')}</p>`
+                );
+                
+                // Gerar título original
+                const promptTitulo = `Crie um título jornalístico ORIGINAL e DIFERENTE para esta notícia (máximo 80 caracteres). 
+Não copie o título original. Apenas responda com o novo título, sem aspas.
+
+Assunto: ${tituloOriginal}
+Conteúdo: ${conteudoLimitado.substring(0, 500)}`;
+                
+                tituloFinal = await AIService.gerarConteudo(promptTitulo);
+                tituloFinal = tituloFinal.replace(/^["']|["']$/g, '').trim().substring(0, 100);
+                
+                // Extrair descrição do conteúdo reescrito
+                const descMatch = conteudoReescrito.match(/<p[^>]*>([^<]+)<\/p>/i);
+                descricaoFinal = descMatch ? descMatch[1].substring(0, 160).trim() : '';
+            }
             
         } catch (iaError) {
             console.error('❌ Erro na IA:', iaError.message);
             
-            // Se erro, usar conteúdo original formatado
-            conteudoReescrito = `<p>${conteudoLimitado.replace(/\n\n/g, '</p><p>')}</p>`;
-            descricaoFinal = conteudoLimitado.substring(0, 160);
-            console.log('⚠️ Usando conteúdo original devido ao erro');
+            // Fallback: usar conteúdo formatado mas com aviso
+            tituloFinal = `[REVISAR] ${tituloOriginal}`;
+            conteudoReescrito = `<p><strong>⚠️ Este conteúdo precisa ser revisado e reescrito manualmente.</strong></p><p>${conteudoLimitado.replace(/\n\n/g, '</p><p>')}</p>`;
+            descricaoFinal = 'Conteúdo precisa de revisão manual.';
+            console.log('⚠️ Usando fallback devido ao erro');
+        }
+
+        // Validar resultados
+        if (!tituloFinal || tituloFinal.length < 10) {
+            tituloFinal = `Notícia: ${tituloOriginal.substring(0, 60)}`;
+        }
+        
+        if (!descricaoFinal || descricaoFinal.length < 20) {
+            const textoLimpo = conteudoReescrito.replace(/<[^>]+>/g, '');
+            descricaoFinal = textoLimpo.substring(0, 160).trim();
         }
 
         // Criar objeto resultado
         const resultado = {
-            titulo: tituloFinal,
-            descricao: descricaoFinal,
+            titulo: tituloFinal.substring(0, 150),
+            descricao: descricaoFinal.substring(0, 200),
             conteudo: conteudoReescrito
         };
 
