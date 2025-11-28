@@ -853,7 +853,7 @@ exports.gerarMateria = async (req, res) => {
         // Usar imagem extraída ou placeholder
         let imagemFinal = imagem || '/images/placeholder.jpg';
 
-        // Criar o artigo
+        // Criar o artigo como RASCUNHO (dataPublicacao null para não ser publicado automaticamente)
         const novoArtigo = await Article.create({
             titulo: resultado.titulo,
             descricao: resultado.descricao || '',
@@ -862,7 +862,7 @@ exports.gerarMateria = async (req, res) => {
             categoria: categoria || 'noticias',
             urlAmigavel,
             publicado: false,
-            dataPublicacao: new Date(),
+            dataPublicacao: null, // NULL = rascunho, não será publicado pelo scheduler
             autor: req.session.userName || 'Sistema',
             visualizacoes: 0
         });

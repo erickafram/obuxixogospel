@@ -3,17 +3,19 @@ const { Op } = require('sequelize');
 
 /**
  * Publica automaticamente matérias agendadas que já passaram da data/hora
+ * IMPORTANTE: Matérias com dataPublicacao = null são RASCUNHOS e NÃO serão publicadas
  */
 async function publishScheduledPosts() {
   try {
     const agora = new Date();
 
     // Buscar matérias não publicadas com data de publicação no passado ou presente
-    // Exclui rascunhos (que têm dataPublicacao = data de criação, não futura)
+    // EXCLUI rascunhos (dataPublicacao = null)
     const scheduledPosts = await Article.findAll({
       where: {
         publicado: false,
         dataPublicacao: {
+          [Op.ne]: null, // Ignora rascunhos (dataPublicacao = null)
           [Op.lte]: agora
         }
       }
