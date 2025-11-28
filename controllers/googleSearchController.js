@@ -572,15 +572,62 @@ exports.extrairConteudo = async (req, res) => {
 
         console.log(`📄 Extraindo conteúdo de: ${url}`);
 
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'pt-BR,pt;q=0.9'
-            },
-            timeout: 15000,
-            maxRedirects: 5
-        });
+        // Headers mais completos para evitar bloqueio 403
+        const userAgents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ];
+        
+        const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
+        
+        let response;
+        let tentativas = 0;
+        const maxTentativas = 3;
+        
+        while (tentativas < maxTentativas) {
+            try {
+                response = await axios.get(url, {
+                    headers: {
+                        'User-Agent': randomUA,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache',
+                        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                        'Sec-Ch-Ua-Mobile': '?0',
+                        'Sec-Ch-Ua-Platform': '"Windows"',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Referer': 'https://www.google.com/'
+                    },
+                    timeout: 20000,
+                    maxRedirects: 5,
+                    validateStatus: (status) => status < 500
+                });
+                
+                if (response.status === 200) break;
+                
+                console.log(`⚠️ Tentativa ${tentativas + 1}: Status ${response.status}`);
+                tentativas++;
+                await new Promise(r => setTimeout(r, 1000)); // Esperar 1s entre tentativas
+                
+            } catch (err) {
+                console.log(`⚠️ Tentativa ${tentativas + 1} falhou: ${err.message}`);
+                tentativas++;
+                if (tentativas >= maxTentativas) throw err;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+        
+        if (!response || response.status !== 200) {
+            throw new Error(`Não foi possível acessar a página (Status: ${response?.status || 'timeout'})`);
+        }
 
         const $ = cheerio.load(response.data);
 
@@ -593,23 +640,34 @@ exports.extrairConteudo = async (req, res) => {
 
         // Seletores específicos para sites de notícias brasileiros
         const seletoresConteudo = [
+            // UOL (específico)
+            '.news-content-wrapper',
+            '.text-content',
+            '.article-text',
+            '.materia-texto',
+            '[data-qa="article-body"]',
             // CNN Brasil
             '.post__content',
             '.single-content',
             // G1, Globo
             '.content-text__container',
             '.mc-article-body',
-            // UOL
+            // UOL genérico
             '.text',
             // Folha
             '.c-news__body',
             // Estadão
             '.n--noticia__content',
+            // Poder360
+            '.entry-content',
+            '.post-content',
+            // R7
+            '.article-text',
+            // Terra
+            '.text-story',
             // Genéricos
             'article .content',
             'article',
-            '.post-content',
-            '.entry-content',
             '.article-content',
             '.article-body',
             '.content-text',
@@ -689,9 +747,23 @@ exports.extrairConteudo = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Erro ao extrair conteúdo:', error.message);
+        
+        // Mensagem de erro mais específica
+        let mensagemErro = 'Erro ao extrair conteúdo da página';
+        
+        if (error.message.includes('403')) {
+            mensagemErro = 'Site bloqueou o acesso (403). Tente outra fonte.';
+        } else if (error.message.includes('404')) {
+            mensagemErro = 'Página não encontrada (404).';
+        } else if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+            mensagemErro = 'Tempo esgotado ao acessar a página. Tente novamente.';
+        } else if (error.message.includes('ENOTFOUND')) {
+            mensagemErro = 'Site não encontrado. Verifique a URL.';
+        }
+        
         res.status(500).json({
             success: false,
-            error: 'Erro ao extrair conteúdo da página'
+            error: mensagemErro
         });
     }
 };
