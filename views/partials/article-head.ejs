@@ -25,13 +25,13 @@
     <meta name="googlebot" content="index, follow">
 
     <!-- Canonical URL -->
-    <link rel="canonical" href="<%= siteUrl %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
+    <link rel="canonical" href="<%= siteUrl + '/' + article.categoria + '/' + article.urlAmigavel %>">
 
     <!-- Additional Social Media Meta Tags -->
     <meta name="thumbnail"
-        content="<%= article.imagem.startsWith('http') ? article.imagem : '<%= siteUrl %>' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+        content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
     <meta itemprop="image"
-        content="<%= article.imagem.startsWith('http') ? article.imagem : '<%= siteUrl %>' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+        content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
     <meta itemprop="name" content="<%= article.titulo %>">
     <meta itemprop="description" content="<%= article.descricao %>">
 
@@ -90,7 +90,7 @@
         
         const imageUrl = article.imagem.startsWith('http') 
             ? article.imagem 
-            : '<%= siteUrl %>' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem);
+            : siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem);
         
         const articleBodyText = article.conteudo 
             ? escapeJSON(article.conteudo.replace(/<[^>]*>/g, '').substring(0, 500)) + '...'
@@ -258,9 +258,9 @@
             <meta property="og:type" content="article">
             <meta property="og:title" content="<%= article.titulo %>">
             <meta property="og:description" content="<%= article.descricao %>">
-            <meta property="og:url" content="<%= siteUrl %>/<%= article.categoria %>/<%= article.urlAmigavel %>">
+            <meta property="og:url" content="<%= siteUrl + '/' + article.categoria + '/' + article.urlAmigavel %>">
             <meta property="og:image"
-                content="<%= article.imagem.startsWith('http') ? article.imagem : '<%= siteUrl %>' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>">
+                content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
             <meta property="og:image:width" content="1200">
             <meta property="og:image:height" content="630">
             <meta property="og:site_name" content="Obuxixo Gospel">
@@ -277,7 +277,7 @@
             <meta name="twitter:title" content="<%= article.titulo %>">
             <meta name="twitter:description" content="<%= article.descricao %>">
             <meta name="twitter:image"
-                content="<%= article.imagem.startsWith('http') ? article.imagem : '<%= siteUrl %>' + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem) %>" />
+                content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
 
             <!-- Google Analytics -->
             <% if (typeof analyticsId !=='undefined' && analyticsId) { %>
