@@ -1,4 +1,5 @@
 const { Article, Category, Page } = require('../models');
+const { Op } = require('sequelize');
 
 exports.generateSitemap = async (req, res) => {
   try {
@@ -6,9 +7,13 @@ exports.generateSitemap = async (req, res) => {
 
     console.log('🗺️ Gerando sitemap...');
 
-    // Buscar todos os artigos publicados
+    // Buscar todos os artigos publicados E com data de publicação no passado (não agendados)
+    const agora = new Date();
     const articles = await Article.findAll({
-      where: { publicado: true },
+      where: { 
+        publicado: true,
+        dataPublicacao: { [Op.lte]: agora } // Exclui matérias agendadas
+      },
       order: [['dataPublicacao', 'DESC']]
     });
 
@@ -106,11 +111,13 @@ exports.generateNewsSitemap = async (req, res) => {
     const twoDaysAgo = new Date();
     twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
+    const agora = new Date();
     const recentArticles = await Article.findAll({
       where: {
         publicado: true,
         dataPublicacao: {
-          [require('sequelize').Op.gte]: twoDaysAgo
+          [Op.gte]: twoDaysAgo,
+          [Op.lte]: agora // Exclui matérias agendadas
         }
       },
       order: [['dataPublicacao', 'DESC']],

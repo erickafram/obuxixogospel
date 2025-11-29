@@ -640,22 +640,8 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       console.log('✅ Publicando imediatamente');
     }
 
-    // Adicionar links internos automaticamente se estiver publicando
+    // Links internos serão adicionados em background após criar o artigo
     let conteudoFinal = conteudo;
-    if (statusPublicado) {
-      console.log('🔗 Adicionando links internos automaticamente...');
-      try {
-        conteudoFinal = await InternalLinkingService.addInternalLinks(
-          conteudo,
-          titulo,
-          null, // Novo artigo, sem ID ainda
-          2 // Máximo de 2 links
-        );
-      } catch (linkError) {
-        console.error('Erro ao adicionar links internos:', linkError);
-        // Continua com conteúdo original se houver erro
-      }
-    }
 
     // Processar dados de fact-check
     let factCheckData = null;
@@ -695,8 +681,28 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
 
     console.log('Post criado com sucesso:', article.id);
 
-    // Trigger Sitemap Refresh in background if published
+    // Processos em background (não bloqueiam a resposta)
     if (statusPublicado) {
+      // Adicionar links internos em background
+      (async () => {
+        try {
+          console.log('🔗 Adicionando links internos em background...');
+          const conteudoComLinks = await InternalLinkingService.addInternalLinks(
+            conteudo,
+            titulo,
+            article.id,
+            2
+          );
+          if (conteudoComLinks !== conteudo) {
+            await article.update({ conteudo: conteudoComLinks });
+            console.log('✅ Links internos adicionados com sucesso');
+          }
+        } catch (linkError) {
+          console.error('Erro ao adicionar links internos (background):', linkError);
+        }
+      })();
+
+      // Trigger Sitemap Refresh in background
       googleSitemapService.refreshSitemaps().catch(err =>
         console.error('Background Sitemap Refresh Error:', err)
       );
@@ -822,23 +828,9 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       console.log('✅ Publicando imediatamente');
     }
 
-    // Adicionar links internos automaticamente se estiver publicando
+    // Links internos serão adicionados em background se estiver publicando pela primeira vez
     let conteudoFinal = conteudo;
-    if (statusPublicado && !article.publicado) {
-      // Só adiciona links se estiver publicando pela primeira vez
-      console.log('🔗 Adicionando links internos automaticamente...');
-      try {
-        conteudoFinal = await InternalLinkingService.addInternalLinks(
-          conteudo,
-          titulo,
-          article.id, // ID do artigo atual para não linkar para si mesmo
-          2 // Máximo de 2 links
-        );
-      } catch (linkError) {
-        console.error('Erro ao adicionar links internos:', linkError);
-        // Continua com conteúdo original se houver erro
-      }
-    }
+    const deveAdicionarLinks = statusPublicado && !article.publicado;
 
     // Processar dados de fact-check
     let factCheckData = null;
@@ -874,8 +866,30 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       factCheck: factCheckData
     });
 
-    // Trigger Sitemap Refresh in background if published
+    // Processos em background (não bloqueiam a resposta)
     if (statusPublicado) {
+      // Adicionar links internos em background se estiver publicando pela primeira vez
+      if (deveAdicionarLinks) {
+        (async () => {
+          try {
+            console.log('🔗 Adicionando links internos em background...');
+            const conteudoComLinks = await InternalLinkingService.addInternalLinks(
+              conteudo,
+              titulo,
+              article.id,
+              2
+            );
+            if (conteudoComLinks !== conteudo) {
+              await article.update({ conteudo: conteudoComLinks });
+              console.log('✅ Links internos adicionados com sucesso');
+            }
+          } catch (linkError) {
+            console.error('Erro ao adicionar links internos (background):', linkError);
+          }
+        })();
+      }
+
+      // Trigger Sitemap Refresh in background
       googleSitemapService.refreshSitemaps().catch(err =>
         console.error('Background Sitemap Refresh Error:', err)
       );
