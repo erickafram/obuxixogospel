@@ -36,38 +36,68 @@ class AIService {
   }
 
   /**
-   * Faz uma requisição para a API da IA
+   * Faz uma requisição para a API da IA com retry automático
    */
-  static async makeRequest(messages, temperature = 0.7, maxTokens = 2000) {
+  static async makeRequest(messages, temperature = 0.7, maxTokens = 2000, retries = 3) {
     const { apiKey, apiUrl, model } = await this.getConfig();
 
     if (!apiKey || !apiUrl || !model) {
       throw new Error('Configurações da IA não encontradas');
     }
 
-    try {
-      const response = await axios.post(
-        apiUrl,
-        {
-          model: model,
-          messages: messages,
-          temperature: temperature,
-          max_tokens: maxTokens
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+    let lastError;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🤖 Tentativa ${attempt}/${retries} de requisição à IA...`);
+        
+        const response = await axios.post(
+          apiUrl,
+          {
+            model: model,
+            messages: messages,
+            temperature: temperature,
+            max_tokens: maxTokens
           },
-          timeout: 120000 // 120 segundos (2 minutos)
-        }
-      );
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 180000 // 180 segundos (3 minutos)
+          }
+        );
 
-      return response.data.choices[0].message.content;
-    } catch (error) {
-      console.error('Erro na API da IA:', error.response?.data || error.message);
-      throw new Error('Erro ao comunicar com a IA: ' + (error.response?.data?.error?.message || error.message));
+        return response.data.choices[0].message.content;
+      } catch (error) {
+        lastError = error;
+        const errorMessage = error.response?.data?.error?.message || error.message;
+        const isRetryable = 
+          errorMessage.includes('timeout') || 
+          errorMessage.includes('Service unavailable') ||
+          errorMessage.includes('rate limit') ||
+          errorMessage.includes('overloaded') ||
+          errorMessage.includes('503') ||
+          errorMessage.includes('502') ||
+          errorMessage.includes('429') ||
+          error.code === 'ECONNRESET' ||
+          error.code === 'ETIMEDOUT';
+        
+        console.error(`❌ Erro na tentativa ${attempt}:`, errorMessage);
+        
+        if (isRetryable && attempt < retries) {
+          const waitTime = Math.min(30000, 5000 * Math.pow(2, attempt - 1)); // 5s, 10s, 20s (max 30s)
+          console.log(`⏳ Aguardando ${waitTime/1000}s antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else if (!isRetryable) {
+          // Erro não recuperável, não tenta novamente
+          break;
+        }
+      }
     }
+    
+    console.error('Erro na API da IA após todas as tentativas:', lastError.response?.data || lastError.message);
+    throw new Error('Erro ao comunicar com a IA: ' + (lastError.response?.data?.error?.message || lastError.message));
   }
 
   /**
