@@ -1414,106 +1414,202 @@ Retorne APENAS um objeto JSON válido:
   static async extrairConteudoFacebook(url, transcreverVideo = true) {
     console.log('📘 Extraindo conteúdo do Facebook:', url);
     
-    let conteudo = '';
+    let textoLegenda = '';
     let transcricao = '';
     
     // Verificar se é vídeo
     const isVideo = url.includes('/watch') || url.includes('fb.watch') || url.includes('/videos/') || url.includes('/reel');
     
-    // Se é vídeo e deve transcrever, usar yt-dlp diretamente
-    if (isVideo && transcreverVideo) {
-      console.log('🎥 Detectado vídeo do Facebook, usando yt-dlp para baixar e transcrever...');
-      
-      try {
-        const { exec } = require('child_process');
-        const util = require('util');
-        const execPromise = util.promisify(exec);
-        const path = require('path');
-        const fs = require('fs');
-        
-        const tempDir = path.join(__dirname, '..', 'temp');
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir, { recursive: true });
-        }
-        
-        const timestamp = Date.now();
-        const audioPath = path.join(tempDir, `fb_audio_${timestamp}.mp3`);
-        
-        console.log('📥 Baixando áudio do Facebook com yt-dlp...');
-        
-        // Baixar apenas o áudio usando yt-dlp
-        const ytdlpCommand = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" "${url}" --no-warnings --quiet`;
-        
-        try {
-          await execPromise(ytdlpCommand, { timeout: 120000 });
-          console.log('✅ Áudio do Facebook baixado:', audioPath);
-          
-          // Verificar se o arquivo existe
-          if (fs.existsSync(audioPath)) {
-            // Transcrever usando Whisper (via Groq)
-            console.log('🎤 Transcrevendo áudio do Facebook...');
-            transcricao = await this.transcreverAudio(audioPath);
-            
-            // Limpar arquivo temporário
-            try { fs.unlinkSync(audioPath); } catch (e) {}
-            
-            if (transcricao && transcricao.length > 50) {
-              console.log('✅ Vídeo do Facebook transcrito:', transcricao.length, 'caracteres');
-            }
-          }
-        } catch (ytError) {
-          console.log('⚠️ yt-dlp falhou para Facebook:', ytError.message);
-        }
-      } catch (error) {
-        console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
-      }
-    }
-    
-    // Extrair texto/descrição do post via scraping
+    // 1. EXTRAIR TEXTO/LEGENDA DO POST
     try {
-      const axios = require('axios');
-      const cheerio = require('cheerio');
-      
       const response = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
         },
         timeout: 15000
       });
 
       const $ = cheerio.load(response.data);
       
-      // Tentar extrair texto do post
-      const textoPost = $('meta[property="og:description"]').attr('content') ||
-                       $('meta[name="description"]').attr('content') ||
-                       $('.userContent').text() ||
-                       $('[data-testid="post_message"]').text();
+      // Método 1: Meta tags (mais confiável)
+      let textoPost = $('meta[property="og:description"]').attr('content') ||
+                     $('meta[name="description"]').attr('content');
       
-      if (textoPost) {
-        conteudo = '📘 CONTEÚDO DO FACEBOOK:\n\nTEXTO DA POSTAGEM:\n' + textoPost;
+      // Método 2: Título do vídeo
+      if (!textoPost || textoPost.length < 20) {
+        textoPost = $('meta[property="og:title"]').attr('content');
+      }
+      
+      // Método 3: Seletores específicos do Facebook
+      if (!textoPost || textoPost.length < 20) {
+        textoPost = $('.userContent').text() ||
+                   $('[data-testid="post_message"]').text() ||
+                   $('[data-ad-preview="message"]').text();
+      }
+      
+      // Método 4: JSON-LD
+      if (!textoPost || textoPost.length < 20) {
+        const scripts = $('script[type="application/ld+json"]').toArray();
+        for (const script of scripts) {
+          try {
+            const jsonData = JSON.parse($(script).html());
+            if (jsonData.description) {
+              textoPost = jsonData.description;
+              break;
+            }
+            if (jsonData.articleBody) {
+              textoPost = jsonData.articleBody;
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+      
+      if (textoPost && textoPost.length > 10) {
+        // Limpar texto do Facebook (remover "likes", "comments", etc)
+        textoPost = textoPost
+          .replace(/^\d+K?\s*(likes?|curtidas?|comentários?|comments?|compartilhamentos?|shares?)[,\s]*/gi, '')
+          .replace(/\s*\d+K?\s*(likes?|curtidas?|comentários?|comments?)[,\s]*/gi, '')
+          .trim();
+        
+        textoLegenda = `TEXTO DA POSTAGEM (LEGENDA):\n${textoPost}\n\n`;
+        console.log('✅ Legenda do Facebook extraída:', textoPost.substring(0, 100) + '...');
       }
 
     } catch (error) {
       console.log('⚠️ Erro ao extrair texto do Facebook:', error.message);
     }
     
-    // Adicionar transcrição se disponível
+    // 2. SE É VÍDEO, BAIXAR E TRANSCREVER
+    if (isVideo && transcreverVideo) {
+      console.log('🎥 Detectado vídeo do Facebook, processando...');
+      
+      try {
+        transcricao = await this.processarVideoFacebook(url);
+        if (transcricao && transcricao.length > 50) {
+          console.log('✅ Vídeo do Facebook transcrito:', transcricao.length, 'caracteres');
+        }
+      } catch (error) {
+        console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
+      }
+    }
+    
+    // 3. COMBINAR RESULTADOS
+    let conteudoFinal = '\n\n📘 CONTEÚDO DO FACEBOOK:\n\n';
+    
+    if (textoLegenda) conteudoFinal += textoLegenda;
     if (transcricao && transcricao.length > 50) {
-      conteudo += '\n\n🎥 TRANSCRIÇÃO DO VÍDEO:\n' + transcricao;
+      conteudoFinal += `🎥 TRANSCRIÇÃO DO VÍDEO:\n${transcricao}\n\n`;
     }
 
     // Se não conseguiu extrair nada
-    if (!conteudo || conteudo.length < 50) {
-      if (transcricao && transcricao.length > 50) {
-        conteudo = '📘 CONTEÚDO DO FACEBOOK:\n\n🎥 TRANSCRIÇÃO DO VÍDEO:\n' + transcricao;
-      } else {
-        throw new Error('Não foi possível extrair conteúdo suficiente do Facebook. Tente colar o texto manualmente.');
-      }
+    if (!textoLegenda && (!transcricao || transcricao.length < 50)) {
+      throw new Error('Não foi possível extrair conteúdo suficiente do Facebook. Tente colar o texto manualmente.');
     }
 
-    return conteudo;
+    return conteudoFinal;
+  }
+
+  /**
+   * Processo completo de vídeo do Facebook: Baixar -> Extrair Áudio -> Transcrever
+   */
+  static async processarVideoFacebook(url) {
+    let videoPath = null;
+    let audioPath = null;
+
+    try {
+      // 1. Baixar vídeo usando yt-dlp (funciona bem com Facebook)
+      videoPath = await this.baixarVideoFacebook(url);
+
+      // 2. Extrair áudio
+      audioPath = await this.extrairAudioDoVideo(videoPath);
+
+      // 3. Transcrever
+      const transcricao = await this.transcreverAudio(audioPath);
+
+      // 4. Limpar arquivos temporários
+      this.limparArquivosTemporarios(videoPath, audioPath);
+
+      console.log('✅ Processamento de vídeo do Facebook concluído com sucesso');
+      return transcricao;
+    } catch (error) {
+      // Limpar arquivos em caso de erro
+      this.limparArquivosTemporarios(videoPath, audioPath);
+
+      console.error('❌ Erro ao processar vídeo do Facebook:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Baixa vídeo do Facebook usando yt-dlp
+   */
+  static async baixarVideoFacebook(url) {
+    try {
+      console.log('📥 Baixando vídeo do Facebook:', url);
+      
+      const tempDir = path.join(__dirname, '../temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      const timestamp = Date.now();
+      const videoPath = path.join(tempDir, `facebook_${timestamp}.mp4`);
+      
+      const { execSync } = require('child_process');
+      const ytDlpPath = await this.garantirYtDlp();
+      
+      // Estratégias para baixar vídeo do Facebook
+      const strategies = [
+        // Estratégia 1: Download direto
+        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings`,
+        // Estratégia 2: Com cookies do navegador
+        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --cookies-from-browser chrome`,
+        // Estratégia 3: Forçar formato
+        `${ytDlpPath} --format mp4 -o "${videoPath}" "${url}" --no-warnings`,
+        // Estratégia 4: Qualquer formato
+        `${ytDlpPath} -o "${videoPath}" "${url}" --no-warnings`
+      ];
+      
+      for (let i = 0; i < strategies.length; i++) {
+        try {
+          console.log(`🔧 Tentando estratégia ${i + 1}/${strategies.length} do yt-dlp para Facebook`);
+          
+          execSync(strategies[i], {
+            encoding: 'utf8',
+            timeout: 120000,
+            maxBuffer: 50 * 1024 * 1024
+          });
+          
+          // Verificar se o arquivo foi criado
+          if (fs.existsSync(videoPath)) {
+            console.log('✅ Vídeo do Facebook baixado:', videoPath);
+            return videoPath;
+          }
+          
+          // Verificar se foi salvo com extensão diferente
+          const possibleExtensions = ['.mp4', '.webm', '.mkv', '.mov'];
+          for (const ext of possibleExtensions) {
+            const altPath = videoPath.replace('.mp4', ext);
+            if (fs.existsSync(altPath)) {
+              console.log('✅ Vídeo do Facebook baixado (formato alternativo):', altPath);
+              return altPath;
+            }
+          }
+        } catch (strategyError) {
+          console.log(`⚠️ Estratégia ${i + 1} falhou:`, strategyError.message.substring(0, 100));
+        }
+      }
+      
+      throw new Error('Não foi possível baixar o vídeo do Facebook por nenhum método.');
+    } catch (error) {
+      console.error('❌ Erro ao baixar vídeo do Facebook:', error.message);
+      throw error;
+    }
   }
 
   /**
@@ -3140,6 +3236,28 @@ Retorne APENAS um objeto JSON válido:
           }
         }
 
+        // Adicionar embed do Facebook
+        if (linkReferencia && (linkReferencia.includes('facebook.com') || linkReferencia.includes('fb.watch') || linkReferencia.includes('fb.com'))) {
+          const jaTemEmbedFb = conteudoLimpo.includes('fb-post') || conteudoLimpo.includes('fb-video') || conteudoLimpo.includes('facebook.com/plugins');
+          if (!jaTemEmbedFb) {
+            console.log('📘 Adicionando embed do Facebook:', linkReferencia);
+            
+            // Determinar se é vídeo ou post
+            const isVideo = linkReferencia.includes('/watch') || linkReferencia.includes('fb.watch') || linkReferencia.includes('/videos/') || linkReferencia.includes('/reel');
+            
+            let embedCode;
+            if (isVideo) {
+              // Embed de vídeo do Facebook
+              embedCode = `<div class="fb-video" data-href="${linkReferencia}" data-width="500" data-show-text="true" style="margin: 30px auto; max-width: 540px;"><blockquote cite="${linkReferencia}" class="fb-xfbml-parse-ignore"><a href="${linkReferencia}">Vídeo do Facebook</a></blockquote></div>`;
+            } else {
+              // Embed de post do Facebook
+              embedCode = `<div class="fb-post" data-href="${linkReferencia}" data-width="500" data-show-text="true" style="margin: 30px auto; max-width: 540px;"><blockquote cite="${linkReferencia}" class="fb-xfbml-parse-ignore"><a href="${linkReferencia}">Post do Facebook</a></blockquote></div>`;
+            }
+            
+            conteudoLimpo += embedCode;
+          }
+        }
+
         // Buscar imagens
         const palavrasChave = this.extrairPalavrasChave(parsed.titulo);
         console.log('🔍 Título:', parsed.titulo);
@@ -3177,18 +3295,34 @@ Retorne APENAS um objeto JSON válido:
     let conteudoSemEmbeds = conteudoHTML;
     
     // Regex para capturar blockquote do Instagram
-    const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
+    const embedRegexInstagram = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
     
-    // Extrair e guardar todos os embeds
+    // Extrair e guardar todos os embeds do Instagram
     let match;
-    while ((match = embedRegex.exec(conteudoHTML)) !== null) {
+    while ((match = embedRegexInstagram.exec(conteudoHTML)) !== null) {
       embedsInstagram.push(match[0]);
       console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado`);
     }
     
-    // Remover embeds temporariamente do conteúdo
-    conteudoSemEmbeds = conteudoHTML.replace(embedRegex, '');
+    // Remover embeds do Instagram temporariamente
+    conteudoSemEmbeds = conteudoHTML.replace(embedRegexInstagram, '');
     console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s)`);
+
+    // 🔹 PRESERVAR EMBEDS DO FACEBOOK
+    const embedsFacebook = [];
+    
+    // Regex para capturar embeds do Facebook (fb-post e fb-video)
+    const embedRegexFacebook = /<div[^>]*class="fb-(post|video)"[^>]*>[\s\S]*?<\/div>/gi;
+    
+    // Extrair e guardar todos os embeds do Facebook
+    while ((match = embedRegexFacebook.exec(conteudoSemEmbeds)) !== null) {
+      embedsFacebook.push(match[0]);
+      console.log(`📘 Embed do Facebook #${embedsFacebook.length} encontrado e preservado`);
+    }
+    
+    // Remover embeds do Facebook temporariamente
+    conteudoSemEmbeds = conteudoSemEmbeds.replace(embedRegexFacebook, '');
+    console.log(`✅ ${embedsFacebook.length} embed(s) do Facebook preservado(s)`);
 
     // Extrair texto do HTML (agora sem os embeds)
     const textoLimpo = conteudoSemEmbeds
@@ -3304,7 +3438,16 @@ RETORNE APENAS O HTML (sem título ou descrição):`
         console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram no final do conteúdo`);
         embedsInstagram.forEach((embed, index) => {
           conteudoLimpo += `<br><br>${embed}`;
-          console.log(`✅ Embed #${index + 1} reinserido`);
+          console.log(`✅ Embed Instagram #${index + 1} reinserido`);
+        });
+      }
+
+      // 🔹 REINSERIR EMBEDS DO FACEBOOK NO FINAL
+      if (embedsFacebook.length > 0) {
+        console.log(`📘 Reinserindo ${embedsFacebook.length} embed(s) do Facebook no final do conteúdo`);
+        embedsFacebook.forEach((embed, index) => {
+          conteudoLimpo += `<br><br>${embed}`;
+          console.log(`✅ Embed Facebook #${index + 1} reinserido`);
         });
       }
 
