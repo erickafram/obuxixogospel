@@ -112,8 +112,8 @@
     </script>
 
     <!-- SiteNavigationElement Schema for Categories (Sitelinks) -->
-    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-    <script type="application/ld+json">
+    <% if (typeof categories !=='undefined' && categories.length> 0) { %>
+        <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "ItemList",
@@ -130,25 +130,25 @@
         ]
     }
     </script>
-    <% } %>
-
-    <% if (typeof schemaData !=='undefined' && schemaData) { %>
-        <script type="application/ld+json">
-    <%- JSON.stringify(schemaData) %>
-    </script>
         <% } %>
 
-            <!-- Google Analytics -->
-            <% if (typeof analyticsId !=='undefined' && analyticsId) { %>
-                <!-- Google tag (gtag.js) -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag() { dataLayer.push(arguments); }
-                    gtag('js', new Date());
-                    gtag('config', '<%= analyticsId %>');
-                </script>
+            <% if (typeof schemaData !=='undefined' && schemaData) { %>
+                <script type="application/ld+json">
+    <%- JSON.stringify(schemaData) %>
+    </script>
                 <% } %>
+
+                    <!-- Google Analytics -->
+                    <% if (typeof analyticsId !=='undefined' && analyticsId) { %>
+                        <!-- Google tag (gtag.js) -->
+                        <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
+                        <script>
+                            window.dataLayer = window.dataLayer || [];
+                            function gtag() { dataLayer.push(arguments); }
+                            gtag('js', new Date());
+                            gtag('config', '<%= analyticsId %>');
+                        </script>
+                        <% } %>
 </head>
 
 <body>

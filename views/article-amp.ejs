@@ -43,9 +43,18 @@
     {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>"
+        },
         "headline": "<%= article.titulo %>",
         "description": "<%= article.descricao %>",
-        "image": "<%= article.imagem %>",
+        "image": {
+            "@type": "ImageObject",
+            "url": "<%= article.imagem %>",
+            "width": 1200,
+            "height": 630
+        },
         "datePublished": "<%= article.dataPublicacao %>",
         "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "author": {
@@ -326,10 +335,17 @@
         }
 
         .article-image {
+            aspect-ratio: 17/10;
+            overflow: hidden;
+            position: relative;
             width: 100%;
-            height: auto;
             border-radius: 8px;
             margin-bottom: 20px;
+        }
+
+        .article-image amp-img {
+            width: 100%;
+            height: 100%;
         }
 
         .article-content {
@@ -411,22 +427,56 @@
 
         .social-share {
             background: #fff;
-            padding: 20px;
+            padding: 24px;
             margin: 20px 0;
-            border-radius: 8px;
+            border-radius: 16px;
             text-align: center;
+            border: 1px solid #e4e9f2;
+            box-shadow: 0 4px 20px rgba(1, 83, 185, 0.08);
+        }
+
+        .social-share-top {
+            margin-top: 24px;
+            margin-bottom: 28px;
         }
 
         .social-share h3 {
-            font-size: 16px;
-            margin: 0 0 15px 0;
+            font-size: 18px;
+            margin: 0 0 20px 0;
+            font-weight: 700;
+            color: #1c1c1c;
+            letter-spacing: -0.02em;
         }
 
         .share-buttons {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(72px, auto));
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .share-buttons amp-social-share {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(1, 83, 185, 0.15);
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-size: 28px !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .share-buttons amp-social-share:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 16px 32px rgba(1, 83, 185, 0.25);
+        }
+
+        .share-buttons amp-social-share:active {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(1, 83, 185, 0.2);
         }
 
         /* Related Articles */
@@ -448,32 +498,62 @@
 
         .related-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
         }
 
         .related-item {
             display: flex;
-            gap: 15px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #f0f0f0;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e4e9f2;
+            background: linear-gradient(180deg, #fdfdff 0%, #f3f6ff 100%);
+            text-decoration: none;
+            color: inherit;
+            min-height: 220px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .related-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
+        .related-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(6, 105, 222, 0.12);
         }
 
         .related-image {
-            flex-shrink: 0;
-            width: 120px;
-            height: 80px;
-            border-radius: 8px;
+            width: 100%;
+            border-radius: 10px;
             overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/10;
+        }
+
+        .related-image amp-img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .related-image .category-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(1, 83, 185, 0.95);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
         }
 
         .related-content {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .related-category {
@@ -489,16 +569,29 @@
         }
 
         .related-item-title {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             line-height: 1.4;
-            color: #1c1c1c;
-            margin-bottom: 6px;
+            color: #101828;
+            margin: 0;
         }
 
         .related-meta {
-            font-size: 11px;
-            color: #666;
+            font-size: 12px;
+            color: #5c6475;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (min-width: 768px) {
+            .share-buttons {
+                max-width: none;
+            }
+
+            .related-section {
+                padding: 36px 28px;
+            }
         }
 
         .footer {
@@ -577,57 +670,67 @@
         </article>
 
         <% if (article.imagem) { %>
-            <amp-img src="<%= article.imagem %>" alt="<%= article.titulo %>" width="680" height="400"
-                layout="responsive" class="article-image">
-            </amp-img>
+            <div class="article-image">
+                <amp-img src="<%= article.imagem %>" alt="<%= article.titulo %>" layout="fill">
+                </amp-img>
+            </div>
             <% } %>
 
-                <div class="article-content">
-                    <%- article.conteudo %>
+            <!-- Social Share Above Article -->
+            <div class="social-share social-share-top">
+                <h3>Compartilhe esta notícia</h3>
+                <div class="share-buttons">
+                    <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="email" width="48" height="48"></amp-social-share>
                 </div>
+            </div>
 
-                <!-- Social Share -->
-                <div class="social-share">
-                    <h3>Compartilhe esta notícia</h3>
-                    <div class="share-buttons">
-                        <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
-                        <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
-                        <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
-                        <amp-social-share type="email" width="48" height="48"></amp-social-share>
-                    </div>
+            <div class="article-content">
+                <%- article.conteudo %>
+            </div>
+
+            <!-- Social Share -->
+            <div class="social-share">
+                <h3>Compartilhe esta notícia</h3>
+                <div class="share-buttons">
+                    <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
+                    <amp-social-share type="email" width="48" height="48"></amp-social-share>
                 </div>
+            </div>
 
-                <!-- Related Articles -->
-                <% if (typeof related !=='undefined' && related && related.length> 0) { %>
-                    <div class="related-section">
-                        <h2 class="related-title">📰 Notícias Relacionadas</h2>
-                        <div class="related-grid">
-                            <% related.forEach(item=> { %>
-                                <a href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>"
-                                    class="related-item">
-                                    <% if (item.imagem) { %>
-                                        <div class="related-image">
-                                            <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" width="120"
-                                                height="80" layout="responsive">
-                                            </amp-img>
+            <!-- Related Articles -->
+            <% if (typeof related !=='undefined' && related && related.length> 0) { %>
+                <div class="related-section">
+                    <h2 class="related-title">📰 Notícias Relacionadas</h2>
+                    <div class="related-grid">
+                        <% related.forEach(item=> { %>
+                            <a class="related-item" href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>">
+                                <% if (item.imagem) { %>
+                                    <div class="related-image">
+                                        <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" layout="fill">
+                                        </amp-img>
+                                        <div class="category-overlay">
+                                            <%= categoryName %>
                                         </div>
-                                        <% } %>
-                                            <div class="related-content">
-                                                <span class="related-category">
-                                                    <%= categoryName %>
-                                                </span>
-                                                <h3 class="related-item-title">
-                                                    <%= item.titulo %>
-                                                </h3>
-                                                <div class="related-meta">
-                                                    📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
-                                                </div>
+                                    </div>
+                                    <% } %>
+                                        <div class="related-content">
+                                            <h3 class="related-item-title">
+                                                <%= item.titulo %>
+                                            </h3>
+                                            <div class="related-meta">
+                                                📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
                                             </div>
-                                </a>
-                                <% }); %>
-                        </div>
+                                        </div>
+                            </a>
+                            <% }); %>
                     </div>
-                    <% } %>
+                </div>
+                <% } %>
     </div>
 
     <!-- Footer -->
