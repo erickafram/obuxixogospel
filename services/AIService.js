@@ -1417,10 +1417,24 @@ Retorne APENAS um objeto JSON válido:
     let textoLegenda = '';
     let transcricao = '';
     
-    // Verificar se é vídeo
-    const isVideo = url.includes('/watch') || url.includes('fb.watch') || url.includes('/videos/') || url.includes('/reel');
+    // Verificar se é vídeo (Facebook tem muitos formatos de URL de vídeo)
+    const isVideo = url.includes('/watch') || url.includes('fb.watch') || url.includes('/videos/') || url.includes('/reel') || url.includes('/share/v/') || url.includes('video.php');
     
-    // 1. EXTRAIR TEXTO/LEGENDA DO POST
+    // Se parece ser vídeo, SEMPRE tentar transcrever primeiro (mais confiável que scraping)
+    if (isVideo && transcreverVideo) {
+      console.log('🎥 Detectado vídeo do Facebook, tentando baixar e transcrever primeiro...');
+      
+      try {
+        transcricao = await this.processarVideoFacebook(url);
+        if (transcricao && transcricao.length > 50) {
+          console.log('✅ Vídeo do Facebook transcrito:', transcricao.length, 'caracteres');
+        }
+      } catch (error) {
+        console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
+      }
+    }
+    
+    // 1. EXTRAIR TEXTO/LEGENDA DO POST (mesmo que já tenha transcrição, pode complementar)
     try {
       const response = await axios.get(url, {
         headers: {
@@ -1484,21 +1498,7 @@ Retorne APENAS um objeto JSON válido:
       console.log('⚠️ Erro ao extrair texto do Facebook:', error.message);
     }
     
-    // 2. SE É VÍDEO, BAIXAR E TRANSCREVER
-    if (isVideo && transcreverVideo) {
-      console.log('🎥 Detectado vídeo do Facebook, processando...');
-      
-      try {
-        transcricao = await this.processarVideoFacebook(url);
-        if (transcricao && transcricao.length > 50) {
-          console.log('✅ Vídeo do Facebook transcrito:', transcricao.length, 'caracteres');
-        }
-      } catch (error) {
-        console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
-      }
-    }
-    
-    // 3. COMBINAR RESULTADOS
+    // 2. COMBINAR RESULTADOS
     let conteudoFinal = '\n\n📘 CONTEÚDO DO FACEBOOK:\n\n';
     
     if (textoLegenda) conteudoFinal += textoLegenda;
@@ -1563,17 +1563,32 @@ Retorne APENAS um objeto JSON válido:
       const { execSync } = require('child_process');
       const ytDlpPath = await this.garantirYtDlp();
       
+      // Verificar se existe arquivo de cookies (pode ser usado para Facebook também)
+      const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
+      const hasCookiesFile = fs.existsSync(cookiesPath);
+      
       // Estratégias para baixar vídeo do Facebook
-      const strategies = [
-        // Estratégia 1: Download direto
-        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings`,
-        // Estratégia 2: Com cookies do navegador
-        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --cookies-from-browser chrome`,
-        // Estratégia 3: Forçar formato
-        `${ytDlpPath} --format mp4 -o "${videoPath}" "${url}" --no-warnings`,
-        // Estratégia 4: Qualquer formato
-        `${ytDlpPath} -o "${videoPath}" "${url}" --no-warnings`
-      ];
+      const strategies = [];
+      
+      // Estratégia 0: Com arquivo de cookies (se existir) - PRIORIDADE MÁXIMA
+      if (hasCookiesFile) {
+        strategies.push(`${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --cookies "${cookiesPath}"`);
+        console.log('✅ Arquivo de cookies encontrado, será usado como prioridade para Facebook');
+      }
+      
+      // Estratégias sem cookies
+      strategies.push(
+        // Estratégia 1: Download direto com melhor qualidade MP4
+        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --no-check-certificates`,
+        // Estratégia 2: Forçar formato MP4
+        `${ytDlpPath} --format mp4 -o "${videoPath}" "${url}" --no-warnings --no-check-certificates`,
+        // Estratégia 3: Qualquer formato disponível
+        `${ytDlpPath} -f "best" -o "${videoPath}" "${url}" --no-warnings --no-check-certificates`,
+        // Estratégia 4: Sem especificar formato
+        `${ytDlpPath} -o "${videoPath}" "${url}" --no-warnings --no-check-certificates`,
+        // Estratégia 5: Com user-agent de navegador
+        `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --no-check-certificates --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"`
+      );
       
       for (let i = 0; i < strategies.length; i++) {
         try {
@@ -3784,17 +3799,17 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
       // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
       strategies.push(`${ytDlpPath} -g --no-warnings "${instagramUrl}"`);
 
-      // Estratégia 2: Com cookies do Firefox (se disponível no servidor)
-      strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser firefox "${instagramUrl}"`);
-
-      // Estratégia 3: Com cookies do Chrome (se disponível no servidor)
-      strategies.push(`${ytDlpPath} -g --no-warnings --cookies-from-browser chrome "${instagramUrl}"`);
-
-      // Estratégia 4: Com User-Agent específico
+      // Estratégia 2: Com User-Agent do app Instagram Android
       strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`);
 
-      // Estratégia 5: Ignorar erros e tentar extrair URL mesmo assim
+      // Estratégia 3: Com User-Agent de navegador desktop
+      strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "${instagramUrl}"`);
+
+      // Estratégia 4: Ignorar erros e tentar extrair URL mesmo assim
       strategies.push(`${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`);
+
+      // Estratégia 5: Com --no-check-certificates
+      strategies.push(`${ytDlpPath} -g --no-warnings --no-check-certificates "${instagramUrl}"`);
 
       for (let i = 0; i < strategies.length; i++) {
         try {
