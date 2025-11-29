@@ -242,9 +242,8 @@ exports.salvarMateria = async (req, res) => {
       categoria: categoriaCodigo,
       subcategoria: null,
       autor: 'Redação Obuxixo Gospel',
-      autor: 'Redação Obuxixo Gospel',
-      publicado: false, // Salvar como rascunho (rascunho explícito)
-      destaque: false, destaque: false,
+      publicado: false,
+      destaque: false,
       dataPublicacao: new Date(),
       visualizacoes: 0,
       urlAmigavel,
@@ -506,5 +505,46 @@ exports.getAutoPostStatus = async (req, res) => {
   } catch (error) {
     console.error('Erro ao obter status:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Buscar imagens do Google/Bing para seleção
+exports.buscarImagens = async (req, res) => {
+  try {
+    const { query, source } = req.body;
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        error: 'Query de busca é obrigatória'
+      });
+    }
+
+    console.log(`🔍 Buscando imagens: "${query}" - Fonte: ${source || 'bing'}`);
+
+    let imagens = [];
+
+    if (source === 'google') {
+      imagens = await AIService.buscarImagensGoogle(query);
+    } else {
+      imagens = await AIService.buscarImagensPexels(query); // Bing
+    }
+
+    console.log(`✅ ${imagens.length} imagens encontradas`);
+
+    res.json({
+      success: true,
+      imagens: imagens.map(img => ({
+        url: img.url || img,
+        thumbnail: img.thumbnail || img.url || img,
+        title: img.descricao || img.title || ''
+      }))
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar imagens:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro ao buscar imagens'
+    });
   }
 };

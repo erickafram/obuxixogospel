@@ -2133,6 +2133,9 @@ app.put('/api/ia/perfis/:id/auto-post', isAuthenticated, iaLoteController.atuali
 app.post('/api/ia/perfis/:id/processar-manual', isAuthenticated, iaLoteController.processarPerfilManual);
 app.get('/api/ia/auto-post/status', isAuthenticated, iaLoteController.getAutoPostStatus);
 
+// Busca de imagens Google/Bing
+app.post('/api/ia/buscar-imagens', isAuthenticated, iaLoteController.buscarImagens);
+
 // Pesquisa Google + Trends
 const googleSearchController = require('./controllers/googleSearchController');
 app.get('/dashboard/ia/google-search', isAuthenticated, googleSearchController.renderPage);

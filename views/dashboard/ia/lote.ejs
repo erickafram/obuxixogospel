@@ -1179,24 +1179,49 @@
                 
                 <div class="materia-content">${materia.conteudo}</div>
                 
-                ${materia.imagensSugeridas && materia.imagensSugeridas.length > 0 ? `
-                    <div>
-                        <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">
-                            <i class="fas fa-images"></i> Selecione uma imagem:
-                        </label>
-                        <div class="materia-images">
-                            ${materia.imagensSugeridas.map((img, imgIndex) => `
+                <div class="image-selection-section">
+                    <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-images"></i> Selecione uma imagem:
+                    </label>
+                    
+                    <!-- Busca de imagens -->
+                    <div class="image-search-box" style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" 
+                            id="imageSearch-${index}" 
+                            class="form-control" 
+                            placeholder="Buscar imagens..." 
+                            value="${materia.titulo}"
+                            style="flex: 1; min-width: 200px;"
+                        >
+                        <button type="button" onclick="buscarImagensExternas(${index}, 'bing')" class="btn btn-secondary" title="Buscar no Bing">
+                            <i class="fab fa-microsoft"></i> Bing
+                        </button>
+                        <button type="button" onclick="buscarImagensExternas(${index}, 'google')" class="btn btn-secondary" title="Buscar no Google">
+                            <i class="fab fa-google"></i> Google
+                        </button>
+                    </div>
+                    
+                    <!-- Container de imagens -->
+                    <div class="materia-images" id="imagens-${index}">
+                        ${materia.imagensSugeridas && materia.imagensSugeridas.length > 0 ? 
+                            materia.imagensSugeridas.map((img, imgIndex) => `
                                 <img 
                                     src="${img.url}" 
-                                    alt="${img.descricao}" 
+                                    alt="${img.descricao || ''}" 
                                     class="materia-image ${imgIndex === 0 ? 'selected' : ''}"
-                                    onclick="selecionarImagem(${index}, ${imgIndex})"
+                                    onclick="selecionarImagem(${index}, this)"
                                     data-url="${img.url}"
+                                    onerror="this.style.display='none'"
                                 >
-                            `).join('')}
-                        </div>
+                            `).join('') 
+                        : '<p style="color: #666; font-size: 13px;">Nenhuma imagem disponível. Use a busca acima.</p>'}
                     </div>
-                ` : ''}
+                    
+                    <!-- Loading de busca -->
+                    <div id="imageLoading-${index}" style="display: none; text-align: center; padding: 20px;">
+                        <i class="fas fa-spinner fa-spin"></i> Buscando imagens...
+                    </div>
+                </div>
                 
                 <div class="materia-footer">
                     <div class="materia-meta">
@@ -1235,17 +1260,58 @@
     }
 
     // Selecionar imagem
-    function selecionarImagem(materiaIndex, imagemIndex) {
-        const card = document.getElementById(`materia-${materiaIndex}`);
-        const imagens = card.querySelectorAll('.materia-image');
+    function selecionarImagem(materiaIndex, imgElement) {
+        const container = document.getElementById(`imagens-${materiaIndex}`);
+        const imagens = container.querySelectorAll('.materia-image');
         
-        imagens.forEach((img, idx) => {
-            if (idx === imagemIndex) {
-                img.classList.add('selected');
+        imagens.forEach(img => img.classList.remove('selected'));
+        imgElement.classList.add('selected');
+    }
+
+    // Buscar imagens externas (Google/Bing)
+    async function buscarImagensExternas(materiaIndex, source) {
+        const searchInput = document.getElementById(`imageSearch-${materiaIndex}`);
+        const container = document.getElementById(`imagens-${materiaIndex}`);
+        const loading = document.getElementById(`imageLoading-${materiaIndex}`);
+        const query = searchInput.value.trim();
+        
+        if (!query) {
+            alert('Digite um termo de busca');
+            return;
+        }
+        
+        loading.style.display = 'block';
+        
+        try {
+            const response = await fetch('/api/ia/buscar-imagens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, source })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.imagens.length > 0) {
+                container.innerHTML = data.imagens.map((img, idx) => `
+                    <img 
+                        src="${img.thumbnail || img.url}" 
+                        alt="${img.title || ''}" 
+                        class="materia-image ${idx === 0 ? 'selected' : ''}"
+                        onclick="selecionarImagem(${materiaIndex}, this)"
+                        data-url="${img.url}"
+                        onerror="this.style.display='none'"
+                        title="${img.title || ''}"
+                    >
+                `).join('');
             } else {
-                img.classList.remove('selected');
+                container.innerHTML = '<p style="color: #666; font-size: 13px;">Nenhuma imagem encontrada. Tente outro termo.</p>';
             }
-        });
+        } catch (error) {
+            console.error('Erro ao buscar imagens:', error);
+            alert('Erro ao buscar imagens: ' + error.message);
+        } finally {
+            loading.style.display = 'none';
+        }
     }
 
     // Salvar matéria
