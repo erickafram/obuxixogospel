@@ -243,20 +243,55 @@ class YouTubeTranscriptService {
       
       console.log(`📝 Legenda encontrada: ${selectedTrack.languageCode}`);
       
-      // Baixar o arquivo de legendas
+      // Baixar o arquivo de legendas (com cookies!)
       const captionUrl = selectedTrack.baseUrl;
+      console.log(`📥 Baixando legendas de: ${captionUrl.substring(0, 80)}...`);
+      
       const captionResponse = await axios.get(captionUrl, {
         headers: {
-          'User-Agent': userAgent
+          'User-Agent': userAgent,
+          'Cookie': cookies,
+          'Accept': '*/*',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': `https://www.youtube.com/watch?v=${videoId}`,
+          'Origin': 'https://www.youtube.com'
         },
         timeout: 15000
       });
       
       // Parsear XML das legendas
       const captionXml = captionResponse.data;
-      const textMatches = captionXml.match(/<text[^>]*>([^<]*)<\/text>/g);
+      console.log(`📄 Resposta das legendas: ${typeof captionXml}, tamanho: ${String(captionXml).length}`);
       
+      // Tentar extrair texto do XML
+      let textMatches = captionXml.match(/<text[^>]*>([^<]*)<\/text>/g);
+      
+      // Se não encontrou no formato padrão, tentar formato alternativo
       if (!textMatches || textMatches.length === 0) {
+        // Tentar formato JSON (algumas legendas vêm em JSON)
+        if (typeof captionXml === 'object' || captionXml.startsWith('{')) {
+          try {
+            const jsonData = typeof captionXml === 'object' ? captionXml : JSON.parse(captionXml);
+            if (jsonData.events) {
+              textMatches = jsonData.events
+                .filter(e => e.segs)
+                .map(e => e.segs.map(s => s.utf8).join(''))
+                .filter(t => t.trim());
+              if (textMatches.length > 0) {
+                const fullText = textMatches.join(' ');
+                console.log(`✅ Transcrição obtida (formato JSON): ${fullText.length} caracteres`);
+                return {
+                  segments: textMatches.map(text => ({ text })),
+                  fullText
+                };
+              }
+            }
+          } catch (e) {
+            console.log(`⚠️ Não é JSON válido: ${e.message}`);
+          }
+        }
+        
+        console.log(`⚠️ Formato da resposta: ${captionXml.substring(0, 200)}`);
         throw new Error('Não foi possível extrair texto das legendas');
       }
       
