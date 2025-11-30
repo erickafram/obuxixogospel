@@ -273,46 +273,66 @@ class YouTubeTranscriptService {
     let transcript = null;
     let fullText = '';
 
-    // Método 1: Tentar com youtube-transcript-plus
-    try {
-      console.log('📥 Tentando método 1 (youtube-transcript-plus)...');
-      console.log(`   User-Agent: ${userAgent.substring(0, 50)}...`);
-      console.log(`   Usando cookies de consentimento`);
-      
-      const fetchOptions = { 
-        userAgent,
-        headers: {
-          'Cookie': cookies,
-          'Referer': 'https://www.youtube.com/'
-        }
-      };
-      
-      // Tentar português primeiro
+    // Método 1: Tentar com youtube-transcript-plus (com retry)
+    const maxRetries = 3;
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries && !fullText; attempt++) {
       try {
-        console.log('   Tentando idioma: pt');
-        transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'pt' });
-        console.log(`   ✓ PT funcionou: ${transcript.length} segmentos`);
-      } catch (ptError) {
-        console.log(`   ✗ PT falhou: ${ptError.message}`);
+        console.log(`📥 Tentando método 1 (youtube-transcript-plus)... Tentativa ${attempt}/${maxRetries}`);
+        console.log(`   User-Agent: ${userAgent.substring(0, 50)}...`);
+        console.log(`   Usando cookies de consentimento`);
+        
+        // Delay entre tentativas (backoff exponencial)
+        if (attempt > 1) {
+          const delay = Math.pow(2, attempt - 1) * 1000; // 2s, 4s, 8s
+          console.log(`   ⏳ Aguardando ${delay}ms antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        const fetchOptions = { 
+          userAgent,
+          headers: {
+            'Cookie': cookies,
+            'Referer': 'https://www.youtube.com/'
+          }
+        };
+        
+        // Tentar português primeiro
         try {
-          console.log('   Tentando idioma: en');
-          transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'en' });
-          console.log(`   ✓ EN funcionou: ${transcript.length} segmentos`);
-        } catch (enError) {
-          console.log(`   ✗ EN falhou: ${enError.message}`);
-          console.log('   Tentando sem especificar idioma');
-          transcript = await fetchTranscript(videoId, fetchOptions);
-          console.log(`   ✓ Sem idioma funcionou: ${transcript.length} segmentos`);
+          console.log('   Tentando idioma: pt');
+          transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'pt' });
+          console.log(`   ✓ PT funcionou: ${transcript.length} segmentos`);
+        } catch (ptError) {
+          console.log(`   ✗ PT falhou: ${ptError.message}`);
+          try {
+            console.log('   Tentando idioma: en');
+            transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'en' });
+            console.log(`   ✓ EN funcionou: ${transcript.length} segmentos`);
+          } catch (enError) {
+            console.log(`   ✗ EN falhou: ${enError.message}`);
+            console.log('   Tentando sem especificar idioma');
+            transcript = await fetchTranscript(videoId, fetchOptions);
+            console.log(`   ✓ Sem idioma funcionou: ${transcript.length} segmentos`);
+          }
+        }
+
+        if (transcript && transcript.length > 0) {
+          fullText = transcript.map(segment => segment.text).join(' ');
+          console.log(`✅ Transcrição obtida (método 1): ${fullText.length} caracteres`);
+          break; // Sucesso, sair do loop
+        }
+      } catch (method1Error) {
+        lastError = method1Error;
+        console.log(`⚠️ Método 1 tentativa ${attempt} falhou: ${method1Error.message}`);
+        if (attempt === maxRetries) {
+          console.log(`   Stack: ${method1Error.stack?.substring(0, 200)}`);
         }
       }
-
-      if (transcript && transcript.length > 0) {
-        fullText = transcript.map(segment => segment.text).join(' ');
-        console.log(`✅ Transcrição obtida (método 1): ${fullText.length} caracteres`);
-      }
-    } catch (method1Error) {
-      console.log(`⚠️ Método 1 falhou completamente: ${method1Error.message}`);
-      console.log(`   Stack: ${method1Error.stack?.substring(0, 200)}`);
+    }
+    
+    if (!fullText && lastError) {
+      console.log(`⚠️ Método 1 falhou após ${maxRetries} tentativas`);
     }
 
     // Método 2: Fallback via scraping direto
