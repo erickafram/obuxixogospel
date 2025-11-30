@@ -8,6 +8,14 @@ const AIService = require('./AIService');
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+// User agents para rotação
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+];
+
 class YouTubeTranscriptService {
   
   /**
@@ -80,6 +88,101 @@ class YouTubeTranscriptService {
   }
 
   /**
+   * Método alternativo para obter transcrição via scraping direto do YouTube
+   * Usado como fallback quando o pacote youtube-transcript-plus falha
+   */
+  static async getTranscriptDirect(videoId) {
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    
+    console.log('🔄 Tentando método alternativo de transcrição (scraping direto)...');
+    
+    try {
+      // Primeiro, obter a página do vídeo para extrair os dados de caption
+      const videoPageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        },
+        timeout: 20000
+      });
+
+      const html = videoPageResponse.data;
+      
+      // Extrair URL das legendas do ytInitialPlayerResponse
+      const captionMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+      
+      if (!captionMatch) {
+        throw new Error('Legendas não encontradas na página do vídeo');
+      }
+      
+      let captionTracks;
+      try {
+        captionTracks = JSON.parse(captionMatch[1]);
+      } catch (e) {
+        throw new Error('Erro ao parsear dados de legendas');
+      }
+      
+      if (!captionTracks || captionTracks.length === 0) {
+        throw new Error('Nenhuma legenda disponível para este vídeo');
+      }
+      
+      // Priorizar português, depois inglês, depois qualquer uma
+      let selectedTrack = captionTracks.find(t => t.languageCode === 'pt' || t.languageCode === 'pt-BR');
+      if (!selectedTrack) {
+        selectedTrack = captionTracks.find(t => t.languageCode === 'en' || t.languageCode === 'en-US');
+      }
+      if (!selectedTrack) {
+        selectedTrack = captionTracks[0];
+      }
+      
+      console.log(`📝 Legenda encontrada: ${selectedTrack.languageCode}`);
+      
+      // Baixar o arquivo de legendas
+      const captionUrl = selectedTrack.baseUrl;
+      const captionResponse = await axios.get(captionUrl, {
+        headers: {
+          'User-Agent': userAgent
+        },
+        timeout: 15000
+      });
+      
+      // Parsear XML das legendas
+      const captionXml = captionResponse.data;
+      const textMatches = captionXml.match(/<text[^>]*>([^<]*)<\/text>/g);
+      
+      if (!textMatches || textMatches.length === 0) {
+        throw new Error('Não foi possível extrair texto das legendas');
+      }
+      
+      // Extrair e limpar o texto
+      const segments = textMatches.map(match => {
+        const text = match.replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\n/g, ' ')
+          .trim();
+        return { text };
+      });
+      
+      const fullText = segments.map(s => s.text).join(' ');
+      
+      console.log(`✅ Transcrição obtida via método alternativo: ${fullText.length} caracteres`);
+      
+      return {
+        segments,
+        fullText
+      };
+    } catch (error) {
+      console.error('❌ Método alternativo falhou:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Obtém a transcrição de um vídeo do YouTube
    */
   static async getTranscript(videoUrl) {
@@ -93,59 +196,64 @@ class YouTubeTranscriptService {
     
     // Obter metadados do vídeo primeiro
     const metadata = await this.getVideoMetadata(videoId);
+    
+    // Selecionar user agent aleatório
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
+    let transcript = null;
+    let fullText = '';
+
+    // Método 1: Tentar com youtube-transcript-plus
     try {
-      // Tentar obter transcrição em português primeiro
-      let transcript;
+      console.log('📥 Tentando método 1 (youtube-transcript-plus)...');
       
+      // Tentar português primeiro
       try {
-        transcript = await fetchTranscript(videoId, {
-          lang: 'pt',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        });
+        transcript = await fetchTranscript(videoId, { lang: 'pt', userAgent });
       } catch (ptError) {
-        console.log('⚠️ Transcrição em português não disponível, tentando em inglês...');
-        
+        console.log('⚠️ PT não disponível, tentando EN...');
         try {
-          transcript = await fetchTranscript(videoId, {
-            lang: 'en',
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          });
+          transcript = await fetchTranscript(videoId, { lang: 'en', userAgent });
         } catch (enError) {
-          console.log('⚠️ Transcrição em inglês não disponível, tentando qualquer idioma...');
-          
-          // Tentar sem especificar idioma
-          transcript = await fetchTranscript(videoId, {
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          });
+          console.log('⚠️ EN não disponível, tentando qualquer idioma...');
+          transcript = await fetchTranscript(videoId, { userAgent });
         }
       }
 
-      if (!transcript || transcript.length === 0) {
-        throw new Error('Não foi possível obter a transcrição. O vídeo pode não ter legendas disponíveis.');
+      if (transcript && transcript.length > 0) {
+        fullText = transcript.map(segment => segment.text).join(' ');
+        console.log(`✅ Transcrição obtida (método 1): ${fullText.length} caracteres`);
       }
-
-      // Concatenar todos os segmentos da transcrição
-      const fullText = transcript.map(segment => segment.text).join(' ');
-      
-      console.log(`✅ Transcrição obtida: ${fullText.length} caracteres`);
-      
-      return {
-        videoId,
-        text: fullText,
-        segments: transcript,
-        duration: transcript.length > 0 ? transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration : 0,
-        metadata: metadata
-      };
-    } catch (error) {
-      console.error('❌ Erro ao obter transcrição:', error.message);
-      
-      if (error.message.includes('Could not get transcripts')) {
-        throw new Error('Este vídeo não possui legendas/transcrição disponíveis. Tente outro vídeo com legendas ativadas.');
-      }
-      
-      throw new Error(`Erro ao obter transcrição: ${error.message}`);
+    } catch (method1Error) {
+      console.log(`⚠️ Método 1 falhou: ${method1Error.message}`);
     }
+
+    // Método 2: Fallback via scraping direto
+    if (!fullText || fullText.length < 100) {
+      try {
+        const directResult = await this.getTranscriptDirect(videoId);
+        if (directResult && directResult.fullText) {
+          fullText = directResult.fullText;
+          transcript = directResult.segments;
+          console.log(`✅ Transcrição obtida (método 2): ${fullText.length} caracteres`);
+        }
+      } catch (method2Error) {
+        console.log(`⚠️ Método 2 falhou: ${method2Error.message}`);
+      }
+    }
+
+    // Se nenhum método funcionou
+    if (!fullText || fullText.length < 50) {
+      throw new Error('Este vídeo não possui legendas/transcrição disponíveis. Tente outro vídeo com legendas ativadas.');
+    }
+      
+    return {
+      videoId,
+      text: fullText,
+      segments: transcript || [],
+      duration: transcript && transcript.length > 0 ? (transcript[transcript.length - 1].offset || 0) + (transcript[transcript.length - 1].duration || 0) : 0,
+      metadata: metadata
+    };
   }
 
   /**
