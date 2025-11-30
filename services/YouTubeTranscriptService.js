@@ -281,6 +281,26 @@ class YouTubeTranscriptService {
         console.log(`📄 Status da resposta XML: ${captionResponse.status}, tamanho: ${String(captionResponse.data).length}`);
       }
 
+      // Se ainda assim falhar (tamanho 0), tentar URL simplificada
+      if (!captionResponse.data || String(captionResponse.data).length === 0) {
+         console.log('⚠️ Resposta ainda vazia, tentando URL simplificada de timedtext...');
+         // Construir URL simplificada
+         const simpleUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${selectedTrack.languageCode}&fmt=json3`;
+         
+         captionResponse = await axios.get(simpleUrl, {
+          headers: {
+            'User-Agent': userAgent,
+            'Cookie': cookies,
+            'Accept': '*/*',
+            'Referer': `https://www.youtube.com/watch?v=${videoId}`,
+            'Origin': 'https://www.youtube.com'
+          },
+          timeout: 15000,
+          validateStatus: () => true
+        });
+        console.log(`📄 Status da resposta Simplificada: ${captionResponse.status}, tamanho: ${String(captionResponse.data).length}`);
+      }
+
       // Parsear XML ou JSON das legendas
       const captionXml = captionResponse.data;
       console.log(`📄 Resposta das legendas: ${typeof captionXml}, tamanho: ${String(captionXml).length}`);
@@ -416,7 +436,12 @@ class YouTubeTranscriptService {
       'https://inv.zzls.xyz',
       'https://invidious.protokolla.fi',
       'https://invidious.slipfox.xyz',
-      'https://yewtu.be'
+      'https://yewtu.be',
+      'https://invidious.jing.rocks',
+      'https://invidious.nerdvpn.de',
+      'https://invidious.lunar.icu',
+      'https://invidious.privacyredirect.com',
+      'https://invidious.vpsburti.com'
     ];
     
     for (const instance of instances) {
@@ -424,9 +449,15 @@ class YouTubeTranscriptService {
         console.log(`   Tentando instância: ${instance}`);
         
         const response = await axios.get(`${instance}/api/v1/captions/${videoId}`, {
-          timeout: 15000 // Aumentado para 15s
+          timeout: 10000, // Reduzido para 10s para tentar mais instâncias rapidamente
+          validateStatus: () => true
         });
         
+        if (response.status !== 200) {
+            console.log(`   ⚠️ Erro na instância ${instance}: Status ${response.status}`);
+            continue;
+        }
+
         const captions = response.data.captions;
         
         if (!captions || captions.length === 0) {
