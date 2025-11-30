@@ -490,7 +490,8 @@ app.get('/dashboard/posts', isAuthenticated, async (req, res) => {
       where,
       order: [[orderField, orderDirection]],
       limit,
-      offset
+      offset,
+      attributes: ['id', 'titulo', 'descricao', 'imagem', 'categoria', 'urlAmigavel', 'publicado', 'destaque', 'dataPublicacao', 'visualizacoes', 'autor']
     });
 
     const totalPages = Math.ceil(count / limit);
@@ -1523,20 +1524,26 @@ app.get('/', CacheService.middleware(300), async (req, res) => {
     // Estrutura: { 'noticias': [artigos...], 'musica': [artigos...] }
     const articlesByCategory = {};
 
-    // Buscar artigos para cada categoria
-    for (const cat of categories) {
-      const articles = await Article.findAll({
-        where: {
-          categoria: cat.slug,
-          publicado: true,
-          ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
-        },
-        order: [['dataPublicacao', 'DESC']],
-        limit: 50 // Limite de artigos por categoria para scroll infinito
-      });
+    // OTIMIZAÇÃO: Buscar todos os artigos de uma vez em vez de N queries
+    const categorySlugs = categories.map(c => c.slug);
+    
+    const allArticles = await Article.findAll({
+      where: {
+        categoria: { [sequelize.Sequelize.Op.in]: categorySlugs },
+        publicado: true,
+        ...(destaqueId && { id: { [sequelize.Sequelize.Op.ne]: destaqueId } })
+      },
+      order: [['dataPublicacao', 'DESC']],
+      attributes: ['id', 'titulo', 'descricao', 'imagem', 'categoria', 'urlAmigavel', 'dataPublicacao', 'visualizacoes', 'autor']
+    });
 
-      if (articles.length > 0) {
-        articlesByCategory[cat.slug] = articles;
+    // Agrupar artigos por categoria (máximo 50 por categoria)
+    for (const article of allArticles) {
+      if (!articlesByCategory[article.categoria]) {
+        articlesByCategory[article.categoria] = [];
+      }
+      if (articlesByCategory[article.categoria].length < 50) {
+        articlesByCategory[article.categoria].push(article);
       }
     }
 
