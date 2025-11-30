@@ -7,6 +7,8 @@ const { fetchTranscript } = require('youtube-transcript-plus');
 const AIService = require('./AIService');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { google } = require('googleapis');
+const { SystemConfig } = require('../models');
 
 // User agents para rotação
 const USER_AGENTS = [
@@ -246,6 +248,138 @@ class YouTubeTranscriptService {
   }
 
   /**
+   * Método para obter legendas via YouTube Data API v3
+   * Requer API Key configurada no banco de dados
+   */
+  static async getTranscriptViaAPI(videoId) {
+    console.log('🔄 Tentando método via YouTube Data API v3...');
+    
+    try {
+      // Buscar API Key no banco
+      const config = await SystemConfig.findOne({ where: { chave: 'youtube_api_key' } });
+      
+      if (!config || !config.valor) {
+        console.log('⚠️ API Key do YouTube não configurada (youtube_api_key)');
+        return null;
+      }
+      
+      const youtube = google.youtube({
+        version: 'v3',
+        auth: config.valor
+      });
+      
+      // Listar legendas disponíveis
+      const response = await youtube.captions.list({
+        part: 'snippet',
+        videoId: videoId
+      });
+      
+      const captions = response.data.items;
+      
+      if (!captions || captions.length === 0) {
+        throw new Error('Nenhuma legenda encontrada via API');
+      }
+      
+      console.log(`📄 ${captions.length} faixas de legenda encontradas via API`);
+      
+      // Priorizar português
+      let selectedCaption = captions.find(c => c.snippet.language === 'pt' || c.snippet.language === 'pt-BR');
+      if (!selectedCaption) selectedCaption = captions.find(c => c.snippet.language === 'en');
+      if (!selectedCaption) selectedCaption = captions[0];
+      
+      // NOTA: A API v3 não permite baixar o conteúdo da legenda (download) sem OAuth do dono do vídeo.
+      // O endpoint captions.download retorna 403 Forbidden para chaves de API simples.
+      // Portanto, a API serve apenas para confirmar que existem legendas e pegar metadados.
+      // Para baixar, ainda precisamos de scraping ou autenticação OAuth completa.
+      
+      console.log(`⚠️ API v3 confirmou legendas (${selectedCaption.snippet.language}), mas download requer OAuth.`);
+      return null; // Retorna null para forçar o uso dos outros métodos
+      
+    } catch (error) {
+      console.log(`⚠️ Erro na YouTube API: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Método alternativo usando Invidious API (frontend alternativo do YouTube)
+   * Útil quando o IP do servidor está bloqueado pelo YouTube
+   */
+  static async getTranscriptViaInvidious(videoId) {
+    console.log('🔄 Tentando método via Invidious API...');
+    
+    // Lista de instâncias Invidious para tentar
+    const instances = [
+      'https://inv.tux.pizza',
+      'https://invidious.flokinet.to',
+      'https://vid.puffyan.us',
+      'https://invidious.projectsegfau.lt',
+      'https://inv.zzls.xyz'
+    ];
+    
+    for (const instance of instances) {
+      try {
+        console.log(`   Tentando instância: ${instance}`);
+        
+        const response = await axios.get(`${instance}/api/v1/captions/${videoId}`, {
+          timeout: 10000
+        });
+        
+        const captions = response.data.captions;
+        
+        if (!captions || captions.length === 0) {
+          console.log(`   ⚠️ Nenhuma legenda encontrada na instância ${instance}`);
+          continue;
+        }
+        
+        // Priorizar português
+        let selectedCaption = captions.find(c => c.language === 'Portuguese' || c.language === 'Portuguese (Brazil)' || c.label.includes('Português'));
+        if (!selectedCaption) selectedCaption = captions.find(c => c.language === 'English' || c.label.includes('English'));
+        if (!selectedCaption) selectedCaption = captions[0];
+        
+        console.log(`   📝 Legenda encontrada: ${selectedCaption.label} (${selectedCaption.language})`);
+        
+        // Baixar o conteúdo da legenda (VTT)
+        const vttResponse = await axios.get(`${instance}${selectedCaption.url}`, {
+          timeout: 10000
+        });
+        
+        const vttText = vttResponse.data;
+        
+        // Converter VTT para texto limpo
+        // Remover cabeçalho WEBVTT e timestamps
+        const lines = vttText.split('\n');
+        const cleanLines = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          // Pular cabeçalho, timestamps (00:00:00.000 --> 00:00:05.000) e linhas vazias
+          if (line === 'WEBVTT' || line === '' || line.includes('-->')) continue;
+          
+          // Adicionar linha se não for repetição exata da anterior
+          if (cleanLines.length === 0 || cleanLines[cleanLines.length - 1] !== line) {
+            cleanLines.push(line);
+          }
+        }
+        
+        const fullText = cleanLines.join(' ');
+        
+        console.log(`✅ Transcrição obtida via Invidious: ${fullText.length} caracteres`);
+        
+        return {
+          fullText,
+          segments: cleanLines.map(text => ({ text }))
+        };
+        
+      } catch (error) {
+        console.log(`   ⚠️ Erro na instância ${instance}: ${error.message}`);
+      }
+    }
+    
+    throw new Error('Todas as instâncias Invidious falharam');
+  }
+
+  /**
    * Obtém a transcrição de um vídeo do YouTube
    */
   static async getTranscript(videoUrl) {
@@ -259,6 +393,9 @@ class YouTubeTranscriptService {
     
     // Obter metadados do vídeo primeiro
     const metadata = await this.getVideoMetadata(videoId);
+    
+    // Tentar verificar via API primeiro (opcional, apenas para log)
+    await this.getTranscriptViaAPI(videoId);
     
     // Selecionar user agent aleatório
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
@@ -337,7 +474,7 @@ class YouTubeTranscriptService {
 
     // Método 2: Fallback via scraping direto
     if (!fullText || fullText.length < 100) {
-      console.log(`🔄 Método 1 retornou ${fullText.length} caracteres, tentando método 2...`);
+      console.log(`🔄 Método 1 falhou, tentando método 2 (scraping direto)...`);
       try {
         const directResult = await this.getTranscriptDirect(videoId);
         if (directResult && directResult.fullText) {
@@ -347,7 +484,21 @@ class YouTubeTranscriptService {
         }
       } catch (method2Error) {
         console.log(`⚠️ Método 2 falhou: ${method2Error.message}`);
-        console.log(`   Stack: ${method2Error.stack?.substring(0, 200)}`);
+      }
+    }
+
+    // Método 3: Fallback via Invidious API
+    if (!fullText || fullText.length < 100) {
+      console.log(`🔄 Método 2 falhou, tentando método 3 (Invidious API)...`);
+      try {
+        const invidiousResult = await this.getTranscriptViaInvidious(videoId);
+        if (invidiousResult && invidiousResult.fullText) {
+          fullText = invidiousResult.fullText;
+          transcript = invidiousResult.segments;
+          console.log(`✅ Transcrição obtida (método 3): ${fullText.length} caracteres`);
+        }
+      } catch (method3Error) {
+        console.log(`⚠️ Método 3 falhou: ${method3Error.message}`);
       }
     }
 
