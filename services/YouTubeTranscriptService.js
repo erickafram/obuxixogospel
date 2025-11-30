@@ -244,20 +244,29 @@ class YouTubeTranscriptService {
       console.log(`📝 Legenda encontrada: ${selectedTrack.languageCode}`);
       
       // Baixar o arquivo de legendas (com cookies!)
-      const captionUrl = selectedTrack.baseUrl;
-      console.log(`📥 Baixando legendas de: ${captionUrl.substring(0, 80)}...`);
+      // Adicionar fmt=json3 para formato JSON mais confiável
+      let captionUrl = selectedTrack.baseUrl;
+      if (!captionUrl.includes('fmt=')) {
+        captionUrl += (captionUrl.includes('?') ? '&' : '?') + 'fmt=json3';
+      }
+      console.log(`📥 Baixando legendas de: ${captionUrl.substring(0, 100)}...`);
       
       const captionResponse = await axios.get(captionUrl, {
         headers: {
           'User-Agent': userAgent,
           'Cookie': cookies,
-          'Accept': '*/*',
+          'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
           'Referer': `https://www.youtube.com/watch?v=${videoId}`,
-          'Origin': 'https://www.youtube.com'
+          'Origin': 'https://www.youtube.com',
+          'X-YouTube-Client-Name': '1',
+          'X-YouTube-Client-Version': '2.20231219.04.00'
         },
-        timeout: 15000
+        timeout: 15000,
+        validateStatus: () => true // Aceitar qualquer status para debug
       });
+      
+      console.log(`📄 Status da resposta: ${captionResponse.status}`);
       
       // Parsear XML das legendas
       const captionXml = captionResponse.data;
