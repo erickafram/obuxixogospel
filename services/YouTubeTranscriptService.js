@@ -9,6 +9,42 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { google } = require('googleapis');
 const { SystemConfig } = require('../models');
+const fs = require('fs');
+const path = require('path');
+
+// Caminho para o arquivo de cookies do YouTube
+const YOUTUBE_COOKIES_PATH = path.join(__dirname, '..', 'youtube_cookies.txt');
+
+// Função para carregar cookies do arquivo Netscape
+function loadCookiesFromFile() {
+  try {
+    if (!fs.existsSync(YOUTUBE_COOKIES_PATH)) {
+      console.log('⚠️ Arquivo youtube_cookies.txt não encontrado');
+      return null;
+    }
+    
+    const content = fs.readFileSync(YOUTUBE_COOKIES_PATH, 'utf8');
+    const lines = content.split('\n').filter(line => !line.startsWith('#') && line.trim());
+    
+    const cookies = lines.map(line => {
+      const parts = line.split('\t');
+      if (parts.length >= 7) {
+        return `${parts[5]}=${parts[6]}`;
+      }
+      return null;
+    }).filter(Boolean);
+    
+    if (cookies.length > 0) {
+      console.log(`✅ ${cookies.length} cookies carregados do arquivo`);
+      return cookies.join('; ');
+    }
+    
+    return null;
+  } catch (error) {
+    console.log(`⚠️ Erro ao carregar cookies: ${error.message}`);
+    return null;
+  }
+}
 
 // User agents para rotação
 const USER_AGENTS = [
@@ -107,12 +143,16 @@ class YouTubeTranscriptService {
     console.log('🔄 Tentando método alternativo de transcrição (scraping direto)...');
     
     try {
-      // Cookies de consentimento do YouTube para evitar bloqueio
-      const cookies = [
-        'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
-        'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
-        'YSC=DwKYllHNwuw'
-      ].join('; ');
+      // Tentar carregar cookies do arquivo primeiro
+      let cookies = loadCookiesFromFile();
+      
+      if (!cookies) {
+        cookies = [
+          'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
+          'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
+          'YSC=DwKYllHNwuw'
+        ].join('; ');
+      }
       
       // Primeiro, obter a página do vídeo para extrair os dados de caption
       const videoPageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
@@ -405,12 +445,20 @@ class YouTubeTranscriptService {
     // Selecionar user agent aleatório
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
     
-    // Cookies de consentimento do YouTube
-    const cookies = [
-      'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
-      'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
-      'YSC=DwKYllHNwuw'
-    ].join('; ');
+    // Tentar carregar cookies do arquivo primeiro (igual Instagram)
+    let cookies = loadCookiesFromFile();
+    
+    // Se não tiver arquivo de cookies, usar cookies básicos de consentimento
+    if (!cookies) {
+      console.log('⚠️ Usando cookies básicos (sem arquivo youtube_cookies.txt)');
+      cookies = [
+        'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
+        'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
+        'YSC=DwKYllHNwuw'
+      ].join('; ');
+    } else {
+      console.log('✅ Usando cookies do arquivo youtube_cookies.txt');
+    }
 
     let transcript = null;
     let fullText = '';

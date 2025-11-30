@@ -1,0 +1,22 @@
+# Netscape HTTP Cookie File
+# Este arquivo deve conter os cookies exportados do YouTube
+# 
+# COMO OBTER OS COOKIES:
+# 1. Instale a extensão "Get cookies.txt LOCALLY" no Chrome
+# 2. Acesse https://www.youtube.com e faça login (opcional, mas recomendado)
+# 3. Clique na extensão e exporte os cookies
+# 4. Salve o arquivo como "youtube_cookies.txt" na raiz do projeto
+# 5. Reinicie o servidor: pm2 restart obuxixogospel
+#
+# FORMATO DO ARQUIVO (separado por TAB):
+# domínio	subdomínio	caminho	seguro	expira	nome	valor
+#
+# EXEMPLO:
+# .youtube.com	TRUE	/	TRUE	1735689600	CONSENT	YES+cb.20210328-17-p0.en+FX+123
+# .youtube.com	TRUE	/	TRUE	1735689600	VISITOR_INFO1_LIVE	abc123xyz
+# .youtube.com	TRUE	/	TRUE	1735689600	YSC	def456uvw
+#
+# IMPORTANTE: 
+# - O arquivo real deve se chamar "youtube_cookies.txt" (sem .example)
+# - Não commitar o arquivo real no git (já está no .gitignore)
+# - Os cookies expiram, então pode ser necessário exportar novamente periodicamente
