@@ -109,38 +109,67 @@ class YouTubeTranscriptService {
 
       const html = videoPageResponse.data;
       
-      // Extrair URL das legendas do ytInitialPlayerResponse
-      // Tentar diferentes padrões de regex
-      let captionMatch = html.match(/"captionTracks":\s*(\[[\s\S]*?\])\s*[,}]/);
+      // Extrair ytInitialPlayerResponse completo
+      // Usar uma abordagem mais robusta para extrair o JSON
+      let captionTracks = null;
       
-      if (!captionMatch) {
-        // Tentar padrão alternativo
-        captionMatch = html.match(/"captionTracks":\[([^\]]+)\]/);
-        if (captionMatch) {
-          captionMatch[1] = '[' + captionMatch[1] + ']';
+      const playerResponseStart = html.indexOf('var ytInitialPlayerResponse = ');
+      if (playerResponseStart !== -1) {
+        const jsonStart = html.indexOf('{', playerResponseStart);
+        if (jsonStart !== -1) {
+          // Encontrar o final do JSON contando chaves
+          let braceCount = 0;
+          let jsonEnd = jsonStart;
+          
+          for (let i = jsonStart; i < html.length && i < jsonStart + 500000; i++) {
+            if (html[i] === '{') braceCount++;
+            if (html[i] === '}') braceCount--;
+            if (braceCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+          
+          if (jsonEnd > jsonStart) {
+            try {
+              const jsonStr = html.substring(jsonStart, jsonEnd);
+              const playerResponse = JSON.parse(jsonStr);
+              captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+              if (captionTracks) {
+                console.log(`📄 captionTracks encontrado via ytInitialPlayerResponse: ${captionTracks.length} legendas`);
+              }
+            } catch (e) {
+              console.log(`⚠️ Erro ao parsear ytInitialPlayerResponse: ${e.message}`);
+            }
+          }
         }
       }
       
-      if (!captionMatch) {
-        console.log('❌ Padrão "captionTracks" não encontrado no HTML');
-        console.log(`   HTML size: ${html.length} bytes`);
-        console.log(`   HTML preview: ${html.substring(0, 500)}`);
-        throw new Error('Legendas não encontradas na página do vídeo');
-      }
-      
-      console.log(`📄 captionTracks encontrado: ${captionMatch[1].substring(0, 200)}...`);
-      
-      let captionTracks;
-      try {
-        captionTracks = JSON.parse(captionMatch[1]);
-      } catch (e) {
-        console.error('❌ Erro ao parsear JSON:', e.message);
-        console.error(`   JSON: ${captionMatch[1].substring(0, 300)}`);
-        throw new Error('Erro ao parsear dados de legendas: ' + e.message);
+      // Fallback: buscar captionTracks diretamente
+      if (!captionTracks) {
+        console.log('🔍 Buscando captionTracks diretamente no HTML...');
+        const captionMatch = html.match(/"captionTracks":\s*(\[[\s\S]*?\])\s*[,}]/);
+        
+        if (captionMatch) {
+          try {
+            captionTracks = JSON.parse(captionMatch[1]);
+            console.log(`📄 captionTracks encontrado diretamente: ${captionTracks.length} legendas`);
+          } catch (e) {
+            console.log(`⚠️ Erro ao parsear captionTracks: ${e.message}`);
+          }
+        }
       }
       
       if (!captionTracks || captionTracks.length === 0) {
-        throw new Error('Nenhuma legenda disponível para este vídeo');
+        console.log('❌ Nenhuma legenda encontrada no HTML');
+        console.log(`   HTML size: ${html.length} bytes`);
+        
+        // Verificar se o vídeo existe mas não tem legendas
+        if (html.includes('videoDetails')) {
+          throw new Error('Este vídeo não possui legendas/closed captions disponíveis');
+        } else {
+          throw new Error('Não foi possível acessar os dados do vídeo');
+        }
       }
       
       // Priorizar português, depois inglês, depois qualquer uma
