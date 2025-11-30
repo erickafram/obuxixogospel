@@ -110,17 +110,33 @@ class YouTubeTranscriptService {
       const html = videoPageResponse.data;
       
       // Extrair URL das legendas do ytInitialPlayerResponse
-      const captionMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+      // Tentar diferentes padrões de regex
+      let captionMatch = html.match(/"captionTracks":\s*(\[[\s\S]*?\])\s*[,}]/);
       
       if (!captionMatch) {
+        // Tentar padrão alternativo
+        captionMatch = html.match(/"captionTracks":\[([^\]]+)\]/);
+        if (captionMatch) {
+          captionMatch[1] = '[' + captionMatch[1] + ']';
+        }
+      }
+      
+      if (!captionMatch) {
+        console.log('❌ Padrão "captionTracks" não encontrado no HTML');
+        console.log(`   HTML size: ${html.length} bytes`);
+        console.log(`   HTML preview: ${html.substring(0, 500)}`);
         throw new Error('Legendas não encontradas na página do vídeo');
       }
+      
+      console.log(`📄 captionTracks encontrado: ${captionMatch[1].substring(0, 200)}...`);
       
       let captionTracks;
       try {
         captionTracks = JSON.parse(captionMatch[1]);
       } catch (e) {
-        throw new Error('Erro ao parsear dados de legendas');
+        console.error('❌ Erro ao parsear JSON:', e.message);
+        console.error(`   JSON: ${captionMatch[1].substring(0, 300)}`);
+        throw new Error('Erro ao parsear dados de legendas: ' + e.message);
       }
       
       if (!captionTracks || captionTracks.length === 0) {
@@ -206,17 +222,24 @@ class YouTubeTranscriptService {
     // Método 1: Tentar com youtube-transcript-plus
     try {
       console.log('📥 Tentando método 1 (youtube-transcript-plus)...');
+      console.log(`   User-Agent: ${userAgent.substring(0, 50)}...`);
       
       // Tentar português primeiro
       try {
+        console.log('   Tentando idioma: pt');
         transcript = await fetchTranscript(videoId, { lang: 'pt', userAgent });
+        console.log(`   ✓ PT funcionou: ${transcript.length} segmentos`);
       } catch (ptError) {
-        console.log('⚠️ PT não disponível, tentando EN...');
+        console.log(`   ✗ PT falhou: ${ptError.message}`);
         try {
+          console.log('   Tentando idioma: en');
           transcript = await fetchTranscript(videoId, { lang: 'en', userAgent });
+          console.log(`   ✓ EN funcionou: ${transcript.length} segmentos`);
         } catch (enError) {
-          console.log('⚠️ EN não disponível, tentando qualquer idioma...');
+          console.log(`   ✗ EN falhou: ${enError.message}`);
+          console.log('   Tentando sem especificar idioma');
           transcript = await fetchTranscript(videoId, { userAgent });
+          console.log(`   ✓ Sem idioma funcionou: ${transcript.length} segmentos`);
         }
       }
 
@@ -225,11 +248,13 @@ class YouTubeTranscriptService {
         console.log(`✅ Transcrição obtida (método 1): ${fullText.length} caracteres`);
       }
     } catch (method1Error) {
-      console.log(`⚠️ Método 1 falhou: ${method1Error.message}`);
+      console.log(`⚠️ Método 1 falhou completamente: ${method1Error.message}`);
+      console.log(`   Stack: ${method1Error.stack?.substring(0, 200)}`);
     }
 
     // Método 2: Fallback via scraping direto
     if (!fullText || fullText.length < 100) {
+      console.log(`🔄 Método 1 retornou ${fullText.length} caracteres, tentando método 2...`);
       try {
         const directResult = await this.getTranscriptDirect(videoId);
         if (directResult && directResult.fullText) {
@@ -239,12 +264,15 @@ class YouTubeTranscriptService {
         }
       } catch (method2Error) {
         console.log(`⚠️ Método 2 falhou: ${method2Error.message}`);
+        console.log(`   Stack: ${method2Error.stack?.substring(0, 200)}`);
       }
     }
 
     // Se nenhum método funcionou
     if (!fullText || fullText.length < 50) {
-      throw new Error('Este vídeo não possui legendas/transcrição disponíveis. Tente outro vídeo com legendas ativadas.');
+      const errorMsg = `Este vídeo não possui legendas/transcrição disponíveis ou houve erro ao acessá-las. Caracteres obtidos: ${fullText.length}. Tente outro vídeo com legendas ativadas.`;
+      console.error(`❌ ${errorMsg}`);
+      throw new Error(errorMsg);
     }
       
     return {
