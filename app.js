@@ -18,6 +18,7 @@ const googleSitemapService = require('./services/GoogleSitemapService');
 const GoogleIndexingService = require('./services/GoogleIndexingService');
 const InternalLinkingService = require('./services/InternalLinkingService');
 const { publishScheduledPosts } = require('./schedulers/publishScheduledPosts');
+const CacheService = require('./services/CacheService');
 
 // Configurar Multer para upload
 const storage = multer.diskStorage({
@@ -339,13 +340,13 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     // Buscar visualizações dos últimos 7 dias baseado nos artigos reais
     let dailyViews = [];
     const { Op } = require('sequelize');
-    
+
     try {
       // Calcular data de 7 dias atrás
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 6);
       startDate.setHours(0, 0, 0, 0);
-      
+
       // Buscar artigos com visualizações, agrupados por data de publicação
       const viewsByDate = await Article.findAll({
         attributes: [
@@ -362,7 +363,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         order: [[sequelize.Sequelize.fn('DATE', sequelize.Sequelize.col('data_publicacao')), 'ASC']],
         raw: true
       });
-      
+
       // Criar mapa de visualizações por data
       const viewsMap = {};
       viewsByDate.forEach(row => {
@@ -371,7 +372,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
           viewsMap[dateStr] = parseInt(row.totalViews) || 0;
         }
       });
-      
+
       // Preencher os 7 dias (incluindo dias sem dados)
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
@@ -399,7 +400,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     // Posts publicados hoje e visualizações de hoje
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Buscar visualizações de artigos publicados hoje
     let todayViews = 0;
     try {
@@ -415,7 +416,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     } catch (e) {
       console.log('Erro ao buscar visualizações de hoje:', e.message);
     }
-    
+
     const postsToday = await Article.count({
       where: {
         createdAt: {
@@ -713,6 +714,9 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       GoogleIndexingService.publishUrl(url).catch(err =>
         console.error('Background Indexing API Error:', err)
       );
+
+      // Limpar cache para exibir novo post/atualização
+      CacheService.flush();
     }
 
     // Se for requisição AJAX (rascunho), retornar JSON
@@ -950,6 +954,9 @@ app.delete('/dashboard/posts/deletar/:id', isAuthenticated, canDeletePosts, asyn
         console.error('Background Indexing API Remove Error:', err)
       );
     }
+
+    // Limpar cache
+    CacheService.flush();
 
     res.json({ success: true, message: 'Post deletado com sucesso' });
   } catch (error) {
@@ -1340,7 +1347,7 @@ app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
 
 // Rotas de páginas públicas
-app.get('/', async (req, res) => {
+app.get('/', CacheService.middleware(300), async (req, res) => {
   try {
     // Buscar configurações SEO do banco
     const seoConfig = await SystemConfig.findAll({
@@ -1461,7 +1468,7 @@ function convertToAMP(html) {
 }
 
 // Rota AMP do artigo
-app.get('/:categorySlug/:articleSlug/amp', async (req, res) => {
+app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (req, res) => {
   try {
     // Verificar se AMP está habilitado
     const ampConfig = await SystemConfig.findOne({
@@ -1622,7 +1629,7 @@ app.get('/artigo/:slug', async (req, res) => {
   }
 });
 
-app.get('/categoria/:categoria', async (req, res) => {
+app.get('/categoria/:categoria', CacheService.middleware(300), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 12;
@@ -2191,7 +2198,7 @@ app.post('/dashboard/ia/configuracoes', async (req, res) => {
 
 // Rota dinâmica universal - captura QUALQUER categoria/:slug
 // DEVE VIR ANTES DO 404 para capturar novas categorias do banco
-app.get('/:categorySlug/:articleSlug', async (req, res, next) => {
+app.get('/:categorySlug/:articleSlug', CacheService.middleware(300), async (req, res, next) => {
   try {
     const { categorySlug, articleSlug } = req.params;
 
