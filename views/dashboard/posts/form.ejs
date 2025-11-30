@@ -127,6 +127,80 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- SEO Avançado -->
+                    <div class="card" style="margin-top: 20px;">
+                        <div class="card-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" id="seoCardHeader">
+                            <h3 style="margin: 0;"><i class="fas fa-search"></i> SEO Avançado</h3>
+                            <i class="fas fa-chevron-down" id="seoCardIcon" style="transition: transform 0.3s;"></i>
+                        </div>
+                        <div class="card-body" id="seoCardBody" style="display: none;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <div class="form-group">
+                                        <label for="metaTitulo">
+                                            <i class="fas fa-heading"></i> Título SEO
+                                            <span id="metaTituloCounter" style="float: right; font-size: 12px; color: #666;">0/70</span>
+                                        </label>
+                                        <input type="text" id="metaTitulo" name="metaTitulo" class="form-control" 
+                                            maxlength="70"
+                                            value="<%= isEdit && article.metaTitulo ? article.metaTitulo : '' %>"
+                                            placeholder="Título otimizado para buscadores (máx. 70 caracteres)">
+                                        <small style="color: #666;">Deixe em branco para usar o título do post</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="metaDescricao">
+                                            <i class="fas fa-align-left"></i> Descrição SEO
+                                            <span id="metaDescricaoCounter" style="float: right; font-size: 12px; color: #666;">0/160</span>
+                                        </label>
+                                        <textarea id="metaDescricao" name="metaDescricao" class="form-control" 
+                                            rows="3" maxlength="160"
+                                            placeholder="Descrição otimizada para buscadores (máx. 160 caracteres)"><%= isEdit && article.metaDescricao ? article.metaDescricao : '' %></textarea>
+                                        <small style="color: #666;">Deixe em branco para usar a descrição do post</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="urlAmigavelCustom">
+                                            <i class="fas fa-link"></i> URL Personalizada
+                                        </label>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="color: #666; font-size: 13px;">/<%= isEdit ? article.categoria : 'categoria' %>/</span>
+                                            <input type="text" id="urlAmigavelCustom" name="urlAmigavelCustom" class="form-control" 
+                                                value="<%= isEdit ? article.urlAmigavel : '' %>"
+                                                placeholder="url-do-post"
+                                                style="flex: 1;">
+                                        </div>
+                                        <small style="color: #666;">
+                                            <% if (isEdit && article.slugCustomizado) { %>
+                                                <i class="fas fa-check-circle" style="color: #10b981;"></i> URL personalizada
+                                            <% } else { %>
+                                                <i class="fas fa-info-circle"></i> Altere para personalizar (redirecionamento automático)
+                                            <% } %>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <!-- Preview do Google -->
+                                    <div style="padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                                        <p style="font-size: 11px; color: #666; margin-bottom: 12px; text-transform: uppercase; font-weight: 600;">Preview do Google</p>
+                                        <div style="font-family: Arial, sans-serif;">
+                                            <div id="seoPreviewTitle" style="color: #1a0dab; font-size: 18px; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <%= isEdit ? (article.metaTitulo || article.titulo) : 'Título do Post' %>
+                                            </div>
+                                            <div id="seoPreviewUrl" style="color: #006621; font-size: 13px; margin-bottom: 4px;">
+                                                https://www.obuxixogospel.com.br/<%= isEdit ? article.categoria : 'categoria' %>/<%= isEdit ? article.urlAmigavel : 'url-do-post' %>
+                                            </div>
+                                            <div id="seoPreviewDesc" style="color: #545454; font-size: 13px; line-height: 1.4;">
+                                                <%= isEdit ? (article.metaDescricao || article.descricao || 'Descrição do post...') : 'Descrição do post que aparecerá nos resultados de busca...' %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sidebar -->
@@ -274,76 +348,69 @@
                     <div class="card">
                         <div class="card-header">
                             <h3>Autor</h3>
-                        </div>
-                        <div class="card-body">
-                            <input type="text" id="autor" name="autor" class="form-control"
-                                value="<%= isEdit ? article.autor : 'Redação Obuxixo Gospel' %>">
-                        </div>
-                    </div>
-
-                    <!-- Fact-Check -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-check-double"></i> Fact-Check</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-check" style="margin-bottom: 12px;">
-                                <label>
-                                    <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
-                                        onchange="toggleFactCheckFields()" <%=isEdit && article.factCheck &&
-                                        article.factCheck.claim ? 'checked' : '' %>>
-                                    <span>Este artigo é uma verificação de fatos</span>
-                                </label>
-                            </div>
-
-                            <div id="factCheckFields"
-                                style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
-                                <div class="form-group">
-                                    <label for="factCheckClaim">Afirmação verificada *</label>
-                                    <textarea id="factCheckClaim" name="factCheckClaim" class="form-control" rows="2"
-                                        placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
-                                    <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
+                            <div class="card-body">
+                                <div class="form-check" style="margin-bottom: 12px;">
+                                    <label>
+                                        <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
+                                            onchange="toggleFactCheckFields()" <%=isEdit && article.factCheck &&
+                                            article.factCheck.claim ? 'checked' : '' %>>
+                                        <span>Este artigo é uma verificação de fatos</span>
+                                    </label>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckAuthor">Quem fez a afirmação</label>
-                                    <input type="text" id="factCheckAuthor" name="factCheckAuthor" class="form-control"
-                                        placeholder="Ex: Pastor X, Site Y, WhatsApp..."
-                                        value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
-                                </div>
+                                <div id="factCheckFields"
+                                    style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
+                                    <div class="form-group">
+                                        <label for="factCheckClaim">Afirmação verificada *</label>
+                                        <textarea id="factCheckClaim" name="factCheckClaim" class="form-control"
+                                            rows="2"
+                                            placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
+                                        <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckAuthorType">Tipo do autor</label>
-                                    <select id="factCheckAuthorType" name="factCheckAuthorType" class="form-control">
-                                        <option value="Person" <%=isEdit && article.factCheck &&
-                                            article.factCheck.claimAuthorType==='Person' ? 'selected' : '' %>>Pessoa
-                                        </option>
-                                        <option value="Organization" <%=isEdit && article.factCheck &&
-                                            article.factCheck.claimAuthorType==='Organization' ? 'selected' : '' %>
-                                            >Organização/Site</option>
-                                    </select>
-                                </div>
+                                    <div class="form-group">
+                                        <label for="factCheckAuthor">Quem fez a afirmação</label>
+                                        <input type="text" id="factCheckAuthor" name="factCheckAuthor"
+                                            class="form-control" placeholder="Ex: Pastor X, Site Y, WhatsApp..."
+                                            value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckRating">Veredito *</label>
-                                    <select id="factCheckRating" name="factCheckRating" class="form-control">
-                                        <option value="1" <%=isEdit && article.factCheck && article.factCheck.rating==1
-                                            ? 'selected' : '' %>>❌ Falso</option>
-                                        <option value="2" <%=isEdit && article.factCheck && article.factCheck.rating==2
-                                            ? 'selected' : '' %>>⚠️ Majoritariamente Falso</option>
-                                        <option value="3" <%=isEdit && article.factCheck && article.factCheck.rating==3
-                                            ? 'selected' : '' %>>🔶 Parcialmente Verdadeiro</option>
-                                        <option value="4" <%=isEdit && article.factCheck && article.factCheck.rating==4
-                                            ? 'selected' : '' %>>✅ Majoritariamente Verdadeiro</option>
-                                        <option value="5" <%=isEdit && article.factCheck && article.factCheck.rating==5
-                                            ? 'selected' : '' %>>✅ Verdadeiro</option>
-                                    </select>
+                                    <div class="form-group">
+                                        <label for="factCheckAuthorType">Tipo do autor</label>
+                                        <select id="factCheckAuthorType" name="factCheckAuthorType"
+                                            class="form-control">
+                                            <option value="Person" <%=isEdit && article.factCheck &&
+                                                article.factCheck.claimAuthorType==='Person' ? 'selected' : '' %>>Pessoa
+                                            </option>
+                                            <option value="Organization" <%=isEdit && article.factCheck &&
+                                                article.factCheck.claimAuthorType==='Organization' ? 'selected' : '' %>
+                                                >Organização/Site</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="factCheckRating">Veredito *</label>
+                                        <select id="factCheckRating" name="factCheckRating" class="form-control">
+                                            <option value="1" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==1 ? 'selected' : '' %>>❌ Falso</option>
+                                            <option value="2" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==2 ? 'selected' : '' %>>⚠️ Majoritariamente
+                                                Falso</option>
+                                            <option value="3" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==3 ? 'selected' : '' %>>🔶 Parcialmente
+                                                Verdadeiro</option>
+                                            <option value="4" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==4 ? 'selected' : '' %>>✅ Majoritariamente
+                                                Verdadeiro</option>
+                                            <option value="5" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==5 ? 'selected' : '' %>>✅ Verdadeiro</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
         </form>
     </div>
 
@@ -5732,6 +5799,81 @@
                 }
             };
         }
+
+        // ========== SEO Card Functions ==========
+        // Toggle SEO Card
+        document.getElementById('seoCardHeader').addEventListener('click', function() {
+            const body = document.getElementById('seoCardBody');
+            const icon = document.getElementById('seoCardIcon');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        // Update character counters
+        function updateSeoCounters() {
+            const metaTitulo = document.getElementById('metaTitulo');
+            const metaDescricao = document.getElementById('metaDescricao');
+            const metaTituloCounter = document.getElementById('metaTituloCounter');
+            const metaDescricaoCounter = document.getElementById('metaDescricaoCounter');
+            
+            if (metaTitulo && metaTituloCounter) {
+                const len = metaTitulo.value.length;
+                metaTituloCounter.textContent = len + '/70';
+                metaTituloCounter.style.color = len > 63 ? '#ef4444' : (len > 50 ? '#f59e0b' : '#666');
+            }
+            if (metaDescricao && metaDescricaoCounter) {
+                const len = metaDescricao.value.length;
+                metaDescricaoCounter.textContent = len + '/160';
+                metaDescricaoCounter.style.color = len > 144 ? '#ef4444' : (len > 112 ? '#f59e0b' : '#666');
+            }
+        }
+
+        // Update SEO Preview
+        function updateSeoPreview() {
+            const titulo = document.getElementById('titulo');
+            const descricao = document.getElementById('descricao');
+            const metaTitulo = document.getElementById('metaTitulo');
+            const metaDescricao = document.getElementById('metaDescricao');
+            const urlAmigavelCustom = document.getElementById('urlAmigavelCustom');
+            const categoria = document.getElementById('categoria');
+
+            const previewTitle = document.getElementById('seoPreviewTitle');
+            const previewUrl = document.getElementById('seoPreviewUrl');
+            const previewDesc = document.getElementById('seoPreviewDesc');
+
+            if (previewTitle) {
+                previewTitle.textContent = (metaTitulo && metaTitulo.value) ? metaTitulo.value : (titulo ? titulo.value || 'Título do Post' : 'Título do Post');
+            }
+            if (previewDesc) {
+                previewDesc.textContent = (metaDescricao && metaDescricao.value) ? metaDescricao.value : (descricao ? descricao.value || 'Descrição do post...' : 'Descrição do post...');
+            }
+            if (previewUrl) {
+                const cat = categoria ? (categoria.value || 'categoria') : 'categoria';
+                const slug = urlAmigavelCustom && urlAmigavelCustom.value ? urlAmigavelCustom.value : 'url-do-post';
+                previewUrl.textContent = 'https://www.obuxixogospel.com.br/' + cat + '/' + slug;
+            }
+            
+            updateSeoCounters();
+        }
+
+        // Initialize SEO listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSeoCounters();
+            
+            const campos = ['titulo', 'descricao', 'metaTitulo', 'metaDescricao', 'urlAmigavelCustom', 'categoria'];
+            campos.forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updateSeoPreview);
+                    el.addEventListener('change', updateSeoPreview);
+                }
+            });
+        });
     </script>
 
     <%- include('../partials/footer') %>
