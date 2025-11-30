@@ -42,10 +42,18 @@ class YouTubeTranscriptService {
     try {
       console.log(`📋 Obtendo metadados do vídeo: ${videoId}`);
       
+      // Cookies de consentimento para evitar bloqueio
+      const cookies = [
+        'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
+        'VISITOR_INFO1_LIVE=jMEWvRKVN1U'
+      ].join('; ');
+      
       const response = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Cookie': cookies,
+          'Referer': 'https://www.youtube.com/'
         },
         timeout: 15000
       });
@@ -97,12 +105,22 @@ class YouTubeTranscriptService {
     console.log('🔄 Tentando método alternativo de transcrição (scraping direto)...');
     
     try {
+      // Cookies de consentimento do YouTube para evitar bloqueio
+      const cookies = [
+        'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
+        'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
+        'YSC=DwKYllHNwuw'
+      ].join('; ');
+      
       // Primeiro, obter a página do vídeo para extrair os dados de caption
       const videoPageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
         headers: {
           'User-Agent': userAgent,
           'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Cookie': cookies,
+          'Referer': 'https://www.youtube.com/',
+          'Origin': 'https://www.youtube.com'
         },
         timeout: 20000
       });
@@ -244,6 +262,13 @@ class YouTubeTranscriptService {
     
     // Selecionar user agent aleatório
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    
+    // Cookies de consentimento do YouTube
+    const cookies = [
+      'CONSENT=YES+cb.20210328-17-p0.en+FX+' + Math.floor(Math.random() * 1000),
+      'VISITOR_INFO1_LIVE=jMEWvRKVN1U',
+      'YSC=DwKYllHNwuw'
+    ].join('; ');
 
     let transcript = null;
     let fullText = '';
@@ -252,22 +277,31 @@ class YouTubeTranscriptService {
     try {
       console.log('📥 Tentando método 1 (youtube-transcript-plus)...');
       console.log(`   User-Agent: ${userAgent.substring(0, 50)}...`);
+      console.log(`   Usando cookies de consentimento`);
+      
+      const fetchOptions = { 
+        userAgent,
+        headers: {
+          'Cookie': cookies,
+          'Referer': 'https://www.youtube.com/'
+        }
+      };
       
       // Tentar português primeiro
       try {
         console.log('   Tentando idioma: pt');
-        transcript = await fetchTranscript(videoId, { lang: 'pt', userAgent });
+        transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'pt' });
         console.log(`   ✓ PT funcionou: ${transcript.length} segmentos`);
       } catch (ptError) {
         console.log(`   ✗ PT falhou: ${ptError.message}`);
         try {
           console.log('   Tentando idioma: en');
-          transcript = await fetchTranscript(videoId, { lang: 'en', userAgent });
+          transcript = await fetchTranscript(videoId, { ...fetchOptions, lang: 'en' });
           console.log(`   ✓ EN funcionou: ${transcript.length} segmentos`);
         } catch (enError) {
           console.log(`   ✗ EN falhou: ${enError.message}`);
           console.log('   Tentando sem especificar idioma');
-          transcript = await fetchTranscript(videoId, { userAgent });
+          transcript = await fetchTranscript(videoId, fetchOptions);
           console.log(`   ✓ Sem idioma funcionou: ${transcript.length} segmentos`);
         }
       }
