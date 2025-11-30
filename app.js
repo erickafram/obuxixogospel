@@ -561,7 +561,7 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
-      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating, metaTitulo, metaDescricao, urlAmigavelCustom } = req.body;
 
     console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
 
@@ -585,20 +585,36 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       }
     }
 
-    // Gerar URL amigável base usando slugify
+    // Gerar URL amigável (customizada ou automática)
     const slugify = require('slugify');
-    let urlAmigavelBase = slugify(titulo, {
-      lower: true,
-      strict: true,
-      locale: 'pt',
-      remove: /[*+~.()'"!:@]/g
-    });
+    let urlAmigavel;
+    let slugCustomizado = false;
+
+    if (urlAmigavelCustom && urlAmigavelCustom.trim()) {
+      // Usar slug customizada
+      urlAmigavel = slugify(urlAmigavelCustom.trim(), {
+        lower: true,
+        strict: true,
+        locale: 'pt',
+        remove: /[*+~.()'"!:@]/g
+      });
+      slugCustomizado = true;
+    } else {
+      // Gerar automaticamente do título
+      let urlAmigavelBase = slugify(titulo, {
+        lower: true,
+        strict: true,
+        locale: 'pt',
+        remove: /[*+~.()'"!:@]/g
+      });
+      urlAmigavel = urlAmigavelBase;
+    }
 
     // Verificar se já existe e adicionar sufixo apenas se necessário
-    let urlAmigavel = urlAmigavelBase;
     let contador = 1;
+    const urlOriginal = urlAmigavel;
     while (await Article.findOne({ where: { urlAmigavel } })) {
-      urlAmigavel = `${urlAmigavelBase}-${contador}`;
+      urlAmigavel = `${urlOriginal}-${contador}`;
       contador++;
     }
 
@@ -677,7 +693,10 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       dataPublicacao: dataFinalParaSalvar,
       visualizacoes: 0,
       urlAmigavel,
-      factCheck: factCheckData
+      factCheck: factCheckData,
+      metaTitulo: metaTitulo || null,
+      metaDescricao: metaDescricao || null,
+      slugCustomizado: slugCustomizado
     });
 
     console.log('Post criado com sucesso:', article.id);
@@ -791,7 +810,7 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
-      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating, metaTitulo, metaDescricao, urlAmigavelCustom } = req.body;
 
     const article = await Article.findByPk(req.params.id);
 
@@ -801,6 +820,43 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
         return res.status(404).json({ success: false, message: errorMsg });
       }
       return res.status(404).send(errorMsg);
+    }
+
+    // Capturar URL antiga para criar redirecionamento se necessário
+    const urlAntigaCompleta = `/${article.categoria}/${article.urlAmigavel}`;
+    let urlAmigavelNova = article.urlAmigavel;
+    let slugCustomizado = article.slugCustomizado || false;
+
+    // Verificar se o slug foi alterado manualmente
+    if (urlAmigavelCustom && urlAmigavelCustom.trim()) {
+      const slugify = require('slugify');
+      const novoSlug = slugify(urlAmigavelCustom.trim(), {
+        lower: true,
+        strict: true,
+        locale: 'pt',
+        remove: /[*+~.()'\"!:@]/g
+      });
+
+      // Se o slug mudou, verificar se já existe
+      if (novoSlug !== article.urlAmigavel) {
+        const existente = await Article.findOne({
+          where: {
+            urlAmigavel: novoSlug,
+            id: { [sequelize.Sequelize.Op.ne]: article.id }
+          }
+        });
+
+        if (existente) {
+          const errorMsg = 'Esta URL já está em uso por outro artigo';
+          if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.status(400).json({ success: false, message: errorMsg });
+          }
+          return res.status(400).send(errorMsg);
+        }
+
+        urlAmigavelNova = novoSlug;
+        slugCustomizado = true;
+      }
     }
 
     // Processar data de publicação
@@ -867,8 +923,33 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       publicado: statusPublicado,
       destaque: destaque === 'true',
       dataPublicacao: dataFinalParaSalvar,
-      factCheck: factCheckData
+      factCheck: factCheckData,
+      urlAmigavel: urlAmigavelNova,
+      metaTitulo: metaTitulo || null,
+      metaDescricao: metaDescricao || null,
+      slugCustomizado: slugCustomizado
     });
+
+    // Criar redirecionamento automático se a URL mudou
+    if (urlAmigavelNova !== article.urlAmigavel) {
+      const urlNovaCompleta = `/${categoria || article.categoria}/${urlAmigavelNova}`;
+
+      try {
+        const { Redirect } = require('./models');
+        await Redirect.create({
+          urlAntiga: urlAntigaCompleta,
+          urlNova: urlNovaCompleta,
+          tipoRedirecionamento: '301',
+          ativo: true,
+          descricao: `Redirecionamento automático criado ao alterar URL do artigo "${titulo}"`,
+          criadoPor: req.session.userId
+        });
+        console.log(`✅ Redirecionamento criado: ${urlAntigaCompleta} → ${urlNovaCompleta}`);
+      } catch (redirectError) {
+        console.error('Erro ao criar redirecionamento:', redirectError);
+        // Não bloqueia a atualização do artigo
+      }
+    }
 
     // Processos em background (não bloqueiam a resposta)
     if (statusPublicado) {

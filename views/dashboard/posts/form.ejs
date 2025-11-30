@@ -106,8 +106,7 @@
                                             onclick="abrirModalAcrescentarInfo()">
                                             <i class="fas fa-plus-circle"></i> Acrescentar Informação
                                         </button>
-                                        <button type="button" class="btn-ai-assistant"
-                                            onclick="abrirAssistenteIA()">
+                                        <button type="button" class="btn-ai-assistant" onclick="abrirAssistenteIA()">
                                             <i class="fas fa-robot"></i> Assistente IA
                                         </button>
                                     </div>
@@ -275,66 +274,69 @@
                     <div class="card">
                         <div class="card-header">
                             <h3>Autor</h3>
-                        </div>
-                        <div class="card-body">
-                            <input type="text" id="autor" name="autor" class="form-control"
-                                value="<%= isEdit ? article.autor : 'Redação Obuxixo Gospel' %>">
-                        </div>
-                    </div>
-
-                    <!-- Fact-Check -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-check-double"></i> Fact-Check</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-check" style="margin-bottom: 12px;">
-                                <label>
-                                    <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
-                                        onchange="toggleFactCheckFields()"
-                                        <%= isEdit && article.factCheck && article.factCheck.claim ? 'checked' : '' %>>
-                                    <span>Este artigo é uma verificação de fatos</span>
-                                </label>
-                            </div>
-
-                            <div id="factCheckFields" style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
-                                <div class="form-group">
-                                    <label for="factCheckClaim">Afirmação verificada *</label>
-                                    <textarea id="factCheckClaim" name="factCheckClaim" class="form-control" rows="2"
-                                        placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
-                                    <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
+                            <div class="card-body">
+                                <div class="form-check" style="margin-bottom: 12px;">
+                                    <label>
+                                        <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
+                                            onchange="toggleFactCheckFields()" <%=isEdit && article.factCheck &&
+                                            article.factCheck.claim ? 'checked' : '' %>>
+                                        <span>Este artigo é uma verificação de fatos</span>
+                                    </label>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckAuthor">Quem fez a afirmação</label>
-                                    <input type="text" id="factCheckAuthor" name="factCheckAuthor" class="form-control"
-                                        placeholder="Ex: Pastor X, Site Y, WhatsApp..."
-                                        value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
-                                </div>
+                                <div id="factCheckFields"
+                                    style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
+                                    <div class="form-group">
+                                        <label for="factCheckClaim">Afirmação verificada *</label>
+                                        <textarea id="factCheckClaim" name="factCheckClaim" class="form-control"
+                                            rows="2"
+                                            placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
+                                        <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckAuthorType">Tipo do autor</label>
-                                    <select id="factCheckAuthorType" name="factCheckAuthorType" class="form-control">
-                                        <option value="Person" <%= isEdit && article.factCheck && article.factCheck.claimAuthorType === 'Person' ? 'selected' : '' %>>Pessoa</option>
-                                        <option value="Organization" <%= isEdit && article.factCheck && article.factCheck.claimAuthorType === 'Organization' ? 'selected' : '' %>>Organização/Site</option>
-                                    </select>
-                                </div>
+                                    <div class="form-group">
+                                        <label for="factCheckAuthor">Quem fez a afirmação</label>
+                                        <input type="text" id="factCheckAuthor" name="factCheckAuthor"
+                                            class="form-control" placeholder="Ex: Pastor X, Site Y, WhatsApp..."
+                                            value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
+                                    </div>
 
-                                <div class="form-group">
-                                    <label for="factCheckRating">Veredito *</label>
-                                    <select id="factCheckRating" name="factCheckRating" class="form-control">
-                                        <option value="1" <%= isEdit && article.factCheck && article.factCheck.rating == 1 ? 'selected' : '' %>>❌ Falso</option>
-                                        <option value="2" <%= isEdit && article.factCheck && article.factCheck.rating == 2 ? 'selected' : '' %>>⚠️ Majoritariamente Falso</option>
-                                        <option value="3" <%= isEdit && article.factCheck && article.factCheck.rating == 3 ? 'selected' : '' %>>🔶 Parcialmente Verdadeiro</option>
-                                        <option value="4" <%= isEdit && article.factCheck && article.factCheck.rating == 4 ? 'selected' : '' %>>✅ Majoritariamente Verdadeiro</option>
-                                        <option value="5" <%= isEdit && article.factCheck && article.factCheck.rating == 5 ? 'selected' : '' %>>✅ Verdadeiro</option>
-                                    </select>
+                                    <div class="form-group">
+                                        <label for="factCheckAuthorType">Tipo do autor</label>
+                                        <select id="factCheckAuthorType" name="factCheckAuthorType"
+                                            class="form-control">
+                                            <option value="Person" <%=isEdit && article.factCheck &&
+                                                article.factCheck.claimAuthorType==='Person' ? 'selected' : '' %>>Pessoa
+                                            </option>
+                                            <option value="Organization" <%=isEdit && article.factCheck &&
+                                                article.factCheck.claimAuthorType==='Organization' ? 'selected' : '' %>
+                                                >Organização/Site</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="factCheckRating">Veredito *</label>
+                                        <select id="factCheckRating" name="factCheckRating" class="form-control">
+                                            <option value="1" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==1 ? 'selected' : '' %>>❌ Falso</option>
+                                            <option value="2" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==2 ? 'selected' : '' %>>⚠️ Majoritariamente
+                                                Falso</option>
+                                            <option value="3" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==3 ? 'selected' : '' %>>🔶 Parcialmente
+                                                Verdadeiro</option>
+                                            <option value="4" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==4 ? 'selected' : '' %>>✅ Majoritariamente
+                                                Verdadeiro</option>
+                                            <option value="5" <%=isEdit && article.factCheck &&
+                                                article.factCheck.rating==5 ? 'selected' : '' %>>✅ Verdadeiro</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
         </form>
     </div>
 
@@ -385,7 +387,8 @@
                             <span>🌐 Pesquisar Informações na Internet (Recomendado)</span>
                         </label>
                         <small class="form-text" style="color: #059669; font-weight: 500;">
-                            <i class="fas fa-check-circle"></i> A IA buscará notícias atuais no Google News e informações no DuckDuckGo para criar uma matéria baseada em FATOS REAIS
+                            <i class="fas fa-check-circle"></i> A IA buscará notícias atuais no Google News e
+                            informações no DuckDuckGo para criar uma matéria baseada em FATOS REAIS
                         </small>
                     </div>
 
@@ -555,7 +558,9 @@
                         <label for="aiLinkUrl">Link da Postagem ou Matéria *</label>
                         <input type="url" id="aiLinkUrl" class="form-control"
                             placeholder="Ex: https://www.instagram.com/p/ABC123/ ou https://facebook.com/watch?v=123">
-                        <small class="form-text">✨ Suporta: <strong>Instagram</strong> (posts, reels, vídeos), <strong>Facebook</strong> (posts, vídeos, watch), <strong>YouTube</strong>, ou qualquer site de notícias</small>
+                        <small class="form-text">✨ Suporta: <strong>Instagram</strong> (posts, reels, vídeos),
+                            <strong>Facebook</strong> (posts, vídeos, watch), <strong>YouTube</strong>, ou qualquer site
+                            de notícias</small>
                     </div>
 
                     <div class="form-group">
@@ -576,18 +581,22 @@
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="aiLinkTranscreverVideo" checked style="width: 18px; height: 18px;">
+                            <input type="checkbox" id="aiLinkTranscreverVideo" checked
+                                style="width: 18px; height: 18px;">
                             <span>🎥 Transcrever Vídeos Automaticamente</span>
                         </label>
-                        <small class="form-text" style="color: #059669;">Se o link for um vídeo (Instagram Reel, Facebook Watch, etc), o áudio será transcrito automaticamente para criar a matéria</small>
+                        <small class="form-text" style="color: #059669;">Se o link for um vídeo (Instagram Reel,
+                            Facebook Watch, etc), o áudio será transcrito automaticamente para criar a matéria</small>
                     </div>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="aiLinkPesquisarInternet" checked style="width: 18px; height: 18px;">
+                            <input type="checkbox" id="aiLinkPesquisarInternet" checked
+                                style="width: 18px; height: 18px;">
                             <span>🌐 Pesquisar na Internet para Complementar</span>
                         </label>
-                        <small class="form-text" style="color: #059669;">A IA buscará notícias e informações adicionais na internet para enriquecer a matéria com contexto e fatos atualizados</small>
+                        <small class="form-text" style="color: #059669;">A IA buscará notícias e informações adicionais
+                            na internet para enriquecer a matéria com contexto e fatos atualizados</small>
                     </div>
 
                     <div class="form-group">
@@ -603,9 +612,11 @@
 
                     <div class="ai-info" style="background: #ecfdf5; border-color: #10b981;">
                         <i class="fas fa-info-circle" style="color: #10b981;"></i>
-                        <p style="color: #065f46;">📱 <strong>Instagram/Facebook com vídeo:</strong> Extrai legenda + transcreve o áudio do vídeo<br>
-                        🌐 <strong>Pesquisa na internet:</strong> Busca notícias relacionadas para enriquecer a matéria<br>
-                        🖼️ <strong>Imagem:</strong> Baixa automaticamente a imagem/thumbnail do post</p>
+                        <p style="color: #065f46;">📱 <strong>Instagram/Facebook com vídeo:</strong> Extrai legenda +
+                            transcreve o áudio do vídeo<br>
+                            🌐 <strong>Pesquisa na internet:</strong> Busca notícias relacionadas para enriquecer a
+                            matéria<br>
+                            🖼️ <strong>Imagem:</strong> Baixa automaticamente a imagem/thumbnail do post</p>
                     </div>
 
                     <div class="modal-footer">
@@ -650,7 +661,8 @@
                     <button type="button" class="btn btn-secondary" onclick="fecharModalAcrescentarInfo()">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="gerarAcrescentarInfo()" id="btnGerarAcrescentar">
+                    <button type="button" class="btn btn-primary" onclick="gerarAcrescentarInfo()"
+                        id="btnGerarAcrescentar">
                         <i class="fas fa-magic"></i> Gerar com IA
                     </button>
                 </div>
@@ -675,28 +687,36 @@
                             <div class="mensagem-conteudo">
                                 <p>Olá! Sou seu assistente de IA. Posso ajudar você a:</p>
                                 <ul>
-                                    <li><strong>Alterar só o título</strong> - "altere o título para ficar mais polêmico"</li>
+                                    <li><strong>Alterar só o título</strong> - "altere o título para ficar mais
+                                        polêmico"</li>
                                     <li><strong>Alterar só a descrição</strong> - "melhore a descrição"</li>
-                                    <li><strong>Alterar só o conteúdo</strong> - "acrescente no conteúdo informações sobre..."</li>
-                                    <li><strong>Criar matéria completa</strong> - "crie uma matéria sobre divórcio entre evangélicos"</li>
+                                    <li><strong>Alterar só o conteúdo</strong> - "acrescente no conteúdo informações
+                                        sobre..."</li>
+                                    <li><strong>Criar matéria completa</strong> - "crie uma matéria sobre divórcio entre
+                                        evangélicos"</li>
                                 </ul>
-                                <p style="margin-top: 10px; padding: 8px; background: #FEF3C7; border-radius: 6px; font-size: 12px;">
-                                    <i class="fas fa-lightbulb" style="color: #D97706;"></i> 
-                                    <strong>Dica:</strong> Seja específico! Se quiser alterar só o título, diga "altere o título". 
+                                <p
+                                    style="margin-top: 10px; padding: 8px; background: #FEF3C7; border-radius: 6px; font-size: 12px;">
+                                    <i class="fas fa-lightbulb" style="color: #D97706;"></i>
+                                    <strong>Dica:</strong> Seja específico! Se quiser alterar só o título, diga "altere
+                                    o título".
                                     Se quiser uma matéria completa, diga "crie uma matéria sobre..."
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div class="assistente-opcoes" style="margin-bottom: 12px; padding: 12px; background: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: #166534;">
+                    <div class="assistente-opcoes"
+                        style="margin-bottom: 12px; padding: 12px; background: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: #166534;">
                             <input type="checkbox" id="assistentePesquisarInternet" style="width: 18px; height: 18px;">
                             <i class="fas fa-globe" style="color: #22C55E;"></i>
-                            <span><strong>Pesquisar na internet</strong> para enriquecer a matéria com dados atualizados</span>
+                            <span><strong>Pesquisar na internet</strong> para enriquecer a matéria com dados
+                                atualizados</span>
                         </label>
                     </div>
                     <div class="assistente-input-area">
-                        <textarea id="assistenteInput" class="form-control" rows="2" 
+                        <textarea id="assistenteInput" class="form-control" rows="2"
                             placeholder="Digite o que você quer... Ex: 'crie uma matéria sobre divórcio entre evangélicos'"
                             onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); enviarMensagemAssistente(); }"></textarea>
                         <button type="button" class="btn-enviar-assistente" onclick="enviarMensagemAssistente()">
@@ -749,7 +769,8 @@
                             <option value="video">Videos</option>
                             <option value="audio">Audios</option>
                         </select>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSelectMode()" id="btnSelectMode">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSelectMode()"
+                            id="btnSelectMode">
                             <i class="fas fa-check-square"></i> Selecionar
                         </button>
                     </div>
@@ -1639,7 +1660,7 @@
         .media-item:hover {
             border-color: #3d8bfd;
             transform: scale(1.03);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .media-item.selected {
@@ -1676,7 +1697,7 @@
             left: 6px;
             width: 26px;
             height: 26px;
-            background: rgba(255,255,255,0.95);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1757,7 +1778,7 @@
         }
 
         .media-selection-bar .btn-delete {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
         }
 
@@ -1768,11 +1789,11 @@
         .media-selection-bar .btn-cancel {
             background: transparent;
             color: white;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         .media-selection-bar .btn-cancel:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .upload-area-modal {
@@ -2882,67 +2903,438 @@
         }
 
         /* Estilos do Modal Assistente IA */
-        .modal-assistente { max-width: 600px; }
-        .assistente-chat { display: flex; flex-direction: column; gap: 16px; }
-        .assistente-mensagens { max-height: 300px; overflow-y: auto; padding: 16px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; }
-        .mensagem-ia, .mensagem-usuario { display: flex; gap: 12px; }
-        .mensagem-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
-        .mensagem-ia .mensagem-avatar { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white; }
-        .mensagem-usuario .mensagem-avatar { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; }
-        .mensagem-conteudo { flex: 1; background: white; padding: 12px 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size:12px; }
-        .mensagem-conteudo p { margin: 0 0 8px 0; line-height: 1.5; }
-        .mensagem-conteudo p:last-child { margin-bottom: 0; }
-        .mensagem-conteudo ul { margin: 8px 0; padding-left: 20px; }
-        .mensagem-conteudo li { margin-bottom: 6px; }
-        .assistente-input-area { display: flex; gap: 10px; align-items: flex-end; }
-        .assistente-input-area textarea { flex: 1; resize: none; border-radius: 12px; }
-        .btn-enviar-assistente { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); color: white; border: none; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; font-size: 18px; }
-        .btn-enviar-assistente:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
-        .assistente-sugestoes { margin-top: 16px; padding: 16px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 12px; }
-        .assistente-sugestoes h4 { margin: 0 0 12px 0; color: #92400E; font-size: 14px; }
-        .sugestoes-lista { display: flex; flex-direction: column; gap: 8px; }
-        .sugestao-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
-        .sugestao-item:hover { border-color: #F59E0B; background: #FFFEF5; }
-        .sugestao-texto { flex: 1; font-size: 14px; }
-        .sugestao-campo { font-size: 11px; color: #6B7280; background: #F3F4F6; padding: 2px 8px; border-radius: 4px; }
-        .btn-aplicar-sugestao { background: #10B981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-        .btn-aplicar-sugestao:hover { background: #059669; }
+        .modal-assistente {
+            max-width: 600px;
+        }
+
+        .assistente-chat {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .assistente-mensagens {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 16px;
+            background: #F8FAFC;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mensagem-ia,
+        .mensagem-usuario {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mensagem-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .mensagem-ia .mensagem-avatar {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            color: white;
+        }
+
+        .mensagem-usuario .mensagem-avatar {
+            background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+            color: white;
+        }
+
+        .mensagem-conteudo {
+            flex: 1;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+        }
+
+        .mensagem-conteudo p {
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+
+        .mensagem-conteudo p:last-child {
+            margin-bottom: 0;
+        }
+
+        .mensagem-conteudo ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .mensagem-conteudo li {
+            margin-bottom: 6px;
+        }
+
+        .assistente-input-area {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .assistente-input-area textarea {
+            flex: 1;
+            resize: none;
+            border-radius: 12px;
+        }
+
+        .btn-enviar-assistente {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 18px;
+        }
+
+        .btn-enviar-assistente:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .assistente-sugestoes {
+            margin-top: 16px;
+            padding: 16px;
+            background: #FFFBEB;
+            border: 1px solid #FCD34D;
+            border-radius: 12px;
+        }
+
+        .assistente-sugestoes h4 {
+            margin: 0 0 12px 0;
+            color: #92400E;
+            font-size: 14px;
+        }
+
+        .sugestoes-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sugestao-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .sugestao-item:hover {
+            border-color: #F59E0B;
+            background: #FFFEF5;
+        }
+
+        .sugestao-texto {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .sugestao-campo {
+            font-size: 11px;
+            color: #6B7280;
+            background: #F3F4F6;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .btn-aplicar-sugestao {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-aplicar-sugestao:hover {
+            background: #059669;
+        }
 
         /* Botao Verificar Fatos */
-        .btn-factcheck { background: linear-gradient(135deg, #059669 0%, #10B981 100%); color: white; padding: 12px 16px; border-radius: 10px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); width: 100%; margin-top: 12px; }
-        .btn-factcheck:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35); background: linear-gradient(135deg, #047857 0%, #059669 100%); }
-        .btn-factcheck:active { transform: translateY(0); }
+        .btn-factcheck {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn-factcheck:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+        }
+
+        .btn-factcheck:active {
+            transform: translateY(0);
+        }
 
         /* Modal Verificar Fatos */
-        .modal-factcheck { max-width: 700px; }
-        .factcheck-loading { text-align: center; padding: 60px 20px; }
-        .factcheck-spinner { width: 50px; height: 50px; border: 4px solid #E5E7EB; border-top-color: #10B981; border-radius: 50%; animation: factcheck-spin 1s linear infinite; margin: 0 auto 20px; }
-        @keyframes factcheck-spin { to { transform: rotate(360deg); } }
-        .factcheck-loading p { font-size: 16px; font-weight: 600; color: #1F2937; margin: 0 0 8px 0; }
-        .factcheck-loading small { color: #6B7280; font-size: 13px; }
-        .factcheck-resultado { padding: 20px; }
-        .factcheck-header { display: flex; align-items: center; gap: 16px; padding: 20px; background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-radius: 12px; margin-bottom: 20px; }
-        .factcheck-score { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #059669 0%, #10B981 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .factcheck-score span { color: white; font-size: 24px; font-weight: 700; }
-        .factcheck-info h3 { font-size: 18px; font-weight: 700; color: #065F46; margin: 0 0 8px 0; }
-        .factcheck-info p { font-size: 14px; color: #047857; margin: 0; line-height: 1.5; }
-        .factcheck-fatos { margin-bottom: 20px; }
-        .factcheck-fatos h4 { font-size: 14px; font-weight: 700; color: #1F2937; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .fato-item { display: flex; gap: 12px; padding: 14px; background: #F9FAFB; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #10B981; }
-        .fato-item.pendente { border-left-color: #F59E0B; }
-        .fato-icon { width: 28px; height: 28px; border-radius: 50%; background: #D1FAE5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #059669; font-size: 12px; }
-        .fato-item.pendente .fato-icon { background: #FEF3C7; color: #D97706; }
-        .fato-content { flex: 1; }
-        .fato-content strong { display: block; font-size: 14px; color: #1F2937; margin-bottom: 4px; }
-        .fato-content p { font-size: 13px; color: #6B7280; margin: 0; line-height: 1.4; }
-        .factcheck-observacoes { background: #FEF3C7; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
-        .factcheck-observacoes h4 { font-size: 13px; font-weight: 700; color: #92400E; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; }
-        .factcheck-observacoes p { font-size: 13px; color: #78350F; margin: 0; line-height: 1.5; }
-        .factcheck-conclusao { background: #F0FDF4; border-radius: 10px; padding: 16px; border: 1px solid #BBF7D0; }
-        .factcheck-conclusao h4 { font-size: 13px; font-weight: 700; color: #166534; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; }
-        .factcheck-conclusao p { font-size: 13px; color: #15803D; margin: 0; line-height: 1.5; }
-        .factcheck-fontes { margin-top: 16px; padding-top: 16px; border-top: 1px solid #E5E7EB; font-size: 12px; color: #6B7280; }
-        @media (max-width: 768px) { .modal-factcheck { width: 100%; margin: 10px; } .factcheck-header { flex-direction: column; text-align: center; } .factcheck-score { width: 70px; height: 70px; } .factcheck-score span { font-size: 20px; } .fato-item { flex-direction: column; gap: 8px; } .fato-icon { align-self: flex-start; } }
+        .modal-factcheck {
+            max-width: 700px;
+        }
+
+        .factcheck-loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .factcheck-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #E5E7EB;
+            border-top-color: #10B981;
+            border-radius: 50%;
+            animation: factcheck-spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes factcheck-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .factcheck-loading p {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1F2937;
+            margin: 0 0 8px 0;
+        }
+
+        .factcheck-loading small {
+            color: #6B7280;
+            font-size: 13px;
+        }
+
+        .factcheck-resultado {
+            padding: 20px;
+        }
+
+        .factcheck-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .factcheck-score {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .factcheck-score span {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .factcheck-info h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #065F46;
+            margin: 0 0 8px 0;
+        }
+
+        .factcheck-info p {
+            font-size: 14px;
+            color: #047857;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .factcheck-fatos {
+            margin-bottom: 20px;
+        }
+
+        .factcheck-fatos h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1F2937;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .fato-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px;
+            background: #F9FAFB;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #10B981;
+        }
+
+        .fato-item.pendente {
+            border-left-color: #F59E0B;
+        }
+
+        .fato-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #D1FAE5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #059669;
+            font-size: 12px;
+        }
+
+        .fato-item.pendente .fato-icon {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+
+        .fato-content {
+            flex: 1;
+        }
+
+        .fato-content strong {
+            display: block;
+            font-size: 14px;
+            color: #1F2937;
+            margin-bottom: 4px;
+        }
+
+        .fato-content p {
+            font-size: 13px;
+            color: #6B7280;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .factcheck-observacoes {
+            background: #FEF3C7;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .factcheck-observacoes h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #92400E;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .factcheck-observacoes p {
+            font-size: 13px;
+            color: #78350F;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .factcheck-conclusao {
+            background: #F0FDF4;
+            border-radius: 10px;
+            padding: 16px;
+            border: 1px solid #BBF7D0;
+        }
+
+        .factcheck-conclusao h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #166534;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .factcheck-conclusao p {
+            font-size: 13px;
+            color: #15803D;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .factcheck-fontes {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        @media (max-width: 768px) {
+            .modal-factcheck {
+                width: 100%;
+                margin: 10px;
+            }
+
+            .factcheck-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .factcheck-score {
+                width: 70px;
+                height: 70px;
+            }
+
+            .factcheck-score span {
+                font-size: 20px;
+            }
+
+            .fato-item {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .fato-icon {
+                align-self: flex-start;
+            }
+        }
     </style>
 
     <!-- Cropper.js CSS e JS -->
@@ -3046,7 +3438,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
+                let conteudoCarregado = <% - JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
@@ -3452,7 +3844,7 @@
         function toggleSelectMode() {
             selectMode = !selectMode;
             const btn = document.getElementById('btnSelectMode');
-            
+
             if (selectMode) {
                 btn.innerHTML = '<i class="fas fa-times"></i> Cancelar';
                 btn.classList.remove('btn-secondary');
@@ -3475,11 +3867,11 @@
 
         function updateSelectedCount() {
             const count = selectedMedia.length;
-            
+
             // Atualizar texto na barra de selecao
             const countText = document.getElementById('selectedCountText');
             if (countText) countText.textContent = count;
-            
+
             // Mostrar/ocultar barra de selecao
             const selectionBar = document.getElementById('mediaSelectionBar');
             if (selectionBar) {
@@ -3497,10 +3889,10 @@
                 return;
             }
 
-            const confirmMsg = selectedMedia.length === 1 
-                ? 'Deseja excluir esta midia?' 
+            const confirmMsg = selectedMedia.length === 1
+                ? 'Deseja excluir esta midia?'
                 : `Deseja excluir ${selectedMedia.length} midias selecionadas?`;
-            
+
             if (!confirm(confirmMsg)) return;
 
             let successCount = 0;
@@ -4223,7 +4615,7 @@
 
             // Se tem texto manual, usar direto
             if (textoPostagem) {
-                btn.innerHTML = pesquisarInternet 
+                btn.innerHTML = pesquisarInternet
                     ? '<i class="fas fa-spinner fa-spin"></i> Gerando matéria e pesquisando na internet...'
                     : '<i class="fas fa-spinner fa-spin"></i> Gerando matéria do texto...';
 
@@ -4256,10 +4648,10 @@
 
             // Se tem apenas link, tentar extrair automaticamente
             // Detectar tipo de link para mensagem apropriada
-            const isVideo = linkUrl.includes('/reel') || linkUrl.includes('/reels') || 
-                           linkUrl.includes('/watch') || linkUrl.includes('fb.watch') ||
-                           linkUrl.includes('/videos/');
-            
+            const isVideo = linkUrl.includes('/reel') || linkUrl.includes('/reels') ||
+                linkUrl.includes('/watch') || linkUrl.includes('fb.watch') ||
+                linkUrl.includes('/videos/');
+
             let loadingMsg = '<i class="fas fa-spinner fa-spin"></i> ';
             if (isVideo && transcreverVideo) {
                 loadingMsg += '🎥 Transcrevendo vídeo';
@@ -4710,9 +5102,9 @@
             const input = document.getElementById('assistenteInput');
             const mensagem = input.value.trim();
             const pesquisarInternet = document.getElementById('assistentePesquisarInternet').checked;
-            
+
             if (!mensagem) return;
-            
+
             // Adicionar mensagem do usuário ao chat
             const mensagensDiv = document.getElementById('assistenteMensagens');
             const pesquisaInfo = pesquisarInternet ? ' <span style="color: #22C55E; font-size: 11px;"><i class="fas fa-globe"></i> com pesquisa</span>' : '';
@@ -4722,13 +5114,13 @@
                     <div class="mensagem-conteudo"><p>${mensagem}${pesquisaInfo}</p></div>
                 </div>
             `;
-            
+
             input.value = '';
             input.disabled = true;
-            
+
             // Adicionar indicador de carregamento
-            const loadingMsg = pesquisarInternet 
-                ? '<i class="fas fa-spinner fa-spin"></i> Pesquisando na internet e gerando matéria...' 
+            const loadingMsg = pesquisarInternet
+                ? '<i class="fas fa-spinner fa-spin"></i> Pesquisando na internet e gerando matéria...'
                 : '<i class="fas fa-spinner fa-spin"></i> Pensando...';
             mensagensDiv.innerHTML += `
                 <div class="mensagem-ia" id="msgLoading">
@@ -4737,13 +5129,13 @@
                 </div>
             `;
             mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
-            
+
             try {
                 // Coletar contexto atual do post
                 const tituloAtual = document.getElementById('titulo').value;
                 const descricaoAtual = document.getElementById('descricao').value;
                 const conteudoAtual = quill.getText();
-                
+
                 const response = await fetch('/api/ia/assistente', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4757,12 +5149,12 @@
                         }
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 // Remover loading
                 document.getElementById('msgLoading').remove();
-                
+
                 if (data.success) {
                     // Mostrar resposta da IA
                     mensagensDiv.innerHTML += `
@@ -4771,7 +5163,7 @@
                             <div class="mensagem-conteudo"><p>${data.resposta}</p></div>
                         </div>
                     `;
-                    
+
                     // Se tem sugestões, mostrar
                     if (data.sugestoes && data.sugestoes.length > 0) {
                         mostrarSugestoes(data.sugestoes);
@@ -4802,7 +5194,7 @@
         function mostrarSugestoes(sugestoes) {
             const sugestoesDiv = document.getElementById('assistenteSugestoes');
             const listaDiv = document.getElementById('sugestoesLista');
-            
+
             listaDiv.innerHTML = sugestoes.map((s, i) => {
                 // Para campo "todos", mostrar preview do título
                 let textoPreview = s.texto;
@@ -4818,7 +5210,7 @@
                     </div>
                 `;
             }).join('');
-            
+
             sugestoesDiv.style.display = 'block';
             window.sugestoesAtuais = sugestoes;
         }
@@ -4826,8 +5218,8 @@
         function aplicarSugestao(index) {
             const sugestao = window.sugestoesAtuais[index];
             if (!sugestao) return;
-            
-            switch(sugestao.campo) {
+
+            switch (sugestao.campo) {
                 case 'titulo':
                     document.getElementById('titulo').value = sugestao.texto;
                     break;
@@ -4843,9 +5235,9 @@
                     if (sugestao.conteudo) quill.root.innerHTML = sugestao.conteudo;
                     break;
             }
-            
+
             document.getElementById('assistenteSugestoes').style.display = 'none';
-            
+
             const mensagensDiv = document.getElementById('assistenteMensagens');
             mensagensDiv.innerHTML += `
                 <div class="mensagem-ia">
@@ -4904,7 +5296,7 @@
             const fatos = data.fatos || [];
             const fontes = data.fontes || [];
             const numFontes = data.fontesConsultadas || fontes.length || 0;
-            
+
             let fatosHtml = '';
             fatos.forEach(fato => {
                 fatosHtml += '<div class="fato-item ' + (fato.status === 'pendente' ? 'pendente' : '') + '"><div class="fato-icon"><i class="fas ' + (fato.status === 'confirmado' ? 'fa-check' : 'fa-question') + '"></i></div><div class="fato-content"><strong>' + fato.afirmacao + '</strong><p>' + (fato.explicacao || '') + '</p></div></div>';
@@ -4928,7 +5320,7 @@
             document.getElementById('modalVerificarFatos').style.display = 'none';
         }
 
-        document.getElementById('modalVerificarFatos').addEventListener('click', function(e) {
+        document.getElementById('modalVerificarFatos').addEventListener('click', function (e) {
             if (e.target === this) fecharModalVerificarFatos();
         });
 
