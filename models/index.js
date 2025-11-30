@@ -28,13 +28,6 @@ if (process.env.DB_NAME && process.env.DB_USER && process.env.DB_PASSWORD) {
         timestamps: true,
         underscored: true,
         underscoredAll: true
-      },
-      // Pool de conexões para melhor performance
-      pool: {
-        max: 10,      // Máximo de conexões no pool
-        min: 2,       // Mínimo de conexões mantidas
-        acquire: 30000, // Tempo máximo para adquirir conexão (ms)
-        idle: 10000   // Tempo máximo de inatividade antes de liberar (ms)
       }
     }
   );
