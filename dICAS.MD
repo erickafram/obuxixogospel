@@ -114,3 +114,18 @@ pm2 logs obuxixogospel --lines 50
 pm2 monit
 
 
+
+atualizar depois
+Show, agora quero um funcionalidade nova.
+vamos criar na dashbaord um nenu algo de criar materia atraves de video.
+ou seja esse modulo tera que ter onde o usuario coloque o link do youtube e a ia consegue baixar o video, transcrever o video e dar várias materias atraves do video ou seja a ia consegue gerar varias materias do video que foi transcrevido.
+veja como fazer esse modulo, lembrando que quero que siga a risca quando a ia for escrever a materia gerar igual temos no /dashboard/posts/novo em <button type="button" class="ai-dropdown-item" onclick="corrigirConteudo('reescrever')">
+                                                    <i class="fas fa-sync-alt"></i> Reescrever Matéria (Estilo G1)
+                                                </button>
+
+quero que consiga gerar varias materias de um unico video e publicar para mim no post como rascunho.
+
+
+se tiver como transcrever sem baixar o video melhor ainda mas veja com ofazer isso e pesquise na internet se precisar
+
+

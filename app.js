@@ -561,8 +561,7 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
-      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating,
-      metaTitulo, metaDescricao, urlAmigavelCustom } = req.body;
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
 
     console.log('Dados recebidos:', { titulo, descricao, categoria, imagem, rascunho });
 
@@ -586,35 +585,20 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       }
     }
 
-    // Gerar URL amigável (customizada ou automática)
+    // Gerar URL amigável base usando slugify
     const slugify = require('slugify');
-    let urlAmigavel;
-    let slugCustomizado = false;
-
-    if (urlAmigavelCustom && urlAmigavelCustom.trim()) {
-      // Usar slug customizado
-      urlAmigavel = slugify(urlAmigavelCustom.trim(), {
-        lower: true,
-        strict: true,
-        locale: 'pt',
-        remove: /[*+~.()'"!:@]/g
-      });
-      slugCustomizado = true;
-    } else {
-      // Gerar automaticamente do título
-      urlAmigavel = slugify(titulo, {
-        lower: true,
-        strict: true,
-        locale: 'pt',
-        remove: /[*+~.()'"!:@]/g
-      });
-    }
+    let urlAmigavelBase = slugify(titulo, {
+      lower: true,
+      strict: true,
+      locale: 'pt',
+      remove: /[*+~.()'"!:@]/g
+    });
 
     // Verificar se já existe e adicionar sufixo apenas se necessário
+    let urlAmigavel = urlAmigavelBase;
     let contador = 1;
-    const urlOriginal = urlAmigavel;
     while (await Article.findOne({ where: { urlAmigavel } })) {
-      urlAmigavel = `${urlOriginal}-${contador}`;
+      urlAmigavel = `${urlAmigavelBase}-${contador}`;
       contador++;
     }
 
@@ -693,10 +677,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       dataPublicacao: dataFinalParaSalvar,
       visualizacoes: 0,
       urlAmigavel,
-      factCheck: factCheckData,
-      metaTitulo: metaTitulo || null,
-      metaDescricao: metaDescricao || null,
-      slugCustomizado: slugCustomizado
+      factCheck: factCheckData
     });
 
     console.log('Post criado com sucesso:', article.id);
@@ -810,8 +791,7 @@ app.get('/dashboard/posts/editar/:id', isAuthenticated, async (req, res) => {
 app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
-      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating,
-      metaTitulo, metaDescricao, urlAmigavelCustom } = req.body;
+      isFactCheck, factCheckClaim, factCheckAuthor, factCheckAuthorType, factCheckRating } = req.body;
 
     const article = await Article.findByPk(req.params.id);
 
@@ -821,85 +801,6 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
         return res.status(404).json({ success: false, message: errorMsg });
       }
       return res.status(404).send(errorMsg);
-    }
-
-    // Capturar URL antiga para criar redirecionamento se necessário
-    const urlAntigaCompleta = `/${article.categoria}/${article.urlAmigavel}`;
-    let urlAmigavelNova = article.urlAmigavel;
-    let slugCustomizado = article.slugCustomizado || false;
-    const slugify = require('slugify');
-
-    // CASO 1: URL foi alterada manualmente no campo SEO
-    if (urlAmigavelCustom && urlAmigavelCustom.trim() && urlAmigavelCustom.trim() !== article.urlAmigavel) {
-      const novoSlug = slugify(urlAmigavelCustom.trim(), {
-        lower: true,
-        strict: true,
-        locale: 'pt',
-        remove: /[*+~.()'"!:@]/g
-      });
-
-      // Se o slug mudou, verificar se já existe
-      if (novoSlug !== article.urlAmigavel) {
-        const existente = await Article.findOne({
-          where: {
-            urlAmigavel: novoSlug,
-            id: { [sequelize.Sequelize.Op.ne]: article.id }
-          }
-        });
-
-        if (existente) {
-          const errorMsg = 'Esta URL já está em uso por outro artigo';
-          if (req.headers.accept && req.headers.accept.includes('application/json')) {
-            return res.status(400).json({ success: false, message: errorMsg });
-          }
-          return res.status(400).send(errorMsg);
-        }
-
-        urlAmigavelNova = novoSlug;
-        slugCustomizado = true;
-        console.log(`🔗 URL alterada manualmente: ${article.urlAmigavel} → ${urlAmigavelNova}`);
-      }
-    }
-    // CASO 2: Título foi alterado - gerar nova URL automaticamente (se não foi customizado)
-    else if (titulo && titulo.trim() !== article.titulo && !slugCustomizado) {
-      const novoSlugDoTitulo = slugify(titulo.trim(), {
-        lower: true,
-        strict: true,
-        locale: 'pt',
-        remove: /[*+~.()'"!:@]/g
-      });
-
-      // Só atualiza se o novo slug for diferente do atual
-      if (novoSlugDoTitulo !== article.urlAmigavel) {
-        // Verificar se já existe outro artigo com essa URL
-        let slugFinal = novoSlugDoTitulo;
-        let contador = 1;
-        let existente = await Article.findOne({
-          where: {
-            urlAmigavel: slugFinal,
-            id: { [sequelize.Sequelize.Op.ne]: article.id }
-          }
-        });
-
-        // Se existir, adicionar sufixo numérico
-        while (existente) {
-          slugFinal = `${novoSlugDoTitulo}-${contador}`;
-          contador++;
-          existente = await Article.findOne({
-            where: {
-              urlAmigavel: slugFinal,
-              id: { [sequelize.Sequelize.Op.ne]: article.id }
-            }
-          });
-        }
-
-        urlAmigavelNova = slugFinal;
-        console.log(`🔗 URL atualizada pelo título: ${article.urlAmigavel} → ${urlAmigavelNova}`);
-      }
-    }
-    // CASO 3: Categoria foi alterada - manter mesma URL mas criar redirecionamento
-    else if (categoria && categoria !== article.categoria) {
-      console.log(`📁 Categoria alterada: ${article.categoria} → ${categoria}`);
     }
 
     // Processar data de publicação
@@ -955,9 +856,6 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       console.log('📋 Fact-check atualizado:', factCheckData);
     }
 
-    // Guardar URL antiga antes de atualizar
-    const urlAntigaParaRedirect = article.urlAmigavel;
-
     await article.update({
       titulo,
       descricao: descricao || article.descricao,
@@ -969,48 +867,8 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       publicado: statusPublicado,
       destaque: destaque === 'true',
       dataPublicacao: dataFinalParaSalvar,
-      factCheck: factCheckData,
-      urlAmigavel: urlAmigavelNova,
-      metaTitulo: metaTitulo || null,
-      metaDescricao: metaDescricao || null,
-      slugCustomizado: slugCustomizado
+      factCheck: factCheckData
     });
-
-    // Criar redirecionamento automático se a URL ou categoria mudou
-    const categoriaFinal = categoria || article.categoria;
-    const urlNovaCompleta = `/${categoriaFinal}/${urlAmigavelNova}`;
-    const urlMudou = urlAmigavelNova !== urlAntigaParaRedirect;
-    const categoriaMudou = categoriaFinal !== article.categoria;
-
-    if (urlMudou || categoriaMudou) {
-      try {
-        // Verificar se já existe um redirecionamento para essa URL antiga
-        const redirectExistente = await Redirect.findOne({ where: { urlAntiga: urlAntigaCompleta } });
-        
-        if (redirectExistente) {
-          // Atualizar o redirecionamento existente
-          await redirectExistente.update({
-            urlNova: urlNovaCompleta,
-            descricao: `Redirecionamento atualizado ao alterar ${urlMudou ? 'URL' : 'categoria'} do artigo "${titulo}"`
-          });
-          console.log(`🔄 Redirecionamento atualizado: ${urlAntigaCompleta} → ${urlNovaCompleta}`);
-        } else {
-          // Criar novo redirecionamento
-          await Redirect.create({
-            urlAntiga: urlAntigaCompleta,
-            urlNova: urlNovaCompleta,
-            tipoRedirecionamento: '301',
-            ativo: true,
-            descricao: `Redirecionamento automático: ${urlMudou ? 'título alterado' : 'categoria alterada'} - "${titulo}"`,
-            criadoPor: req.session.userId
-          });
-          console.log(`✅ Redirecionamento 301 criado: ${urlAntigaCompleta} → ${urlNovaCompleta}`);
-        }
-      } catch (redirectError) {
-        console.error('Erro ao criar redirecionamento:', redirectError);
-        // Não bloqueia a atualização do artigo
-      }
-    }
 
     // Processos em background (não bloqueiam a resposta)
     if (statusPublicado) {
@@ -2451,22 +2309,6 @@ app.get('/:categorySlug/:articleSlug', CacheService.middleware(300), async (req,
 // Tratamento de erros 404
 app.use(async (req, res) => {
   try {
-    // PRIMEIRO: Verificar se existe redirecionamento na tabela redirects
-    const urlPath = req.path;
-    const redirectFromDb = await Redirect.findOne({
-      where: { urlAntiga: urlPath, ativo: true }
-    });
-
-    if (redirectFromDb) {
-      // Registrar acesso ao redirecionamento
-      try {
-        await redirectFromDb.registrarAcesso();
-      } catch (e) { /* ignora erro de registro */ }
-      
-      console.log(`🔀 Redirecionamento encontrado: ${urlPath} → ${redirectFromDb.urlNova}`);
-      return res.redirect(parseInt(redirectFromDb.tipoRedirecionamento) || 301, redirectFromDb.urlNova);
-    }
-
     // Verificar configuração de redirecionamento 404
     const redirectEnabled = await SystemConfig.findOne({
       where: { chave: '404_redirect_enabled' }
