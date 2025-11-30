@@ -65,13 +65,14 @@
 
                     <div class="form-group">
                         <label for="statusPublicacao">
-                            <i class="fas fa-eye"></i> Status da Publicação
+                            <i class="fas fa-eye"></i> Destino das Matérias
                         </label>
                         <select id="statusPublicacao" name="statusPublicacao" class="form-control">
-                            <option value="rascunho" selected>📝 Rascunho (revisar antes de publicar)</option>
-                            <option value="publicado">✅ Publicado (publicar imediatamente)</option>
+                            <option value="rascunho" selected>📝 Salvar como Rascunho</option>
+                            <option value="publicado">✅ Publicar Imediatamente</option>
+                            <option value="exportar">📥 Exportar para Arquivo (para importar no servidor)</option>
                         </select>
-                        <small>Recomendamos salvar como rascunho para revisar o conteúdo antes de publicar</small>
+                        <small>Use "Exportar para Arquivo" para gerar localmente e importar no servidor de produção</small>
                     </div>
 
                     <div class="alert alert-info">
@@ -186,6 +187,9 @@
                 <div class="action-buttons-container">
                     <button onclick="voltarPasso1()" class="btn btn-secondary">
                         <i class="fas fa-home"></i> Novo Vídeo
+                    </button>
+                    <button onclick="exportarMateriasGeradas()" class="btn btn-success" id="btnExportarGeradas">
+                        <i class="fas fa-download"></i> Exportar para Arquivo
                     </button>
                     <a href="/dashboard/posts" class="btn btn-primary">
                         <i class="fas fa-list"></i> Ver Todos os Posts
@@ -553,6 +557,8 @@ async function transcreverVideo(event) {
     const maxArticles = parseInt(document.getElementById('maxArticles').value);
     const statusPublicacao = document.getElementById('statusPublicacao').value;
     
+    console.log('Status de publicação selecionado:', statusPublicacao);
+    
     if (!videoUrl) {
         alert('Por favor, insira a URL do vídeo');
         return;
@@ -625,31 +631,73 @@ async function transcreverVideo(event) {
         const statusText = statusPublicacao === 'publicado' ? 'Publicando matérias...' : 'Salvando matérias como rascunho...';
         updateProgress(80, statusText);
         
-        // 4. Salvar matérias
-        const saveResponse = await fetch('/api/youtube/save-articles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                articles: articlesData.articles,
-                categoria: categoria,
+        // 4. Salvar ou Exportar matérias
+        console.log('Verificando destino:', statusPublicacao, '| É exportar?', statusPublicacao === 'exportar');
+        
+        if (statusPublicacao === 'exportar') {
+            // Exportar para arquivo JSON
+            console.log('Iniciando exportação para arquivo...');
+            updateProgress(90, 'Gerando arquivo de exportação...');
+            
+            const exportData = {
+                exportedAt: new Date().toISOString(),
+                videoUrl: videoUrl,
                 videoId: currentTranscript.videoId,
-                publicado: statusPublicacao === 'publicado'
-            })
-        });
-        
-        const saveData = await saveResponse.json();
-        
-        if (!saveData.success) {
-            throw new Error(saveData.message || 'Erro ao salvar matérias');
+                categoria: categoria,
+                articles: articlesData.articles.map(article => ({
+                    titulo: article.titulo,
+                    descricao: article.descricao,
+                    conteudo: article.conteudo,
+                    categoria: categoria,
+                    autor: 'Redação Obuxixo Gospel'
+                }))
+            };
+            
+            // Criar e baixar arquivo
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `youtube-materias-${currentTranscript.videoId}-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            updateStatus('save', 'done');
+            updateProgress(100, 'Arquivo exportado com sucesso!');
+            
+            // Mostrar mensagem de sucesso
+            setTimeout(() => {
+                showExportSuccess(articlesData.articles.length, currentTranscript.videoId);
+            }, 500);
+        } else {
+            // Salvar no banco de dados
+            const saveResponse = await fetch('/api/youtube/save-articles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    articles: articlesData.articles,
+                    categoria: categoria,
+                    videoId: currentTranscript.videoId,
+                    publicado: statusPublicacao === 'publicado'
+                })
+            });
+            
+            const saveData = await saveResponse.json();
+            
+            if (!saveData.success) {
+                throw new Error(saveData.message || 'Erro ao salvar matérias');
+            }
+            
+            updateStatus('save', 'done');
+            updateProgress(100, 'Concluído!');
+            
+            // Mostrar resultados
+            setTimeout(() => {
+                showResults(saveData.savedArticles);
+            }, 500);
         }
-        
-        updateStatus('save', 'done');
-        updateProgress(100, 'Concluído!');
-        
-        // Mostrar resultados
-        setTimeout(() => {
-            showResults(saveData.savedArticles);
-        }, 500);
         
     } catch (error) {
         console.error('Erro:', error);
@@ -773,7 +821,83 @@ function showResults(articles) {
         ${errorCount > 0 ? `<span style="color: #ef4444; margin-left: 12px;"><i class="fas fa-times-circle"></i> ${errorCount} erro(s)</span>` : ''}
     `;
     
+    // Guardar artigos para possível exportação posterior
+    window.lastGeneratedArticles = articles.filter(a => !a.error);
+    
     showStep(4);
+}
+
+// Função para exportar matérias já geradas
+async function exportarMateriasGeradas() {
+    if (!window.lastGeneratedArticles || window.lastGeneratedArticles.length === 0) {
+        alert('Nenhuma matéria disponível para exportar');
+        return;
+    }
+    
+    const btn = document.getElementById('btnExportarGeradas');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando dados...';
+    btn.disabled = true;
+    
+    try {
+        // Buscar conteúdo completo das matérias do banco
+        const articleIds = window.lastGeneratedArticles.map(a => a.id).filter(id => id);
+        
+        let articlesToExport = [];
+        
+        if (articleIds.length > 0) {
+            // Buscar dados completos do banco
+            const response = await fetch('/api/articles/export-by-ids', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: articleIds })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                articlesToExport = data.articles;
+            } else {
+                throw new Error(data.message || 'Erro ao buscar matérias');
+            }
+        } else {
+            // Usar dados em memória se não tiver IDs
+            articlesToExport = window.lastGeneratedArticles;
+        }
+        
+        const categoria = document.getElementById('categoria').value;
+        
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            videoUrl: document.getElementById('videoUrl').value || 'N/A',
+            videoId: currentTranscript?.videoId || 'unknown',
+            categoria: categoria,
+            articles: articlesToExport.map(article => ({
+                titulo: article.titulo,
+                descricao: article.descricao,
+                conteudo: article.conteudo || '',
+                categoria: article.categoria || categoria,
+                autor: article.autor || 'Redação Obuxixo Gospel'
+            }))
+        };
+        
+        // Criar e baixar arquivo
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `youtube-materias-${exportData.videoId}-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ ${articlesToExport.length} matéria(s) exportada(s) com sucesso!\n\nImporte o arquivo no servidor de produção em:\nDashboard → Posts → Importar Matérias`);
+    } catch (error) {
+        alert('Erro ao exportar: ' + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 function voltarPasso1() {
@@ -781,6 +905,36 @@ function voltarPasso1() {
     currentTopics = [];
     document.getElementById('videoUrl').value = '';
     showStep(1);
+}
+
+function showExportSuccess(count, videoId) {
+    const container = document.getElementById('materiasGeradas');
+    container.innerHTML = `
+        <div class="alert alert-success" style="text-align: center; padding: 40px;">
+            <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+            <h3 style="margin-bottom: 12px;">Arquivo Exportado com Sucesso!</h3>
+            <p style="margin-bottom: 20px;">
+                <strong>${count} matéria(s)</strong> foram exportadas para um arquivo JSON.<br>
+                O download deve ter iniciado automaticamente.
+            </p>
+            <div class="alert alert-info" style="text-align: left; max-width: 600px; margin: 0 auto;">
+                <strong><i class="fas fa-info-circle"></i> Próximos passos:</strong>
+                <ol style="margin: 10px 0 0 20px;">
+                    <li>Acesse o servidor de produção</li>
+                    <li>Vá em <strong>Dashboard → Posts</strong></li>
+                    <li>Clique em <strong>"Importar Matérias"</strong></li>
+                    <li>Faça upload do arquivo JSON baixado</li>
+                    <li>As matérias serão importadas como rascunho</li>
+                </ol>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('resultInfo').innerHTML = `
+        <span style="color: #22c55e;"><i class="fas fa-download"></i> ${count} exportada(s)</span>
+    `;
+    
+    showStep(4);
 }
 </script>
 

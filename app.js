@@ -2533,6 +2533,109 @@ app.post('/api/youtube/save-articles', isAuthenticated, async (req, res) => {
   }
 });
 
+// API: Buscar artigos por IDs para exportação
+app.post('/api/articles/export-by-ids', isAuthenticated, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'IDs são obrigatórios' });
+    }
+    
+    const articles = await Article.findAll({
+      where: { id: ids },
+      attributes: ['id', 'titulo', 'descricao', 'conteudo', 'categoria', 'autor']
+    });
+    
+    res.json({ success: true, articles });
+  } catch (error) {
+    console.error('Erro ao buscar artigos:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// API: Importar matérias de arquivo JSON exportado
+app.post('/api/articles/import', isAuthenticated, async (req, res) => {
+  try {
+    const { articles, categoria, videoId } = req.body;
+    const slugify = require('slugify');
+    
+    if (!articles || !Array.isArray(articles) || articles.length === 0) {
+      return res.status(400).json({ success: false, message: 'Nenhuma matéria para importar' });
+    }
+    
+    console.log(`📥 Importando ${articles.length} matéria(s) do arquivo...`);
+    
+    let imported = 0;
+    const errors = [];
+    
+    for (const article of articles) {
+      try {
+        // Gerar slug único
+        let baseSlug = slugify(article.titulo, {
+          lower: true,
+          strict: true,
+          locale: 'pt',
+          remove: /[*+~.()'"!:@]/g
+        });
+        
+        let slug = baseSlug;
+        let counter = 1;
+        
+        // Verificar se slug já existe
+        while (await Article.findOne({ where: { urlAmigavel: slug } })) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+        
+        // Usar thumbnail do YouTube como imagem se disponível
+        let imagemUrl = '/images/placeholder-youtube.jpg';
+        if (videoId) {
+          imagemUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        }
+        
+        // Truncar campos SEO
+        const metaTitulo = article.titulo ? article.titulo.substring(0, 70) : null;
+        const metaDescricao = article.descricao ? article.descricao.substring(0, 160) : null;
+        
+        // Criar artigo como rascunho
+        await Article.create({
+          titulo: article.titulo,
+          descricao: article.descricao,
+          conteudo: article.conteudo,
+          imagem: imagemUrl,
+          categoria: article.categoria || categoria || 'noticias',
+          urlAmigavel: slug,
+          publicado: false, // Sempre como rascunho na importação
+          destaque: false,
+          autor: article.autor || req.session.user?.nome || 'Redação Obuxixo Gospel',
+          dataPublicacao: new Date(),
+          metaTitulo: metaTitulo,
+          metaDescricao: metaDescricao
+        });
+        
+        imported++;
+        console.log(`✅ Importada: ${article.titulo}`);
+      } catch (saveError) {
+        console.error(`❌ Erro ao importar "${article.titulo}":`, saveError.message);
+        errors.push({ titulo: article.titulo, error: saveError.message });
+      }
+    }
+    
+    console.log(`📥 Importação concluída: ${imported} de ${articles.length} matéria(s)`);
+    
+    res.json({ 
+      success: true, 
+      imported, 
+      total: articles.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('❌ Erro na importação:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Notificações
 const notificationController = require('./controllers/notificationController');
 app.get('/api/notifications/unread', isAuthenticated, notificationController.getUnreadNotifications);

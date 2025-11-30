@@ -10,6 +10,9 @@
                 <button id="btnDeleteSelected" class="btn btn-danger" style="display: none;" onclick="deleteSelected()">
                     <i class="fas fa-trash"></i> Excluir Selecionados
                 </button>
+                <button class="btn btn-secondary" onclick="openImportModal()">
+                    <i class="fas fa-file-import"></i> Importar Matérias
+                </button>
                 <a href="/dashboard/posts/novo" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Novo Post
                 </a>
@@ -1000,6 +1003,206 @@
 
             window.location.href = `${window.location.pathname}?${params.toString()}`;
         }
+
+        // Modal de Importação
+        function openImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            document.getElementById('importFile').value = '';
+            document.getElementById('importPreview').innerHTML = '';
+            document.getElementById('btnConfirmImport').style.display = 'none';
+        }
+
+        let importData = null;
+
+        function previewImport() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Selecione um arquivo JSON');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    importData = JSON.parse(e.target.result);
+                    
+                    if (!importData.articles || !Array.isArray(importData.articles)) {
+                        throw new Error('Arquivo inválido: não contém matérias');
+                    }
+
+                    const preview = document.getElementById('importPreview');
+                    preview.innerHTML = `
+                        <div class="import-info">
+                            <p><strong>Arquivo:</strong> ${file.name}</p>
+                            <p><strong>Exportado em:</strong> ${new Date(importData.exportedAt).toLocaleString('pt-BR')}</p>
+                            <p><strong>Vídeo:</strong> ${importData.videoId || 'N/A'}</p>
+                            <p><strong>Categoria:</strong> ${importData.categoria || 'noticias'}</p>
+                            <hr>
+                            <p><strong>${importData.articles.length} matéria(s) para importar:</strong></p>
+                            <ul class="import-articles-list">
+                                ${importData.articles.map((a, i) => `
+                                    <li>
+                                        <strong>${i + 1}.</strong> ${a.titulo}
+                                        <br><small style="color: #666;">${a.descricao?.substring(0, 100)}...</small>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    
+                    document.getElementById('btnConfirmImport').style.display = 'inline-flex';
+                } catch (error) {
+                    alert('Erro ao ler arquivo: ' + error.message);
+                    importData = null;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function confirmImport() {
+            if (!importData) {
+                alert('Nenhum arquivo carregado');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmImport');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
+
+            try {
+                const response = await fetch('/api/articles/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(importData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Sucesso! ${result.imported} matéria(s) importada(s) como rascunho.`);
+                    closeImportModal();
+                    window.location.reload();
+                } else {
+                    throw new Error(result.message || 'Erro ao importar');
+                }
+            } catch (error) {
+                alert('Erro: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmar Importação';
+            }
+        }
     </script>
 
-    <%- include('../partials/footer') %>
+    <!-- Modal de Importação -->
+    <div id="importModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-import"></i> Importar Matérias do YouTube</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="importFile">
+                        <i class="fas fa-upload"></i> Selecione o arquivo JSON exportado
+                    </label>
+                    <input type="file" id="importFile" accept=".json" class="form-control" onchange="previewImport()">
+                    <small>Arquivo gerado pela opção "Exportar para Arquivo" na página de YouTube</small>
+                </div>
+                <div id="importPreview" style="margin-top: 20px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeImportModal()">Cancelar</button>
+                <button id="btnConfirmImport" class="btn btn-primary" onclick="confirmImport()" style="display: none;">
+                    <i class="fas fa-check"></i> Confirmar Importação
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .import-info {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .import-info p {
+            margin: 8px 0;
+        }
+        .import-info hr {
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .import-articles-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0 0;
+        }
+        .import-articles-list li {
+            padding: 12px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        </style>
+
+        <%- include('../partials/footer') %>
