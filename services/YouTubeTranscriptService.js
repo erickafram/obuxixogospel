@@ -46,12 +46,9 @@ function loadCookiesFromFile() {
   }
 }
 
-// User agents para rotação
+// User agents - Forçando Firefox pois os cookies foram exportados dele
 const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0'
 ];
 
 class YouTubeTranscriptService {
@@ -243,32 +240,48 @@ class YouTubeTranscriptService {
       
       console.log(`📝 Legenda encontrada: ${selectedTrack.languageCode}`);
       
-      // Baixar o arquivo de legendas (com cookies!)
-      // Adicionar fmt=json3 para formato JSON mais confiável
       let captionUrl = selectedTrack.baseUrl;
-      if (!captionUrl.includes('fmt=')) {
-        captionUrl += (captionUrl.includes('?') ? '&' : '?') + 'fmt=json3';
-      }
-      console.log(`📥 Baixando legendas de: ${captionUrl.substring(0, 100)}...`);
+      // Tentar primeiro COM fmt=json3
+      let urlToTry = captionUrl + (captionUrl.includes('?') ? '&' : '?') + 'fmt=json3';
       
-      const captionResponse = await axios.get(captionUrl, {
+      console.log(`📥 Baixando legendas de: ${urlToTry.substring(0, 100)}...`);
+      
+      let captionResponse = await axios.get(urlToTry, {
         headers: {
           'User-Agent': userAgent,
           'Cookie': cookies,
-          'Accept': 'application/json, text/plain, */*',
+          // Remover headers específicos do cliente que podem conflitar com o cookie de navegador
+          'Accept': '*/*',
           'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
           'Referer': `https://www.youtube.com/watch?v=${videoId}`,
-          'Origin': 'https://www.youtube.com',
-          'X-YouTube-Client-Name': '1',
-          'X-YouTube-Client-Version': '2.20231219.04.00'
+          'Origin': 'https://www.youtube.com'
         },
         timeout: 15000,
-        validateStatus: () => true // Aceitar qualquer status para debug
+        validateStatus: () => true
       });
       
-      console.log(`📄 Status da resposta: ${captionResponse.status}`);
+      console.log(`📄 Status da resposta: ${captionResponse.status}, tamanho: ${String(captionResponse.data).length}`);
       
-      // Parsear XML das legendas
+      // Se falhou ou vazio, tentar SEM fmt=json3 (XML padrão)
+      if (captionResponse.status !== 200 || !captionResponse.data || String(captionResponse.data).length === 0) {
+        console.log('⚠️ Resposta vazia ou erro com JSON3, tentando formato XML padrão...');
+        urlToTry = captionUrl; // URL original sem fmt=json3
+        
+        captionResponse = await axios.get(urlToTry, {
+          headers: {
+            'User-Agent': userAgent,
+            'Cookie': cookies,
+            'Accept': '*/*',
+            'Referer': `https://www.youtube.com/watch?v=${videoId}`,
+            'Origin': 'https://www.youtube.com'
+          },
+          timeout: 15000,
+          validateStatus: () => true
+        });
+        console.log(`📄 Status da resposta XML: ${captionResponse.status}, tamanho: ${String(captionResponse.data).length}`);
+      }
+
+      // Parsear XML ou JSON das legendas
       const captionXml = captionResponse.data;
       console.log(`📄 Resposta das legendas: ${typeof captionXml}, tamanho: ${String(captionXml).length}`);
       
