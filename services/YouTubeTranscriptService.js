@@ -308,13 +308,18 @@ class YouTubeTranscriptService {
   static async getTranscriptViaInvidious(videoId) {
     console.log('🔄 Tentando método via Invidious API...');
     
-    // Lista de instâncias Invidious para tentar
+    // Lista expandida de instâncias Invidious para tentar
     const instances = [
+      'https://invidious.drgns.space',
+      'https://inv.bp.projectsegfau.lt',
       'https://inv.tux.pizza',
       'https://invidious.flokinet.to',
       'https://vid.puffyan.us',
       'https://invidious.projectsegfau.lt',
-      'https://inv.zzls.xyz'
+      'https://inv.zzls.xyz',
+      'https://invidious.protokolla.fi',
+      'https://invidious.slipfox.xyz',
+      'https://yewtu.be'
     ];
     
     for (const instance of instances) {
@@ -322,7 +327,7 @@ class YouTubeTranscriptService {
         console.log(`   Tentando instância: ${instance}`);
         
         const response = await axios.get(`${instance}/api/v1/captions/${videoId}`, {
-          timeout: 10000
+          timeout: 15000 // Aumentado para 15s
         });
         
         const captions = response.data.captions;
