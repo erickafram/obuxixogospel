@@ -2249,11 +2249,29 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         const dataPublicacao = new Date(dataBase);
         dataPublicacao.setHours(dataPublicacao.getHours() + i); // +1 hora para cada matéria
 
+        // Adicionar embed do YouTube no final do conteúdo (com lazy loading)
+        let conteudoFinal = materia.conteudoHTML;
+        if (transcricaoResult.videoId) {
+          const embedYoutube = `
+<h3>Assista ao vídeo</h3>
+<div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 20px 0;">
+  <iframe 
+    src="https://www.youtube.com/embed/${transcricaoResult.videoId}" 
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+    allowfullscreen
+    loading="lazy"
+    title="Vídeo relacionado à matéria">
+  </iframe>
+</div>`;
+          conteudoFinal += embedYoutube;
+        }
+
         // Criar artigo AGENDADO (publicado=false para revisão)
         const article = await Article.create({
           titulo: materia.titulo,
           descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
-          conteudo: materia.conteudoHTML,
+          conteudo: conteudoFinal,
           imagem: transcricaoResult.videoId ? 
             `https://img.youtube.com/vi/${transcricaoResult.videoId}/maxresdefault.jpg` : 
             '/images/default-post.jpg',
