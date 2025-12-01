@@ -558,6 +558,28 @@ app.get('/dashboard/posts/novo', isAuthenticated, async (req, res) => {
   }
 });
 
+// Rota para criar matérias a partir de vídeo do YouTube
+app.get('/dashboard/posts/video-novo', isAuthenticated, async (req, res) => {
+  try {
+    const { Category } = require('./models');
+    const categories = await Category.findAll({
+      order: [['nome', 'ASC']]
+    });
+
+    res.render('dashboard/posts/video-form', {
+      user: {
+        nome: req.session.userName,
+        email: req.session.userEmail,
+        role: req.session.userRole
+      },
+      categories: categories
+    });
+  } catch (error) {
+    console.error('Erro ao carregar página de vídeo:', error);
+    res.status(500).send('Erro ao carregar página');
+  }
+});
+
 app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, res) => {
   try {
     const { titulo, descricao, conteudo, imagem, categoria, subcategoria, autor, publicado, destaque, rascunho, dataPublicacao,
@@ -2114,6 +2136,133 @@ app.get('/api/ia/status', async (req, res) => {
   } catch (error) {
     console.error('Erro ao verificar status da IA:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== API DE VÍDEO - GERAR MATÉRIAS ====================
+const TranscriptionService = require('./services/TranscriptionService');
+
+app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
+  try {
+    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true } = req.body;
+
+    console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
+    console.log('   URL:', youtubeUrl);
+    console.log('   Quantidade:', quantidade);
+    console.log('   Categoria:', categoria);
+
+    // Validar URL
+    if (!youtubeUrl || !TranscriptionService.isValidYoutubeUrl(youtubeUrl)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
+      });
+    }
+
+    // 1. Obter transcrição do vídeo
+    console.log('📝 Obtendo transcrição do vídeo...');
+    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(youtubeUrl);
+    
+    if (!transcricaoResult.textoTranscricao || transcricaoResult.textoTranscricao.length < 100) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Transcrição muito curta ou vazia. Verifique se o vídeo possui legendas disponíveis.' 
+      });
+    }
+
+    console.log(`✅ Transcrição obtida: ${transcricaoResult.textoTranscricao.length} caracteres`);
+
+    // 2. Gerar matérias com IA
+    console.log('🤖 Gerando matérias com IA...');
+    const materias = await AIService.gerarMateriasDeVideo(
+      transcricaoResult.textoTranscricao,
+      Math.min(quantidade, 5), // Máximo 5
+      categoria,
+      aplicarEstiloG1
+    );
+
+    console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
+
+    // 3. Salvar cada matéria como rascunho
+    const slugify = require('slugify');
+    const materiassSalvas = [];
+
+    for (const materia of materias) {
+      try {
+        // Gerar URL amigável
+        let urlAmigavelBase = slugify(materia.titulo, {
+          lower: true,
+          strict: true,
+          locale: 'pt',
+          remove: /[*+~.()'"!:@]/g
+        });
+
+        let urlAmigavel = urlAmigavelBase;
+        let contador = 1;
+        while (await Article.findOne({ where: { urlAmigavel } })) {
+          urlAmigavel = `${urlAmigavelBase}-${contador}`;
+          contador++;
+        }
+
+        // Criar artigo como rascunho
+        const article = await Article.create({
+          titulo: materia.titulo,
+          descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
+          conteudo: materia.conteudoHTML,
+          imagem: transcricaoResult.videoId ? 
+            `https://img.youtube.com/vi/${transcricaoResult.videoId}/maxresdefault.jpg` : 
+            '/images/default-post.jpg',
+          categoria: categoria,
+          autor: autor,
+          publicado: false, // Rascunho
+          destaque: false,
+          dataPublicacao: new Date(),
+          visualizacoes: 0,
+          urlAmigavel
+        });
+
+        materiassSalvas.push({
+          id: article.id,
+          titulo: article.titulo,
+          descricao: article.descricao,
+          categoria: article.categoria,
+          urlAmigavel: article.urlAmigavel,
+          previewHtml: materia.conteudoHTML.substring(0, 300) + '...'
+        });
+
+        console.log(`💾 Rascunho salvo: "${article.titulo}" (ID: ${article.id})`);
+
+      } catch (saveError) {
+        console.error('Erro ao salvar matéria:', saveError);
+      }
+    }
+
+    if (materiassSalvas.length === 0) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Não foi possível salvar nenhuma matéria. Tente novamente.' 
+      });
+    }
+
+    console.log(`✅ ${materiassSalvas.length} rascunho(s) salvo(s) com sucesso!`);
+
+    res.json({
+      success: true,
+      message: `${materiassSalvas.length} matéria(s) gerada(s) e salva(s) como rascunho`,
+      transcricao: {
+        idioma: transcricaoResult.idioma,
+        origem: transcricaoResult.origem,
+        caracteres: transcricaoResult.textoTranscricao.length
+      },
+      materias: materiassSalvas
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao gerar matérias de vídeo:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Erro ao processar vídeo. Tente novamente.' 
+    });
   }
 });
 

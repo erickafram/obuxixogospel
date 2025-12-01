@@ -3978,6 +3978,268 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
       throw error;
     }
   }
+
+  // ==================== GERAÇÃO DE MATÉRIAS A PARTIR DE VÍDEO ====================
+
+  /**
+   * Analisa uma transcrição de vídeo e identifica pautas/temas diferentes
+   * @param {string} transcricao - Texto da transcrição do vídeo
+   * @param {number} quantidade - Quantidade de pautas/matérias desejadas (1-5)
+   * @returns {Promise<Array<{resumoPauta: string, foco: string, trechoRelevante: string}>>}
+   */
+  static async gerarPautasDoVideo(transcricao, quantidade = 3) {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    console.log('📋 Analisando transcrição para identificar pautas...');
+    console.log(`   Tamanho da transcrição: ${transcricao.length} caracteres`);
+    console.log(`   Quantidade de pautas solicitadas: ${quantidade}`);
+
+    // Limitar transcrição para não exceder limite de tokens
+    const transcricaoLimitada = transcricao.substring(0, 15000);
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Você é um editor-chefe de um portal de notícias gospel (Obuxixo Gospel). 
+Sua tarefa é analisar transcrições de vídeos e identificar diferentes ângulos/pautas que podem virar matérias jornalísticas separadas.
+Você deve identificar temas distintos, declarações importantes, polêmicas ou informações relevantes que mereçam matérias próprias.
+Responda APENAS em JSON válido.`
+      },
+      {
+        role: 'user',
+        content: `Analise a transcrição abaixo e identifique até ${quantidade} pautas/temas DIFERENTES que podem virar matérias jornalísticas separadas.
+
+TRANSCRIÇÃO DO VÍDEO:
+${transcricaoLimitada}
+
+REGRAS:
+1. Cada pauta deve ter um FOCO DIFERENTE (não repita o mesmo tema)
+2. Priorize: declarações polêmicas, anúncios importantes, críticas, revelações, eventos
+3. Se o vídeo tiver apenas 1 tema principal, retorne apenas 1 pauta
+4. Extraia o trecho mais relevante da transcrição para cada pauta
+
+RESPONDA EM JSON:
+[
+  {
+    "resumoPauta": "Resumo curto do tema (1 linha)",
+    "foco": "Qual o ângulo/foco jornalístico desta matéria",
+    "trechoRelevante": "Trecho da transcrição mais importante para esta pauta (copie exatamente)"
+  }
+]
+
+Se não for possível identificar pautas relevantes, retorne: []`
+      }
+    ];
+
+    try {
+      const resposta = await this.makeRequest(messages, 0.3, 2000);
+      
+      // Parse do JSON
+      let pautas = [];
+      try {
+        let jsonText = resposta.trim();
+        if (jsonText.startsWith('```')) {
+          jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+        pautas = JSON.parse(jsonText);
+        
+        if (!Array.isArray(pautas)) {
+          console.error('Resposta não é um array');
+          return [];
+        }
+        
+        // Limitar à quantidade solicitada
+        pautas = pautas.slice(0, quantidade);
+        
+      } catch (parseError) {
+        console.error('Erro ao parsear pautas:', parseError);
+        return [];
+      }
+
+      console.log(`✅ ${pautas.length} pauta(s) identificada(s)`);
+      return pautas;
+
+    } catch (error) {
+      console.error('❌ Erro ao gerar pautas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gera uma matéria completa a partir de uma pauta e transcrição
+   * @param {string} transcricao - Transcrição completa do vídeo
+   * @param {Object} pauta - Objeto com resumoPauta, foco e trechoRelevante
+   * @param {string} categoria - Categoria da matéria
+   * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
+   */
+  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias') {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    console.log('📝 Gerando matéria para pauta:', pauta.resumoPauta);
+
+    // Limitar transcrição
+    const transcricaoLimitada = transcricao.substring(0, 12000);
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Você é um jornalista experiente do portal Metrópoles/G1, especializado em notícias gospel.
+Seu estilo é direto, informativo, objetivo e levemente formal, mas acessível.
+Você prioriza a clareza e a precisão dos fatos.
+NUNCA invente informações que não estejam na transcrição.
+Responda APENAS em JSON válido.`
+      },
+      {
+        role: 'user',
+        content: `Crie uma matéria jornalística completa baseada na transcrição de vídeo abaixo.
+
+FOCO DA MATÉRIA: ${pauta.foco}
+RESUMO DA PAUTA: ${pauta.resumoPauta}
+TRECHO PRINCIPAL: ${pauta.trechoRelevante}
+
+TRANSCRIÇÃO COMPLETA (para contexto):
+${transcricaoLimitada}
+
+REGRAS OBRIGATÓRIAS:
+1. ✅ Use APENAS informações presentes na transcrição
+2. ✅ Título chamativo mas verdadeiro (estilo Metrópoles)
+3. ✅ Descrição com 1-2 frases resumindo o principal
+4. ✅ Conteúdo em HTML bem formatado (<p>, <h3>, <blockquote>)
+5. ❌ NUNCA invente nomes, datas, números ou fatos
+6. ❌ NUNCA adicione informações que não estão na transcrição
+
+ESTRUTURA DO CONTEÚDO:
+- Lide (1-2 parágrafos): Fato principal
+- Desenvolvimento (2-3 parágrafos): Detalhes e contexto
+- Citações diretas quando houver (use <blockquote>)
+
+FORMATAÇÃO HTML:
+- Use <p>texto</p> para parágrafos
+- Use <h3>Subtítulo</h3> para subtítulos
+- Use <blockquote>"citação"</blockquote> para citações
+- Use <strong>nome</strong> para nomes importantes
+- NÃO adicione <p></p> vazios
+
+RESPONDA EM JSON:
+{
+  "titulo": "Título da matéria (máx 100 caracteres)",
+  "descricao": "Descrição/resumo (máx 200 caracteres)",
+  "conteudoHTML": "<p>Conteúdo HTML formatado...</p>"
+}`
+      }
+    ];
+
+    try {
+      const resposta = await this.makeRequest(messages, 0.4, 3000);
+      
+      // Parse do JSON
+      let materia = null;
+      try {
+        let jsonText = resposta.trim();
+        if (jsonText.startsWith('```')) {
+          jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+        
+        // Tentar extrair JSON
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          materia = JSON.parse(jsonMatch[0]);
+        }
+        
+        if (!materia || !materia.titulo || !materia.conteudoHTML) {
+          throw new Error('Resposta incompleta da IA');
+        }
+        
+      } catch (parseError) {
+        console.error('Erro ao parsear matéria:', parseError);
+        throw new Error('Erro ao processar resposta da IA');
+      }
+
+      // Limpar e formatar o conteúdo HTML
+      let conteudoLimpo = materia.conteudoHTML
+        .replace(/>\s+</g, '><')
+        .replace(/<p>\s*<\/p>/gi, '')
+        .replace(/<p><\/p>/gi, '')
+        .replace(/<\/p><p>/gi, '</p><br><p>')
+        .replace(/<\/h3><p>/gi, '</h3><br><p>')
+        .replace(/<\/blockquote><p>/gi, '</blockquote><br><p>');
+
+      console.log(`✅ Matéria gerada: "${materia.titulo}"`);
+      
+      return {
+        titulo: materia.titulo.trim(),
+        descricao: (materia.descricao || 'Matéria gerada a partir de vídeo').trim(),
+        conteudoHTML: conteudoLimpo
+      };
+
+    } catch (error) {
+      console.error('❌ Erro ao gerar matéria:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Processo completo: gera múltiplas matérias a partir de uma transcrição de vídeo
+   * @param {string} transcricao - Transcrição do vídeo
+   * @param {number} quantidade - Quantidade de matérias (1-5)
+   * @param {string} categoria - Categoria padrão
+   * @param {boolean} aplicarEstiloG1 - Se deve aplicar reescrita estilo G1
+   * @returns {Promise<Array<{titulo, descricao, conteudoHTML}>>}
+   */
+  static async gerarMateriasDeVideo(transcricao, quantidade = 3, categoria = 'noticias', aplicarEstiloG1 = true) {
+    console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
+    console.log(`   Quantidade solicitada: ${quantidade}`);
+    console.log(`   Categoria: ${categoria}`);
+    console.log(`   Aplicar estilo G1: ${aplicarEstiloG1}`);
+
+    // 1. Identificar pautas
+    const pautas = await this.gerarPautasDoVideo(transcricao, quantidade);
+    
+    if (pautas.length === 0) {
+      throw new Error('Não foi possível identificar pautas relevantes na transcrição');
+    }
+
+    console.log(`📋 ${pautas.length} pauta(s) identificada(s). Gerando matérias...`);
+
+    // 2. Gerar matéria para cada pauta
+    const materias = [];
+    
+    for (let i = 0; i < pautas.length; i++) {
+      const pauta = pautas[i];
+      console.log(`\n📰 Gerando matéria ${i + 1}/${pautas.length}: ${pauta.resumoPauta}`);
+      
+      try {
+        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria);
+        
+        // 3. Opcional: aplicar estilo G1/Metrópoles
+        if (aplicarEstiloG1 && materia.conteudoHTML) {
+          console.log('   🔄 Aplicando estilo G1/Metrópoles...');
+          try {
+            materia.conteudoHTML = await this.reescreverMateriaG1(materia.conteudoHTML);
+          } catch (g1Error) {
+            console.log('   ⚠️ Não foi possível aplicar estilo G1, mantendo original');
+          }
+        }
+        
+        materias.push(materia);
+        
+      } catch (materiaError) {
+        console.error(`   ❌ Erro ao gerar matéria ${i + 1}:`, materiaError.message);
+        // Continua para a próxima pauta
+      }
+    }
+
+    if (materias.length === 0) {
+      throw new Error('Não foi possível gerar nenhuma matéria');
+    }
+
+    console.log(`\n✅ ${materias.length} matéria(s) gerada(s) com sucesso!`);
+    return materias;
+  }
 }
 
 module.exports = AIService;

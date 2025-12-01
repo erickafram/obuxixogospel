@@ -1,0 +1,854 @@
+<%- include('../partials/header', { title: 'Criar Matérias de Vídeo', user: user }) %>
+
+<style>
+    .video-form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .content-header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1A202C;
+        margin: 0;
+    }
+
+    .content-header p {
+        color: #718096;
+        margin: 4px 0 0;
+        font-size: 14px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #E2E8F0;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #F8FAFC;
+    }
+
+    .card-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1A202C;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-header h2 i {
+        color: #FF0000;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .form-group label .required {
+        color: #EF4444;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(6, 105, 222, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: #9CA3AF;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+        font-size: 16px;
+    }
+
+    .input-with-icon .form-control {
+        padding-left: 44px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-hint {
+        font-size: 12px;
+        color: #6B7280;
+        margin-top: 6px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #F0FDF4;
+        border-radius: 8px;
+        border: 1px solid #BBF7D0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #22C55E;
+    }
+
+    .checkbox-group label {
+        margin: 0;
+        font-size: 14px;
+        color: #166534;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de, #3d8bfd);
+        color: white;
+        box-shadow: 0 2px 8px rgba(6, 105, 222, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(6, 105, 222, 0.4);
+    }
+
+    .btn-primary:disabled {
+        background: #9CA3AF;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-secondary {
+        background: #F3F4F6;
+        color: #374151;
+        border: 1px solid #D1D5DB;
+    }
+
+    .btn-secondary:hover {
+        background: #E5E7EB;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    /* Progress Section */
+    .progress-section {
+        display: none;
+        margin-top: 24px;
+    }
+
+    .progress-section.active {
+        display: block;
+    }
+
+    .progress-card {
+        background: #F0F9FF;
+        border: 1px solid #BAE6FD;
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .progress-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .progress-header i {
+        font-size: 24px;
+        color: #0284C7;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .progress-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0C4A6E;
+        margin: 0;
+    }
+
+    .progress-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #E0F2FE;
+    }
+
+    .progress-step.active {
+        border-color: #0284C7;
+        background: #F0F9FF;
+    }
+
+    .progress-step.completed {
+        border-color: #22C55E;
+        background: #F0FDF4;
+    }
+
+    .progress-step.error {
+        border-color: #EF4444;
+        background: #FEF2F2;
+    }
+
+    .step-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        background: #E5E7EB;
+        color: #6B7280;
+    }
+
+    .progress-step.active .step-icon {
+        background: #0284C7;
+        color: white;
+    }
+
+    .progress-step.completed .step-icon {
+        background: #22C55E;
+        color: white;
+    }
+
+    .progress-step.error .step-icon {
+        background: #EF4444;
+        color: white;
+    }
+
+    .step-text {
+        font-size: 14px;
+        color: #374151;
+    }
+
+    /* Results Section */
+    .results-section {
+        display: none;
+        margin-top: 24px;
+    }
+
+    .results-section.active {
+        display: block;
+    }
+
+    .results-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .results-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1A202C;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .results-header h3 i {
+        color: #22C55E;
+    }
+
+    .result-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+    .result-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .result-number {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #0669de, #3d8bfd);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .result-title {
+        flex: 1;
+        margin-left: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1A202C;
+    }
+
+    .result-body {
+        padding: 16px 20px;
+    }
+
+    .result-description {
+        font-size: 14px;
+        color: #6B7280;
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .result-preview {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 13px;
+        color: #374151;
+        line-height: 1.6;
+    }
+
+    .result-actions {
+        padding: 12px 20px;
+        background: #F8FAFC;
+        border-top: 1px solid #E2E8F0;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .btn-success {
+        background: #22C55E;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #16A34A;
+    }
+
+    /* Error Alert */
+    .alert {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-top: 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .alert-error {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        color: #991B1B;
+    }
+
+    .alert-success {
+        background: #F0FDF4;
+        border: 1px solid #BBF7D0;
+        color: #166534;
+    }
+
+    .alert i {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .alert-message {
+        font-size: 14px;
+    }
+
+    /* Video Preview */
+    .video-preview {
+        margin-top: 16px;
+        display: none;
+    }
+
+    .video-preview.active {
+        display: block;
+    }
+
+    .video-preview-content {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        background: #F8FAFC;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .video-thumbnail {
+        width: 200px;
+        height: 112px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #E5E7EB;
+    }
+
+    .video-info {
+        flex: 1;
+    }
+
+    .video-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1A202C;
+        margin: 0 0 8px;
+    }
+
+    .video-info p {
+        font-size: 13px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .video-preview-content {
+            flex-direction: column;
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16/9;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="dashboard-content">
+    <div class="video-form-container">
+        <div class="content-header">
+            <div>
+                <h1>Criar Matérias de Vídeo</h1>
+                <p>Gere múltiplas matérias automaticamente a partir de um vídeo do YouTube</p>
+            </div>
+            <a href="/dashboard/posts" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fab fa-youtube"></i> Configurações do Vídeo</h2>
+            </div>
+            <div class="card-body">
+                <form id="videoForm">
+                    <div class="form-group">
+                        <label>URL do Vídeo do YouTube <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fab fa-youtube"></i>
+                            <input type="url" 
+                                   id="youtubeUrl" 
+                                   name="youtubeUrl" 
+                                   class="form-control" 
+                                   placeholder="https://www.youtube.com/watch?v=..."
+                                   required>
+                        </div>
+                        <p class="form-hint">Cole a URL completa do vídeo do YouTube que deseja transcrever</p>
+                    </div>
+
+                    <div class="video-preview" id="videoPreview">
+                        <div class="video-preview-content">
+                            <img id="videoThumbnail" class="video-thumbnail" src="" alt="Thumbnail">
+                            <div class="video-info">
+                                <h4>Vídeo detectado</h4>
+                                <p id="videoId">ID: </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantidade de Matérias</label>
+                            <select id="quantidade" name="quantidade" class="form-control">
+                                <option value="1">1 matéria</option>
+                                <option value="2">2 matérias</option>
+                                <option value="3" selected>3 matérias</option>
+                                <option value="4">4 matérias</option>
+                                <option value="5">5 matérias</option>
+                            </select>
+                            <p class="form-hint">A IA identificará diferentes pautas no vídeo</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Categoria</label>
+                            <select id="categoria" name="categoria" class="form-control">
+                                <% categories.forEach(cat => { %>
+                                    <option value="<%= cat.slug %>"><%= cat.nome %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Autor</label>
+                        <input type="text" 
+                               id="autor" 
+                               name="autor" 
+                               class="form-control" 
+                               value="Redação Obuxixo Gospel"
+                               placeholder="Nome do autor">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="aplicarEstiloG1" name="aplicarEstiloG1" checked>
+                            <label for="aplicarEstiloG1">
+                                <i class="fas fa-magic"></i> Aplicar estilo jornalístico (G1/Metrópoles)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="btnGerar">
+                            <i class="fas fa-wand-magic-sparkles"></i> Gerar Matérias com IA
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="limparFormulario()">
+                            <i class="fas fa-eraser"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Progress Section -->
+                <div class="progress-section" id="progressSection">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-spinner"></i>
+                            <h3>Processando vídeo...</h3>
+                        </div>
+                        <div class="progress-steps">
+                            <div class="progress-step" id="step1">
+                                <div class="step-icon"><i class="fas fa-download"></i></div>
+                                <span class="step-text">Obtendo transcrição do vídeo...</span>
+                            </div>
+                            <div class="progress-step" id="step2">
+                                <div class="step-icon"><i class="fas fa-search"></i></div>
+                                <span class="step-text">Identificando pautas e temas...</span>
+                            </div>
+                            <div class="progress-step" id="step3">
+                                <div class="step-icon"><i class="fas fa-pen-fancy"></i></div>
+                                <span class="step-text">Gerando matérias com IA...</span>
+                            </div>
+                            <div class="progress-step" id="step4">
+                                <div class="step-icon"><i class="fas fa-save"></i></div>
+                                <span class="step-text">Salvando rascunhos...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Alert -->
+                <div class="alert alert-error" id="errorAlert" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div class="alert-content">
+                        <div class="alert-title">Erro ao processar</div>
+                        <div class="alert-message" id="errorMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h3><i class="fas fa-check-circle"></i> Matérias Geradas</h3>
+                <span id="resultsCount"></span>
+            </div>
+            <div id="resultsList"></div>
+            
+            <div class="alert alert-success">
+                <i class="fas fa-info-circle"></i>
+                <div class="alert-content">
+                    <div class="alert-title">Rascunhos salvos com sucesso!</div>
+                    <div class="alert-message">As matérias foram salvas como rascunho. Clique em "Editar" para revisar e publicar.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Preview do vídeo ao digitar URL
+    document.getElementById('youtubeUrl').addEventListener('input', function() {
+        const url = this.value;
+        const videoId = extractVideoId(url);
+        
+        if (videoId) {
+            document.getElementById('videoPreview').classList.add('active');
+            document.getElementById('videoThumbnail').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            document.getElementById('videoId').textContent = `ID: ${videoId}`;
+        } else {
+            document.getElementById('videoPreview').classList.remove('active');
+        }
+    });
+
+    function extractVideoId(url) {
+        if (!url) return null;
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+            /^([a-zA-Z0-9_-]{11})$/
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    }
+
+    function limparFormulario() {
+        document.getElementById('videoForm').reset();
+        document.getElementById('videoPreview').classList.remove('active');
+        document.getElementById('progressSection').classList.remove('active');
+        document.getElementById('resultsSection').classList.remove('active');
+        document.getElementById('errorAlert').style.display = 'none';
+        resetProgress();
+    }
+
+    function resetProgress() {
+        ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('active', 'completed', 'error');
+        });
+    }
+
+    function setStepActive(stepId) {
+        document.getElementById(stepId).classList.add('active');
+    }
+
+    function setStepCompleted(stepId) {
+        const el = document.getElementById(stepId);
+        el.classList.remove('active');
+        el.classList.add('completed');
+    }
+
+    function setStepError(stepId) {
+        const el = document.getElementById(stepId);
+        el.classList.remove('active');
+        el.classList.add('error');
+    }
+
+    // Form submit
+    document.getElementById('videoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const youtubeUrl = document.getElementById('youtubeUrl').value;
+        const quantidade = document.getElementById('quantidade').value;
+        const categoria = document.getElementById('categoria').value;
+        const autor = document.getElementById('autor').value;
+        const aplicarEstiloG1 = document.getElementById('aplicarEstiloG1').checked;
+
+        if (!youtubeUrl) {
+            alert('Por favor, insira a URL do vídeo do YouTube');
+            return;
+        }
+
+        // Reset e mostrar progresso
+        resetProgress();
+        document.getElementById('errorAlert').style.display = 'none';
+        document.getElementById('resultsSection').classList.remove('active');
+        document.getElementById('progressSection').classList.add('active');
+        document.getElementById('btnGerar').disabled = true;
+
+        try {
+            setStepActive('step1');
+
+            const response = await fetch('/api/video/gerar-materias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    youtubeUrl,
+                    quantidade: parseInt(quantidade),
+                    categoria,
+                    autor,
+                    aplicarEstiloG1
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Erro ao processar vídeo');
+            }
+
+            // Marcar todos os steps como completos
+            setStepCompleted('step1');
+            setStepCompleted('step2');
+            setStepCompleted('step3');
+            setStepCompleted('step4');
+
+            // Mostrar resultados
+            setTimeout(() => {
+                document.getElementById('progressSection').classList.remove('active');
+                mostrarResultados(data.materias);
+            }, 500);
+
+        } catch (error) {
+            console.error('Erro:', error);
+            
+            // Marcar step atual como erro
+            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el.classList.contains('active')) {
+                    setStepError(id);
+                }
+            });
+
+            document.getElementById('errorMessage').textContent = error.message;
+            document.getElementById('errorAlert').style.display = 'flex';
+        } finally {
+            document.getElementById('btnGerar').disabled = false;
+        }
+    });
+
+    function mostrarResultados(materias) {
+        document.getElementById('resultsSection').classList.add('active');
+        document.getElementById('resultsCount').textContent = `${materias.length} matéria(s) gerada(s)`;
+
+        const lista = document.getElementById('resultsList');
+        lista.innerHTML = '';
+
+        materias.forEach((materia, index) => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-header">
+                    <div class="result-number">${index + 1}</div>
+                    <div class="result-title">${escapeHtml(materia.titulo)}</div>
+                </div>
+                <div class="result-body">
+                    <p class="result-description">${escapeHtml(materia.descricao)}</p>
+                    <div class="result-preview">${materia.previewHtml || materia.conteudoHTML?.substring(0, 500) + '...'}</div>
+                </div>
+                <div class="result-actions">
+                    <a href="/dashboard/posts/editar/${materia.id}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="/${materia.categoria}/${materia.urlAmigavel}" target="_blank" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-eye"></i> Visualizar
+                    </a>
+                </div>
+            `;
+            lista.appendChild(card);
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+<%- include('../partials/footer') %>
