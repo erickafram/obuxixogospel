@@ -6,18 +6,14 @@
 const axios = require('axios');
 
 class TranscriptionService {
-  // Lista de instâncias Invidious públicas (não bloqueadas pelo YouTube)
+  // Lista de instâncias Invidious públicas com API habilitada
+  // Fonte: https://api.invidious.io/instances.json
   static INVIDIOUS_INSTANCES = [
+    'https://yewtu.be',
     'https://inv.nadeko.net',
     'https://invidious.nerdvpn.de',
-    'https://invidious.jing.rocks',
-    'https://invidious.privacyredirect.com',
-    'https://iv.nboeck.de',
-    'https://invidious.protokolla.fi',
-    'https://inv.tux.pizza',
-    'https://invidious.perennialte.ch',
-    'https://yt.cdaut.de',
-    'https://invidious.drgns.space'
+    'https://inv.perditum.com',
+    'https://invidious.f5.si'
   ];
 
   /**
@@ -45,59 +41,88 @@ class TranscriptionService {
   }
 
   /**
-   * Busca legendas via Invidious API (contorna bloqueio de IP)
+   * Busca legendas via Invidious (scraping da página de legendas)
    * @param {string} videoId - ID do vídeo
    * @param {string} lang - Idioma preferido
    * @returns {Promise<{text: string, lang: string}|null>}
    */
   static async fetchViaInvidious(videoId, lang = 'pt') {
-    const idiomas = [lang, 'pt-BR', 'pt', 'en', 'es', 'auto'];
+    const idiomas = [lang, 'pt', 'en', 'es'];
     
     for (const instance of this.INVIDIOUS_INSTANCES) {
+      for (const idioma of idiomas) {
+        try {
+          console.log(`🔄 Tentando ${instance} (${idioma})...`);
+          
+          // Tentar baixar legenda diretamente via URL de caption do Invidious
+          const captionUrl = `${instance}/api/v1/captions/${videoId}?label=${idioma}`;
+          
+          const response = await axios.get(captionUrl, {
+            timeout: 15000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': '*/*'
+            },
+            validateStatus: (status) => status < 500
+          });
+          
+          if (response.status === 200 && response.data) {
+            const text = this.parseCaptionData(response.data);
+            if (text && text.length > 50) {
+              console.log(`✅ Legendas obtidas via ${instance}: ${idioma}`);
+              return { text, lang: idioma, source: 'invidious', instance };
+            }
+          }
+        } catch (error) {
+          // Silencioso, tentar próximo
+        }
+      }
+      
+      // Tentar via API de vídeo (se disponível)
       try {
-        console.log(`🔄 Tentando Invidious: ${instance}`);
-        
-        // Primeiro, obter lista de legendas disponíveis
         const videoInfoUrl = `${instance}/api/v1/videos/${videoId}`;
         const videoResponse = await axios.get(videoInfoUrl, {
           timeout: 10000,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
+          },
+          validateStatus: (status) => status < 500
         });
+        
+        if (videoResponse.status !== 200) continue;
         
         const captions = videoResponse.data.captions || [];
         
         if (captions.length === 0) {
-          console.log(`⚠️ Nenhuma legenda disponível em ${instance}`);
+          console.log(`⚠️ Nenhuma legenda em ${instance}`);
           continue;
         }
         
-        console.log(`📋 Legendas disponíveis: ${captions.map(c => c.language_code).join(', ')}`);
+        console.log(`📋 Legendas: ${captions.map(c => c.label || c.language_code).join(', ')}`);
         
         // Encontrar a melhor legenda
         let selectedCaption = null;
         for (const idioma of idiomas) {
           selectedCaption = captions.find(c => 
-            c.language_code === idioma || 
-            c.language_code.startsWith(idioma.split('-')[0])
+            (c.language_code && c.language_code.startsWith(idioma)) ||
+            (c.label && c.label.toLowerCase().includes(idioma))
           );
           if (selectedCaption) break;
         }
         
-        // Se não encontrou, usar a primeira disponível
         if (!selectedCaption && captions.length > 0) {
           selectedCaption = captions[0];
         }
         
         if (!selectedCaption) continue;
         
-        console.log(`✅ Usando legenda: ${selectedCaption.language_code}`);
+        console.log(`✅ Usando: ${selectedCaption.label || selectedCaption.language_code}`);
         
         // Baixar a legenda
-        const captionUrl = selectedCaption.url.startsWith('http') 
-          ? selectedCaption.url 
-          : `${instance}${selectedCaption.url}`;
+        let captionUrl = selectedCaption.url;
+        if (!captionUrl.startsWith('http')) {
+          captionUrl = `${instance}${captionUrl}`;
+        }
         
         const captionResponse = await axios.get(captionUrl, {
           timeout: 15000,
@@ -106,13 +131,12 @@ class TranscriptionService {
           }
         });
         
-        // Parse do XML/VTT da legenda
         const captionText = this.parseCaptionData(captionResponse.data);
         
         if (captionText && captionText.length > 50) {
           return {
             text: captionText,
-            lang: selectedCaption.language_code,
+            lang: selectedCaption.language_code || 'auto',
             source: 'invidious',
             instance
           };
@@ -120,8 +144,85 @@ class TranscriptionService {
         
       } catch (error) {
         console.log(`⚠️ Falha em ${instance}: ${error.message}`);
-        continue;
       }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Busca legendas via scraping da página do YouTube
+   * Extrai o JSON de legendas embutido na página
+   * @param {string} videoId - ID do vídeo
+   * @param {string} lang - Idioma preferido
+   * @returns {Promise<{text: string, lang: string}|null>}
+   */
+  static async fetchViaYouTubeScraping(videoId, lang = 'pt') {
+    try {
+      console.log(`🔍 Tentando scraping da página do YouTube...`);
+      
+      const url = `https://www.youtube.com/watch?v=${videoId}`;
+      
+      const response = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate',
+          'Cookie': 'CONSENT=YES+cb'
+        }
+      });
+      
+      const html = response.data;
+      
+      // Extrair o JSON de playerCaptionsTracklistRenderer
+      const captionsMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+      
+      if (captionsMatch) {
+        try {
+          const captionTracks = JSON.parse(captionsMatch[1]);
+          console.log(`📋 Legendas encontradas: ${captionTracks.map(c => c.languageCode).join(', ')}`);
+          
+          // Encontrar a melhor legenda
+          const idiomas = [lang, 'pt', 'en', 'es'];
+          let selectedTrack = null;
+          
+          for (const idioma of idiomas) {
+            selectedTrack = captionTracks.find(t => 
+              t.languageCode === idioma || 
+              t.languageCode.startsWith(idioma)
+            );
+            if (selectedTrack) break;
+          }
+          
+          if (!selectedTrack && captionTracks.length > 0) {
+            selectedTrack = captionTracks[0];
+          }
+          
+          if (selectedTrack && selectedTrack.baseUrl) {
+            console.log(`✅ Baixando legenda: ${selectedTrack.languageCode}`);
+            
+            // Baixar a legenda
+            const captionResponse = await axios.get(selectedTrack.baseUrl, {
+              timeout: 10000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            });
+            
+            const text = this.parseCaptionData(captionResponse.data);
+            if (text && text.length > 50) {
+              return { text, lang: selectedTrack.languageCode, source: 'youtube-scraping' };
+            }
+          }
+        } catch (parseError) {
+          console.log(`⚠️ Erro ao parsear legendas: ${parseError.message}`);
+        }
+      }
+      
+    } catch (error) {
+      console.log(`⚠️ Scraping do YouTube falhou: ${error.message}`);
     }
     
     return null;
@@ -302,19 +403,25 @@ class TranscriptionService {
     
     let result = null;
     
-    // Estratégia 1: Invidious API (melhor para servidores cloud)
-    console.log('\n📡 Estratégia 1: Invidious API...');
-    result = await this.fetchViaInvidious(videoId, lang);
+    // Estratégia 1: Scraping direto do YouTube (extrai JSON de legendas da página)
+    console.log('\n📡 Estratégia 1: YouTube Scraping...');
+    result = await this.fetchViaYouTubeScraping(videoId, lang);
     
-    // Estratégia 2: YouTube timedtext API direta
+    // Estratégia 2: Invidious API (proxy alternativo)
     if (!result) {
-      console.log('\n📡 Estratégia 2: YouTube timedtext API...');
+      console.log('\n📡 Estratégia 2: Invidious API...');
+      result = await this.fetchViaInvidious(videoId, lang);
+    }
+    
+    // Estratégia 3: YouTube timedtext API direta
+    if (!result) {
+      console.log('\n📡 Estratégia 3: YouTube timedtext API...');
       result = await this.fetchViaTimedText(videoId, lang);
     }
     
-    // Estratégia 3: youtube-transcript-plus (funciona melhor localmente)
+    // Estratégia 4: youtube-transcript-plus (funciona melhor localmente)
     if (!result) {
-      console.log('\n📡 Estratégia 3: youtube-transcript-plus...');
+      console.log('\n📡 Estratégia 4: youtube-transcript-plus...');
       result = await this.fetchViaLibrary(videoId, lang);
     }
     
