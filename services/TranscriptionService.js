@@ -1,9 +1,25 @@
 /**
  * TranscriptionService - Serviço para transcrição de vídeos do YouTube
- * Usa youtube-transcript-plus para buscar legendas sem baixar o vídeo
+ * Usa múltiplas estratégias para contornar bloqueios de IP em servidores cloud
  */
 
+const axios = require('axios');
+
 class TranscriptionService {
+  // Lista de instâncias Invidious públicas (não bloqueadas pelo YouTube)
+  static INVIDIOUS_INSTANCES = [
+    'https://inv.nadeko.net',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.jing.rocks',
+    'https://invidious.privacyredirect.com',
+    'https://iv.nboeck.de',
+    'https://invidious.protokolla.fi',
+    'https://inv.tux.pizza',
+    'https://invidious.perennialte.ch',
+    'https://yt.cdaut.de',
+    'https://invidious.drgns.space'
+  ];
+
   /**
    * Extrai o ID do vídeo de uma URL do YouTube
    * @param {string} url - URL do YouTube
@@ -29,77 +45,299 @@ class TranscriptionService {
   }
 
   /**
-   * Busca a transcrição de um vídeo do YouTube
-   * @param {string} youtubeUrl - URL ou ID do vídeo do YouTube
-   * @param {string} lang - Idioma preferido (padrão: 'pt')
-   * @returns {Promise<{textoTranscricao: string, idioma: string, origem: string, segmentos: Array}>}
+   * Busca legendas via Invidious API (contorna bloqueio de IP)
+   * @param {string} videoId - ID do vídeo
+   * @param {string} lang - Idioma preferido
+   * @returns {Promise<{text: string, lang: string}|null>}
    */
-  static async transcreverYoutubeVideo(youtubeUrl, lang = 'pt') {
-    try {
-      console.log('🎬 Iniciando transcrição do vídeo:', youtubeUrl);
-      
-      const videoId = this.extractVideoId(youtubeUrl);
-      if (!videoId) {
-        throw new Error('URL do YouTube inválida. Não foi possível extrair o ID do vídeo.');
+  static async fetchViaInvidious(videoId, lang = 'pt') {
+    const idiomas = [lang, 'pt-BR', 'pt', 'en', 'es', 'auto'];
+    
+    for (const instance of this.INVIDIOUS_INSTANCES) {
+      try {
+        console.log(`🔄 Tentando Invidious: ${instance}`);
+        
+        // Primeiro, obter lista de legendas disponíveis
+        const videoInfoUrl = `${instance}/api/v1/videos/${videoId}`;
+        const videoResponse = await axios.get(videoInfoUrl, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        
+        const captions = videoResponse.data.captions || [];
+        
+        if (captions.length === 0) {
+          console.log(`⚠️ Nenhuma legenda disponível em ${instance}`);
+          continue;
+        }
+        
+        console.log(`📋 Legendas disponíveis: ${captions.map(c => c.language_code).join(', ')}`);
+        
+        // Encontrar a melhor legenda
+        let selectedCaption = null;
+        for (const idioma of idiomas) {
+          selectedCaption = captions.find(c => 
+            c.language_code === idioma || 
+            c.language_code.startsWith(idioma.split('-')[0])
+          );
+          if (selectedCaption) break;
+        }
+        
+        // Se não encontrou, usar a primeira disponível
+        if (!selectedCaption && captions.length > 0) {
+          selectedCaption = captions[0];
+        }
+        
+        if (!selectedCaption) continue;
+        
+        console.log(`✅ Usando legenda: ${selectedCaption.language_code}`);
+        
+        // Baixar a legenda
+        const captionUrl = selectedCaption.url.startsWith('http') 
+          ? selectedCaption.url 
+          : `${instance}${selectedCaption.url}`;
+        
+        const captionResponse = await axios.get(captionUrl, {
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        
+        // Parse do XML/VTT da legenda
+        const captionText = this.parseCaptionData(captionResponse.data);
+        
+        if (captionText && captionText.length > 50) {
+          return {
+            text: captionText,
+            lang: selectedCaption.language_code,
+            source: 'invidious',
+            instance
+          };
+        }
+        
+      } catch (error) {
+        console.log(`⚠️ Falha em ${instance}: ${error.message}`);
+        continue;
       }
-      
-      console.log('📹 ID do vídeo:', videoId);
-      
-      // Importar dinamicamente o youtube-transcript-plus
+    }
+    
+    return null;
+  }
+
+  /**
+   * Busca legendas diretamente do YouTube via timedtext API
+   * @param {string} videoId - ID do vídeo
+   * @param {string} lang - Idioma preferido
+   * @returns {Promise<{text: string, lang: string}|null>}
+   */
+  static async fetchViaTimedText(videoId, lang = 'pt') {
+    const idiomas = [lang, 'pt', 'en', 'es'];
+    
+    for (const idioma of idiomas) {
+      try {
+        console.log(`🔍 Tentando timedtext API para: ${idioma}`);
+        
+        // URL direta da API de legendas do YouTube
+        const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${idioma}&fmt=srv3`;
+        
+        const response = await axios.get(url, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+          }
+        });
+        
+        if (response.data && response.data.length > 100) {
+          const text = this.parseCaptionData(response.data);
+          if (text && text.length > 50) {
+            console.log(`✅ Legendas obtidas via timedtext: ${idioma}`);
+            return { text, lang: idioma, source: 'timedtext' };
+          }
+        }
+      } catch (error) {
+        console.log(`⚠️ timedtext falhou para ${idioma}: ${error.message}`);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Busca legendas via youtube-transcript-plus (funciona localmente)
+   * @param {string} videoId - ID do vídeo
+   * @param {string} lang - Idioma preferido
+   * @returns {Promise<{text: string, lang: string, segments: Array}|null>}
+   */
+  static async fetchViaLibrary(videoId, lang = 'pt') {
+    try {
       const { fetchTranscript } = await import('youtube-transcript-plus');
-      
-      // Tentar buscar em português primeiro
-      let transcript = null;
-      let idiomaUsado = lang;
-      
       const idiomas = [lang, 'pt-BR', 'pt', 'en', 'es'];
       
       for (const idioma of idiomas) {
         try {
-          console.log(`🔍 Tentando buscar legendas em: ${idioma}`);
-          transcript = await fetchTranscript(videoId, {
+          console.log(`🔍 Tentando youtube-transcript-plus: ${idioma}`);
+          const transcript = await fetchTranscript(videoId, {
             lang: idioma,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           });
           
           if (transcript && transcript.length > 0) {
-            idiomaUsado = idioma;
-            console.log(`✅ Legendas encontradas em: ${idioma}`);
-            break;
+            const text = transcript.map(seg => seg.text).join(' ').replace(/\s+/g, ' ').trim();
+            console.log(`✅ Legendas via biblioteca: ${idioma}`);
+            return { text, lang: idioma, source: 'library', segments: transcript };
           }
-        } catch (langError) {
-          console.log(`⚠️ Legendas não disponíveis em ${idioma}:`, langError.message);
+        } catch (e) {
+          console.log(`⚠️ Biblioteca falhou para ${idioma}`);
         }
       }
-      
-      if (!transcript || transcript.length === 0) {
-        throw new Error('Nenhuma legenda/transcrição disponível para este vídeo. Verifique se o vídeo possui legendas ativadas.');
-      }
-      
-      // Unificar os segmentos em um texto único
-      const textoTranscricao = transcript
-        .map(seg => seg.text)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      console.log(`📝 Transcrição obtida: ${textoTranscricao.length} caracteres`);
-      console.log(`📊 Total de segmentos: ${transcript.length}`);
-      
-      return {
-        textoTranscricao,
-        idioma: idiomaUsado,
-        origem: 'legenda',
-        segmentos: transcript,
-        videoId,
-        duracao: transcript.length > 0 ? 
-          Math.round(transcript[transcript.length - 1].offset + transcript[transcript.length - 1].duration) : 0
-      };
-      
     } catch (error) {
-      console.error('❌ Erro ao transcrever vídeo:', error);
-      throw error;
+      console.log(`⚠️ youtube-transcript-plus não disponível: ${error.message}`);
     }
+    
+    return null;
+  }
+
+  /**
+   * Parse de dados de legenda (XML/VTT/JSON)
+   * @param {string} data - Dados da legenda
+   * @returns {string} - Texto extraído
+   */
+  static parseCaptionData(data) {
+    if (!data) return '';
+    
+    let text = '';
+    
+    // Tentar parse como XML (formato YouTube)
+    if (data.includes('<transcript>') || data.includes('<text')) {
+      const textMatches = data.match(/<text[^>]*>([^<]*)<\/text>/gi) || [];
+      text = textMatches
+        .map(match => {
+          const content = match.replace(/<[^>]+>/g, '');
+          return this.decodeHtmlEntities(content);
+        })
+        .join(' ');
+    }
+    // Tentar parse como VTT
+    else if (data.includes('WEBVTT') || data.includes('-->')) {
+      const lines = data.split('\n');
+      const textLines = lines.filter(line => 
+        line.trim() && 
+        !line.includes('-->') && 
+        !line.includes('WEBVTT') &&
+        !line.match(/^\d+$/) &&
+        !line.match(/^\d{2}:\d{2}/)
+      );
+      text = textLines.join(' ');
+    }
+    // Tentar parse como JSON
+    else if (data.startsWith('{') || data.startsWith('[')) {
+      try {
+        const json = JSON.parse(data);
+        if (Array.isArray(json)) {
+          text = json.map(item => item.text || item.content || '').join(' ');
+        } else if (json.events) {
+          text = json.events
+            .filter(e => e.segs)
+            .map(e => e.segs.map(s => s.utf8).join(''))
+            .join(' ');
+        }
+      } catch (e) {
+        text = data;
+      }
+    }
+    // Texto puro
+    else {
+      text = data;
+    }
+    
+    // Limpar o texto
+    return text
+      .replace(/\s+/g, ' ')
+      .replace(/\[.*?\]/g, '') // Remove [Music], [Applause], etc.
+      .replace(/♪/g, '')
+      .trim();
+  }
+
+  /**
+   * Decodifica entidades HTML
+   * @param {string} text - Texto com entidades HTML
+   * @returns {string} - Texto decodificado
+   */
+  static decodeHtmlEntities(text) {
+    const entities = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&apos;': "'",
+      '&#x27;': "'",
+      '&#x2F;': '/',
+      '&nbsp;': ' '
+    };
+    
+    return text.replace(/&[#\w]+;/g, match => entities[match] || match);
+  }
+
+  /**
+   * Busca a transcrição de um vídeo do YouTube usando múltiplas estratégias
+   * @param {string} youtubeUrl - URL ou ID do vídeo do YouTube
+   * @param {string} lang - Idioma preferido (padrão: 'pt')
+   * @returns {Promise<{textoTranscricao: string, idioma: string, origem: string, videoId: string}>}
+   */
+  static async transcreverYoutubeVideo(youtubeUrl, lang = 'pt') {
+    console.log('🎬 Iniciando transcrição do vídeo:', youtubeUrl);
+    
+    const videoId = this.extractVideoId(youtubeUrl);
+    if (!videoId) {
+      throw new Error('URL do YouTube inválida. Não foi possível extrair o ID do vídeo.');
+    }
+    
+    console.log('📹 ID do vídeo:', videoId);
+    
+    let result = null;
+    
+    // Estratégia 1: Invidious API (melhor para servidores cloud)
+    console.log('\n📡 Estratégia 1: Invidious API...');
+    result = await this.fetchViaInvidious(videoId, lang);
+    
+    // Estratégia 2: YouTube timedtext API direta
+    if (!result) {
+      console.log('\n📡 Estratégia 2: YouTube timedtext API...');
+      result = await this.fetchViaTimedText(videoId, lang);
+    }
+    
+    // Estratégia 3: youtube-transcript-plus (funciona melhor localmente)
+    if (!result) {
+      console.log('\n📡 Estratégia 3: youtube-transcript-plus...');
+      result = await this.fetchViaLibrary(videoId, lang);
+    }
+    
+    if (!result || !result.text || result.text.length < 50) {
+      throw new Error(
+        'Não foi possível obter a transcrição deste vídeo. ' +
+        'Possíveis causas: vídeo sem legendas, legendas desativadas, ou vídeo privado/restrito.'
+      );
+    }
+    
+    console.log(`\n✅ Transcrição obtida com sucesso!`);
+    console.log(`   📊 Fonte: ${result.source}`);
+    console.log(`   🌐 Idioma: ${result.lang}`);
+    console.log(`   📝 Caracteres: ${result.text.length}`);
+    
+    return {
+      textoTranscricao: result.text,
+      idioma: result.lang,
+      origem: result.source,
+      segmentos: result.segments || [],
+      videoId,
+      duracao: 0
+    };
   }
 
   /**
