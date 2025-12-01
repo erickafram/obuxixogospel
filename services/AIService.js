@@ -4086,6 +4086,17 @@ Se não for possível identificar pautas relevantes, retorne: []`
         // Limitar à quantidade solicitada
         pautas = pautas.slice(0, quantidade);
         
+        // Se a IA retornou array vazio mas temos transcrição, criar pauta genérica
+        if (pautas.length === 0 && transcricao.length > 100) {
+          console.log('⚠️ IA não identificou pautas, criando pauta baseada no título do vídeo...');
+          const tituloBase = metadados.tituloVideo || 'Conteúdo do vídeo';
+          pautas = [{
+            resumoPauta: tituloBase,
+            foco: `Análise e destaque das principais informações apresentadas: ${tituloBase}`,
+            trechoRelevante: transcricao.substring(0, 500)
+          }];
+        }
+        
       } catch (parseError) {
         console.error('Erro ao parsear pautas:', parseError.message);
         console.error('Texto recebido:', resposta.substring(0, 300));
@@ -4093,8 +4104,9 @@ Se não for possível identificar pautas relevantes, retorne: []`
         // Fallback: criar pauta genérica se a transcrição tem conteúdo
         if (transcricao.length > 100) {
           console.log('⚠️ Criando pauta genérica como fallback...');
+          const tituloBase = metadados.tituloVideo || 'Declarações e informações do vídeo';
           pautas = [{
-            resumoPauta: 'Declarações e informações do vídeo',
+            resumoPauta: tituloBase,
             foco: 'Principais pontos abordados no vídeo',
             trechoRelevante: transcricao.substring(0, 500)
           }];
