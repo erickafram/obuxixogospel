@@ -4,6 +4,17 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     const now = new Date();
+    const timestamp = Date.now();
+    
+    // Verificar se já existem artigos demo
+    const [existing] = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM articles WHERE autor = 'Redação Obuxixo Gospel'`
+    );
+    
+    if (existing[0].count > 0) {
+      console.log('Artigos demo já existem, pulando seed...');
+      return;
+    }
     
     await queryInterface.bulkInsert('articles', [
       // Notícias (g1)
@@ -14,7 +25,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
         categoria: 'g1',
         subcategoria: 'Eventos',
-        url_amigavel: 'congresso-de-missoes-reune-milhares-de-jovens-em-sao-paulo-' + Date.now(),
+        url_amigavel: 'congresso-de-missoes-reune-milhares-de-jovens-em-sao-paulo-' + timestamp,
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 1250,
         destaque: true,
@@ -30,7 +41,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800',
         categoria: 'g1',
         subcategoria: 'Ação Social',
-        url_amigavel: 'igreja-inaugura-centro-de-acolhimento-para-moradores-de-rua-' + (Date.now() + 1),
+        url_amigavel: 'igreja-inaugura-centro-de-acolhimento-para-moradores-de-rua-' + (timestamp + 1),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 890,
         destaque: false,
@@ -46,7 +57,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=800',
         categoria: 'g1',
         subcategoria: 'Política',
-        url_amigavel: 'pastores-se-reunem-para-oracao-pela-paz-no-pais-' + (Date.now() + 2),
+        url_amigavel: 'pastores-se-reunem-para-oracao-pela-paz-no-pais-' + (timestamp + 2),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 670,
         destaque: false,
@@ -64,7 +75,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800',
         categoria: 'ge',
         subcategoria: 'Lançamentos',
-        url_amigavel: 'fernandinho-lanca-novo-album-com-participacoes-especiais-' + (Date.now() + 3),
+        url_amigavel: 'fernandinho-lanca-novo-album-com-participacoes-especiais-' + (timestamp + 3),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 2100,
         destaque: false,
@@ -80,7 +91,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
         categoria: 'ge',
         subcategoria: 'Premiações',
-        url_amigavel: 'premio-promessas-anuncia-indicados-de-2025-' + (Date.now() + 4),
+        url_amigavel: 'premio-promessas-anuncia-indicados-de-2025-' + (timestamp + 4),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 1580,
         destaque: false,
@@ -98,7 +109,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800',
         categoria: 'gshow',
         subcategoria: 'Festivais',
-        url_amigavel: 'festival-promessas-2025-anuncia-line-up-completo-' + (Date.now() + 5),
+        url_amigavel: 'festival-promessas-2025-anuncia-line-up-completo-' + (timestamp + 5),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 3200,
         destaque: false,
@@ -114,7 +125,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800',
         categoria: 'gshow',
         subcategoria: 'Conferências',
-        url_amigavel: 'conferencia-de-jovens-espera-50-mil-participantes-' + (Date.now() + 6),
+        url_amigavel: 'conferencia-de-jovens-espera-50-mil-participantes-' + (timestamp + 6),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 980,
         destaque: false,
@@ -132,7 +143,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
         categoria: 'quem',
         subcategoria: 'Perfil',
-        url_amigavel: 'pastor-claudio-duarte-completa-30-anos-de-ministerio-' + (Date.now() + 7),
+        url_amigavel: 'pastor-claudio-duarte-completa-30-anos-de-ministerio-' + (timestamp + 7),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 1450,
         destaque: false,
@@ -150,7 +161,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800',
         categoria: 'valor',
         subcategoria: 'Educação',
-        url_amigavel: 'novo-curso-de-teologia-online-tem-inscricoes-abertas-' + (Date.now() + 8),
+        url_amigavel: 'novo-curso-de-teologia-online-tem-inscricoes-abertas-' + (timestamp + 8),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 720,
         destaque: false,
@@ -166,7 +177,7 @@ module.exports = {
         imagem: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800',
         categoria: 'valor',
         subcategoria: 'Pesquisas',
-        url_amigavel: 'estudo-revela-crescimento-de-igrejas-evangelicas-no-brasil-' + (Date.now() + 9),
+        url_amigavel: 'estudo-revela-crescimento-de-igrejas-evangelicas-no-brasil-' + (timestamp + 9),
         autor: 'Redação Obuxixo Gospel',
         visualizacoes: 1890,
         destaque: false,
