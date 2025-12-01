@@ -768,6 +768,10 @@
         try {
             setStepActive('step1');
 
+            // Controller para timeout de 5 minutos (processo pode demorar)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutos
+
             const response = await fetch('/api/video/gerar-materias', {
                 method: 'POST',
                 headers: {
@@ -779,8 +783,18 @@
                     categoria,
                     autor,
                     aplicarEstiloG1
-                })
+                }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
+
+            // Verificar se a resposta é JSON válido
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Se não for JSON, as matérias podem ter sido criadas mas houve erro no retorno
+                throw new Error('Processo pode ter sido concluído. Verifique a lista de posts no dashboard.');
+            }
 
             const data = await response.json();
 
@@ -811,7 +825,16 @@
                 }
             });
 
-            document.getElementById('errorMessage').textContent = error.message;
+            // Mensagem de erro mais amigável
+            let errorMsg = error.message;
+            if (error.name === 'AbortError') {
+                errorMsg = 'Tempo limite excedido. O processo pode ter sido concluído em segundo plano. Verifique a lista de posts.';
+            } else if (errorMsg.includes('Unexpected token')) {
+                errorMsg = 'Erro de comunicação com o servidor. As matérias podem ter sido criadas. Verifique a lista de posts no dashboard.';
+            }
+
+            document.getElementById('errorMessage').innerHTML = errorMsg + 
+                '<br><br><a href="/dashboard/posts" style="color: #991B1B; font-weight: 600;">→ Ir para lista de posts</a>';
             document.getElementById('errorAlert').style.display = 'flex';
         } finally {
             document.getElementById('btnGerar').disabled = false;
