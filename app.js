@@ -2218,14 +2218,14 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
 
-    // 3. Salvar cada matéria com agendamento para 1 dia depois
+    // 3. Salvar cada matéria como AGENDADA para 2 dias depois (não publicada)
     const slugify = require('slugify');
     const materiassSalvas = [];
     
-    // Calcular data de publicação: 1 dia a partir de agora
+    // Calcular data de publicação: 2 dias a partir de agora
     // Para múltiplas matérias, espaçar 1 hora entre cada
     const dataBase = new Date();
-    dataBase.setDate(dataBase.getDate() + 1); // +1 dia
+    dataBase.setDate(dataBase.getDate() + 2); // +2 dias para revisão
 
     for (let i = 0; i < materias.length; i++) {
       const materia = materias[i];
@@ -2249,7 +2249,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         const dataPublicacao = new Date(dataBase);
         dataPublicacao.setHours(dataPublicacao.getHours() + i); // +1 hora para cada matéria
 
-        // Criar artigo AGENDADO (publicado=true mas com data futura)
+        // Criar artigo AGENDADO (publicado=false para revisão)
         const article = await Article.create({
           titulo: materia.titulo,
           descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
@@ -2259,7 +2259,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
             '/images/default-post.jpg',
           categoria: categoria,
           autor: autor,
-          publicado: true, // Agendado (será publicado na dataPublicacao)
+          publicado: false, // NÃO publicado - aguardando revisão
           destaque: false,
           dataPublicacao: dataPublicacao, // Data futura = agendado
           visualizacoes: 0,
