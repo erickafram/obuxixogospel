@@ -2252,6 +2252,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         // Adicionar embed do YouTube no final do conteúdo (com lazy loading)
         let conteudoFinal = materia.conteudoHTML;
         if (transcricaoResult.videoId) {
+          console.log(`🎥 Adicionando embed do YouTube: ${transcricaoResult.videoId}`);
           const embedYoutube = `
 <h3>Assista ao vídeo</h3>
 <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 20px 0;">
