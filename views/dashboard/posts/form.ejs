@@ -3688,27 +3688,26 @@
 
         // Converter links do YouTube em embeds automaticamente
         let youtubeConvertTimeout = null;
+        let isConvertingYoutube = false;
         function convertYouTubeLinksToEmbed() {
             if (youtubeConvertTimeout) clearTimeout(youtubeConvertTimeout);
+            if (isConvertingYoutube) return;
             
             youtubeConvertTimeout = setTimeout(() => {
-                if (!quill) return;
-                const content = quill.root.innerHTML;
-                
-                // Padrões de URL do YouTube
-                const patterns = [
-                    { regex: /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g },
-                    { regex: /https?:\/\/youtu\.be\/([a-zA-Z0-9_-]{11})/g },
-                    { regex: /https?:\/\/(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/g }
-                ];
-                
-                let newContent = content;
-                let hasChanges = false;
-                
-                for (const pattern of patterns) {
-                    const regex = new RegExp(pattern.regex.source, 'g');
+                try {
+                    if (!quill || !quill.root) return;
+                    
+                    const content = quill.root.innerHTML;
+                    if (!content) return;
+                    
+                    // Padrões de URL do YouTube
+                    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/g;
+                    
+                    let newContent = content;
+                    let hasChanges = false;
                     let match;
-                    while ((match = regex.exec(content)) !== null) {
+                    
+                    while ((match = youtubeRegex.exec(content)) !== null) {
                         const fullUrl = match[0];
                         const videoId = match[1];
                         
@@ -3721,20 +3720,24 @@
                         if (before.includes('src=') || before.includes('href=')) continue;
                         
                         // Criar embed
-                        const embed = '<div class="video-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:15px 0;"><iframe src="https://www.youtube.com/embed/' + videoId + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>';
+                        const embed = '<p><br></p><div class="video-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:15px 0;"><iframe src="https://www.youtube.com/embed/' + videoId + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div><p><br></p>';
                         
                         newContent = newContent.replace(fullUrl, embed);
                         hasChanges = true;
                         console.log('🎬 YouTube convertido:', videoId);
                     }
+                    
+                    if (hasChanges) {
+                        isConvertingYoutube = true;
+                        const delta = quill.clipboard.convert(newContent);
+                        quill.setContents(delta, 'silent');
+                        isConvertingYoutube = false;
+                    }
+                } catch (e) {
+                    console.error('Erro ao converter YouTube:', e);
+                    isConvertingYoutube = false;
                 }
-                
-                if (hasChanges) {
-                    const sel = quill.getSelection();
-                    quill.root.innerHTML = newContent;
-                    if (sel) setTimeout(() => { try { quill.setSelection(sel.index, sel.length); } catch(e){} }, 10);
-                }
-            }, 800);
+            }, 1000);
         }
 
         // FACT-CHECK - Toggle campos
