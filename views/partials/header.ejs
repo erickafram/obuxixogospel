@@ -178,6 +178,60 @@
                         </a>
                     </div>
                     <div class="header-actions">
+                        <!-- Sino de Notificações -->
+                        <div class="notifications-wrapper">
+                            <button class="notifications-toggle" id="notificationsToggle" aria-label="Ver notificações">
+                                <i class="fas fa-bell"></i>
+                                <span class="notifications-badge"><%= typeof ultimasNoticias !== 'undefined' ? ultimasNoticias.length : 0 %></span>
+                            </button>
+                            <div class="notifications-dropdown" id="notificationsDropdown">
+                                <div class="notifications-header">
+                                    <i class="fas fa-fire-alt"></i>
+                                    <span>Últimas Notícias</span>
+                                </div>
+                                <div class="notifications-list">
+                                    <% if (typeof ultimasNoticias !== 'undefined' && ultimasNoticias.length > 0) { %>
+                                        <% ultimasNoticias.forEach((noticia) => { %>
+                                            <a href="/<%= noticia.categoria %>/<%= noticia.urlAmigavel %>" class="notification-item">
+                                                <div class="notification-thumb">
+                                                    <img src="<%= noticia.imagem || '/images/default-post.jpg' %>" alt="" loading="lazy">
+                                                </div>
+                                                <div class="notification-content">
+                                                    <span class="notification-title"><%= noticia.titulo %></span>
+                                                    <span class="notification-time">
+                                                        <i class="far fa-clock"></i>
+                                                        <% 
+                                                            const agora = new Date();
+                                                            const dataNoticia = new Date(noticia.dataPublicacao);
+                                                            const diffMs = agora - dataNoticia;
+                                                            const diffMins = Math.floor(diffMs / 60000);
+                                                            const diffHoras = Math.floor(diffMs / 3600000);
+                                                            const diffDias = Math.floor(diffMs / 86400000);
+                                                            
+                                                            if (diffMins < 60) {
+                                                        %>
+                                                            há <%= diffMins %> min
+                                                        <% } else if (diffHoras < 24) { %>
+                                                            há <%= diffHoras %>h
+                                                        <% } else { %>
+                                                            há <%= diffDias %> dia<%= diffDias > 1 ? 's' : '' %>
+                                                        <% } %>
+                                                    </span>
+                                                </div>
+                                            </a>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <div class="no-notifications">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Nenhuma notícia nova</span>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <a href="/" class="notifications-footer">
+                                    Ver todas as notícias <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
                         <div class="conta-globo-wrapper">
                             <a href="/login" class="login-btn" aria-label="Fazer login">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"

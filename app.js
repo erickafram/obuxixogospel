@@ -173,6 +173,30 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Middleware para carregar últimas notícias (para modal de alertas)
+app.use(async (req, res, next) => {
+  try {
+    // Só carrega para páginas públicas (não dashboard)
+    if (!req.path.startsWith('/dashboard') && !req.path.startsWith('/api')) {
+      const ultimasNoticias = await Article.findAll({
+        where: { 
+          publicado: true,
+          dataPublicacao: { [require('sequelize').Op.lte]: new Date() }
+        },
+        order: [['dataPublicacao', 'DESC']],
+        limit: 5,
+        attributes: ['id', 'titulo', 'urlAmigavel', 'categoria', 'dataPublicacao', 'imagem']
+      });
+      res.locals.ultimasNoticias = ultimasNoticias;
+    } else {
+      res.locals.ultimasNoticias = [];
+    }
+  } catch (error) {
+    res.locals.ultimasNoticias = [];
+  }
+  next();
+});
+
 // Middleware de redirecionamentos SEO (ANTES das rotas principais)
 const redirectMiddleware = require('./middleware/redirectMiddleware');
 app.use(redirectMiddleware);

@@ -82,5 +82,398 @@
             src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v18.0" 
             nonce="YOUR_NONCE">
     </script>
+
+    <!-- Banner de Cookies Fixo na Parte Inferior -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-icon">
+                <i class="fas fa-cookie-bite"></i>
+            </div>
+            <div class="cookie-text">
+                <p>Nós usamos <strong>cookies</strong> e outras tecnologias semelhantes para melhorar a sua experiência em nossos serviços, personalizar publicidade e recomendar conteúdo de seu interesse.</p>
+                <p class="cookie-links">
+                    Ao continuar, você concorda com nossa 
+                    <a href="/pagina/politica-de-privacidade">Política de Privacidade</a> e 
+                    <a href="/pagina/politica-de-cookies">Política de Cookies</a>.
+                </p>
+            </div>
+            <button class="cookie-accept" id="acceptCookies">
+                <i class="fas fa-check"></i>
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <style>
+        /* Sino de Notificações no Header */
+        .notifications-wrapper {
+            position: relative;
+        }
+
+        .notifications-toggle {
+            background: none;
+            border: none;
+            color: #333;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .notifications-toggle:hover {
+            color: #FF6B35;
+        }
+
+        .notifications-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #FF6B35;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .notifications-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 380px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .notifications-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(5px);
+        }
+
+        .notifications-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            padding: 14px 18px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notifications-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            text-decoration: none;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background: #fff8f5;
+        }
+
+        .notification-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .notification-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-title {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #222;
+            margin-bottom: 6px;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #FF6B35;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .no-notifications {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+        }
+
+        .no-notifications i {
+            font-size: 2rem;
+            color: #FF6B35;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .notifications-footer {
+            display: block;
+            padding: 14px 18px;
+            text-align: center;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .notifications-footer:hover {
+            opacity: 0.9;
+        }
+
+        .notifications-footer i {
+            margin-left: 5px;
+        }
+
+        /* Banner de Cookies - Clean e Laranja */
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 16px 24px;
+            z-index: 99999;
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            border-top: 3px solid #FF6B35;
+        }
+
+        .cookie-banner.active {
+            transform: translateY(0);
+        }
+
+        .cookie-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .cookie-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cookie-icon i {
+            color: white;
+            font-size: 20px;
+        }
+
+        .cookie-text {
+            flex: 1;
+        }
+
+        .cookie-text p {
+            color: #444;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0 0 4px 0;
+        }
+
+        .cookie-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .cookie-links a {
+            color: #FF6B35;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .cookie-links a:hover {
+            text-decoration: underline;
+        }
+
+        .cookie-accept {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .cookie-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .cookie-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .cookie-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .cookie-icon i {
+                font-size: 18px;
+            }
+
+            .cookie-text p {
+                font-size: 12px;
+            }
+
+            .cookie-accept {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .notifications-dropdown {
+                width: 320px;
+                right: -80px;
+            }
+
+            .notification-thumb {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .notifications-dropdown {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                max-height: 80vh;
+            }
+
+            .notification-thumb {
+                width: 45px;
+                height: 45px;
+            }
+
+            .notification-title {
+                font-size: 12px;
+            }
+        }
+    </style>
+
+    <script>
+        // Controle do Banner de Cookies
+        (function() {
+            const banner = document.getElementById('cookieBanner');
+            const acceptBtn = document.getElementById('acceptCookies');
+            const STORAGE_KEY = 'obuxixo_cookies_accepted';
+
+            function shouldShowBanner() {
+                return !localStorage.getItem(STORAGE_KEY);
+            }
+
+            function acceptCookies() {
+                localStorage.setItem(STORAGE_KEY, 'true');
+                banner.classList.remove('active');
+            }
+
+            // Mostrar banner se necessário
+            if (shouldShowBanner()) {
+                setTimeout(() => {
+                    banner.classList.add('active');
+                }, 1000);
+            }
+
+            if (acceptBtn) {
+                acceptBtn.addEventListener('click', acceptCookies);
+            }
+        })();
+
+        // Controle do Dropdown de Notificações
+        (function() {
+            const toggle = document.getElementById('notificationsToggle');
+            const dropdown = document.getElementById('notificationsDropdown');
+
+            if (toggle && dropdown) {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('active');
+                });
+
+                // Fechar ao clicar fora
+                document.addEventListener('click', function(e) {
+                    if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+
+                // Fechar com ESC
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdown.classList.remove('active');
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
