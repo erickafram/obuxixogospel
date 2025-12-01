@@ -390,17 +390,29 @@ async function salvarRedirecionamento() {
         return;
     }
     
-    // Validar URL de destino
-    try {
-        new URL(urlNova);
-    } catch (e) {
-        alert('URL de destino inválida! Use o formato completo: https://...');
-        return;
+    // Validar URL de destino (aceita URLs absolutas ou relativas)
+    let urlNovaFinal = urlNova;
+    
+    // Se começa com /, é URL relativa - adicionar domínio para validação
+    if (urlNova.startsWith('/')) {
+        // URL relativa é válida, manter como está
+        urlNovaFinal = urlNova;
+    } else if (!urlNova.startsWith('http://') && !urlNova.startsWith('https://')) {
+        // Se não tem protocolo e não começa com /, adicionar /
+        urlNovaFinal = '/' + urlNova;
+    } else {
+        // URL absoluta - validar formato
+        try {
+            new URL(urlNova);
+        } catch (e) {
+            alert('URL de destino inválida! Use:\n- URL relativa: /noticias/novo-post\n- URL completa: https://site.com/pagina');
+            return;
+        }
     }
     
     const dados = {
         urlAntiga: urlAntiga,
-        urlNova: urlNova,
+        urlNova: urlNovaFinal,
         tipoRedirecionamento: tipoRedirecionamento,
         descricao: descricao || `Redirecionamento criado via admin-bar`
     };
