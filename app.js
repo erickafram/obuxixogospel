@@ -2171,23 +2171,40 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
     }
 
     console.log(`✅ Transcrição obtida: ${transcricaoResult.textoTranscricao.length} caracteres`);
+    if (transcricaoResult.tituloVideo) {
+      console.log(`📺 Título do vídeo: ${transcricaoResult.tituloVideo}`);
+    }
+    if (transcricaoResult.canalVideo) {
+      console.log(`👤 Canal: ${transcricaoResult.canalVideo}`);
+    }
 
-    // 2. Gerar matérias com IA
+    // 2. Gerar matérias com IA (passando metadados do vídeo)
     console.log('🤖 Gerando matérias com IA...');
     const materias = await AIService.gerarMateriasDeVideo(
       transcricaoResult.textoTranscricao,
       Math.min(quantidade, 5), // Máximo 5
       categoria,
-      aplicarEstiloG1
+      aplicarEstiloG1,
+      {
+        tituloVideo: transcricaoResult.tituloVideo,
+        descricaoVideo: transcricaoResult.descricaoVideo,
+        canalVideo: transcricaoResult.canalVideo
+      }
     );
 
     console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
 
-    // 3. Salvar cada matéria como rascunho
+    // 3. Salvar cada matéria com agendamento para 1 dia depois
     const slugify = require('slugify');
     const materiassSalvas = [];
+    
+    // Calcular data de publicação: 1 dia a partir de agora
+    // Para múltiplas matérias, espaçar 1 hora entre cada
+    const dataBase = new Date();
+    dataBase.setDate(dataBase.getDate() + 1); // +1 dia
 
-    for (const materia of materias) {
+    for (let i = 0; i < materias.length; i++) {
+      const materia = materias[i];
       try {
         // Gerar URL amigável
         let urlAmigavelBase = slugify(materia.titulo, {
@@ -2204,7 +2221,11 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
           contador++;
         }
 
-        // Criar artigo como rascunho
+        // Calcular data de publicação (espaçar 1 hora entre matérias)
+        const dataPublicacao = new Date(dataBase);
+        dataPublicacao.setHours(dataPublicacao.getHours() + i); // +1 hora para cada matéria
+
+        // Criar artigo AGENDADO (publicado=true mas com data futura)
         const article = await Article.create({
           titulo: materia.titulo,
           descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
@@ -2214,9 +2235,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
             '/images/default-post.jpg',
           categoria: categoria,
           autor: autor,
-          publicado: false, // Rascunho
+          publicado: true, // Agendado (será publicado na dataPublicacao)
           destaque: false,
-          dataPublicacao: new Date(),
+          dataPublicacao: dataPublicacao, // Data futura = agendado
           visualizacoes: 0,
           urlAmigavel
         });
@@ -2227,10 +2248,11 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
           descricao: article.descricao,
           categoria: article.categoria,
           urlAmigavel: article.urlAmigavel,
+          dataPublicacao: dataPublicacao.toISOString(),
           previewHtml: materia.conteudoHTML.substring(0, 300) + '...'
         });
 
-        console.log(`💾 Rascunho salvo: "${article.titulo}" (ID: ${article.id})`);
+        console.log(`📅 Matéria agendada: "${article.titulo}" para ${dataPublicacao.toLocaleString('pt-BR')} (ID: ${article.id})`);
 
       } catch (saveError) {
         console.error('Erro ao salvar matéria:', saveError);

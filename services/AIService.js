@@ -3985,9 +3985,10 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
    * Analisa uma transcrição de vídeo e identifica pautas/temas diferentes
    * @param {string} transcricao - Texto da transcrição do vídeo
    * @param {number} quantidade - Quantidade de pautas/matérias desejadas (1-5)
+   * @param {Object} metadados - Metadados do vídeo (tituloVideo, descricaoVideo, canalVideo)
    * @returns {Promise<Array<{resumoPauta: string, foco: string, trechoRelevante: string}>>}
    */
-  static async gerarPautasDoVideo(transcricao, quantidade = 3) {
+  static async gerarPautasDoVideo(transcricao, quantidade = 3, metadados = {}) {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
@@ -3998,6 +3999,19 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
 
     // Limitar transcrição para não exceder limite de tokens
     const transcricaoLimitada = transcricao.substring(0, 15000);
+    
+    // Construir contexto com metadados do vídeo
+    let contextoVideo = '';
+    if (metadados.tituloVideo) {
+      contextoVideo += `TÍTULO DO VÍDEO: ${metadados.tituloVideo}\n`;
+    }
+    if (metadados.canalVideo) {
+      contextoVideo += `CANAL/AUTOR: ${metadados.canalVideo}\n`;
+    }
+    if (metadados.descricaoVideo) {
+      // Limitar descrição a 500 caracteres
+      contextoVideo += `DESCRIÇÃO DO VÍDEO: ${metadados.descricaoVideo.substring(0, 500)}\n`;
+    }
 
     const messages = [
       {
@@ -4005,20 +4019,23 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         content: `Você é um editor-chefe de um portal de notícias gospel (Obuxixo Gospel). 
 Sua tarefa é analisar transcrições de vídeos e identificar diferentes ângulos/pautas que podem virar matérias jornalísticas separadas.
 Você deve identificar temas distintos, declarações importantes, polêmicas ou informações relevantes que mereçam matérias próprias.
+Use o título e descrição do vídeo para entender melhor o contexto.
 Responda APENAS em JSON válido.`
       },
       {
         role: 'user',
         content: `Analise a transcrição abaixo e identifique até ${quantidade} pautas/temas DIFERENTES que podem virar matérias jornalísticas separadas.
 
+${contextoVideo}
 TRANSCRIÇÃO DO VÍDEO:
 ${transcricaoLimitada}
 
 REGRAS:
-1. Cada pauta deve ter um FOCO DIFERENTE (não repita o mesmo tema)
-2. Priorize: declarações polêmicas, anúncios importantes, críticas, revelações, eventos
-3. Se o vídeo tiver apenas 1 tema principal, retorne apenas 1 pauta
-4. Extraia o trecho mais relevante da transcrição para cada pauta
+1. Use o TÍTULO e DESCRIÇÃO do vídeo para entender o contexto principal
+2. Cada pauta deve ter um FOCO DIFERENTE (não repita o mesmo tema)
+3. Priorize: declarações polêmicas, anúncios importantes, críticas, revelações, eventos
+4. Se o vídeo tiver apenas 1 tema principal, retorne apenas 1 pauta
+5. Extraia o trecho mais relevante da transcrição para cada pauta
 
 RESPONDA EM JSON:
 [
@@ -4225,16 +4242,23 @@ RESPONDA EM JSON:
    * @param {number} quantidade - Quantidade de matérias (1-5)
    * @param {string} categoria - Categoria padrão
    * @param {boolean} aplicarEstiloG1 - Se deve aplicar reescrita estilo G1
+   * @param {Object} metadados - Metadados do vídeo (titulo, descricao, canal)
    * @returns {Promise<Array<{titulo, descricao, conteudoHTML}>>}
    */
-  static async gerarMateriasDeVideo(transcricao, quantidade = 3, categoria = 'noticias', aplicarEstiloG1 = true) {
+  static async gerarMateriasDeVideo(transcricao, quantidade = 3, categoria = 'noticias', aplicarEstiloG1 = true, metadados = {}) {
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
     console.log(`   Quantidade solicitada: ${quantidade}`);
     console.log(`   Categoria: ${categoria}`);
     console.log(`   Aplicar estilo G1: ${aplicarEstiloG1}`);
+    if (metadados.tituloVideo) {
+      console.log(`   📺 Título do vídeo: ${metadados.tituloVideo}`);
+    }
+    if (metadados.canalVideo) {
+      console.log(`   👤 Canal: ${metadados.canalVideo}`);
+    }
 
-    // 1. Identificar pautas
-    const pautas = await this.gerarPautasDoVideo(transcricao, quantidade);
+    // 1. Identificar pautas (passando metadados para contexto)
+    const pautas = await this.gerarPautasDoVideo(transcricao, quantidade, metadados);
     
     if (pautas.length === 0) {
       throw new Error('Não foi possível identificar pautas relevantes na transcrição');

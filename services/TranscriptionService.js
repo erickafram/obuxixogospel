@@ -24,15 +24,22 @@ class TranscriptionService {
   static extractVideoId(url) {
     if (!url) return null;
     
-    // Padrões de URL do YouTube
+    // Padrões de URL do YouTube (incluindo Shorts)
     const patterns = [
+      // YouTube Shorts
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+      // URLs padrão
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
-      /^([a-zA-Z0-9_-]{11})$/ // ID direto
+      // URL com parâmetros extras
+      /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+      // ID direto
+      /^([a-zA-Z0-9_-]{11})$/
     ];
     
     for (const pattern of patterns) {
       const match = url.match(pattern);
       if (match) {
+        console.log(`🔗 ID extraído: ${match[1]} (padrão: ${pattern.source.substring(0, 30)}...)`);
         return match[1];
       }
     }
@@ -145,6 +152,100 @@ class TranscriptionService {
       } catch (error) {
         console.log(`⚠️ Falha em ${instance}: ${error.message}`);
       }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extrai metadados do vídeo (título, descrição, canal) via scraping ou API
+   * @param {string} videoId - ID do vídeo
+   * @returns {Promise<{titulo: string, descricao: string, canal: string}|null>}
+   */
+  static async fetchVideoMetadata(videoId) {
+    try {
+      console.log(`📋 Buscando metadados do vídeo...`);
+      
+      // Tentar via Invidious primeiro (mais confiável em servidores)
+      for (const instance of this.INVIDIOUS_INSTANCES) {
+        try {
+          const response = await axios.get(`${instance}/api/v1/videos/${videoId}`, {
+            timeout: 10000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            validateStatus: (status) => status < 500
+          });
+          
+          if (response.status === 200 && response.data) {
+            const data = response.data;
+            console.log(`✅ Metadados obtidos via ${instance}`);
+            return {
+              titulo: data.title || '',
+              descricao: data.description || '',
+              canal: data.author || '',
+              duracao: data.lengthSeconds || 0,
+              visualizacoes: data.viewCount || 0,
+              dataPublicacao: data.published ? new Date(data.published * 1000).toISOString() : null
+            };
+          }
+        } catch (e) {
+          // Tentar próxima instância
+        }
+      }
+      
+      // Fallback: scraping da página do YouTube
+      const url = `https://www.youtube.com/watch?v=${videoId}`;
+      const response = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Cookie': 'CONSENT=YES+cb'
+        }
+      });
+      
+      const html = response.data;
+      
+      // Extrair título
+      let titulo = '';
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+      if (titleMatch) {
+        titulo = titleMatch[1].replace(' - YouTube', '').trim();
+      }
+      
+      // Extrair descrição do meta tag
+      let descricao = '';
+      const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+      if (descMatch) {
+        descricao = this.decodeHtmlEntities(descMatch[1]);
+      }
+      
+      // Tentar extrair do JSON embutido
+      const jsonMatch = html.match(/var ytInitialPlayerResponse\s*=\s*({.+?});/);
+      if (jsonMatch) {
+        try {
+          const playerData = JSON.parse(jsonMatch[1]);
+          if (playerData.videoDetails) {
+            titulo = playerData.videoDetails.title || titulo;
+            descricao = playerData.videoDetails.shortDescription || descricao;
+          }
+        } catch (e) {}
+      }
+      
+      // Extrair canal
+      let canal = '';
+      const canalMatch = html.match(/"ownerChannelName":"([^"]+)"/);
+      if (canalMatch) {
+        canal = canalMatch[1];
+      }
+      
+      if (titulo) {
+        console.log(`✅ Metadados extraídos via scraping`);
+        console.log(`   📺 Título: ${titulo.substring(0, 50)}...`);
+        return { titulo, descricao, canal };
+      }
+      
+    } catch (error) {
+      console.log(`⚠️ Erro ao buscar metadados: ${error.message}`);
     }
     
     return null;
@@ -432,10 +533,18 @@ class TranscriptionService {
       );
     }
     
+    // Buscar metadados do vídeo (título, descrição, canal)
+    console.log('\n📋 Buscando metadados do vídeo...');
+    const metadata = await this.fetchVideoMetadata(videoId);
+    
     console.log(`\n✅ Transcrição obtida com sucesso!`);
     console.log(`   📊 Fonte: ${result.source}`);
     console.log(`   🌐 Idioma: ${result.lang}`);
     console.log(`   📝 Caracteres: ${result.text.length}`);
+    if (metadata) {
+      console.log(`   📺 Título: ${metadata.titulo?.substring(0, 50)}...`);
+      console.log(`   👤 Canal: ${metadata.canal}`);
+    }
     
     return {
       textoTranscricao: result.text,
@@ -443,7 +552,11 @@ class TranscriptionService {
       origem: result.source,
       segmentos: result.segments || [],
       videoId,
-      duracao: 0
+      duracao: 0,
+      // Metadados do vídeo
+      tituloVideo: metadata?.titulo || '',
+      descricaoVideo: metadata?.descricao || '',
+      canalVideo: metadata?.canal || ''
     };
   }
 
