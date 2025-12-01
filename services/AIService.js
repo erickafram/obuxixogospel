@@ -4036,26 +4036,52 @@ Se não for possível identificar pautas relevantes, retorne: []`
     try {
       const resposta = await this.makeRequest(messages, 0.3, 2000);
       
+      console.log('📄 Resposta da IA para pautas:', resposta.substring(0, 500));
+      
       // Parse do JSON
       let pautas = [];
       try {
         let jsonText = resposta.trim();
+        
+        // Remover markdown code blocks
         if (jsonText.startsWith('```')) {
-          jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          jsonText = jsonText.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
         }
+        
+        // Tentar encontrar array JSON na resposta
+        const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[0];
+        }
+        
         pautas = JSON.parse(jsonText);
         
         if (!Array.isArray(pautas)) {
-          console.error('Resposta não é um array');
-          return [];
+          console.error('Resposta não é um array, tentando converter...');
+          // Se for objeto único, colocar em array
+          if (pautas && typeof pautas === 'object') {
+            pautas = [pautas];
+          } else {
+            pautas = [];
+          }
         }
         
         // Limitar à quantidade solicitada
         pautas = pautas.slice(0, quantidade);
         
       } catch (parseError) {
-        console.error('Erro ao parsear pautas:', parseError);
-        return [];
+        console.error('Erro ao parsear pautas:', parseError.message);
+        console.error('Texto recebido:', resposta.substring(0, 300));
+        
+        // Fallback: criar pauta genérica se a transcrição tem conteúdo
+        if (transcricao.length > 100) {
+          console.log('⚠️ Criando pauta genérica como fallback...');
+          pautas = [{
+            resumoPauta: 'Declarações e informações do vídeo',
+            foco: 'Principais pontos abordados no vídeo',
+            trechoRelevante: transcricao.substring(0, 500)
+          }];
+        }
       }
 
       console.log(`✅ ${pautas.length} pauta(s) identificada(s)`);
@@ -4063,6 +4089,17 @@ Se não for possível identificar pautas relevantes, retorne: []`
 
     } catch (error) {
       console.error('❌ Erro ao gerar pautas:', error);
+      
+      // Fallback em caso de erro
+      if (transcricao.length > 100) {
+        console.log('⚠️ Usando fallback após erro...');
+        return [{
+          resumoPauta: 'Conteúdo do vídeo',
+          foco: 'Informações apresentadas no vídeo',
+          trechoRelevante: transcricao.substring(0, 500)
+        }];
+      }
+      
       throw error;
     }
   }
