@@ -4145,17 +4145,11 @@ Se não for possível identificar pautas relevantes, retorne: []`
    * @param {string} transcricao - Transcrição completa do vídeo
    * @param {Object} pauta - Objeto com resumoPauta, foco e trechoRelevante
    * @param {string} categoria - Categoria da matéria
-<<<<<<< HEAD
    * @param {string} tom - Tom da matéria (normal, sensacionalista, polemico, investigativo, emocional)
-   * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
-   */
-  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', tom = 'normal') {
-=======
    * @param {Object} metadados - Metadados do vídeo (tituloVideo, canalVideo, descricaoVideo)
    * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
    */
-  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', metadados = {}) {
->>>>>>> ec9f646d19428b0b571d73c3930267e828388da2
+  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', tom = 'normal', metadados = {}) {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
@@ -4359,12 +4353,8 @@ RESPONDA EM JSON:
       console.log(`\n📰 Gerando matéria ${i + 1}/${pautas.length}: ${pauta.resumoPauta}`);
       
       try {
-<<<<<<< HEAD
-        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, tom);
-=======
-        // Passar metadados para identificar corretamente o autor/canal
-        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, metadados);
->>>>>>> ec9f646d19428b0b571d73c3930267e828388da2
+        // Passar tom e metadados para identificar corretamente o autor/canal
+        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, tom, metadados);
         
         // 3. Opcional: aplicar estilo G1/Metrópoles
         if (aplicarEstiloG1 && materia.conteudoHTML) {
