@@ -52,7 +52,11 @@ module.exports = {
       
       res.render('dashboard/configuracoes/redes-sociais', {
         title: 'Redes Sociais',
-        user: req.user,
+        user: {
+          nome: req.session.userName,
+          email: req.session.userEmail,
+          role: req.session.userRole
+        },
         networks: configMap,
         recentPosts,
         stats
