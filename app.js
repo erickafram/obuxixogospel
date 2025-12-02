@@ -2334,7 +2334,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 // Rota para redes sociais (Instagram, Facebook, Twitter)
 app.post('/api/video/gerar-materias-social', isAuthenticated, async (req, res) => {
   try {
-    const { videoUrl, platform, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
+    const { videoUrl, platform, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal', manualText } = req.body;
 
     console.log('🌐 Iniciando geração de matérias a partir de rede social...');
     console.log('   URL:', videoUrl);
@@ -2358,14 +2358,36 @@ app.post('/api/video/gerar-materias-social', isAuthenticated, async (req, res) =
       });
     }
 
-    // Usar o método existente criarMateriaPorLink que já suporta essas plataformas
-    console.log('🤖 Criando matéria por link...');
-    const materia = await AIService.criarMateriaPorLink(
-      videoUrl, 
-      categoria, 
-      true, // pesquisarInternet
-      true  // transcreverVideo
-    );
+    let materia;
+    
+    // Se tem texto manual, usar diretamente
+    if (manualText && manualText.trim().length > 50) {
+      console.log('📝 Usando texto manual fornecido pelo usuário...');
+      materia = await AIService.criarMateria(
+        manualText,
+        categoria,
+        '', // palavrasChave
+        true, // pesquisarInternet
+        [videoUrl] // links para referência
+      );
+    } else {
+      // Tentar extração automática
+      console.log('🤖 Tentando extração automática...');
+      try {
+        materia = await AIService.criarMateriaPorLink(
+          videoUrl, 
+          categoria, 
+          true, // pesquisarInternet
+          true  // transcreverVideo
+        );
+      } catch (extractError) {
+        console.error('❌ Falha na extração automática:', extractError.message);
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, copie o texto da postagem e cole no campo "Texto Manual".' 
+        });
+      }
+    }
 
     console.log('✅ Matéria base gerada com sucesso!');
 

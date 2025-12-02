@@ -855,6 +855,13 @@
                                placeholder="Nome do autor">
                     </div>
 
+                    <div class="form-group" id="manualTextGroup" style="display: none;">
+                        <label for="manualText">Texto Manual (Opcional)</label>
+                        <textarea id="manualText" name="manualText" class="form-control" rows="6" 
+                                  placeholder="Se a extração automática falhar, cole aqui o texto do post/tweet manualmente..."></textarea>
+                        <p class="form-hint">💡 <strong>Dica:</strong> Copie o texto da postagem e cole aqui caso a extração automática não funcione</p>
+                    </div>
+
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input type="checkbox" id="aplicarEstiloG1" name="aplicarEstiloG1" checked>
@@ -984,6 +991,14 @@
             document.querySelectorAll('.platform-hints .form-hint').forEach(h => h.classList.remove('active'));
             document.getElementById(`hint-${platform}`).classList.add('active');
             
+            // Mostrar/ocultar campo de texto manual
+            const manualTextGroup = document.getElementById('manualTextGroup');
+            if (platform === 'youtube') {
+                manualTextGroup.style.display = 'none';
+            } else {
+                manualTextGroup.style.display = 'block';
+            }
+            
             // Limpar preview
             document.getElementById('videoPreview').classList.remove('active');
         });
@@ -1110,6 +1125,7 @@
         const autor = document.getElementById('autor').value;
         const aplicarEstiloG1 = document.getElementById('aplicarEstiloG1').checked;
         const tom = document.querySelector('input[name="tom"]:checked').value;
+        const manualText = document.getElementById('manualText').value;
         const platform = detectPlatform(videoUrl);
 
         if (!videoUrl) {
@@ -1151,7 +1167,8 @@
                     categoria,
                     autor,
                     aplicarEstiloG1,
-                    tom
+                    tom,
+                    manualText
                 }),
                 signal: controller.signal
             });
