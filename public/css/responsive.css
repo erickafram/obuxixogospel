@@ -257,6 +257,7 @@
 
     .hero-description {
         font-size: 14px;
+        display: none;
     }
 
     /* News Grid Mobile */
