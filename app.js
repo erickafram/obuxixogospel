@@ -2456,7 +2456,7 @@ app.post('/api/video/gerar-materias-social', isAuthenticated, async (req, res) =
         dataPublicacao.setHours(dataPublicacao.getHours() + i);
 
         // Adicionar embed da rede social no final do conteúdo
-        let conteudoFinal = materiaItem.conteudoHTML;
+        let conteudoFinal = materiaItem.conteudoHTML || '<p>Conteúdo não disponível</p>';
         
         // Adicionar link da postagem original
         conteudoFinal += `
@@ -2485,7 +2485,7 @@ app.post('/api/video/gerar-materias-social', isAuthenticated, async (req, res) =
           categoria: article.categoria,
           urlAmigavel: article.urlAmigavel,
           dataPublicacao: dataPublicacao.toISOString(),
-          previewHtml: materiaItem.conteudoHTML.substring(0, 300) + '...'
+          previewHtml: (materiaItem.conteudoHTML || materiaItem.titulo || 'Conteúdo gerado').substring(0, 300) + '...'
         });
 
         console.log(`📅 Matéria salva: "${article.titulo}" para ${dataPublicacao.toLocaleString('pt-BR')} (ID: ${article.id})`);
