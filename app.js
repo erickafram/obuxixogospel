@@ -2169,16 +2169,19 @@ const TranscriptionService = require('./services/TranscriptionService');
 // Rota para YouTube (mantém a lógica existente)
 app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
   try {
-    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
+    // Aceitar tanto youtubeUrl (formato antigo) quanto videoUrl (formato novo)
+    const { youtubeUrl, videoUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
+    
+    const url = youtubeUrl || videoUrl;
 
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
-    console.log('   URL:', youtubeUrl);
+    console.log('   URL:', url);
     console.log('   Quantidade:', quantidade);
     console.log('   Categoria:', categoria);
     console.log('   Tom:', tom);
 
     // Validar URL
-    if (!youtubeUrl || !TranscriptionService.isValidYoutubeUrl(youtubeUrl)) {
+    if (!url || !TranscriptionService.isValidYoutubeUrl(url)) {
       return res.status(400).json({ 
         success: false, 
         error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
@@ -2187,7 +2190,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     // 1. Obter transcrição do vídeo
     console.log('📝 Obtendo transcrição do vídeo...');
-    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(youtubeUrl);
+    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(url);
     
     if (!transcricaoResult.textoTranscricao || transcricaoResult.textoTranscricao.length < 100) {
       return res.status(400).json({ 
