@@ -3,6 +3,8 @@
  */
 
 const SocialMediaService = require('../services/SocialMediaService');
+const models = require('../models');
+const { Op } = require('sequelize');
 
 module.exports = {
   /**
@@ -10,8 +12,7 @@ module.exports = {
    */
   async renderPage(req, res) {
     try {
-      const { SocialMedia, SocialMediaPost } = req.app.get('models');
-      const { Op } = require('sequelize');
+      const { SocialMedia, SocialMediaPost, Article } = models;
       
       // Buscar configurações de todas as redes
       const networks = await SocialMedia.findAll({
@@ -35,7 +36,7 @@ module.exports = {
         order: [['createdAt', 'DESC']],
         limit: 20,
         include: [{
-          model: req.app.get('models').Article,
+          model: Article,
           as: 'article',
           attributes: ['id', 'titulo', 'urlAmigavel', 'categoria']
         }]
@@ -68,7 +69,7 @@ module.exports = {
    */
   async saveConfig(req, res) {
     try {
-      const { SocialMedia } = req.app.get('models');
+      const { SocialMedia } = models;
       const { platform } = req.params;
       const {
         ativo,
@@ -150,7 +151,7 @@ module.exports = {
    */
   async testConnection(req, res) {
     try {
-      const { SocialMedia } = req.app.get('models');
+      const { SocialMedia } = models;
       const { platform } = req.params;
       
       const config = await SocialMedia.findOne({ where: { platform } });
@@ -179,7 +180,7 @@ module.exports = {
    */
   async postArticle(req, res) {
     try {
-      const { Article } = req.app.get('models');
+      const { Article } = models;
       const { articleId } = req.params;
       const { platforms } = req.body; // Array de plataformas ou 'all'
       
@@ -189,7 +190,6 @@ module.exports = {
         return res.status(404).json({ success: false, error: 'Artigo não encontrado' });
       }
       
-      const models = req.app.get('models');
       const results = await SocialMediaService.postToAllNetworks(article, models);
       
       res.json({
@@ -208,7 +208,7 @@ module.exports = {
    */
   async getHistory(req, res) {
     try {
-      const { SocialMediaPost, Article } = req.app.get('models');
+      const { SocialMediaPost, Article } = models;
       const { platform, status, page = 1, limit = 20 } = req.query;
       
       const where = {};
@@ -248,7 +248,7 @@ module.exports = {
    */
   async retryPost(req, res) {
     try {
-      const { SocialMediaPost, SocialMedia, Article } = req.app.get('models');
+      const { SocialMediaPost, SocialMedia, Article } = models;
       const { postId } = req.params;
       
       const post = await SocialMediaPost.findByPk(postId, {
@@ -268,8 +268,6 @@ module.exports = {
       if (!network || !network.ativo) {
         return res.status(400).json({ success: false, error: 'Rede social não está ativa' });
       }
-      
-      const models = req.app.get('models');
       let result;
       
       switch (post.platform) {
