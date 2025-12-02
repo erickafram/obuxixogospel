@@ -1,6 +1,6 @@
 {
   "name": "obuxixogospel",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "Portal Notícias O Buxixo Gospel",
   "main": "app.js",
   "scripts": {
@@ -44,6 +44,7 @@
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
+    "oauth-1.0a": "^2.2.6",
     "nodemailer": "^7.0.10",
     "puppeteer-core": "^24.31.0",
     "puppeteer-extra": "^3.3.6",

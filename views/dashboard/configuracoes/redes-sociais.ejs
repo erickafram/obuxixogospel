@@ -1,0 +1,996 @@
+<%- include('../partials/header', { title: 'Redes Sociais', user: user }) %>
+
+<style>
+    .social-config-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1A202C;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-header h1 i {
+        color: #0669de;
+    }
+
+    .page-header p {
+        color: #718096;
+        margin-top: 4px;
+        font-size: 14px;
+    }
+
+    /* Stats Cards */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .stat-icon.total { background: #EBF5FF; color: #0669de; }
+    .stat-icon.success { background: #D1FAE5; color: #059669; }
+    .stat-icon.failed { background: #FEE2E2; color: #DC2626; }
+    .stat-icon.pending { background: #FEF3C7; color: #D97706; }
+
+    .stat-info h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1A202C;
+    }
+
+    .stat-info p {
+        font-size: 13px;
+        color: #718096;
+    }
+
+    /* Network Cards */
+    .networks-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .network-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+    .network-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .network-header {
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .network-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .network-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+
+    .network-icon.twitter { background: #000000; }
+    .network-icon.facebook { background: #1877F2; }
+    .network-icon.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .network-icon.threads { background: #000000; }
+
+    .network-name h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1A202C;
+    }
+
+    .network-name p {
+        font-size: 12px;
+        color: #718096;
+    }
+
+    .network-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-badge.active {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .status-badge.inactive {
+        background: #F3F4F6;
+        color: #6B7280;
+    }
+
+    .network-body {
+        padding: 20px;
+    }
+
+    .config-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px 14px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #0669de;
+        box-shadow: 0 0 0 3px rgba(6, 105, 222, 0.1);
+    }
+
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .form-hint {
+        font-size: 11px;
+        color: #9CA3AF;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #0669de;
+    }
+
+    .checkbox-group label {
+        font-size: 13px;
+        color: #374151;
+    }
+
+    .network-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0669de, #3d8bfd);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(6, 105, 222, 0.3);
+    }
+
+    .btn-secondary {
+        background: #F3F4F6;
+        color: #374151;
+        border: 1px solid #D1D5DB;
+    }
+
+    .btn-secondary:hover {
+        background: #E5E7EB;
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #047857;
+    }
+
+    /* Recent Posts */
+    .recent-posts-section {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        overflow: hidden;
+    }
+
+    .section-header {
+        padding: 20px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1A202C;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-header h2 i {
+        color: #0669de;
+    }
+
+    .posts-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .posts-table th,
+    .posts-table td {
+        padding: 14px 20px;
+        text-align: left;
+        border-bottom: 1px solid #F1F5F9;
+    }
+
+    .posts-table th {
+        background: #F8FAFC;
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+    }
+
+    .posts-table td {
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .platform-badge.twitter { background: #E5E7EB; color: #000; }
+    .platform-badge.facebook { background: #DBEAFE; color: #1877F2; }
+    .platform-badge.instagram { background: #FCE7F3; color: #DB2777; }
+    .platform-badge.threads { background: #E5E7EB; color: #000; }
+
+    .status-badge-sm {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-badge-sm.posted { background: #D1FAE5; color: #059669; }
+    .status-badge-sm.failed { background: #FEE2E2; color: #DC2626; }
+    .status-badge-sm.pending { background: #FEF3C7; color: #D97706; }
+
+    .article-link {
+        color: #0669de;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .article-link:hover {
+        text-decoration: underline;
+    }
+
+    .btn-retry {
+        padding: 6px 12px;
+        font-size: 11px;
+        background: #FEF3C7;
+        color: #D97706;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .btn-retry:hover {
+        background: #FDE68A;
+    }
+
+    /* Collapsible */
+    .config-toggle {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .config-content {
+        display: none;
+    }
+
+    .config-content.active {
+        display: block;
+    }
+
+    .toggle-icon {
+        transition: transform 0.2s;
+    }
+
+    .toggle-icon.open {
+        transform: rotate(180deg);
+    }
+
+    /* Help Section */
+    .help-section {
+        background: #F0F9FF;
+        border: 1px solid #BAE6FD;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 24px;
+    }
+
+    .help-section h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #0369A1;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .help-section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .help-section li {
+        font-size: 13px;
+        color: #0C4A6E;
+        padding: 6px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .help-section li i {
+        color: #0284C7;
+        margin-top: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .networks-grid {
+            grid-template-columns: 1fr;
+        }
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        .form-group.full-width {
+            grid-column: span 1;
+        }
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+    }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .toast.success { background: #059669; }
+    .toast.error { background: #DC2626; }
+    .toast.info { background: #0669de; }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+</style>
+
+<div class="dashboard-content">
+    <div class="social-config-container">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-share-alt"></i> Redes Sociais</h1>
+                <p>Configure a postagem automática nas redes sociais quando publicar uma matéria</p>
+            </div>
+            <a href="/dashboard/configuracoes" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon total"><i class="fas fa-paper-plane"></i></div>
+                <div class="stat-info">
+                    <h3><%= stats.total %></h3>
+                    <p>Total de Postagens</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <h3><%= stats.posted %></h3>
+                    <p>Publicadas</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon failed"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-info">
+                    <h3><%= stats.failed %></h3>
+                    <p>Com Falha</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3><%= stats.pending %></h3>
+                    <p>Pendentes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Cards -->
+        <div class="networks-grid">
+            <!-- Twitter/X -->
+            <div class="network-card" id="twitter-card">
+                <div class="network-header config-toggle" onclick="toggleConfig('twitter')">
+                    <div class="network-info">
+                        <div class="network-icon twitter"><i class="fab fa-x-twitter"></i></div>
+                        <div class="network-name">
+                            <h3>Twitter / X</h3>
+                            <p>Poste automaticamente tweets</p>
+                        </div>
+                    </div>
+                    <div class="network-status">
+                        <span class="status-badge <%= networks.twitter?.ativo ? 'active' : 'inactive' %>">
+                            <%= networks.twitter?.ativo ? 'Ativo' : 'Inativo' %>
+                        </span>
+                        <i class="fas fa-chevron-down toggle-icon" id="twitter-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="network-body config-content" id="twitter-config">
+                    <form class="config-form" id="twitter-form" onsubmit="saveConfig(event, 'twitter')">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="twitter-ativo" name="ativo" <%= networks.twitter?.ativo ? 'checked' : '' %>>
+                            <label for="twitter-ativo">Ativar postagem automática no Twitter</label>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>API Key (Consumer Key)</label>
+                                <input type="password" name="apiKey" value="<%= networks.twitter?.apiKey || '' %>" placeholder="Sua API Key">
+                            </div>
+                            <div class="form-group">
+                                <label>API Secret (Consumer Secret)</label>
+                                <input type="password" name="apiSecret" value="<%= networks.twitter?.apiSecret || '' %>" placeholder="Sua API Secret">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Access Token</label>
+                                <input type="password" name="accessToken" value="<%= networks.twitter?.accessToken || '' %>" placeholder="Access Token">
+                            </div>
+                            <div class="form-group">
+                                <label>Access Token Secret</label>
+                                <input type="password" name="accessTokenSecret" value="<%= networks.twitter?.accessTokenSecret || '' %>" placeholder="Access Token Secret">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Template do Tweet</label>
+                            <textarea name="postTemplate" placeholder="Use {titulo}, {descricao}, {link}, {categoria}"><%= networks.twitter?.postTemplate || '📰 {titulo}\n\n🔗 {link}\n\n#obuxixogospel #noticias #gospel' %></textarea>
+                            <span class="form-hint">Variáveis: {titulo}, {descricao}, {link}, {categoria}, {autor}</span>
+                        </div>
+                        
+                        <div class="network-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="testConnection('twitter')">
+                                <i class="fas fa-plug"></i> Testar Conexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Facebook -->
+            <div class="network-card" id="facebook-card">
+                <div class="network-header config-toggle" onclick="toggleConfig('facebook')">
+                    <div class="network-info">
+                        <div class="network-icon facebook"><i class="fab fa-facebook-f"></i></div>
+                        <div class="network-name">
+                            <h3>Facebook</h3>
+                            <p>Poste na sua página do Facebook</p>
+                        </div>
+                    </div>
+                    <div class="network-status">
+                        <span class="status-badge <%= networks.facebook?.ativo ? 'active' : 'inactive' %>">
+                            <%= networks.facebook?.ativo ? 'Ativo' : 'Inativo' %>
+                        </span>
+                        <i class="fas fa-chevron-down toggle-icon" id="facebook-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="network-body config-content" id="facebook-config">
+                    <form class="config-form" id="facebook-form" onsubmit="saveConfig(event, 'facebook')">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="facebook-ativo" name="ativo" <%= networks.facebook?.ativo ? 'checked' : '' %>>
+                            <label for="facebook-ativo">Ativar postagem automática no Facebook</label>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Page ID</label>
+                                <input type="text" name="pageId" value="<%= networks.facebook?.pageId || '' %>" placeholder="ID da sua página">
+                            </div>
+                            <div class="form-group">
+                                <label>Page Access Token</label>
+                                <input type="password" name="accessToken" value="<%= networks.facebook?.accessToken || '' %>" placeholder="Token de acesso da página">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="facebook-includeLink" name="includeLink" <%= networks.facebook?.includeLink !== false ? 'checked' : '' %>>
+                                <label for="facebook-includeLink">Incluir link da matéria</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Template do Post</label>
+                            <textarea name="postTemplate" placeholder="Use {titulo}, {descricao}, {link}, {categoria}"><%= networks.facebook?.postTemplate || '📰 {titulo}\n\n{descricao}\n\n🔗 Leia mais: {link}\n\n#obuxixogospel #noticias #gospel' %></textarea>
+                            <span class="form-hint">Variáveis: {titulo}, {descricao}, {link}, {categoria}, {autor}</span>
+                        </div>
+                        
+                        <div class="network-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="testConnection('facebook')">
+                                <i class="fas fa-plug"></i> Testar Conexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Instagram -->
+            <div class="network-card" id="instagram-card">
+                <div class="network-header config-toggle" onclick="toggleConfig('instagram')">
+                    <div class="network-info">
+                        <div class="network-icon instagram"><i class="fab fa-instagram"></i></div>
+                        <div class="network-name">
+                            <h3>Instagram</h3>
+                            <p>Poste no feed do Instagram (requer conta Business)</p>
+                        </div>
+                    </div>
+                    <div class="network-status">
+                        <span class="status-badge <%= networks.instagram?.ativo ? 'active' : 'inactive' %>">
+                            <%= networks.instagram?.ativo ? 'Ativo' : 'Inativo' %>
+                        </span>
+                        <i class="fas fa-chevron-down toggle-icon" id="instagram-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="network-body config-content" id="instagram-config">
+                    <form class="config-form" id="instagram-form" onsubmit="saveConfig(event, 'instagram')">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="instagram-ativo" name="ativo" <%= networks.instagram?.ativo ? 'checked' : '' %>>
+                            <label for="instagram-ativo">Ativar postagem automática no Instagram</label>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Instagram Business Account ID</label>
+                                <input type="text" name="accountId" value="<%= networks.instagram?.accountId || '' %>" placeholder="ID da conta Business">
+                            </div>
+                            <div class="form-group">
+                                <label>Access Token</label>
+                                <input type="password" name="accessToken" value="<%= networks.instagram?.accessToken || '' %>" placeholder="Token de acesso">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Template da Legenda</label>
+                            <textarea name="postTemplate" placeholder="Use {titulo}, {descricao}, {link}, {categoria}"><%= networks.instagram?.postTemplate || '📰 {titulo}\n\n{descricao}\n\n🔗 Link na bio!\n\n#obuxixogospel #noticias #gospel #fe #igreja' %></textarea>
+                            <span class="form-hint">Variáveis: {titulo}, {descricao}, {link}, {categoria}, {autor}. Nota: Instagram não permite links clicáveis na legenda.</span>
+                        </div>
+                        
+                        <div class="network-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="testConnection('instagram')">
+                                <i class="fas fa-plug"></i> Testar Conexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Threads -->
+            <div class="network-card" id="threads-card">
+                <div class="network-header config-toggle" onclick="toggleConfig('threads')">
+                    <div class="network-info">
+                        <div class="network-icon threads"><i class="fas fa-at"></i></div>
+                        <div class="network-name">
+                            <h3>Threads</h3>
+                            <p>Poste no Threads (Meta)</p>
+                        </div>
+                    </div>
+                    <div class="network-status">
+                        <span class="status-badge <%= networks.threads?.ativo ? 'active' : 'inactive' %>">
+                            <%= networks.threads?.ativo ? 'Ativo' : 'Inativo' %>
+                        </span>
+                        <i class="fas fa-chevron-down toggle-icon" id="threads-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="network-body config-content" id="threads-config">
+                    <form class="config-form" id="threads-form" onsubmit="saveConfig(event, 'threads')">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="threads-ativo" name="ativo" <%= networks.threads?.ativo ? 'checked' : '' %>>
+                            <label for="threads-ativo">Ativar postagem automática no Threads</label>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Threads User ID</label>
+                                <input type="text" name="accountId" value="<%= networks.threads?.accountId || '' %>" placeholder="ID do usuário">
+                            </div>
+                            <div class="form-group">
+                                <label>Access Token</label>
+                                <input type="password" name="accessToken" value="<%= networks.threads?.accessToken || '' %>" placeholder="Token de acesso">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Template do Post</label>
+                            <textarea name="postTemplate" placeholder="Use {titulo}, {descricao}, {link}, {categoria}"><%= networks.threads?.postTemplate || '📰 {titulo}\n\n{descricao}\n\n🔗 {link}' %></textarea>
+                            <span class="form-hint">Variáveis: {titulo}, {descricao}, {link}, {categoria}, {autor}</span>
+                        </div>
+                        
+                        <div class="network-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="testConnection('threads')">
+                                <i class="fas fa-plug"></i> Testar Conexão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Posts -->
+        <div class="recent-posts-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Postagens Recentes</h2>
+            </div>
+            <% if (recentPosts && recentPosts.length > 0) { %>
+            <table class="posts-table">
+                <thead>
+                    <tr>
+                        <th>Artigo</th>
+                        <th>Rede</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% recentPosts.forEach(post => { %>
+                    <tr>
+                        <td>
+                            <% if (post.article) { %>
+                            <a href="/<%= post.article.categoria %>/<%= post.article.urlAmigavel %>" target="_blank" class="article-link">
+                                <%= post.article.titulo.substring(0, 50) %><%= post.article.titulo.length > 50 ? '...' : '' %>
+                            </a>
+                            <% } else { %>
+                            <span style="color: #9CA3AF;">Artigo removido</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <span class="platform-badge <%= post.platform %>">
+                                <i class="fab fa-<%= post.platform === 'twitter' ? 'x-twitter' : post.platform %>"></i>
+                                <%= post.platform.charAt(0).toUpperCase() + post.platform.slice(1) %>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge-sm <%= post.status %>">
+                                <%= post.status === 'posted' ? 'Publicado' : post.status === 'failed' ? 'Falhou' : 'Pendente' %>
+                            </span>
+                        </td>
+                        <td>
+                            <%= new Date(post.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) %>
+                        </td>
+                        <td>
+                            <% if (post.status === 'failed') { %>
+                            <button class="btn-retry" onclick="retryPost(<%= post.id %>)">
+                                <i class="fas fa-redo"></i> Retentar
+                            </button>
+                            <% } else if (post.postUrl) { %>
+                            <a href="<%= post.postUrl %>" target="_blank" class="btn-retry" style="background: #DBEAFE; color: #1D4ED8; text-decoration: none;">
+                                <i class="fas fa-external-link-alt"></i> Ver
+                            </a>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <% } else { %>
+            <div style="padding: 40px; text-align: center; color: #9CA3AF;">
+                <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                <p>Nenhuma postagem recente</p>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Help Section -->
+        <div class="help-section">
+            <h3><i class="fas fa-question-circle"></i> Como configurar?</h3>
+            <ul>
+                <li>
+                    <i class="fab fa-x-twitter"></i>
+                    <div>
+                        <strong>Twitter/X:</strong> Crie um app em <a href="https://developer.twitter.com" target="_blank">developer.twitter.com</a>, 
+                        obtenha as credenciais OAuth 1.0a (API Key, API Secret, Access Token, Access Token Secret).
+                    </div>
+                </li>
+                <li>
+                    <i class="fab fa-facebook"></i>
+                    <div>
+                        <strong>Facebook:</strong> Crie um app em <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a>, 
+                        conecte sua página e obtenha o Page Access Token com permissão pages_manage_posts.
+                    </div>
+                </li>
+                <li>
+                    <i class="fab fa-instagram"></i>
+                    <div>
+                        <strong>Instagram:</strong> Requer conta Business conectada a uma página do Facebook. 
+                        Use o mesmo app do Facebook e obtenha o Instagram Business Account ID.
+                    </div>
+                </li>
+                <li>
+                    <i class="fas fa-at"></i>
+                    <div>
+                        <strong>Threads:</strong> Use a API do Threads (Meta) disponível em <a href="https://developers.facebook.com/docs/threads" target="_blank">developers.facebook.com/docs/threads</a>.
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleConfig(platform) {
+        const config = document.getElementById(`${platform}-config`);
+        const icon = document.getElementById(`${platform}-toggle-icon`);
+        
+        config.classList.toggle('active');
+        icon.classList.toggle('open');
+    }
+
+    async function saveConfig(event, platform) {
+        event.preventDefault();
+        
+        const form = document.getElementById(`${platform}-form`);
+        const formData = new FormData(form);
+        const data = {};
+        
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        
+        // Checkbox handling
+        data.ativo = document.getElementById(`${platform}-ativo`).checked;
+        
+        if (platform === 'facebook') {
+            data.includeLink = document.getElementById('facebook-includeLink')?.checked ?? true;
+        }
+        
+        try {
+            const response = await fetch(`/api/social-media/${platform}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast('Configurações salvas com sucesso!', 'success');
+                // Atualizar badge de status
+                const badge = document.querySelector(`#${platform}-card .status-badge`);
+                if (badge) {
+                    badge.className = `status-badge ${data.ativo ? 'active' : 'inactive'}`;
+                    badge.textContent = data.ativo ? 'Ativo' : 'Inativo';
+                }
+            } else {
+                showToast(result.error || 'Erro ao salvar', 'error');
+            }
+        } catch (error) {
+            showToast('Erro ao salvar configurações', 'error');
+        }
+    }
+
+    async function testConnection(platform) {
+        showToast('Testando conexão...', 'info');
+        
+        try {
+            const response = await fetch(`/api/social-media/${platform}/test`);
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(`Conexão com ${platform} válida!`, 'success');
+            } else {
+                showToast(`Erro: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showToast('Erro ao testar conexão', 'error');
+        }
+    }
+
+    async function retryPost(postId) {
+        if (!confirm('Deseja retentar esta postagem?')) return;
+        
+        try {
+            const response = await fetch(`/api/social-media/posts/${postId}/retry`, {
+                method: 'POST'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast('Postagem realizada com sucesso!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(result.error || 'Erro ao retentar', 'error');
+            }
+        } catch (error) {
+            showToast('Erro ao retentar postagem', 'error');
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        // Remover toast existente
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) existingToast.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.remove(), 4000);
+    }
+</script>
+
+<%- include('../partials/footer') %>

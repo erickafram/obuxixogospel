@@ -760,6 +760,17 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       GoogleIndexingService.publishUrl(url).catch(err =>
         console.error('Background Indexing API Error:', err)
       );
+      
+      // Postar nas redes sociais automaticamente
+      const SocialMediaService = require('./services/SocialMediaService');
+      const models = require('./models');
+      SocialMediaService.postToAllNetworks(article, models).then(results => {
+        if (results.length > 0) {
+          console.log('📱 Postagem em redes sociais:', results.map(r => `${r.platform}: ${r.success ? '✅' : '❌'}`).join(', '));
+        }
+      }).catch(err => {
+        console.error('Erro ao postar nas redes sociais:', err.message);
+      });
 
       // Limpar cache para exibir novo post/atualização
       CacheService.flush();
@@ -950,6 +961,19 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       GoogleIndexingService.publishUrl(url).catch(err =>
         console.error('Background Indexing API Error:', err)
       );
+      
+      // Postar nas redes sociais (apenas na primeira publicação)
+      if (deveAdicionarLinks) {
+        const SocialMediaService = require('./services/SocialMediaService');
+        const models = require('./models');
+        SocialMediaService.postToAllNetworks(article, models).then(results => {
+          if (results.length > 0) {
+            console.log('📱 Postagem em redes sociais:', results.map(r => `${r.platform}: ${r.success ? '✅' : '❌'}`).join(', '));
+          }
+        }).catch(err => {
+          console.error('Erro ao postar nas redes sociais:', err.message);
+        });
+      }
     }
 
     // Se for requisição AJAX (rascunho), retornar JSON
@@ -1073,6 +1097,15 @@ app.get('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectContro
 app.put('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.atualizar);
 app.delete('/api/redirects/:id', isAuthenticated, canAccessSettings, redirectController.deletar);
 app.post('/api/redirects/:id/toggle', isAuthenticated, canAccessSettings, redirectController.toggleAtivo);
+
+// REDES SOCIAIS - Postagem Automática
+const socialMediaController = require('./controllers/socialMediaController');
+app.get('/dashboard/configuracoes/redes-sociais', isAuthenticated, canAccessSettings, socialMediaController.renderPage);
+app.post('/api/social-media/:platform/config', isAuthenticated, canAccessSettings, socialMediaController.saveConfig);
+app.get('/api/social-media/:platform/test', isAuthenticated, canAccessSettings, socialMediaController.testConnection);
+app.post('/api/social-media/article/:articleId/post', isAuthenticated, socialMediaController.postArticle);
+app.get('/api/social-media/history', isAuthenticated, canAccessSettings, socialMediaController.getHistory);
+app.post('/api/social-media/posts/:postId/retry', isAuthenticated, canAccessSettings, socialMediaController.retryPost);
 
 // PÁGINAS ESTÁTICAS
 const pageController = require('./controllers/pageController');
