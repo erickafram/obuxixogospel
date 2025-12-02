@@ -2166,22 +2166,18 @@ app.get('/api/ia/status', async (req, res) => {
 // ==================== API DE VÍDEO - GERAR MATÉRIAS ====================
 const TranscriptionService = require('./services/TranscriptionService');
 
-// Rota para YouTube (mantém a lógica existente)
 app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
   try {
-    // Aceitar tanto youtubeUrl (formato antigo) quanto videoUrl (formato novo)
-    const { youtubeUrl, videoUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
-    
-    const url = youtubeUrl || videoUrl;
+    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
 
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
-    console.log('   URL:', url);
+    console.log('   URL:', youtubeUrl);
     console.log('   Quantidade:', quantidade);
     console.log('   Categoria:', categoria);
     console.log('   Tom:', tom);
 
     // Validar URL
-    if (!url || !TranscriptionService.isValidYoutubeUrl(url)) {
+    if (!youtubeUrl || !TranscriptionService.isValidYoutubeUrl(youtubeUrl)) {
       return res.status(400).json({ 
         success: false, 
         error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
@@ -2190,7 +2186,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     // 1. Obter transcrição do vídeo
     console.log('📝 Obtendo transcrição do vídeo...');
-    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(url);
+    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(youtubeUrl);
     
     if (!transcricaoResult.textoTranscricao || transcricaoResult.textoTranscricao.length < 100) {
       return res.status(400).json({ 
@@ -2327,195 +2323,6 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Erro ao processar vídeo. Tente novamente.' 
-    });
-  }
-});
-
-// Rota para redes sociais (Instagram, Facebook, Twitter)
-app.post('/api/video/gerar-materias-social', isAuthenticated, async (req, res) => {
-  try {
-    const { videoUrl, platform, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal', manualText } = req.body;
-
-    console.log('🌐 Iniciando geração de matérias a partir de rede social...');
-    console.log('   URL:', videoUrl);
-    console.log('   Plataforma:', platform);
-    console.log('   Quantidade:', quantidade);
-    console.log('   Categoria:', categoria);
-    console.log('   Tom:', tom);
-
-    // Validar URL e plataforma
-    if (!videoUrl) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'URL é obrigatória' 
-      });
-    }
-
-    if (!['instagram', 'facebook', 'twitter'].includes(platform)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Plataforma não suportada. Use: instagram, facebook ou twitter' 
-      });
-    }
-
-    let materia;
-    
-    // Se tem texto manual, usar diretamente
-    if (manualText && manualText.trim().length > 50) {
-      console.log('📝 Usando texto manual fornecido pelo usuário...');
-      materia = await AIService.criarMateria(
-        manualText,
-        categoria,
-        '', // palavrasChave
-        true, // pesquisarInternet
-        [videoUrl] // links para referência
-      );
-    } else {
-      // Tentar extração automática
-      console.log('🤖 Tentando extração automática...');
-      try {
-        materia = await AIService.criarMateriaPorLink(
-          videoUrl, 
-          categoria, 
-          true, // pesquisarInternet
-          true  // transcreverVideo
-        );
-      } catch (extractError) {
-        console.error('❌ Falha na extração automática:', extractError.message);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Não foi possível extrair o conteúdo automaticamente. Por favor, copie o texto da postagem e cole no campo "Texto Manual".' 
-        });
-      }
-    }
-
-    console.log('✅ Matéria base gerada com sucesso!');
-
-    // Gerar múltiplas matérias baseadas na matéria principal
-    const materias = [];
-    
-    for (let i = 0; i < Math.min(quantidade, 5); i++) {
-      console.log(`📰 Gerando variação ${i + 1}/${quantidade}...`);
-      
-      try {
-        // Para a primeira matéria, usar a original
-        if (i === 0) {
-          materias.push({
-            titulo: materia.titulo,
-            descricao: materia.descricao,
-            conteudoHTML: materia.conteudoHTML
-          });
-        } else {
-          // Para as outras, gerar variações com tom diferente
-          const variacao = await AIService.gerarVariacaoMateria(
-            materia.conteudoHTML,
-            materia.titulo,
-            tom,
-            categoria
-          );
-          materias.push(variacao);
-        }
-      } catch (variacaoError) {
-        console.error(`⚠️ Erro ao gerar variação ${i + 1}:`, variacaoError.message);
-        // Continua para a próxima
-      }
-    }
-
-    if (materias.length === 0) {
-      throw new Error('Não foi possível gerar nenhuma matéria');
-    }
-
-    // Salvar matérias como rascunho
-    const slugify = require('slugify');
-    const materiassSalvas = [];
-    
-    // Calcular data de publicação: 2 dias a partir de agora
-    const dataBase = new Date();
-    dataBase.setDate(dataBase.getDate() + 2);
-
-    for (let i = 0; i < materias.length; i++) {
-      const materiaItem = materias[i];
-      try {
-        // Gerar URL amigável
-        let urlAmigavelBase = slugify(materiaItem.titulo, {
-          lower: true,
-          strict: true,
-          locale: 'pt',
-          remove: /[*+~.()'"!:@]/g
-        });
-
-        let urlAmigavel = urlAmigavelBase;
-        let contador = 1;
-        while (await Article.findOne({ where: { urlAmigavel } })) {
-          urlAmigavel = `${urlAmigavelBase}-${contador}`;
-          contador++;
-        }
-
-        // Calcular data de publicação (espaçar 1 hora entre matérias)
-        const dataPublicacao = new Date(dataBase);
-        dataPublicacao.setHours(dataPublicacao.getHours() + i);
-
-        // Adicionar embed da rede social no final do conteúdo
-        let conteudoFinal = materiaItem.conteudoHTML || '<p>Conteúdo não disponível</p>';
-        
-        // Adicionar link da postagem original
-        conteudoFinal += `
-<h3>Veja a postagem original</h3>
-<p><a href="${videoUrl}" target="_blank" rel="noopener">Acesse a postagem no ${platform.charAt(0).toUpperCase() + platform.slice(1)}</a></p>`;
-
-        // Criar artigo como rascunho
-        const article = await Article.create({
-          titulo: materiaItem.titulo,
-          descricao: materiaItem.descricao || 'Matéria gerada a partir de rede social',
-          conteudo: conteudoFinal,
-          imagem: materia.imagensSugeridas?.[0]?.url || '/images/default-post.jpg',
-          categoria: categoria,
-          autor: autor,
-          publicado: false, // Rascunho para revisão
-          destaque: false,
-          dataPublicacao: dataPublicacao,
-          visualizacoes: 0,
-          urlAmigavel: urlAmigavel
-        });
-
-        materiassSalvas.push({
-          id: article.id,
-          titulo: article.titulo,
-          descricao: article.descricao,
-          categoria: article.categoria,
-          urlAmigavel: article.urlAmigavel,
-          dataPublicacao: dataPublicacao.toISOString(),
-          previewHtml: (materiaItem.conteudoHTML || materiaItem.titulo || 'Conteúdo gerado').substring(0, 300) + '...'
-        });
-
-        console.log(`📅 Matéria salva: "${article.titulo}" para ${dataPublicacao.toLocaleString('pt-BR')} (ID: ${article.id})`);
-
-      } catch (saveError) {
-        console.error('Erro ao salvar matéria:', saveError);
-      }
-    }
-
-    if (materiassSalvas.length === 0) {
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Não foi possível salvar nenhuma matéria. Tente novamente.' 
-      });
-    }
-
-    console.log(`✅ ${materiassSalvas.length} rascunho(s) salvo(s) com sucesso!`);
-
-    res.json({
-      success: true,
-      message: `${materiassSalvas.length} matéria(s) gerada(s) e salva(s) como rascunho`,
-      plataforma: platform,
-      materias: materiassSalvas
-    });
-
-  } catch (error) {
-    console.error('❌ Erro ao gerar matérias de rede social:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Erro ao processar conteúdo da rede social. Tente novamente.' 
     });
   }
 });
