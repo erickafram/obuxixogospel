@@ -540,30 +540,35 @@ class TranscriptionService {
     }
     
     // Validar se a transcrição é real (não é página de erro)
+    // Só considera erro se o texto for MUITO curto e contiver indicadores de erro
     const textoLower = result.text.toLowerCase();
-    const indicadoresErro = [
-      'access denied',
-      'oh noes',
-      'error code',
-      'anubis',
-      'blocked',
-      'captcha',
-      'rate limit',
-      'too many requests',
-      'forbidden',
-      '403',
-      '429',
-      'cloudflare'
-    ];
+    const tamanhoTexto = result.text.length;
     
-    const ehPaginaErro = indicadoresErro.some(indicador => textoLower.includes(indicador));
-    
-    if (ehPaginaErro) {
-      console.log('❌ Transcrição detectada como página de erro/bloqueio');
-      throw new Error(
-        'O serviço de transcrição está temporariamente bloqueado. ' +
-        'Tente novamente em alguns minutos ou use outro vídeo.'
-      );
+    // Se o texto tem mais de 500 caracteres, provavelmente é uma transcrição real
+    // mesmo que contenha palavras como "blocked" no conteúdo
+    if (tamanhoTexto < 500) {
+      const indicadoresErro = [
+        'access denied',
+        'oh noes',
+        'error code',
+        'anubis',
+        'captcha',
+        'rate limit',
+        'too many requests',
+        'cloudflare ray id',
+        'please enable javascript',
+        'checking your browser'
+      ];
+      
+      const ehPaginaErro = indicadoresErro.some(indicador => textoLower.includes(indicador));
+      
+      if (ehPaginaErro) {
+        console.log('❌ Transcrição detectada como página de erro/bloqueio');
+        throw new Error(
+          'O serviço de transcrição está temporariamente bloqueado. ' +
+          'Tente novamente em alguns minutos ou use outro vídeo.'
+        );
+      }
     }
     
     // Buscar metadados do vídeo (título, descrição, canal)
