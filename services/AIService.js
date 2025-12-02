@@ -4381,6 +4381,117 @@ RESPONDA EM JSON:
     console.log(`\n✅ ${materias.length} matéria(s) gerada(s) com sucesso!`);
     return materias;
   }
+
+  /**
+   * Gera uma variação de matéria baseada em um conteúdo existente
+   * @param {string} conteudoOriginal - Conteúdo HTML original
+   * @param {string} tituloOriginal - Título original
+   * @param {string} tom - Tom desejado para a variação
+   * @param {string} categoria - Categoria da matéria
+   * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
+   */
+  static async gerarVariacaoMateria(conteudoOriginal, tituloOriginal, tom = 'normal', categoria = 'noticias') {
+    if (!await this.isActive()) {
+      throw new Error('O assistente de IA está desativado');
+    }
+
+    console.log('🔄 Gerando variação da matéria...');
+    console.log('   Tom:', tom);
+
+    // Definir instruções de tom
+    const instrucoesTom = {
+      normal: 'equilibrado, informativo e objetivo',
+      sensacionalista: 'impactante, dramático e chamativo com títulos explosivos',
+      polemico: 'provocativo, questionador e que gera debate',
+      investigativo: 'analítico, aprofundado e questionador',
+      emocional: 'tocante, humano e inspirador'
+    };
+
+    const estiloTom = instrucoesTom[tom] || instrucoesTom.normal;
+
+    // Extrair texto limpo do HTML
+    const textoLimpo = conteudoOriginal
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 2000);
+
+    const messages = [
+      {
+        role: 'system',
+        content: `Você é um jornalista experiente especializado em reescrever matérias.
+Seu estilo deve ser ${estiloTom}.
+Crie uma versão COMPLETAMENTE DIFERENTE da matéria original, mantendo os fatos mas mudando:
+- Ângulo da abordagem
+- Estrutura dos parágrafos
+- Título criativo
+- Descrição atrativa
+NUNCA copie frases inteiras do original.
+Responda APENAS em JSON válido.`
+      },
+      {
+        role: 'user',
+        content: `Reescreva esta matéria com um ângulo diferente e tom ${tom}:
+
+TÍTULO ORIGINAL: ${tituloOriginal}
+
+CONTEÚDO ORIGINAL:
+${textoLimpo}
+
+INSTRUÇÕES:
+1. Crie um título COMPLETAMENTE NOVO com tom ${tom}
+2. Mude o ângulo da abordagem (foque em aspectos diferentes)
+3. Reescreva todos os parágrafos com suas próprias palavras
+4. Mantenha os fatos, mas apresente de forma diferente
+5. Use HTML bem formatado (<p>, <h3>, <blockquote>)
+
+RESPONDA EM JSON:
+{
+  "titulo": "Novo título com tom ${tom}",
+  "descricao": "Nova descrição (máx 200 caracteres)",
+  "conteudoHTML": "<p>Conteúdo HTML completamente reescrito...</p>"
+}`
+      }
+    ];
+
+    try {
+      const resposta = await this.makeRequest(messages, 0.7, 2000);
+      
+      // Parse do JSON
+      let variacao = null;
+      try {
+        let jsonText = resposta.trim();
+        if (jsonText.startsWith('```')) {
+          jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+        
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          variacao = JSON.parse(jsonMatch[0]);
+        }
+        
+        if (!variacao || !variacao.titulo || !variacao.conteudoHTML) {
+          throw new Error('Resposta incompleta da IA');
+        }
+        
+      } catch (parseError) {
+        console.error('Erro ao parsear variação:', parseError);
+        throw new Error('Erro ao processar resposta da IA');
+      }
+
+      console.log(`✅ Variação gerada: "${variacao.titulo}"`);
+      
+      return {
+        titulo: variacao.titulo,
+        descricao: variacao.descricao || variacao.titulo.substring(0, 200),
+        conteudoHTML: variacao.conteudoHTML
+      };
+      
+    } catch (error) {
+      console.error('Erro ao gerar variação:', error);
+      throw new Error('Não foi possível gerar variação da matéria');
+    }
+  }
 }
 
 module.exports = AIService;

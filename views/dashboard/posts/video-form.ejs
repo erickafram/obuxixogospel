@@ -595,6 +595,77 @@
         color: #EC4899;
     }
 
+    /* Platform Tabs */
+    .platform-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #E2E8F0;
+        padding-bottom: 12px;
+    }
+
+    .platform-tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748B;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .platform-tab:hover {
+        background: #F1F5F9;
+        border-color: #CBD5E1;
+    }
+
+    .platform-tab.active {
+        background: #EFF6FF;
+        border-color: #0669de;
+        color: #0669de;
+    }
+
+    .platform-tab i {
+        font-size: 16px;
+    }
+
+    .platform-tab[data-platform="youtube"].active {
+        background: #FEF2F2;
+        border-color: #FF0000;
+        color: #FF0000;
+    }
+
+    .platform-tab[data-platform="instagram"].active {
+        background: #FDF2F8;
+        border-color: #E91E63;
+        color: #E91E63;
+    }
+
+    .platform-tab[data-platform="facebook"].active {
+        background: #EFF6FF;
+        border-color: #1877F2;
+        color: #1877F2;
+    }
+
+    .platform-tab[data-platform="twitter"].active {
+        background: #F0F9FF;
+        border-color: #1DA1F2;
+        color: #1DA1F2;
+    }
+
+    .platform-hints .form-hint {
+        display: none;
+    }
+
+    .platform-hints .form-hint.active {
+        display: block;
+    }
+
     @media (max-width: 768px) {
         .form-row {
             grid-template-columns: 1fr;
@@ -626,6 +697,20 @@
         .tom-options .tom-option:last-child {
             grid-column: span 2;
         }
+
+        .platform-tabs {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .platform-tab {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .platform-tab i {
+            font-size: 14px;
+        }
     }
 </style>
 
@@ -634,7 +719,7 @@
         <div class="content-header">
             <div>
                 <h1>Criar Matérias de Vídeo</h1>
-                <p>Gere múltiplas matérias automaticamente a partir de um vídeo do YouTube</p>
+                <p>Gere múltiplas matérias automaticamente a partir de vídeos do YouTube, Instagram, Facebook ou Twitter</p>
             </div>
             <a href="/dashboard/posts" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
@@ -643,22 +728,41 @@
 
         <div class="card">
             <div class="card-header">
-                <h2><i class="fab fa-youtube"></i> Configurações do Vídeo</h2>
+                <h2><i class="fas fa-video"></i> Configurações do Vídeo</h2>
             </div>
             <div class="card-body">
                 <form id="videoForm">
                     <div class="form-group">
-                        <label>URL do Vídeo do YouTube <span class="required">*</span></label>
+                        <label>URL do Vídeo <span class="required">*</span></label>
+                        <div class="platform-tabs">
+                            <button type="button" class="platform-tab active" data-platform="youtube">
+                                <i class="fab fa-youtube"></i> YouTube
+                            </button>
+                            <button type="button" class="platform-tab" data-platform="instagram">
+                                <i class="fab fa-instagram"></i> Instagram
+                            </button>
+                            <button type="button" class="platform-tab" data-platform="facebook">
+                                <i class="fab fa-facebook"></i> Facebook
+                            </button>
+                            <button type="button" class="platform-tab" data-platform="twitter">
+                                <i class="fab fa-twitter"></i> Twitter
+                            </button>
+                        </div>
                         <div class="input-with-icon">
-                            <i class="fab fa-youtube"></i>
+                            <i class="fab fa-youtube" id="platformIcon"></i>
                             <input type="url" 
-                                   id="youtubeUrl" 
-                                   name="youtubeUrl" 
+                                   id="videoUrl" 
+                                   name="videoUrl" 
                                    class="form-control" 
                                    placeholder="https://www.youtube.com/watch?v=..."
                                    required>
                         </div>
-                        <p class="form-hint">Cole a URL completa do vídeo do YouTube que deseja transcrever</p>
+                        <div class="platform-hints">
+                            <p class="form-hint active" id="hint-youtube">Cole a URL completa do vídeo do YouTube que deseja transcrever</p>
+                            <p class="form-hint" id="hint-instagram">Cole o link do post, reel ou vídeo do Instagram</p>
+                            <p class="form-hint" id="hint-facebook">Cole o link do post ou vídeo do Facebook (incluindo fb.watch)</p>
+                            <p class="form-hint" id="hint-twitter">Cole o link do tweet com vídeo do Twitter/X</p>
+                        </div>
                     </div>
 
                     <div class="video-preview" id="videoPreview">
@@ -837,19 +941,113 @@
         });
     });
 
+    // Gerenciar abas das plataformas
+    const platformData = {
+        youtube: {
+            icon: 'fab fa-youtube',
+            placeholder: 'https://www.youtube.com/watch?v=...',
+            hint: 'Cole a URL completa do vídeo do YouTube que deseja transcrever'
+        },
+        instagram: {
+            icon: 'fab fa-instagram',
+            placeholder: 'https://www.instagram.com/p/... ou /reel/...',
+            hint: 'Cole o link do post, reel ou vídeo do Instagram'
+        },
+        facebook: {
+            icon: 'fab fa-facebook',
+            placeholder: 'https://www.facebook.com/... ou fb.watch/...',
+            hint: 'Cole o link do post ou vídeo do Facebook (incluindo fb.watch)'
+        },
+        twitter: {
+            icon: 'fab fa-twitter',
+            placeholder: 'https://twitter.com/... ou x.com/...',
+            hint: 'Cole o link do tweet com vídeo do Twitter/X'
+        }
+    };
+
+    document.querySelectorAll('.platform-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const platform = this.dataset.platform;
+            const data = platformData[platform];
+            
+            // Atualizar aba ativa
+            document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Atualizar ícone do input
+            document.getElementById('platformIcon').className = data.icon;
+            
+            // Atualizar placeholder
+            document.getElementById('videoUrl').placeholder = data.placeholder;
+            
+            // Atualizar hint
+            document.querySelectorAll('.platform-hints .form-hint').forEach(h => h.classList.remove('active'));
+            document.getElementById(`hint-${platform}`).classList.add('active');
+            
+            // Limpar preview
+            document.getElementById('videoPreview').classList.remove('active');
+        });
+    });
+
     // Preview do vídeo ao digitar URL
-    document.getElementById('youtubeUrl').addEventListener('input', function() {
+    document.getElementById('videoUrl').addEventListener('input', function() {
         const url = this.value;
-        const videoId = extractVideoId(url);
+        const platform = detectPlatform(url);
         
-        if (videoId) {
+        if (platform && url.length > 10) {
             document.getElementById('videoPreview').classList.add('active');
-            document.getElementById('videoThumbnail').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-            document.getElementById('videoId').textContent = `ID: ${videoId}`;
+            updatePreview(url, platform);
         } else {
             document.getElementById('videoPreview').classList.remove('active');
         }
     });
+
+    function detectPlatform(url) {
+        if (!url) return null;
+        
+        if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+        if (url.includes('instagram.com')) return 'instagram';
+        if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) return 'facebook';
+        if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
+        
+        return null;
+    }
+
+    function updatePreview(url, platform) {
+        const preview = document.getElementById('videoPreview');
+        const thumbnail = document.getElementById('videoThumbnail');
+        const videoInfo = document.querySelector('.video-info h4');
+        const videoId = document.getElementById('videoId');
+        
+        switch (platform) {
+            case 'youtube':
+                const ytId = extractVideoId(url);
+                if (ytId) {
+                    thumbnail.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                    videoInfo.textContent = 'Vídeo do YouTube detectado';
+                    videoId.textContent = `ID: ${ytId}`;
+                }
+                break;
+                
+            case 'instagram':
+                thumbnail.src = '/images/instagram-placeholder.jpg';
+                videoInfo.textContent = 'Post/Reel do Instagram detectado';
+                videoId.textContent = 'URL: ' + url.substring(0, 50) + '...';
+                break;
+                
+            case 'facebook':
+                thumbnail.src = '/images/facebook-placeholder.jpg';
+                videoInfo.textContent = 'Vídeo do Facebook detectado';
+                videoId.textContent = 'URL: ' + url.substring(0, 50) + '...';
+                break;
+                
+            case 'twitter':
+                thumbnail.src = '/images/twitter-placeholder.jpg';
+                videoInfo.textContent = 'Tweet com vídeo detectado';
+                videoId.textContent = 'URL: ' + url.substring(0, 50) + '...';
+                break;
+        }
+    }
 
     function extractVideoId(url) {
         if (!url) return null;
@@ -906,15 +1104,21 @@
     document.getElementById('videoForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const youtubeUrl = document.getElementById('youtubeUrl').value;
+        const videoUrl = document.getElementById('videoUrl').value;
         const quantidade = document.getElementById('quantidade').value;
         const categoria = document.getElementById('categoria').value;
         const autor = document.getElementById('autor').value;
         const aplicarEstiloG1 = document.getElementById('aplicarEstiloG1').checked;
         const tom = document.querySelector('input[name="tom"]:checked').value;
+        const platform = detectPlatform(videoUrl);
 
-        if (!youtubeUrl) {
-            alert('Por favor, insira a URL do vídeo do YouTube');
+        if (!videoUrl) {
+            alert('Por favor, insira a URL do vídeo');
+            return;
+        }
+
+        if (!platform) {
+            alert('URL não suportada. Use links do YouTube, Instagram, Facebook ou Twitter.');
             return;
         }
 
@@ -932,13 +1136,17 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutos
 
-            const response = await fetch('/api/video/gerar-materias', {
+            // Escolher a API baseada na plataforma
+            const apiUrl = platform === 'youtube' ? '/api/video/gerar-materias' : '/api/video/gerar-materias-social';
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    youtubeUrl,
+                    videoUrl,
+                    platform,
                     quantidade: parseInt(quantidade),
                     categoria,
                     autor,
