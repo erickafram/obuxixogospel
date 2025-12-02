@@ -169,36 +169,64 @@ class TranscriptionService {
    * @returns {Promise<{titulo: string, descricao: string, canal: string}|null>}
    */
   static async fetchVideoMetadata(videoId) {
+    console.log(`📋 Buscando metadados do vídeo ${videoId}...`);
+    
+    // Estratégia 1: oEmbed do YouTube (mais confiável e rápido)
     try {
-      console.log(`📋 Buscando metadados do vídeo...`);
+      console.log('   🔄 Tentando oEmbed do YouTube...');
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+      const oembedResponse = await axios.get(oembedUrl, {
+        timeout: 8000,
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+      });
       
-      // Tentar via Invidious primeiro (mais confiável em servidores)
-      for (const instance of this.INVIDIOUS_INSTANCES) {
-        try {
-          const response = await axios.get(`${instance}/api/v1/videos/${videoId}`, {
-            timeout: 10000,
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-            validateStatus: (status) => status < 500
-          });
-          
-          if (response.status === 200 && response.data) {
-            const data = response.data;
-            console.log(`✅ Metadados obtidos via ${instance}`);
-            return {
-              titulo: data.title || '',
-              descricao: data.description || '',
-              canal: data.author || '',
-              duracao: data.lengthSeconds || 0,
-              visualizacoes: data.viewCount || 0,
-              dataPublicacao: data.published ? new Date(data.published * 1000).toISOString() : null
-            };
-          }
-        } catch (e) {
-          // Tentar próxima instância
-        }
+      if (oembedResponse.data && oembedResponse.data.title) {
+        console.log(`   ✅ Metadados obtidos via oEmbed`);
+        console.log(`   📺 Título: ${oembedResponse.data.title.substring(0, 50)}...`);
+        console.log(`   👤 Canal: ${oembedResponse.data.author_name}`);
+        return {
+          titulo: oembedResponse.data.title,
+          descricao: '',
+          canal: oembedResponse.data.author_name || '',
+          thumbnail: oembedResponse.data.thumbnail_url || ''
+        };
       }
-      
-      // Fallback: scraping da página do YouTube
+    } catch (e) {
+      console.log(`   ⚠️ oEmbed falhou: ${e.message}`);
+    }
+    
+    // Estratégia 2: Invidious API
+    for (const instance of this.INVIDIOUS_INSTANCES.slice(0, 5)) { // Limitar a 5 tentativas
+      try {
+        console.log(`   🔄 Tentando ${instance}...`);
+        const response = await axios.get(`${instance}/api/v1/videos/${videoId}`, {
+          timeout: 8000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          validateStatus: (status) => status < 500
+        });
+        
+        if (response.status === 200 && response.data && response.data.title) {
+          const data = response.data;
+          console.log(`   ✅ Metadados obtidos via ${instance}`);
+          console.log(`   📺 Título: ${data.title.substring(0, 50)}...`);
+          console.log(`   👤 Canal: ${data.author}`);
+          return {
+            titulo: data.title || '',
+            descricao: data.description || '',
+            canal: data.author || '',
+            duracao: data.lengthSeconds || 0,
+            visualizacoes: data.viewCount || 0,
+            dataPublicacao: data.published ? new Date(data.published * 1000).toISOString() : null
+          };
+        }
+      } catch (e) {
+        // Tentar próxima instância
+      }
+    }
+    
+    // Estratégia 3: Scraping da página do YouTube
+    try {
+      console.log('   🔄 Tentando scraping do YouTube...');
       const url = `https://www.youtube.com/watch?v=${videoId}`;
       const response = await axios.get(url, {
         timeout: 15000,
@@ -210,50 +238,79 @@ class TranscriptionService {
       });
       
       const html = response.data;
-      
-      // Extrair título
       let titulo = '';
-      const titleMatch = html.match(/<title>([^<]+)<\/title>/);
-      if (titleMatch) {
-        titulo = titleMatch[1].replace(' - YouTube', '').trim();
-      }
-      
-      // Extrair descrição do meta tag
       let descricao = '';
-      const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
-      if (descMatch) {
-        descricao = this.decodeHtmlEntities(descMatch[1]);
-      }
+      let canal = '';
       
-      // Tentar extrair do JSON embutido
+      // Tentar extrair do JSON embutido (mais confiável)
       const jsonMatch = html.match(/var ytInitialPlayerResponse\s*=\s*({.+?});/);
       if (jsonMatch) {
         try {
           const playerData = JSON.parse(jsonMatch[1]);
           if (playerData.videoDetails) {
-            titulo = playerData.videoDetails.title || titulo;
-            descricao = playerData.videoDetails.shortDescription || descricao;
+            titulo = playerData.videoDetails.title || '';
+            descricao = playerData.videoDetails.shortDescription || '';
+            canal = playerData.videoDetails.author || '';
           }
         } catch (e) {}
       }
       
-      // Extrair canal
-      let canal = '';
-      const canalMatch = html.match(/"ownerChannelName":"([^"]+)"/);
-      if (canalMatch) {
-        canal = canalMatch[1];
+      // Fallback: extrair do HTML
+      if (!titulo) {
+        const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+        if (titleMatch) {
+          titulo = titleMatch[1].replace(' - YouTube', '').trim();
+        }
       }
       
-      if (titulo) {
-        console.log(`✅ Metadados extraídos via scraping`);
+      if (!descricao) {
+        const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+        if (descMatch) {
+          descricao = this.decodeHtmlEntities(descMatch[1]);
+        }
+      }
+      
+      if (!canal) {
+        const canalMatch = html.match(/"ownerChannelName":"([^"]+)"/);
+        if (canalMatch) {
+          canal = canalMatch[1];
+        }
+      }
+      
+      if (titulo && titulo.length > 3) {
+        console.log(`   ✅ Metadados extraídos via scraping`);
         console.log(`   📺 Título: ${titulo.substring(0, 50)}...`);
+        console.log(`   👤 Canal: ${canal}`);
         return { titulo, descricao, canal };
       }
       
     } catch (error) {
-      console.log(`⚠️ Erro ao buscar metadados: ${error.message}`);
+      console.log(`   ⚠️ Scraping falhou: ${error.message}`);
     }
     
+    // Estratégia 4: Noembed (outro serviço de oEmbed)
+    try {
+      console.log('   🔄 Tentando Noembed...');
+      const noembedUrl = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`;
+      const noembedResponse = await axios.get(noembedUrl, {
+        timeout: 8000,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      
+      if (noembedResponse.data && noembedResponse.data.title) {
+        console.log(`   ✅ Metadados obtidos via Noembed`);
+        console.log(`   📺 Título: ${noembedResponse.data.title.substring(0, 50)}...`);
+        return {
+          titulo: noembedResponse.data.title,
+          descricao: '',
+          canal: noembedResponse.data.author_name || ''
+        };
+      }
+    } catch (e) {
+      console.log(`   ⚠️ Noembed falhou: ${e.message}`);
+    }
+    
+    console.log('   ❌ Não foi possível obter metadados do vídeo');
     return null;
   }
 
