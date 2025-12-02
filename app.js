@@ -2168,25 +2168,113 @@ const TranscriptionService = require('./services/TranscriptionService');
 
 app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
   try {
-    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
+    const { 
+      platform = 'youtube',
+      videoUrl,
+      youtubeUrl, 
+      facebookUrl,
+      instagramUrl,
+      twitterUrl,
+      quantidade = 3, 
+      categoria = 'noticias', 
+      autor = 'Redação Obuxixo Gospel', 
+      aplicarEstiloG1 = true, 
+      tom = 'normal' 
+    } = req.body;
 
+    // Determinar a URL baseada na plataforma
+    let urlToProcess = videoUrl || youtubeUrl || facebookUrl || instagramUrl || twitterUrl;
+    
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
-    console.log('   URL:', youtubeUrl);
+    console.log('   Plataforma:', platform);
+    console.log('   URL:', urlToProcess);
     console.log('   Quantidade:', quantidade);
     console.log('   Categoria:', categoria);
     console.log('   Tom:', tom);
 
-    // Validar URL
-    if (!youtubeUrl || !TranscriptionService.isValidYoutubeUrl(youtubeUrl)) {
+    let transcricaoResult;
+
+    // Processar baseado na plataforma
+    if (platform === 'youtube' || (urlToProcess && (urlToProcess.includes('youtube.com') || urlToProcess.includes('youtu.be')))) {
+      // YouTube - usar transcrição
+      if (!urlToProcess || !TranscriptionService.isValidYoutubeUrl(urlToProcess)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
+        });
+      }
+
+      console.log('📝 Obtendo transcrição do vídeo do YouTube...');
+      transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(urlToProcess);
+    } 
+    else if (platform === 'facebook' || (urlToProcess && (urlToProcess.includes('facebook.com') || urlToProcess.includes('fb.watch')))) {
+      // Facebook - usar função específica que baixa vídeo e transcreve (usa cookies)
+      console.log('📝 Extraindo conteúdo do vídeo do Facebook (com transcrição)...');
+      try {
+        // Usar a função específica do Facebook que faz download + transcrição
+        const conteudoExtraido = await AIService.extrairConteudoFacebook(urlToProcess, true);
+        transcricaoResult = {
+          textoTranscricao: conteudoExtraido || '',
+          tituloVideo: 'Vídeo do Facebook',
+          canalVideo: 'Facebook',
+          descricaoVideo: ''
+        };
+        console.log(`✅ Conteúdo do Facebook extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
+      } catch (err) {
+        console.error('Erro ao extrair Facebook:', err);
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Não foi possível extrair o conteúdo do vídeo do Facebook. Verifique se o vídeo é público ou tente copiar o texto manualmente.' 
+        });
+      }
+    }
+    else if (platform === 'instagram' || (urlToProcess && urlToProcess.includes('instagram.com'))) {
+      // Instagram - usar função específica que baixa vídeo e transcreve (usa cookies)
+      console.log('📝 Extraindo conteúdo do vídeo do Instagram (com transcrição)...');
+      try {
+        // Usar a função específica do Instagram que faz download + transcrição
+        const conteudoExtraido = await AIService.extrairConteudoInstagram(urlToProcess);
+        transcricaoResult = {
+          textoTranscricao: conteudoExtraido || '',
+          tituloVideo: 'Vídeo do Instagram',
+          canalVideo: 'Instagram',
+          descricaoVideo: ''
+        };
+        console.log(`✅ Conteúdo do Instagram extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
+      } catch (err) {
+        console.error('Erro ao extrair Instagram:', err);
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Não foi possível extrair o conteúdo do Instagram. Verifique se o post é público ou tente copiar o texto manualmente.' 
+        });
+      }
+    }
+    else if (platform === 'twitter' || (urlToProcess && (urlToProcess.includes('twitter.com') || urlToProcess.includes('x.com')))) {
+      // Twitter/X - extrair conteúdo usando função genérica
+      console.log('📝 Extraindo conteúdo do vídeo do X/Twitter...');
+      try {
+        const conteudoExtraido = await AIService.extrairConteudoURL(urlToProcess);
+        transcricaoResult = {
+          textoTranscricao: conteudoExtraido.texto || conteudoExtraido.conteudo || conteudoExtraido || '',
+          tituloVideo: conteudoExtraido.titulo || 'Vídeo do X/Twitter',
+          canalVideo: conteudoExtraido.autor || 'X/Twitter',
+          descricaoVideo: conteudoExtraido.descricao || ''
+        };
+        console.log(`✅ Conteúdo do X/Twitter extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
+      } catch (err) {
+        console.error('Erro ao extrair Twitter:', err);
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Não foi possível extrair o conteúdo do X/Twitter. Tente copiar o texto manualmente.' 
+        });
+      }
+    }
+    else {
       return res.status(400).json({ 
         success: false, 
-        error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
+        error: 'Plataforma não suportada ou URL inválida.' 
       });
     }
-
-    // 1. Obter transcrição do vídeo
-    console.log('📝 Obtendo transcrição do vídeo...');
-    const transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(youtubeUrl);
     
     if (!transcricaoResult.textoTranscricao || transcricaoResult.textoTranscricao.length < 100) {
       return res.status(400).json({ 
