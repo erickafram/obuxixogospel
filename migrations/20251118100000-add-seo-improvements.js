@@ -62,14 +62,19 @@ module.exports = {
       }
     ];
 
-    // Inserir apenas as configurações que não existem
+    // Inserir apenas as configurações que não existem (usando upsert)
     for (const config of configs) {
-      const existing = await queryInterface.rawSelect('configuracoes_sistema', {
-        where: { chave: config.chave }
-      }, ['id']);
+      try {
+        const [results] = await queryInterface.sequelize.query(
+          `SELECT id FROM configuracoes_sistema WHERE chave = :chave`,
+          { replacements: { chave: config.chave } }
+        );
 
-      if (!existing) {
-        await queryInterface.bulkInsert('configuracoes_sistema', [config]);
+        if (!results || results.length === 0) {
+          await queryInterface.bulkInsert('configuracoes_sistema', [config]);
+        }
+      } catch (err) {
+        console.log(`Configuração ${config.chave} já existe ou erro:`, err.message);
       }
     }
 

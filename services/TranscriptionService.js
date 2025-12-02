@@ -8,12 +8,18 @@ const axios = require('axios');
 class TranscriptionService {
   // Lista de instâncias Invidious públicas com API habilitada
   // Fonte: https://api.invidious.io/instances.json
+  // Atualizado em: 01/12/2024
   static INVIDIOUS_INSTANCES = [
     'https://yewtu.be',
     'https://inv.nadeko.net',
     'https://invidious.nerdvpn.de',
     'https://inv.perditum.com',
-    'https://invidious.f5.si'
+    'https://invidious.f5.si',
+    'https://invidious.privacyredirect.com',
+    'https://iv.nboeck.de',
+    'https://invidious.protokolla.fi',
+    'https://inv.tux.pizza',
+    'https://invidious.io.lol'
   ];
 
   /**
@@ -533,9 +539,42 @@ class TranscriptionService {
       );
     }
     
+    // Validar se a transcrição é real (não é página de erro)
+    const textoLower = result.text.toLowerCase();
+    const indicadoresErro = [
+      'access denied',
+      'oh noes',
+      'error code',
+      'anubis',
+      'blocked',
+      'captcha',
+      'rate limit',
+      'too many requests',
+      'forbidden',
+      '403',
+      '429',
+      'cloudflare'
+    ];
+    
+    const ehPaginaErro = indicadoresErro.some(indicador => textoLower.includes(indicador));
+    
+    if (ehPaginaErro) {
+      console.log('❌ Transcrição detectada como página de erro/bloqueio');
+      throw new Error(
+        'O serviço de transcrição está temporariamente bloqueado. ' +
+        'Tente novamente em alguns minutos ou use outro vídeo.'
+      );
+    }
+    
     // Buscar metadados do vídeo (título, descrição, canal)
     console.log('\n📋 Buscando metadados do vídeo...');
     const metadata = await this.fetchVideoMetadata(videoId);
+    
+    // Validar se os metadados foram obtidos corretamente
+    if (!metadata || !metadata.titulo || metadata.titulo === '...' || metadata.titulo.length < 3) {
+      console.log('⚠️ Metadados do vídeo não obtidos corretamente');
+      // Tentar obter de outra instância ou usar fallback
+    }
     
     console.log(`\n✅ Transcrição obtida com sucesso!`);
     console.log(`   📊 Fonte: ${result.source}`);

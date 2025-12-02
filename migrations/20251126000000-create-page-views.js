@@ -2,6 +2,16 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Verificar se a tabela já existe
+    const [tables] = await queryInterface.sequelize.query(
+      `SHOW TABLES LIKE 'page_views'`
+    );
+    
+    if (tables.length > 0) {
+      console.log('Tabela page_views já existe, pulando criação...');
+      return;
+    }
+    
     await queryInterface.createTable('page_views', {
       id: {
         type: Sequelize.INTEGER,
@@ -10,13 +20,7 @@ module.exports = {
       },
       article_id: {
         type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'articles',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+        allowNull: true
       },
       date: {
         type: Sequelize.DATEONLY,

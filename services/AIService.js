@@ -4036,13 +4036,20 @@ REGRAS:
 3. Priorize: declarações polêmicas, anúncios importantes, críticas, revelações, eventos
 4. Se o vídeo tiver apenas 1 tema principal, retorne apenas 1 pauta
 5. Extraia o trecho mais relevante da transcrição para cada pauta
+6. IDENTIFIQUE NOMES de pessoas mencionadas na transcrição ou no canal
+
+⚠️ IMPORTANTE - IDENTIFICAÇÃO DE PESSOAS:
+- O CANAL/AUTOR do vídeo geralmente é quem está falando - inclua o nome na pauta
+- Procure nomes próprios mencionados na transcrição
+- Se o canal for "Fulano de Tal", a pessoa falando provavelmente é Fulano de Tal
 
 RESPONDA EM JSON:
 [
   {
-    "resumoPauta": "Resumo curto do tema (1 linha)",
+    "resumoPauta": "Resumo curto do tema incluindo QUEM disse (1 linha)",
     "foco": "Qual o ângulo/foco jornalístico desta matéria",
-    "trechoRelevante": "Trecho da transcrição mais importante para esta pauta (copie exatamente)"
+    "trechoRelevante": "Trecho da transcrição mais importante para esta pauta (copie exatamente)",
+    "pessoasPrincipais": "Nomes das pessoas envolvidas/mencionadas (separados por vírgula)"
   }
 ]
 
@@ -4086,6 +4093,17 @@ Se não for possível identificar pautas relevantes, retorne: []`
         // Limitar à quantidade solicitada
         pautas = pautas.slice(0, quantidade);
         
+        // Se a IA retornou array vazio mas temos transcrição, criar pauta genérica
+        if (pautas.length === 0 && transcricao.length > 100) {
+          console.log('⚠️ IA não identificou pautas, criando pauta baseada no título do vídeo...');
+          const tituloBase = metadados.tituloVideo || 'Conteúdo do vídeo';
+          pautas = [{
+            resumoPauta: tituloBase,
+            foco: `Análise e destaque das principais informações apresentadas: ${tituloBase}`,
+            trechoRelevante: transcricao.substring(0, 500)
+          }];
+        }
+        
       } catch (parseError) {
         console.error('Erro ao parsear pautas:', parseError.message);
         console.error('Texto recebido:', resposta.substring(0, 300));
@@ -4093,8 +4111,9 @@ Se não for possível identificar pautas relevantes, retorne: []`
         // Fallback: criar pauta genérica se a transcrição tem conteúdo
         if (transcricao.length > 100) {
           console.log('⚠️ Criando pauta genérica como fallback...');
+          const tituloBase = metadados.tituloVideo || 'Declarações e informações do vídeo';
           pautas = [{
-            resumoPauta: 'Declarações e informações do vídeo',
+            resumoPauta: tituloBase,
             foco: 'Principais pontos abordados no vídeo',
             trechoRelevante: transcricao.substring(0, 500)
           }];
@@ -4126,10 +4145,17 @@ Se não for possível identificar pautas relevantes, retorne: []`
    * @param {string} transcricao - Transcrição completa do vídeo
    * @param {Object} pauta - Objeto com resumoPauta, foco e trechoRelevante
    * @param {string} categoria - Categoria da matéria
+<<<<<<< HEAD
    * @param {string} tom - Tom da matéria (normal, sensacionalista, polemico, investigativo, emocional)
    * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
    */
   static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', tom = 'normal') {
+=======
+   * @param {Object} metadados - Metadados do vídeo (tituloVideo, canalVideo, descricaoVideo)
+   * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
+   */
+  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', metadados = {}) {
+>>>>>>> ec9f646d19428b0b571d73c3930267e828388da2
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
@@ -4170,6 +4196,18 @@ Se não for possível identificar pautas relevantes, retorne: []`
 
     // Limitar transcrição
     const transcricaoLimitada = transcricao.substring(0, 12000);
+    
+    // Construir contexto do vídeo
+    let contextoVideo = '';
+    if (metadados.tituloVideo) {
+      contextoVideo += `TÍTULO DO VÍDEO: ${metadados.tituloVideo}\n`;
+    }
+    if (metadados.canalVideo) {
+      contextoVideo += `CANAL/AUTOR DO VÍDEO: ${metadados.canalVideo}\n`;
+    }
+    if (metadados.descricaoVideo) {
+      contextoVideo += `DESCRIÇÃO DO VÍDEO: ${metadados.descricaoVideo.substring(0, 500)}\n`;
+    }
 
     const messages = [
       {
@@ -4184,9 +4222,11 @@ Responda APENAS em JSON válido.`
         role: 'user',
         content: `Crie uma matéria jornalística completa baseada na transcrição de vídeo abaixo.
 
+${contextoVideo}
 FOCO DA MATÉRIA: ${pauta.foco}
 RESUMO DA PAUTA: ${pauta.resumoPauta}
 TRECHO PRINCIPAL: ${pauta.trechoRelevante}
+${pauta.pessoasPrincipais ? `PESSOAS IDENTIFICADAS: ${pauta.pessoasPrincipais}` : ''}
 
 TOM DA MATÉRIA: ${tom.toUpperCase()}
 ESTILO DO TÍTULO: ${tomConfig.titulo}
@@ -4202,8 +4242,15 @@ REGRAS OBRIGATÓRIAS:
 5. ❌ NUNCA invente nomes, datas, números ou fatos
 6. ❌ NUNCA adicione informações que não estão na transcrição
 
+⚠️ IDENTIFICAÇÃO DE PESSOAS - MUITO IMPORTANTE:
+- Se o CANAL/AUTOR DO VÍDEO for uma pessoa (ex: "João Silva", "Pastor Fulano"), USE O NOME DELA na matéria
+- NUNCA use termos genéricos como "comentarista", "especialista", "analista" se você souber o nome real
+- Se alguém for mencionado por nome na transcrição, USE O NOME COMPLETO
+- Se não souber o nome, prefira "o apresentador do canal [nome do canal]" em vez de "comentarista"
+- Procure nomes próprios na transcrição (geralmente começam com letra maiúscula)
+
 ESTRUTURA DO CONTEÚDO:
-- Lide (1-2 parágrafos): Fato principal
+- Lide (1-2 parágrafos): Fato principal, identificando QUEM disse/fez
 - Desenvolvimento (2-3 parágrafos): Detalhes e contexto
 - Citações diretas quando houver (use <blockquote>)
 
@@ -4312,7 +4359,12 @@ RESPONDA EM JSON:
       console.log(`\n📰 Gerando matéria ${i + 1}/${pautas.length}: ${pauta.resumoPauta}`);
       
       try {
+<<<<<<< HEAD
         let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, tom);
+=======
+        // Passar metadados para identificar corretamente o autor/canal
+        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, metadados);
+>>>>>>> ec9f646d19428b0b571d73c3930267e828388da2
         
         // 3. Opcional: aplicar estilo G1/Metrópoles
         if (aplicarEstiloG1 && materia.conteudoHTML) {

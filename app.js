@@ -2220,14 +2220,14 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
 
-    // 3. Salvar cada matéria com agendamento para 1 dia depois
+    // 3. Salvar cada matéria como AGENDADA para 2 dias depois (não publicada)
     const slugify = require('slugify');
     const materiassSalvas = [];
     
-    // Calcular data de publicação: 1 dia a partir de agora
+    // Calcular data de publicação: 2 dias a partir de agora
     // Para múltiplas matérias, espaçar 1 hora entre cada
     const dataBase = new Date();
-    dataBase.setDate(dataBase.getDate() + 1); // +1 dia
+    dataBase.setDate(dataBase.getDate() + 2); // +2 dias para revisão
 
     for (let i = 0; i < materias.length; i++) {
       const materia = materias[i];
@@ -2251,17 +2251,30 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         const dataPublicacao = new Date(dataBase);
         dataPublicacao.setHours(dataPublicacao.getHours() + i); // +1 hora para cada matéria
 
-        // Criar artigo AGENDADO (publicado=true mas com data futura)
+        // Adicionar embed do YouTube no final do conteúdo (formato compatível com Quill)
+        let conteudoFinal = materia.conteudoHTML;
+        if (transcricaoResult.videoId) {
+          console.log(`🎥 Adicionando embed do YouTube: ${transcricaoResult.videoId}`);
+          // Usar formato que o Quill reconhece (classe ql-video)
+          const embedYoutube = `
+<h3>Assista ao vídeo</h3>
+<p><br></p>
+<iframe class="ql-video" frameborder="0" allowfullscreen="true" src="https://www.youtube.com/embed/${transcricaoResult.videoId}"></iframe>
+<p><br></p>`;
+          conteudoFinal += embedYoutube;
+        }
+
+        // Criar artigo AGENDADO (publicado=false para revisão)
         const article = await Article.create({
           titulo: materia.titulo,
           descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
-          conteudo: materia.conteudoHTML,
+          conteudo: conteudoFinal,
           imagem: transcricaoResult.videoId ? 
             `https://img.youtube.com/vi/${transcricaoResult.videoId}/maxresdefault.jpg` : 
             '/images/default-post.jpg',
           categoria: categoria,
           autor: autor,
-          publicado: true, // Agendado (será publicado na dataPublicacao)
+          publicado: false, // NÃO publicado - aguardando revisão
           destaque: false,
           dataPublicacao: dataPublicacao, // Data futura = agendado
           visualizacoes: 0,
