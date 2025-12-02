@@ -4126,14 +4126,47 @@ Se não for possível identificar pautas relevantes, retorne: []`
    * @param {string} transcricao - Transcrição completa do vídeo
    * @param {Object} pauta - Objeto com resumoPauta, foco e trechoRelevante
    * @param {string} categoria - Categoria da matéria
+   * @param {string} tom - Tom da matéria (normal, sensacionalista, polemico, investigativo, emocional)
    * @returns {Promise<{titulo: string, descricao: string, conteudoHTML: string}>}
    */
-  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias') {
+  static async gerarMateriaDeVideo(transcricao, pauta, categoria = 'noticias', tom = 'normal') {
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
     }
 
     console.log('📝 Gerando matéria para pauta:', pauta.resumoPauta);
+    console.log('   Tom selecionado:', tom);
+
+    // Definir instruções de tom
+    const instrucoesTom = {
+      normal: {
+        estilo: 'equilibrado, informativo e objetivo',
+        titulo: 'claro e informativo, estilo jornalístico tradicional',
+        instrucoes: 'Mantenha um tom neutro e profissional. Foque nos fatos de forma clara e direta.'
+      },
+      sensacionalista: {
+        estilo: 'impactante, dramático e chamativo',
+        titulo: 'EXPLOSIVO e chamativo, use palavras fortes como "BOMBA", "CHOCANTE", "INACREDITÁVEL", "URGENTE"',
+        instrucoes: 'Use linguagem dramática e impactante. Destaque os aspectos mais surpreendentes. Crie urgência e emoção. Use frases curtas e de impacto. Títulos em caixa alta são bem-vindos.'
+      },
+      polemico: {
+        estilo: 'provocativo, questionador e que gera debate',
+        titulo: 'provocativo que gere discussão, use perguntas retóricas ou afirmações controversas',
+        instrucoes: 'Destaque controvérsias e pontos de tensão. Apresente diferentes lados da questão. Use perguntas que façam o leitor refletir. Explore conflitos e divergências de opinião.'
+      },
+      investigativo: {
+        estilo: 'analítico, aprofundado e questionador',
+        titulo: 'que sugira investigação ou revelação, como "O que está por trás de...", "A verdade sobre..."',
+        instrucoes: 'Aprofunde-se nos detalhes. Questione motivações e contextos. Conecte informações para revelar padrões. Use um tom de investigação jornalística séria.'
+      },
+      emocional: {
+        estilo: 'tocante, humano e inspirador',
+        titulo: 'que toque o coração, foque em histórias humanas e emoções',
+        instrucoes: 'Foque no lado humano da história. Destaque emoções, superações e momentos tocantes. Use linguagem que conecte com os sentimentos do leitor. Conte histórias que inspirem.'
+      }
+    };
+
+    const tomConfig = instrucoesTom[tom] || instrucoesTom.normal;
 
     // Limitar transcrição
     const transcricaoLimitada = transcricao.substring(0, 12000);
@@ -4142,8 +4175,8 @@ Se não for possível identificar pautas relevantes, retorne: []`
       {
         role: 'system',
         content: `Você é um jornalista experiente do portal Metrópoles/G1, especializado em notícias gospel.
-Seu estilo é direto, informativo, objetivo e levemente formal, mas acessível.
-Você prioriza a clareza e a precisão dos fatos.
+Seu estilo deve ser ${tomConfig.estilo}.
+${tomConfig.instrucoes}
 NUNCA invente informações que não estejam na transcrição.
 Responda APENAS em JSON válido.`
       },
@@ -4155,13 +4188,16 @@ FOCO DA MATÉRIA: ${pauta.foco}
 RESUMO DA PAUTA: ${pauta.resumoPauta}
 TRECHO PRINCIPAL: ${pauta.trechoRelevante}
 
+TOM DA MATÉRIA: ${tom.toUpperCase()}
+ESTILO DO TÍTULO: ${tomConfig.titulo}
+
 TRANSCRIÇÃO COMPLETA (para contexto):
 ${transcricaoLimitada}
 
 REGRAS OBRIGATÓRIAS:
 1. ✅ Use APENAS informações presentes na transcrição
-2. ✅ Título chamativo mas verdadeiro (estilo Metrópoles)
-3. ✅ Descrição com 1-2 frases resumindo o principal
+2. ✅ Título ${tomConfig.titulo}
+3. ✅ Descrição com 1-2 frases resumindo o principal (tom ${tom})
 4. ✅ Conteúdo em HTML bem formatado (<p>, <h3>, <blockquote>)
 5. ❌ NUNCA invente nomes, datas, números ou fatos
 6. ❌ NUNCA adicione informações que não estão na transcrição
@@ -4243,12 +4279,14 @@ RESPONDA EM JSON:
    * @param {string} categoria - Categoria padrão
    * @param {boolean} aplicarEstiloG1 - Se deve aplicar reescrita estilo G1
    * @param {Object} metadados - Metadados do vídeo (titulo, descricao, canal)
+   * @param {string} tom - Tom da matéria (normal, sensacionalista, polemico, investigativo, emocional)
    * @returns {Promise<Array<{titulo, descricao, conteudoHTML}>>}
    */
-  static async gerarMateriasDeVideo(transcricao, quantidade = 3, categoria = 'noticias', aplicarEstiloG1 = true, metadados = {}) {
+  static async gerarMateriasDeVideo(transcricao, quantidade = 3, categoria = 'noticias', aplicarEstiloG1 = true, metadados = {}, tom = 'normal') {
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
     console.log(`   Quantidade solicitada: ${quantidade}`);
     console.log(`   Categoria: ${categoria}`);
+    console.log(`   Tom: ${tom}`);
     console.log(`   Aplicar estilo G1: ${aplicarEstiloG1}`);
     if (metadados.tituloVideo) {
       console.log(`   📺 Título do vídeo: ${metadados.tituloVideo}`);
@@ -4274,7 +4312,7 @@ RESPONDA EM JSON:
       console.log(`\n📰 Gerando matéria ${i + 1}/${pautas.length}: ${pauta.resumoPauta}`);
       
       try {
-        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria);
+        let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, tom);
         
         // 3. Opcional: aplicar estilo G1/Metrópoles
         if (aplicarEstiloG1 && materia.conteudoHTML) {

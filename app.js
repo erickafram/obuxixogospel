@@ -2168,12 +2168,13 @@ const TranscriptionService = require('./services/TranscriptionService');
 
 app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
   try {
-    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true } = req.body;
+    const { youtubeUrl, quantidade = 3, categoria = 'noticias', autor = 'Redação Obuxixo Gospel', aplicarEstiloG1 = true, tom = 'normal' } = req.body;
 
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
     console.log('   URL:', youtubeUrl);
     console.log('   Quantidade:', quantidade);
     console.log('   Categoria:', categoria);
+    console.log('   Tom:', tom);
 
     // Validar URL
     if (!youtubeUrl || !TranscriptionService.isValidYoutubeUrl(youtubeUrl)) {
@@ -2202,7 +2203,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
       console.log(`👤 Canal: ${transcricaoResult.canalVideo}`);
     }
 
-    // 2. Gerar matérias com IA (passando metadados do vídeo)
+    // 2. Gerar matérias com IA (passando metadados do vídeo e tom)
     console.log('🤖 Gerando matérias com IA...');
     const materias = await AIService.gerarMateriasDeVideo(
       transcricaoResult.textoTranscricao,
@@ -2213,7 +2214,8 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         tituloVideo: transcricaoResult.tituloVideo,
         descricaoVideo: transcricaoResult.descricaoVideo,
         canalVideo: transcricaoResult.canalVideo
-      }
+      },
+      tom
     );
 
     console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
