@@ -2167,6 +2167,15 @@ app.get('/api/ia/status', async (req, res) => {
 const TranscriptionService = require('./services/TranscriptionService');
 
 app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
+  // Aumentar timeout da requisição para 5 minutos (processo demorado)
+  req.setTimeout(300000); // 5 minutos
+  res.setTimeout(300000);
+  
+  // Desabilitar timeout do socket
+  if (req.socket) {
+    req.socket.setTimeout(300000);
+  }
+  
   try {
     const { 
       platform = 'youtube',
@@ -2293,7 +2302,13 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     // 2. Gerar matérias com IA (passando metadados do vídeo e tom)
     console.log('🤖 Gerando matérias com IA...');
-    const materias = await AIService.gerarMateriasDeVideo(
+    
+    // Criar promise com timeout de 4 minutos para a geração de matérias
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout: A geração de matérias demorou muito. Tente com menos matérias ou um vídeo mais curto.')), 240000);
+    });
+    
+    const geracaoPromise = AIService.gerarMateriasDeVideo(
       transcricaoResult.textoTranscricao,
       Math.min(quantidade, 5), // Máximo 5
       categoria,
@@ -2305,6 +2320,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
       },
       tom
     );
+    
+    // Race entre a geração e o timeout
+    const materias = await Promise.race([geracaoPromise, timeoutPromise]);
 
     console.log(`✅ ${materias.length} matéria(s) gerada(s)`);
 

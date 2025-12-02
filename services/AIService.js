@@ -50,6 +50,11 @@ class AIService {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`🤖 Tentativa ${attempt}/${retries} de requisição à IA...`);
+        console.log(`   📡 URL: ${apiUrl}`);
+        console.log(`   🤖 Modelo: ${model}`);
+        console.log(`   📝 Tokens máx: ${maxTokens}`);
+        
+        const startTime = Date.now();
         
         const response = await axios.post(
           apiUrl,
@@ -68,6 +73,9 @@ class AIService {
           }
         );
 
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Resposta da IA recebida em ${duration}s`);
+        
         return response.data.choices[0].message.content;
       } catch (error) {
         lastError = error;
