@@ -112,7 +112,8 @@ app.use((req, res, next) => {
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
     "img-src 'self' data: https: blob: https://*.google-analytics.com https://*.googletagmanager.com; " +
     "frame-src 'self' https://www.instagram.com https://www.youtube.com https://player.vimeo.com; " +
-    "connect-src 'self' https://api.instagram.com https://graph.instagram.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.google.com https://*.doubleclick.net https://cdn.ampproject.org https://cdn.quilljs.com"
+    "connect-src 'self' https://www.obuxixogospel.com.br https://obuxixogospel.com.br https://fcm.googleapis.com https://updates.push.services.mozilla.com https://*.push.apple.com https://api.instagram.com https://graph.instagram.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.google.com https://*.doubleclick.net https://cdn.ampproject.org https://cdn.quilljs.com; " +
+    "worker-src 'self'"
   );
 
   // Permissions Policy
@@ -232,14 +233,40 @@ app.locals.appVersion = packageJson.version || Date.now();
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/categorias', require('./routes/categories'));
 
+// Rota de teste para verificar se push está funcionando
+app.get('/api/push/test', (req, res) => {
+  console.log('🔔 GET /api/push/test - Endpoint de push está funcionando!');
+  res.json({ success: true, message: 'Push endpoint funcionando', timestamp: new Date().toISOString() });
+});
+
 // Rota para Push Notifications (salvar subscriptions)
 app.post('/api/push/subscribe', async (req, res) => {
+  console.log('📥 POST /api/push/subscribe recebido');
+  console.log('📥 Body:', JSON.stringify(req.body).substring(0, 200));
+  
   try {
     const subscription = req.body;
-    console.log('Nova subscription de push recebida:', subscription.endpoint?.substring(0, 50) + '...');
+    
+    // Validar dados recebidos
+    if (!subscription || !subscription.endpoint) {
+      console.error('❌ Subscription inválida: endpoint ausente');
+      return res.status(400).json({ success: false, error: 'Endpoint ausente' });
+    }
+    
+    if (!subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+      console.error('❌ Subscription inválida: keys ausentes');
+      return res.status(400).json({ success: false, error: 'Keys ausentes' });
+    }
+    
+    console.log('📥 Nova subscription de push recebida:', subscription.endpoint?.substring(0, 50) + '...');
     
     // Salvar no banco de dados
     const { PushSubscription } = require('./models');
+    
+    if (!PushSubscription) {
+      console.error('❌ Modelo PushSubscription não encontrado');
+      return res.status(500).json({ success: false, error: 'Modelo não encontrado' });
+    }
     
     // Verificar se já existe
     const existing = await PushSubscription.findOne({
@@ -254,23 +281,24 @@ app.post('/api/push/subscribe', async (req, res) => {
         user_agent: req.get('user-agent'),
         active: true
       });
-      console.log('✅ Subscription atualizada');
+      console.log('✅ Subscription atualizada - ID:', existing.id);
     } else {
       // Criar nova
-      await PushSubscription.create({
+      const newSub = await PushSubscription.create({
         endpoint: subscription.endpoint,
         keys_p256dh: subscription.keys.p256dh,
         keys_auth: subscription.keys.auth,
         user_agent: req.get('user-agent'),
         active: true
       });
-      console.log('✅ Nova subscription salva');
+      console.log('✅ Nova subscription salva - ID:', newSub.id);
     }
 
     res.json({ success: true, message: 'Subscription salva com sucesso' });
   } catch (error) {
-    console.error('Erro ao salvar subscription:', error);
-    res.status(500).json({ success: false, error: 'Erro ao salvar subscription' });
+    console.error('❌ Erro ao salvar subscription:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Erro ao salvar subscription: ' + error.message });
   }
 });
 

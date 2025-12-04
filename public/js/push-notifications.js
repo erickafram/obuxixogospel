@@ -298,37 +298,50 @@
 
   async function registerServiceWorker() {
     try {
+      console.log('🔧 Iniciando registro do Service Worker...');
+      
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registrado:', registration);
+      console.log('✅ Service Worker registrado:', registration.scope);
 
       // Aguardar o service worker estar pronto
+      console.log('⏳ Aguardando Service Worker ficar pronto...');
       const sw = await navigator.serviceWorker.ready;
-      console.log('Service Worker pronto');
+      console.log('✅ Service Worker pronto');
 
       // Verificar se já tem subscription
       let subscription = await sw.pushManager.getSubscription();
+      console.log('📋 Subscription existente:', subscription ? 'Sim' : 'Não');
 
       if (!subscription) {
         // Criar nova subscription
-        console.log('Criando nova subscription...');
+        console.log('🔑 Criando nova subscription com VAPID key...');
+        console.log('VAPID Public Key:', VAPID_PUBLIC_KEY.substring(0, 20) + '...');
+        
         try {
           subscription = await sw.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
-          console.log('Subscription criada com sucesso');
+          console.log('✅ Subscription criada com sucesso');
+          console.log('Endpoint:', subscription.endpoint.substring(0, 50) + '...');
         } catch (subError) {
-          console.error('Erro ao criar subscription:', subError);
+          console.error('❌ Erro ao criar subscription:', subError);
+          console.error('Detalhes:', subError.message);
+          return;
         }
       }
 
       if (subscription) {
         // Enviar subscription para o servidor
+        console.log('📤 Enviando subscription para o servidor...');
         await saveSubscription(subscription);
+      } else {
+        console.error('❌ Subscription não foi criada');
       }
 
     } catch (error) {
-      console.error('Erro ao registrar Service Worker:', error);
+      console.error('❌ Erro ao registrar Service Worker:', error);
+      console.error('Detalhes:', error.message);
     }
   }
 
@@ -336,16 +349,30 @@
     try {
       // Converter subscription para JSON
       const subscriptionJson = subscription.toJSON();
-      console.log('Enviando subscription:', subscriptionJson);
+      console.log('📤 Enviando subscription para o servidor...');
+      console.log('Endpoint:', subscriptionJson.endpoint);
+      console.log('Keys:', subscriptionJson.keys ? 'Presente' : 'Ausente');
       
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscriptionJson)
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(subscriptionJson),
+        credentials: 'same-origin'
       });
       
+      console.log('📥 Status da resposta:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erro HTTP:', response.status, errorText);
+        return;
+      }
+      
       const result = await response.json();
-      console.log('Resposta do servidor:', result);
+      console.log('📥 Resposta do servidor:', result);
       
       if (result.success) {
         console.log('✅ Subscription salva no servidor com sucesso!');
@@ -354,6 +381,7 @@
       }
     } catch (error) {
       console.error('❌ Erro ao salvar subscription:', error);
+      console.error('Stack:', error.stack);
     }
   }
 
