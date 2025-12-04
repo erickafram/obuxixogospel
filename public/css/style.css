@@ -1610,6 +1610,7 @@ a.internal-link {
 .article-full a.internal-link.animate-underline,
 a.internal-link.animate-underline {
     animation: highlightAnimation 0.7s ease-out forwards;
+        text-decoration: underline;
 }
 
 @keyframes highlightAnimation {
