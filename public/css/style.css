@@ -1587,24 +1587,48 @@ body:not(:has(.admin-bar)) .hero-section {
     overflow-wrap: break-word;
 }
 
-/* Links internos - Estilo laranja sublinhado */
+/* Links internos - Estilo laranja com efeito de sublinhado animado */
 .article-full a.internal-link,
 a.internal-link {
     color: #ea580c;
-    text-decoration: underline;
-    text-decoration-color: #ea580c;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 2px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    text-decoration: none;
+    position: relative;
+    display: inline;
+    background-image: linear-gradient(#ea580c, #ea580c);
+    background-size: 0% 2px;
+    background-repeat: no-repeat;
+    background-position: left bottom;
+    transition: background-size 0.4s ease-out;
+    padding-bottom: 2px;
+}
+
+/* Efeito de sublinhado animado ao aparecer na tela */
+.article-full a.internal-link.animate-underline,
+a.internal-link.animate-underline {
+    animation: underlineAnimation 0.6s ease-out forwards;
+}
+
+@keyframes underlineAnimation {
+    0% {
+        background-size: 0% 2px;
+    }
+    100% {
+        background-size: 100% 2px;
+    }
+}
+
+/* Links já vistos ficam sublinhados */
+.article-full a.internal-link:not(.animate-underline),
+a.internal-link:not(.animate-underline) {
+    background-size: 100% 2px;
 }
 
 .article-full a.internal-link:hover,
 a.internal-link:hover {
     color: #c2410c;
-    text-decoration-color: #c2410c;
-    background-color: rgba(234, 88, 12, 0.1);
-    border-radius: 2px;
+    background-image: linear-gradient(#c2410c, #c2410c);
+    background-size: 100% 3px;
 }
 
 .article-full p,

@@ -582,4 +582,43 @@
                     }
                 </script>
 
+                <!-- Script para animar sublinhado dos links internos -->
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Selecionar todos os links internos
+                        const internalLinks = document.querySelectorAll('.internal-link');
+                        
+                        if (internalLinks.length > 0 && 'IntersectionObserver' in window) {
+                            // Usar Intersection Observer para animar quando o link aparecer na tela
+                            const observer = new IntersectionObserver((entries) => {
+                                entries.forEach(entry => {
+                                    if (entry.isIntersecting) {
+                                        // Adicionar classe de animação com pequeno delay
+                                        setTimeout(() => {
+                                            entry.target.classList.add('animate-underline');
+                                        }, 100);
+                                        // Parar de observar após animar
+                                        observer.unobserve(entry.target);
+                                    }
+                                });
+                            }, {
+                                threshold: 0.5,
+                                rootMargin: '0px 0px -50px 0px'
+                            });
+
+                            // Observar cada link
+                            internalLinks.forEach(link => {
+                                // Remover sublinhado inicial para animar depois
+                                link.style.backgroundSize = '0% 2px';
+                                observer.observe(link);
+                            });
+                        } else {
+                            // Fallback: mostrar todos sublinhados
+                            internalLinks.forEach(link => {
+                                link.classList.add('animate-underline');
+                            });
+                        }
+                    });
+                </script>
+
                 <%- include('partials/footer') %>
