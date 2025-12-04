@@ -334,14 +334,26 @@
 
   async function saveSubscription(subscription) {
     try {
-      await fetch('/api/push/subscribe', {
+      // Converter subscription para JSON
+      const subscriptionJson = subscription.toJSON();
+      console.log('Enviando subscription:', subscriptionJson);
+      
+      const response = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscription)
+        body: JSON.stringify(subscriptionJson)
       });
-      console.log('Subscription salva no servidor');
+      
+      const result = await response.json();
+      console.log('Resposta do servidor:', result);
+      
+      if (result.success) {
+        console.log('✅ Subscription salva no servidor com sucesso!');
+      } else {
+        console.error('❌ Erro ao salvar subscription:', result.error);
+      }
     } catch (error) {
-      console.error('Erro ao salvar subscription:', error);
+      console.error('❌ Erro ao salvar subscription:', error);
     }
   }
 
