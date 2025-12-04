@@ -9,7 +9,18 @@ const SequelizeStore = require('connect-session-sequelize')(session.Store);
 const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs').promises;
+const webpush = require('web-push');
 require('dotenv').config();
+
+// Configurar Web Push com VAPID keys
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL || 'mailto:obuxixogospel@gmail.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log('✅ Web Push configurado com sucesso');
+}
 
 // Sequelize MySQL
 const { sequelize, Article, User, Media, SystemConfig, Page, Category, Redirect, PageView } = require('./models');
@@ -226,14 +237,94 @@ app.post('/api/push/subscribe', async (req, res) => {
   try {
     const subscription = req.body;
     console.log('Nova subscription de push recebida:', subscription.endpoint?.substring(0, 50) + '...');
-    // Aqui você pode salvar a subscription no banco de dados
-    // para enviar notificações depois
+    
+    // Salvar no banco de dados
+    const { PushSubscription } = require('./models');
+    
+    // Verificar se já existe
+    const existing = await PushSubscription.findOne({
+      where: { endpoint: subscription.endpoint }
+    });
+
+    if (existing) {
+      // Atualizar se já existe
+      await existing.update({
+        keys_p256dh: subscription.keys.p256dh,
+        keys_auth: subscription.keys.auth,
+        user_agent: req.get('user-agent'),
+        active: true
+      });
+      console.log('✅ Subscription atualizada');
+    } else {
+      // Criar nova
+      await PushSubscription.create({
+        endpoint: subscription.endpoint,
+        keys_p256dh: subscription.keys.p256dh,
+        keys_auth: subscription.keys.auth,
+        user_agent: req.get('user-agent'),
+        active: true
+      });
+      console.log('✅ Nova subscription salva');
+    }
+
     res.json({ success: true, message: 'Subscription salva com sucesso' });
   } catch (error) {
     console.error('Erro ao salvar subscription:', error);
     res.status(500).json({ success: false, error: 'Erro ao salvar subscription' });
   }
 });
+
+// Função para enviar notificação push para todos os inscritos
+async function sendPushNotification(title, body, url, icon = '/images/logo-icon.png') {
+  try {
+    const { PushSubscription } = require('./models');
+    const subscriptions = await PushSubscription.findAll({ where: { active: true } });
+    
+    console.log(`📤 Enviando notificação para ${subscriptions.length} inscritos...`);
+    
+    const payload = JSON.stringify({
+      title: title,
+      body: body,
+      icon: icon,
+      url: url,
+      tag: 'obuxixo-' + Date.now()
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const sub of subscriptions) {
+      try {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.keys_p256dh,
+            auth: sub.keys_auth
+          }
+        };
+
+        await webpush.sendNotification(pushSubscription, payload);
+        successCount++;
+      } catch (error) {
+        failCount++;
+        // Se a subscription expirou ou foi cancelada, desativar
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await sub.update({ active: false });
+          console.log('❌ Subscription inválida, desativada:', sub.endpoint.substring(0, 50));
+        }
+      }
+    }
+
+    console.log(`✅ Notificações enviadas: ${successCount} sucesso, ${failCount} falhas`);
+    return { success: successCount, failed: failCount };
+  } catch (error) {
+    console.error('Erro ao enviar notificações:', error);
+    return { success: 0, failed: 0, error: error.message };
+  }
+}
+
+// Exportar função para uso em outras partes
+app.locals.sendPushNotification = sendPushNotification;
 
 // Rotas de autenticação
 app.get('/login', (req, res) => {
@@ -785,6 +876,20 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       }).catch(err => {
         console.error('Erro ao postar nas redes sociais:', err.message);
       });
+
+      // Enviar notificação push para inscritos
+      if (app.locals.sendPushNotification) {
+        const notificationUrl = `/${article.categoria}/${article.urlAmigavel}`;
+        app.locals.sendPushNotification(
+          '📰 Nova Notícia!',
+          article.titulo.substring(0, 100),
+          notificationUrl
+        ).then(result => {
+          console.log(`🔔 Push notifications: ${result.success} enviadas, ${result.failed} falhas`);
+        }).catch(err => {
+          console.error('Erro ao enviar push notifications:', err.message);
+        });
+      }
 
       // Limpar cache para exibir novo post/atualização
       CacheService.flush();

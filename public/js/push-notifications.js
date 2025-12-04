@@ -8,8 +8,8 @@
     return;
   }
 
-  // Chave pública VAPID (você precisa gerar uma)
-  const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+  // Chave pública VAPID
+  const VAPID_PUBLIC_KEY = 'BJSsnfk5_Rb21l31-sn_uG5gpi5H2111dKpXpbOi7m4FIOF1qbvE_nWLN11H_smBJBN4WJFn_gWJVtGaIzmOmCQ';
 
   // Verificar se já pediu permissão antes
   const hasAskedPermission = localStorage.getItem('notification_asked');
@@ -310,12 +310,16 @@
 
       if (!subscription) {
         // Criar nova subscription
-        // Nota: Para funcionar em produção, você precisa configurar VAPID keys
         console.log('Criando nova subscription...');
-        // subscription = await sw.pushManager.subscribe({
-        //   userVisibleOnly: true,
-        //   applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        // });
+        try {
+          subscription = await sw.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+          console.log('Subscription criada com sucesso');
+        } catch (subError) {
+          console.error('Erro ao criar subscription:', subError);
+        }
       }
 
       if (subscription) {

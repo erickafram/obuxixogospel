@@ -1,6 +1,6 @@
 {
   "name": "obuxixogospel",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "description": "Portal Notícias O Buxixo Gospel",
   "main": "app.js",
   "scripts": {
@@ -44,8 +44,8 @@
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
-    "oauth-1.0a": "^2.2.6",
     "nodemailer": "^7.0.10",
+    "oauth-1.0a": "^2.2.6",
     "puppeteer-core": "^24.31.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
@@ -54,6 +54,7 @@
     "sequelize-cli": "^6.6.3",
     "sharp": "^0.33.0",
     "slugify": "^1.6.6",
+    "web-push": "^3.6.7",
     "youtube-transcript-plus": "^1.1.1"
   },
   "devDependencies": {
