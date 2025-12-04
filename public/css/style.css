@@ -1587,7 +1587,7 @@ body:not(:has(.admin-bar)) .hero-section {
     overflow-wrap: break-word;
 }
 
-/* Links internos - Estilo marca-texto laranja animado */
+/* Links internos - Estilo marca-texto laranja cobrindo todo o texto */
 .article-full a.internal-link,
 a.internal-link {
     color: #000;
@@ -1595,14 +1595,15 @@ a.internal-link {
     text-decoration: none;
     position: relative;
     display: inline;
-    /* Efeito marca-texto - cobre 40% da altura do texto por baixo */
-    background-image: linear-gradient(rgba(234, 88, 12, 0.35), rgba(234, 88, 12, 0.35));
-    background-size: 0% 45%;
+    /* Efeito marca-texto laranja - cobre 100% do texto */
+    background-image: linear-gradient(rgba(255, 107, 0, 0.3), rgba(255, 107, 0, 0.3));
+    background-size: 0% 100%;
     background-repeat: no-repeat;
-    background-position: left 85%;
+    background-position: left center;
     transition: background-size 0.5s ease-out, color 0.2s ease;
-    padding: 0 2px;
-    margin: 0 -2px;
+    padding: 2px 4px;
+    margin: 0 -4px;
+    border-radius: 3px;
 }
 
 /* Efeito de marca-texto animado ao aparecer na tela */
@@ -1613,24 +1614,24 @@ a.internal-link.animate-underline {
 
 @keyframes highlightAnimation {
     0% {
-        background-size: 0% 45%;
+        background-size: 0% 100%;
     }
     100% {
-        background-size: 100% 45%;
+        background-size: 100% 100%;
     }
 }
 
 /* Links já vistos ficam marcados */
 .article-full a.internal-link:not(.animate-underline),
 a.internal-link:not(.animate-underline) {
-    background-size: 100% 45%;
+    background-size: 100% 100%;
 }
 
 .article-full a.internal-link:hover,
 a.internal-link:hover {
-    color: #c2410c;
-    background-image: linear-gradient(rgba(234, 88, 12, 0.5), rgba(234, 88, 12, 0.5));
-    background-size: 100% 45%;
+    color: #fff;
+    background-image: linear-gradient(rgba(255, 107, 0, 0.85), rgba(255, 107, 0, 0.85));
+    background-size: 100% 100%;
 }
 
 .article-full p,
