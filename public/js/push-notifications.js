@@ -2,9 +2,11 @@
 (function() {
   'use strict';
 
+  console.log('🔔 Push Notifications: Iniciando...');
+
   // Verificar se o navegador suporta notificações
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.log('Este navegador não suporta notificações push');
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.log('❌ Este navegador não suporta notificações push');
     return;
   }
 
@@ -12,7 +14,6 @@
   const VAPID_PUBLIC_KEY = 'BJSsnfk5_Rb21l31-sn_uG5gpi5H2111dKpXpbOi7m4FIOF1qbvE_nWLN11H_smBJBN4WJFn_gWJVtGaIzmOmCQ';
 
   // Verificar se já pediu permissão antes
-  const hasAskedPermission = localStorage.getItem('notification_asked');
   const permissionDenied = localStorage.getItem('notification_denied');
 
   // Se já negou, não mostrar novamente por 7 dias
@@ -20,21 +21,26 @@
     const deniedDate = new Date(permissionDenied);
     const daysSinceDenied = (Date.now() - deniedDate.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceDenied < 7) {
+      console.log('🔕 Usuário negou notificações recentemente, aguardando 7 dias');
       return;
     }
   }
 
-  // Se já tem permissão, registrar service worker
+  // Se já tem permissão, registrar service worker imediatamente
   if (Notification.permission === 'granted') {
+    console.log('✅ Permissão já concedida, registrando SW...');
     registerServiceWorker();
     return;
   }
 
-  // Se já foi negado permanentemente, não mostrar
+  // Se já foi negado permanentemente pelo navegador, não mostrar
   if (Notification.permission === 'denied') {
+    console.log('🚫 Notificações bloqueadas pelo navegador');
     return;
   }
 
+  console.log('📋 Permissão atual:', Notification.permission);
+  
   // Mostrar popup após 5 segundos na página
   setTimeout(showNotificationPopup, 5000);
 
