@@ -221,6 +221,20 @@ app.locals.appVersion = packageJson.version || Date.now();
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/categorias', require('./routes/categories'));
 
+// Rota para Push Notifications (salvar subscriptions)
+app.post('/api/push/subscribe', async (req, res) => {
+  try {
+    const subscription = req.body;
+    console.log('Nova subscription de push recebida:', subscription.endpoint?.substring(0, 50) + '...');
+    // Aqui você pode salvar a subscription no banco de dados
+    // para enviar notificações depois
+    res.json({ success: true, message: 'Subscription salva com sucesso' });
+  } catch (error) {
+    console.error('Erro ao salvar subscription:', error);
+    res.status(500).json({ success: false, error: 'Erro ao salvar subscription' });
+  }
+});
+
 // Rotas de autenticação
 app.get('/login', (req, res) => {
   if (req.session.userId) {

@@ -1587,48 +1587,50 @@ body:not(:has(.admin-bar)) .hero-section {
     overflow-wrap: break-word;
 }
 
-/* Links internos - Estilo laranja com efeito de sublinhado animado */
+/* Links internos - Estilo marca-texto laranja animado */
 .article-full a.internal-link,
 a.internal-link {
-    color: #ea580c;
+    color: #000;
     font-weight: 600;
     text-decoration: none;
     position: relative;
     display: inline;
-    background-image: linear-gradient(#ea580c, #ea580c);
-    background-size: 0% 2px;
+    /* Efeito marca-texto - cobre 40% da altura do texto por baixo */
+    background-image: linear-gradient(rgba(234, 88, 12, 0.35), rgba(234, 88, 12, 0.35));
+    background-size: 0% 45%;
     background-repeat: no-repeat;
-    background-position: left bottom;
-    transition: background-size 0.4s ease-out;
-    padding-bottom: 2px;
+    background-position: left 85%;
+    transition: background-size 0.5s ease-out, color 0.2s ease;
+    padding: 0 2px;
+    margin: 0 -2px;
 }
 
-/* Efeito de sublinhado animado ao aparecer na tela */
+/* Efeito de marca-texto animado ao aparecer na tela */
 .article-full a.internal-link.animate-underline,
 a.internal-link.animate-underline {
-    animation: underlineAnimation 0.6s ease-out forwards;
+    animation: highlightAnimation 0.7s ease-out forwards;
 }
 
-@keyframes underlineAnimation {
+@keyframes highlightAnimation {
     0% {
-        background-size: 0% 2px;
+        background-size: 0% 45%;
     }
     100% {
-        background-size: 100% 2px;
+        background-size: 100% 45%;
     }
 }
 
-/* Links já vistos ficam sublinhados */
+/* Links já vistos ficam marcados */
 .article-full a.internal-link:not(.animate-underline),
 a.internal-link:not(.animate-underline) {
-    background-size: 100% 2px;
+    background-size: 100% 45%;
 }
 
 .article-full a.internal-link:hover,
 a.internal-link:hover {
     color: #c2410c;
-    background-image: linear-gradient(#c2410c, #c2410c);
-    background-size: 100% 3px;
+    background-image: linear-gradient(rgba(234, 88, 12, 0.5), rgba(234, 88, 12, 0.5));
+    background-size: 100% 45%;
 }
 
 .article-full p,
