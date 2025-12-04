@@ -318,15 +318,27 @@
         console.log('VAPID Public Key:', VAPID_PUBLIC_KEY.substring(0, 20) + '...');
         
         try {
+          // Verificar se pushManager está disponível
+          if (!sw.pushManager) {
+            console.error('❌ PushManager não está disponível');
+            return;
+          }
+          
+          const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+          console.log('🔐 Application Server Key gerada, tamanho:', applicationServerKey.length);
+          
           subscription = await sw.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            applicationServerKey: applicationServerKey
           });
+          
           console.log('✅ Subscription criada com sucesso');
           console.log('Endpoint:', subscription.endpoint.substring(0, 50) + '...');
         } catch (subError) {
           console.error('❌ Erro ao criar subscription:', subError);
-          console.error('Detalhes:', subError.message);
+          console.error('Nome do erro:', subError.name);
+          console.error('Mensagem:', subError.message);
+          console.error('Stack:', subError.stack);
           return;
         }
       }
