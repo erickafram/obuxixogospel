@@ -3160,3 +3160,225 @@ a.internal-link:hover {
     text-decoration: underline;
     color: #1d4ed8;
 }
+
+/* ========================================
+   PLAYER DE ÁUDIO WAVEFORM
+   ======================================== */
+.audio-waveform-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.waveform-play-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border: none;
+    border-radius: 50%;
+    background: #1c1c1c;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.waveform-play-btn:hover {
+    background: #333;
+    transform: scale(1.05);
+}
+
+.waveform-play-btn i {
+    font-size: 12px;
+    margin-left: 2px;
+}
+
+.audio-waveform-player.playing .waveform-play-btn {
+    background: #FF6B00;
+}
+
+.audio-waveform-player.playing .waveform-play-btn i {
+    margin-left: 0;
+}
+
+.waveform-container {
+    flex: 1;
+    height: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.waveform-bars {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: 2px;
+}
+
+.waveform-bar {
+    width: 3px;
+    background: #ccc;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+.audio-waveform-player.playing .waveform-bar {
+    animation: waveform-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes waveform-pulse {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+.waveform-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: rgba(255, 107, 0, 0.15);
+    pointer-events: none;
+    transition: width 0.1s linear;
+}
+
+.waveform-time {
+    font-size: 13px;
+    color: #666;
+    min-width: 40px;
+    text-align: center;
+    font-family: monospace;
+}
+
+.waveform-speed {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+}
+
+.waveform-speed:focus {
+    outline: none;
+    border-color: #FF6B00;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .audio-waveform-player {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+    
+    .waveform-play-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+    }
+    
+    .waveform-play-btn i {
+        font-size: 10px;
+    }
+    
+    .waveform-time {
+        font-size: 11px;
+        min-width: 32px;
+    }
+    
+    .waveform-speed {
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+}
+
+/* ========================================
+   PLAYER DE ÁUDIO SIMPLES - OUÇA ESTE CONTEÚDO
+   ======================================== */
+.audio-player-simple {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.audio-play-simple {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(30, 58, 95, 0.3);
+}
+
+.audio-play-simple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(30, 58, 95, 0.4);
+}
+
+.audio-play-simple i {
+    font-size: 18px;
+}
+
+.audio-play-simple.playing {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8F39 100%);
+    animation: pulse-audio-simple 1.5s infinite;
+}
+
+@keyframes pulse-audio-simple {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }
+}
+
+.audio-stop-simple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #dc3545;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.audio-stop-simple:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .audio-play-simple {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .audio-play-simple i {
+        font-size: 16px;
+    }
+    
+    .audio-stop-simple {
+        width: 36px;
+        height: 36px;
+    }
+}
