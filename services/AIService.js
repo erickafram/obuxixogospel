@@ -1884,33 +1884,47 @@ Retorne APENAS um objeto JSON válido:
       const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
       
       if (temInfoInternet) {
-        // TEM informações da internet - usar como base factual
-        promptInstrucao = `⚠️ TAREFA IMPORTANTE: Crie uma matéria jornalística COMPLETA no estilo do portal Metrópoles sobre o tema abaixo.
+        // TEM informações da internet - usar como base factual - MATÉRIA EXTENSA
+        promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma MATÉRIA JORNALÍSTICA EXTENSA E COMPLETA no estilo do portal Metrópoles/G1 sobre o tema abaixo.
 
-📰 VOCÊ TEM INFORMAÇÕES REAIS DA INTERNET - USE-AS!
-As informações abaixo foram pesquisadas na internet e são FATOS REAIS. Use-as para criar uma matéria factual e atualizada.
+📰 VOCÊ TEM INFORMAÇÕES REAIS DA INTERNET - USE TODAS ELAS!
+As informações abaixo foram pesquisadas na internet e são FATOS REAIS. Use-as para criar uma matéria MUITO DETALHADA e atualizada.
+
+🎯 OBJETIVO PRINCIPAL: MATÉRIA EXTENSA DE 1.000 A 3.000 PALAVRAS
+Esta matéria deve ser COMPLETA, PROFUNDA e DETALHADA como as grandes reportagens do G1, Metrópoles, Folha e UOL.
 
 🚨 REGRAS IMPORTANTES:
-- ✅ USE as informações da internet fornecidas como BASE PRINCIPAL da matéria
-- ✅ Cite fatos, datas, declarações e eventos mencionados nas notícias
-- ✅ Mantenha um tom jornalístico profissional, direto e objetivo (Estilo Metrópoles)
-- ✅ Combine as informações de diferentes fontes de forma coerente
+- ✅ USE TODAS as informações da internet fornecidas - não deixe nada de fora
+- ✅ Cite TODOS os fatos, datas, declarações e eventos mencionados nas notícias
+- ✅ Mantenha um tom jornalístico profissional, direto e objetivo (Estilo Metrópoles/G1)
+- ✅ Combine as informações de diferentes fontes de forma coerente e fluida
 - ✅ Priorize as informações mais recentes e relevantes
+- ✅ Desenvolva cada ponto com profundidade e contexto
+- ✅ Adicione contexto histórico e background quando relevante
+- ✅ Explique termos técnicos ou específicos para o leitor
 - ❌ NÃO invente informações além do que foi fornecido
 - ❌ NÃO adicione citações que não existem nas fontes
 - ❌ JAMAIS use meta-linguagem: "Segundo informações...", "Baseado em..."
 
-✅ O QUE VOCÊ DEVE FAZER:
-1. ✅ Usar as informações da internet como base factual
-2. ✅ Organizar as informações em estrutura jornalística
-3. ✅ Manter tom profissional e sério
-4. ✅ Ser objetivo e direto
-5. ✅ Criar uma narrativa coerente com os fatos disponíveis
+✅ O QUE VOCÊ DEVE FAZER PARA UMA MATÉRIA EXTENSA:
+1. ✅ Usar TODAS as informações da internet como base factual
+2. ✅ Organizar as informações em estrutura jornalística profissional
+3. ✅ Criar múltiplas seções com subtítulos <h3> para organizar o conteúdo
+4. ✅ Desenvolver cada seção com 3-5 parágrafos detalhados
+5. ✅ Incluir contexto histórico e background relevante
+6. ✅ Explicar a importância e impacto do tema
+7. ✅ Apresentar diferentes perspectivas quando houver
+8. ✅ Criar uma narrativa coerente e envolvente
+9. ✅ Manter tom profissional e sério do início ao fim
 
-📏 TAMANHO DO CONTEÚDO:
-- Matéria completa (400-600 palavras)
-- Use todas as informações relevantes disponíveis
-- Seja detalhado mas objetivo`;
+📏 TAMANHO OBRIGATÓRIO DO CONTEÚDO:
+- MÍNIMO: 1.000 palavras (obrigatório)
+- IDEAL: 1.500 a 2.500 palavras
+- MÁXIMO: 3.000 palavras
+- Use TODAS as informações disponíveis para atingir esse tamanho
+- Desenvolva cada ponto com profundidade
+- NÃO seja superficial - aprofunde cada aspecto do tema
+- Crie pelo menos 4-6 seções com subtítulos <h3>`;
       } else {
         // NÃO tem informações da internet - usar conhecimento geral
         promptInstrucao = `⚠️ TAREFA: Crie uma matéria jornalística no estilo do portal Metrópoles sobre o tema abaixo.
@@ -1946,36 +1960,54 @@ CATEGORIA: ${categoria}
 ${palavrasChave ? `PALAVRAS-CHAVE: ${palavrasChave}` : ''}
 ${informacoesAdicionais ? `\n${informacoesAdicionais}` : ''}
 
-ESTRUTURA OBRIGATÓRIA:
+ESTRUTURA OBRIGATÓRIA PARA MATÉRIA EXTENSA (1.000-3.000 palavras):
 
 1. TÍTULO (máximo 80 caracteres):
-   - Impactante, jornalístico e direto (estilo Metrópoles)
-   - Baseado APENAS no fato principal mencionado
+   - Impactante, jornalístico e direto (estilo Metrópoles/G1)
+   - Baseado no fato principal mencionado
    - Sem sensacionalismo exagerado, foco na notícia
 
 2. DESCRIÇÃO/RESUMO (máximo 160 caracteres):
-   - Brief, direct introduction summarizing the lead
+   - Breve introdução resumindo o lide
    - Linguagem simples e direta
 
-3. CONTEÚDO HTML:
+3. CONTEÚDO HTML EXTENSO (MÍNIMO 1.000 PALAVRAS):
 
-   a) LIDE (1-2 parágrafos): Fato principal de forma DIRETA
+   a) LIDE (2-3 parágrafos): Fato principal de forma DIRETA
       - Comece com o fato mais importante (Quem, o quê, onde, quando)
       - Texto objetivo, sem rodeios
+      - Contextualize brevemente a importância do tema
 
-   b) DESENVOLVIMENTO (1-3 parágrafos conforme o conteúdo disponível):
-      - Use <h3> para subtítulos APENAS se fizer sentido e o texto for longo
-      - Mantenha parágrafos de tamanho médio (3-5 linhas)
-      - Desenvolva APENAS os pontos mencionados no original ou fatos públicos conhecidos
-      - Conecte os parágrafos de forma lógica
+   b) SEÇÃO 1 - CONTEXTO E BACKGROUND (3-5 parágrafos):
+      - Use <h3>Subtítulo Relevante</h3> para iniciar a seção
+      - Explique o contexto histórico e background do tema
+      - Apresente informações complementares das fontes
+      - Desenvolva cada ponto com profundidade
 
-   c) CITAÇÕES (SE HOUVER):
-      - Use <blockquote> para citações que já existem
-      - NÃO crie citações novas
-      - Se NÃO há citações, NÃO adicione nenhuma
+   c) SEÇÃO 2 - DESENVOLVIMENTO PRINCIPAL (4-6 parágrafos):
+      - Use <h3>Subtítulo Relevante</h3> para iniciar a seção
+      - Desenvolva os pontos principais da notícia
+      - Inclua todos os fatos e dados das fontes
+      - Mantenha parágrafos de tamanho médio (4-6 linhas)
 
-   d) CONCLUSÃO (1 parágrafo):
+   d) SEÇÃO 3 - REPERCUSSÃO E IMPACTO (3-4 parágrafos):
+      - Use <h3>Subtítulo Relevante</h3> para iniciar a seção
+      - Apresente a repercussão do tema
+      - Explique o impacto para o público/comunidade
+
+   e) SEÇÃO 4 - PERSPECTIVAS E ANÁLISE (2-3 parágrafos):
+      - Use <h3>Subtítulo Relevante</h3> para iniciar a seção
+      - Apresente diferentes perspectivas sobre o tema
+      - Adicione contexto analítico sem opiniões pessoais
+
+   f) CITAÇÕES (SE HOUVER nas fontes):
+      - Use <blockquote> para citações que existem nas fontes
+      - Distribua as citações ao longo do texto
+      - NÃO invente citações
+
+   g) CONCLUSÃO (2-3 parágrafos):
       - Encerramento informativo baseado no contexto
+      - Mencione próximos passos ou desdobramentos esperados
       - EVITE: "hora de repensar", "chamado à reflexão"
       - PREFIRA: Informações sobre desdobramentos ou contexto final
 
@@ -1996,7 +2028,7 @@ LINGUAGEM (ESTILO METRÓPOLES):
 - ❌ Evite gírias, exclamações excessivas ou linguagem muito informal
 - ❌ Evite opiniões pessoais ou juízos de valor
 
-⚠️ LEMBRE-SE: É MELHOR uma matéria curta e fiel ao original do que uma matéria longa com informações inventadas!
+⚠️ LEMBRE-SE: A matéria deve ter entre 1.000 e 3.000 palavras, usando TODAS as informações disponíveis. Desenvolva cada seção com profundidade!
 
 IMPORTANTE: O conteúdo HTML deve estar em UMA ÚNICA LINHA (sem quebras de linha reais, apenas tags HTML).
 
@@ -2015,8 +2047,8 @@ Retorne APENAS um objeto JSON válido:
     ];
 
     console.log('🤖 Fazendo requisição para a IA...');
-    // Temperatura 0.3 (baixa) para ser mais fiel ao conteúdo e evitar invenções
-    const response = await this.makeRequest(messages, 0.3, 3000);
+    // Temperatura 0.4 para matérias extensas com mais criatividade controlada
+    const response = await this.makeRequest(messages, 0.4, 8000);
     console.log('✅ Resposta recebida da IA (primeiros 200 chars):', response.substring(0, 200));
 
     try {
