@@ -1,6 +1,6 @@
 {
   "name": "obuxixogospel",
-  "version": "1.0.33",
+  "version": "1.0.35",
   "description": "Portal Notícias O Buxixo Gospel",
   "main": "app.js",
   "scripts": {
