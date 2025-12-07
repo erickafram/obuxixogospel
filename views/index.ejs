@@ -207,7 +207,7 @@
                                 <script>
                                     // Passar apenas os campos necessários para o scroll infinito (mais leve)
                                     // LIMITADO a 100 artigos para performance. Idealmente deve ser feita uma rota de API para paginação real.
-                                    let allArticlesData = <% - JSON.stringify(allArticles.slice(0, 100).map(a => ({
+                                    let allArticlesData = <%- JSON.stringify(allArticles.slice(0, 100).map(a => ({
                                         categoria: a.categoria,
                                         urlAmigavel: a.urlAmigavel,
                                         imagem: a.imagem,
