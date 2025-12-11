@@ -3747,24 +3747,14 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
       }
 
-      // Método 4: yt-dlp (Último recurso - mais robusto)
+      // Método 4: yt-dlp (Último recurso - mais robusto, baixa vídeo+áudio mesclado)
       try {
         console.log('🔄 Tentando método 4: yt-dlp');
-        const videoUrl = await this.obterUrlVideoComYtDlp(url);
+        const downloadedVideoPath = await this.obterUrlVideoComYtDlp(url);
 
-        if (videoUrl) {
-          console.log('✅ URL do vídeo obtida via yt-dlp');
-          const videoResponse = await axios.get(videoUrl, {
-            responseType: 'arraybuffer',
-            timeout: 60000,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-
-          fs.writeFileSync(videoPath, videoResponse.data);
-          console.log('✅ Vídeo salvo via yt-dlp:', videoPath);
-          return videoPath;
+        if (downloadedVideoPath && fs.existsSync(downloadedVideoPath)) {
+          console.log('✅ Vídeo baixado via yt-dlp (com áudio):', downloadedVideoPath);
+          return downloadedVideoPath; // Já é o caminho do arquivo baixado
         }
       } catch (e) {
         console.log('❌ Método 4 (yt-dlp) falhou:', e.message);
@@ -3827,45 +3817,62 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
       const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
       const hasCookiesFile = fs.existsSync(cookiesPath);
 
-      // Tentar diferentes estratégias
+      // Gerar nome de arquivo temporário
+      const tempDir = path.join(__dirname, '../temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      const outputPath = path.join(tempDir, `instagram_${Date.now()}.mp4`);
+
+      // Tentar diferentes estratégias - AGORA BAIXA O ARQUIVO COMPLETO COM ÁUDIO
       const strategies = [];
+
+      // Base de opções comuns para mesclar vídeo+áudio
+      const baseOpts = `-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 --no-warnings -o "${outputPath}"`;
 
       // Estratégia 0: Com arquivo de cookies manual (se existir) - PRIORIDADE MÁXIMA
       if (hasCookiesFile) {
-        strategies.push(`${ytDlpPath} -g --no-warnings --cookies "${cookiesPath}" "${instagramUrl}"`);
+        strategies.push(`${ytDlpPath} ${baseOpts} --cookies "${cookiesPath}" "${instagramUrl}"`);
         console.log('✅ Arquivo de cookies encontrado, será usado como prioridade');
       }
 
       // Estratégia 1: Sem autenticação (funciona para posts públicos se não houver rate limit)
-      strategies.push(`${ytDlpPath} -g --no-warnings "${instagramUrl}"`);
+      strategies.push(`${ytDlpPath} ${baseOpts} "${instagramUrl}"`);
 
       // Estratégia 2: Com User-Agent do app Instagram Android
-      strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`);
+      strategies.push(`${ytDlpPath} ${baseOpts} --user-agent "Instagram 123.0.0.21.114 Android" "${instagramUrl}"`);
 
       // Estratégia 3: Com User-Agent de navegador desktop
-      strategies.push(`${ytDlpPath} -g --no-warnings --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "${instagramUrl}"`);
+      strategies.push(`${ytDlpPath} ${baseOpts} --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "${instagramUrl}"`);
 
-      // Estratégia 4: Ignorar erros e tentar extrair URL mesmo assim
-      strategies.push(`${ytDlpPath} -g --no-warnings --ignore-errors "${instagramUrl}"`);
+      // Estratégia 4: Formato mais simples (best) com merge
+      strategies.push(`${ytDlpPath} -f "best" --merge-output-format mp4 --no-warnings -o "${outputPath}" "${instagramUrl}"`);
 
       // Estratégia 5: Com --no-check-certificates
-      strategies.push(`${ytDlpPath} -g --no-warnings --no-check-certificates "${instagramUrl}"`);
+      strategies.push(`${ytDlpPath} ${baseOpts} --no-check-certificates "${instagramUrl}"`);
 
       for (let i = 0; i < strategies.length; i++) {
         try {
           console.log(`🔧 Tentando estratégia ${i + 1}/${strategies.length} do yt-dlp`);
 
-          const output = execSync(strategies[i], {
+          // Remover arquivo anterior se existir
+          if (fs.existsSync(outputPath)) {
+            fs.unlinkSync(outputPath);
+          }
+
+          execSync(strategies[i], {
             encoding: 'utf8',
-            timeout: 30000,
-            maxBuffer: 10 * 1024 * 1024 // 10MB
+            timeout: 120000, // 2 minutos para download
+            maxBuffer: 50 * 1024 * 1024 // 50MB
           });
 
-          const videoUrl = output.trim().split('\n')[0]; // Primeira linha é a URL do vídeo
-
-          if (videoUrl && videoUrl.startsWith('http')) {
-            console.log('✅ URL do vídeo obtida via yt-dlp');
-            return videoUrl;
+          // Verificar se o arquivo foi criado
+          if (fs.existsSync(outputPath)) {
+            const stats = fs.statSync(outputPath);
+            if (stats.size > 10000) { // Pelo menos 10KB
+              console.log('✅ Vídeo baixado com sucesso via yt-dlp (com áudio mesclado)');
+              return outputPath; // Retorna o CAMINHO DO ARQUIVO, não a URL
+            }
           }
         } catch (strategyError) {
           console.log(`⚠️ Estratégia ${i + 1} falhou`);
