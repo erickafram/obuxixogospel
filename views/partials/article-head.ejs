@@ -21,8 +21,13 @@
     <meta name="keywords"
         content="<%= article.titulo %>, notícias gospel, <%= categoryNames[article.categoria] || article.categoria %>, <%= article.autor %>">
     <meta name="author" content="<%= article.autor %>">
-    <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="googlebot" content="index, follow">
+    <!-- Google Discover 2025 - Meta Robots Otimizado -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    
+    <!-- Link para versão AMP (Google Discover prioriza AMP) -->
+    <link rel="amphtml" href="<%= siteUrl %>/amp/<%= article.categoria %>/<%= article.urlAmigavel %>">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="<%= siteUrl + '/' + article.categoria + '/' + article.urlAmigavel %>">
@@ -263,6 +268,7 @@
                 content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
             <meta property="og:image:width" content="1200">
             <meta property="og:image:height" content="630">
+            <meta property="og:image:alt" content="<%= article.titulo %>">
             <meta property="og:site_name" content="Obuxixo Gospel">
             <meta property="og:locale" content="pt_BR">
             <meta property="article:published_time" content="<%= new Date(article.dataPublicacao).toISOString() %>">
@@ -274,10 +280,18 @@
             <!-- Twitter Card -->
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:site" content="@obuxixogospel">
+            <meta name="twitter:creator" content="@obuxixogospel">
             <meta name="twitter:title" content="<%= article.titulo %>">
             <meta name="twitter:description" content="<%= article.descricao %>">
             <meta name="twitter:image"
                 content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
+            <meta name="twitter:image:alt" content="<%= article.titulo %>">
+            
+            <!-- PWA e Theme Color para Google Discover -->
+            <meta name="theme-color" content="#FF6B35">
+            <meta name="mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
             <!-- Google Analytics -->
             <% if (typeof analyticsId !=='undefined' && analyticsId) { %>

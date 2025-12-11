@@ -23,7 +23,13 @@
         <%= article.titulo %> - Obuxixo Gospel
     </title>
     <meta name="description" content="<%= article.descricao %>">
+    
+    <!-- Canonical aponta para versão normal (não AMP) - IMPORTANTE para SEO -->
     <link rel="canonical" href="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">
+    
+    <!-- Google Discover 2025 - Meta Robots -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-image-preview:large">
 
     <!-- Open Graph -->
     <meta property="og:title" content="<%= article.titulo %>">

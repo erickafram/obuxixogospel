@@ -71,6 +71,9 @@ exports.generateSitemap = async (req, res) => {
     });
 
     // Artigos - usar slug da categoria diretamente do banco
+    // Também coletar autores únicos para E-E-A-T
+    const autoresUnicos = new Set();
+    
     articles.forEach(article => {
       if (article.urlAmigavel && article.categoria) {
         const lastmod = article.updatedAt || article.dataPublicacao || new Date();
@@ -84,8 +87,26 @@ exports.generateSitemap = async (req, res) => {
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.7</priority>\n';
         xml += '  </url>\n';
+        
+        // Coletar autor para página de autor (E-E-A-T)
+        if (article.autor) {
+          autoresUnicos.add(article.autor);
+        }
       }
     });
+    
+    // Páginas de autores (E-E-A-T - importante para Google Discover 2025)
+    autoresUnicos.forEach(autor => {
+      const autorSlug = autor.toLowerCase().replace(/\s+/g, '-');
+      xml += '  <url>\n';
+      xml += `    <loc>${baseUrl}/autor/${autorSlug}</loc>\n`;
+      xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+      xml += '    <changefreq>monthly</changefreq>\n';
+      xml += '    <priority>0.6</priority>\n';
+      xml += '  </url>\n';
+    });
+    
+    console.log(`👤 Adicionados ${autoresUnicos.size} autores ao sitemap`);
 
     xml += '</urlset>';
 
