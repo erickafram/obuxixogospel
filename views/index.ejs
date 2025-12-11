@@ -1,425 +1,336 @@
 <%- include('partials/header') %>
 
-    <main class="main-content">
-        <div class="container">
-            <% // Criar mapa de categorias para lookup rápido (usado em várias seções) const catMap={}; if (typeof
-                categories !=='undefined' && categories) { categories.forEach(cat=> {
+<main class="main-content" id="main-content" role="main">
+    <div class="container">
+        <%
+        // Criar mapa de categorias para lookup rápido (usado em várias seções)
+        const catMap = {};
+        if (typeof categories !== 'undefined' && categories) {
+            categories.forEach(function(cat) {
                 catMap[cat.slug] = { nome: cat.nome, cor: cat.cor };
-                });
-                }
+            });
+        }
 
-                // Combinar todos os artigos de TODAS as categorias do banco
-                let allArticles = [];
-                if (typeof articlesByCategory !== 'undefined' && articlesByCategory) {
-                Object.keys(articlesByCategory).forEach(slug => {
+        // Combinar todos os artigos de TODAS as categorias do banco
+        let allArticles = [];
+        if (typeof articlesByCategory !== 'undefined' && articlesByCategory) {
+            Object.keys(articlesByCategory).forEach(function(slug) {
                 const articles = articlesByCategory[slug];
                 if (articles && articles.length > 0) {
-                articles.forEach(a => {
-                a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
-                a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
-                a.categoryClass = slug;
-                allArticles.push(a);
-                });
+                    articles.forEach(function(a) {
+                        a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
+                        a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
+                        a.categoryClass = slug;
+                        allArticles.push(a);
+                    });
                 }
-                });
+            });
+        }
+
+        // Filtrar notícia em destaque para não duplicar
+        if (destaque) {
+            allArticles = allArticles.filter(function(a) { return a.id !== destaque.id; });
+        }
+
+        // Ordenar por data (mais recentes primeiro)
+        allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); });
+        %>
+
+        <!-- Hero Section - Notícia em Destaque -->
+        <% if (destaque) { %>
+        <section class="hero-section">
+            <a href="/<%= destaque.categoria %>/<%= destaque.urlAmigavel %>" class="hero-card">
+                <div class="hero-image">
+                    <img src="<%= destaque.imagem %>" alt="<%= destaque.titulo %>" fetchpriority="high" width="1200" height="630">
+                    <div class="hero-overlay">
+                        <span class="hero-category <%= destaque.categoria %>">
+                            <%= catMap[destaque.categoria] ? catMap[destaque.categoria].nome : destaque.categoria %>
+                        </span>
+                        <h1 class="hero-title"><%= destaque.titulo %></h1>
+                        <p class="hero-description"><%= destaque.descricao %></p>
+                    </div>
+                </div>
+            </a>
+        </section>
+        <% } %>
+
+        <!-- Mais Lidas Hoje - Cards Horizontais -->
+        <section class="trending-today-section">
+            <div class="trending-header">
+                <h2 class="trending-title">
+                    <i class="fas fa-bolt"></i> Mais Lidas Hoje
+                </h2>
+            </div>
+            <div class="trending-grid">
+                <%
+                // Filtrar artigos de hoje e ordenar por visualizações
+                var hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                
+                var artigosHoje = allArticles.filter(function(a) {
+                    var dataArtigo = new Date(a.dataPublicacao);
+                    dataArtigo.setHours(0, 0, 0, 0);
+                    return dataArtigo.getTime() === hoje.getTime();
+                }).sort(function(a, b) {
+                    return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                }).slice(0, 4);
+
+                // Se não tiver 4 artigos de hoje, completar com os mais lidos recentes
+                var trendingArticles = artigosHoje;
+                if (trendingArticles.length < 4) {
+                    var maisLidos = allArticles.filter(function(a) {
+                        return !trendingArticles.find(function(t) { return t.id === a.id; });
+                    }).sort(function(a, b) {
+                        return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                    }).slice(0, 4 - trendingArticles.length);
+                    trendingArticles = trendingArticles.concat(maisLidos);
                 }
 
-                // Filtrar notícia em destaque para não duplicar
-                if (destaque) {
-                allArticles = allArticles.filter(a => a.id !== destaque.id);
-                }
-
-                // Ordenar por data (mais recentes primeiro)
-                allArticles.sort((a, b) => new Date(b.dataPublicacao) - new Date(a.dataPublicacao));
+                trendingArticles.forEach(function(article, index) {
                 %>
-
-                <!-- Hero Section - Notícia em Destaque -->
-                <% if (destaque) { %>
-                    <section class="hero-section">
-                        <a href="/<%= destaque.categoria %>/<%= destaque.urlAmigavel %>" class="hero-card">
-                            <div class="hero-image">
-                                <img src="<%= destaque.imagem %>" alt="<%= destaque.titulo %>" fetchpriority="high"
-                                    width="1200" height="630">
-                                <div class="hero-overlay">
-                                    <% const categoryNames={}; if (typeof categories !=='undefined' && categories) {
-                                        categories.forEach(cat=> {
-                                        categoryNames[cat.slug] = cat.nome;
-                                        });
-                                        }
-                                        %>
-                                        <span class="hero-category <%= destaque.categoria %>">
-                                            <%= categoryNames[destaque.categoria] || destaque.categoria %>
-                                        </span>
-                                        <h1 class="hero-title">
-                                            <%= destaque.titulo %>
-                                        </h1>
-                                        <p class="hero-description">
-                                            <%= destaque.descricao %>
-                                        </p>
-                                </div>
-                            </div>
-                        </a>
-                    </section>
-                    <% } %>
-
-                        <!-- Mais Lidas Hoje - Cards Horizontais -->
-                        <section class="trending-today-section">
-                            <div class="trending-header">
-                                <h2 class="trending-title">
-                                    <i class="fas fa-bolt"></i> Mais Lidas Hoje
-                                </h2>
-                            </div>
-                            <div class="trending-grid">
-                                <% // Filtrar artigos de hoje e ordenar por visualizações const hoje=new Date();
-                                    hoje.setHours(0, 0, 0, 0); const artigosHoje=allArticles .filter(a=> {
-                                    const dataArtigo = new Date(a.dataPublicacao);
-                                    dataArtigo.setHours(0, 0, 0, 0);
-                                    return dataArtigo.getTime() === hoje.getTime();
-                                    })
-                                    .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
-                                    .slice(0, 4);
-
-                                    // Se não tiver 4 artigos de hoje, completar com os mais lidos recentes
-                                    let trendingArticles = artigosHoje;
-                                    if (trendingArticles.length < 4) { const maisLidos=allArticles .filter(a=>
-                                        !trendingArticles.find(t => t.id === a.id))
-                                        .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
-                                        .slice(0, 4 - trendingArticles.length);
-                                        trendingArticles = [...trendingArticles, ...maisLidos];
-                                        }
-
-                                        trendingArticles.forEach((article, index) => { %>
-                                        <article class="trending-card">
-                                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
-                                                <div class="trending-card-image">
-                                                    <img src="<%= article.imagem %>" alt="<%= article.titulo %>"
-                                                        loading="lazy" height="140">
-                                                    <span class="trending-rank">
-                                                        <%= index + 1 %>
-                                                    </span>
-                                                </div>
-                                                <div class="trending-card-content">
-                                                    <span
-                                                        class="trending-category <%= article.categoryClass || article.categoria %>">
-                                                        <%= article.subcategoria || article.categoryName ||
-                                                            article.categoria %>
-                                                    </span>
-                                                    <h3 class="trending-card-title">
-                                                        <%= article.titulo %>
-                                                    </h3>
-                                                    <div class="trending-meta">
-                                                        <span class="trending-views">
-                                                            <i class="fas fa-eye"></i>
-                                                            <%= article.visualizacoes || 0 %>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </article>
-                                        <% }); %>
-                            </div>
-                        </section>
-
-                        <!-- Layout com Sidebar -->
-                        <div class="content-with-sidebar">
-                            <!-- Coluna Principal de Notícias -->
-                            <div class="main-news-column">
-                                <!-- Todas as Notícias -->
-                                <section class="news-section all-news-section">
-                                    <div class="news-list" id="newsList">
-                                        <% // Mostrar apenas os primeiros 10 const displayArticles=allArticles.slice(0,
-                                            10); if (displayArticles.length===0) { %>
-                                            <div style="padding: 40px; text-align: center; color: #666;">
-                                                <i class="fas fa-newspaper"
-                                                    style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
-                                                <p style="font-size: 18px;">Nenhuma notícia disponível no momento.</p>
-                                                <p style="font-size: 14px; margin-top: 10px;">Em breve teremos
-                                                    novidades!
-                                                </p>
-                                            </div>
-                                            <% } else { displayArticles.forEach(article=> { %>
-                                                <article class="news-item-horizontal">
-                                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
-                                                        <div class="news-item-image">
-                                                            <img src="<%= article.imagem %>" alt="<%= article.titulo %>"
-                                                                loading="lazy" width="280" height="180">
-                                                        </div>
-                                                        <div class="news-item-content">
-                                                            <span
-                                                                class="news-item-category <%= article.categoryClass %>">
-                                                                <%= article.subcategoria || article.categoryName %>
-                                                            </span>
-                                                            <h3 class="news-item-title">
-                                                                <%= article.titulo %>
-                                                            </h3>
-                                                            <p class="news-item-description">
-                                                                <%= article.descricao %>
-                                                            </p>
-                                                            <div class="news-item-meta">
-                                                                <span class="news-date">
-                                                                    <%= new
-                                                                        Date(article.dataPublicacao).toLocaleDateString('pt-BR')
-                                                                        %>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </a>
-                                                </article>
-                                                <% }); } %>
-                                    </div>
-                                    <!-- Elemento sentinela para detectar scroll (invisível) -->
-                                    <div id="scrollSentinel" style="height: 10px;"></div>
-                                    <div id="loadingIndicator"
-                                        style="display: none; text-align: center; padding: 30px 20px;">
-                                        <i class="fas fa-spinner fa-spin"
-                                            style="font-size: 28px; color: var(--color-primary);"></i>
-                                        <p style="margin-top: 12px; color: var(--color-text-light); font-size: 14px;">
-                                            Carregando mais notícias...</p>
-                                    </div>
-                                    <div id="loadMoreContainer" style="text-align: center; padding: 20px;">
-                                        <button id="loadMoreBtn" onclick="loadMoreManual()" style="
-                                        background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%);
-                                        color: white;
-                                        border: none;
-                                        padding: 14px 32px;
-                                        border-radius: 8px;
-                                        font-size: 15px;
-                                        font-weight: 600;
-                                        cursor: pointer;
-                                        display: inline-flex;
-                                        align-items: center;
-                                        gap: 8px;
-                                        box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
-                                        transition: all 0.2s;
-                                    ">
-                                            <i class="fas fa-plus"></i> Carregar mais notícias
-                                        </button>
-                                    </div>
-                                    <div id="endOfArticles"
-                                        style="display: none; text-align: center; padding: 30px 20px; color: #999;">
-                                        <i class="fas fa-check-circle"
-                                            style="font-size: 24px; margin-bottom: 10px;"></i>
-                                        <p style="font-size: 14px;">Você viu todas as notícias!</p>
-                                    </div>
-                                </section>
-
-                                <!-- Script para scroll infinito -->
-                                <script>
-                                    // Passar apenas os campos necessários para o scroll infinito (mais leve)
-                                    // LIMITADO a 100 artigos para performance. Idealmente deve ser feita uma rota de API para paginação real.
-                                    let allArticlesData = <%- JSON.stringify(allArticles.slice(0, 100).map(a => ({
-                                        categoria: a.categoria,
-                                        urlAmigavel: a.urlAmigavel,
-                                        imagem: a.imagem,
-                                        titulo: a.titulo,
-                                        descricao: a.descricao,
-                                        dataPublicacao: a.dataPublicacao,
-                                        categoryClass: a.categoryClass,
-                                        categoryName: a.categoryName,
-                                        subcategoria: a.subcategoria
-                                    }))) %>;
-                                    let currentIndex = 10;
-                                    let isLoading = false;
-                                    let autoLoadCount = 0; // Contador de carregamentos automáticos
-                                    const MAX_AUTO_LOADS = 1; // Carregar automaticamente apenas 1 vez (10 + 10 = 20)
-
-                                    console.log('Total de artigos disponíveis para scroll:', allArticlesData.length);
-
-                                    // Esconder botão inicialmente (só aparece após 20 notícias)
-                                    document.getElementById('loadMoreContainer').style.display = 'none';
-
-                                    // Verificar se já mostrou todos os artigos inicialmente
-                                    if (currentIndex >= allArticlesData.length) {
-                                        if (allArticlesData.length > 0) {
-                                            document.getElementById('endOfArticles').style.display = 'block';
-                                        }
-                                    }
-
-                                    function doLoadMore() {
-                                        const newsList = document.getElementById('newsList');
-                                        const nextArticles = allArticlesData.slice(currentIndex, currentIndex + 10);
-
-                                        if (nextArticles.length === 0) {
-                                            document.getElementById('loadMoreContainer').style.display = 'none';
-                                            document.getElementById('endOfArticles').style.display = 'block';
-                                            return;
-                                        }
-
-                                        console.log('Carregando mais', nextArticles.length, 'artigos. Total exibido:', currentIndex + nextArticles.length);
-
-                                        nextArticles.forEach(article => {
-                                            const articleHTML = `
-                                    <article class="news-item-horizontal">
-                                        <a href="/${article.categoria}/${article.urlAmigavel}">
-                                            <div class="news-item-image">
-                                                <img src="${article.imagem}" alt="${article.titulo}" loading="lazy" width="280" height="180">
-                                            </div>
-                                            <div class="news-item-content">
-                                                <span class="news-item-category ${article.categoryClass}">${article.subcategoria || article.categoryName}</span>
-                                                <h3 class="news-item-title">${article.titulo}</h3>
-                                                <p class="news-item-description">${article.descricao}</p>
-                                                <div class="news-item-meta">
-                                                    <span class="news-date">${new Date(article.dataPublicacao).toLocaleDateString('pt-BR')}</span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </article>
-                                `;
-                                            newsList.insertAdjacentHTML('beforeend', articleHTML);
-                                        });
-
-                                        currentIndex += 10;
-
-                                        // Verificar se acabaram os artigos
-                                        if (currentIndex >= allArticlesData.length) {
-                                            document.getElementById('loadMoreContainer').style.display = 'none';
-                                            document.getElementById('endOfArticles').style.display = 'block';
-                                        }
-                                    }
-
-                                    // Função para carregar manualmente (botão)
-                                    function loadMoreManual() {
-                                        if (isLoading || currentIndex >= allArticlesData.length) return;
-
-                                        isLoading = true;
-                                        const btn = document.getElementById('loadMoreBtn');
-                                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-                                        btn.disabled = true;
-
-                                        setTimeout(() => {
-                                            doLoadMore();
-                                            isLoading = false;
-                                            btn.innerHTML = '<i class="fas fa-plus"></i> Carregar mais notícias';
-                                            btn.disabled = false;
-                                        }, 300);
-                                    }
-
-                                    // Função para scroll infinito automático (apenas nas primeiras 20)
-                                    function loadMoreArticles() {
-                                        // Só carrega automaticamente se ainda não atingiu o limite de auto-loads
-                                        if (isLoading || currentIndex >= allArticlesData.length || autoLoadCount >= MAX_AUTO_LOADS) return;
-
-                                        // Calcular posição do scroll - compatível com mobile
-                                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-                                        const windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-                                        const documentHeight = Math.max(
-                                            document.body.scrollHeight,
-                                            document.documentElement.scrollHeight,
-                                            document.body.offsetHeight,
-                                            document.documentElement.offsetHeight
-                                        );
-
-                                        const scrollPosition = scrollTop + windowHeight;
-                                        const threshold = documentHeight - 800;
-
-                                        if (scrollPosition >= threshold) {
-                                            isLoading = true;
-                                            document.getElementById('loadingIndicator').style.display = 'block';
-
-                                            setTimeout(() => {
-                                                doLoadMore();
-                                                autoLoadCount++;
-                                                isLoading = false;
-                                                document.getElementById('loadingIndicator').style.display = 'none';
-
-                                                // Após carregar automaticamente, mostrar botão se ainda tiver artigos
-                                                if (autoLoadCount >= MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
-                                                    document.getElementById('loadMoreContainer').style.display = 'block';
-                                                }
-                                            }, 300);
-                                        }
-                                    }
-
-                                    // Usar Intersection Observer para mobile (mais confiável)
-                                    if ('IntersectionObserver' in window) {
-                                        const sentinel = document.getElementById('scrollSentinel');
-                                        const observer = new IntersectionObserver((entries) => {
-                                            entries.forEach(entry => {
-                                                if (entry.isIntersecting && !isLoading && autoLoadCount < MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
-                                                    console.log('Sentinela visível! Carregando mais...');
-                                                    isLoading = true;
-                                                    document.getElementById('loadingIndicator').style.display = 'block';
-
-                                                    setTimeout(() => {
-                                                        doLoadMore();
-                                                        autoLoadCount++;
-                                                        isLoading = false;
-                                                        document.getElementById('loadingIndicator').style.display = 'none';
-
-                                                        // Após carregar automaticamente, mostrar botão se ainda tiver artigos
-                                                        if (autoLoadCount >= MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
-                                                            document.getElementById('loadMoreContainer').style.display = 'block';
-                                                            observer.disconnect(); // Parar de observar
-                                                        }
-                                                    }, 300);
-                                                }
-                                            });
-                                        }, {
-                                            root: null,
-                                            rootMargin: '200px', // Disparar 200px antes de chegar
-                                            threshold: 0
-                                        });
-
-                                        observer.observe(sentinel);
-                                    } else {
-                                        // Fallback para navegadores antigos
-                                        window.addEventListener('scroll', loadMoreArticles, { passive: true });
-                                        document.addEventListener('scroll', loadMoreArticles, { passive: true });
-                                    }
-
-                                    // Fallback adicional para iOS Safari
-                                    let lastScrollTop = 0;
-                                    window.addEventListener('scroll', function () {
-                                        const st = window.pageYOffset || document.documentElement.scrollTop;
-                                        if (st > lastScrollTop && !isLoading && autoLoadCount < MAX_AUTO_LOADS) {
-                                            loadMoreArticles();
-                                        }
-                                        lastScrollTop = st <= 0 ? 0 : st;
-                                    }, { passive: true });
-                                </script>
-                            </div>
-
-                            <!-- Sidebar -->
-                            <aside class="sidebar">
-                                <!-- Mais Lidas da Semana -->
-                                <section class="sidebar-section most-read-section">
-                                    <div class="section-header">
-                                        <h2 class="section-title most-read-title">
-                                            <i class="fas fa-fire"></i> Mais Lidas da Semana
-                                        </h2>
-                                    </div>
-                                    <div class="most-read-list">
-                                        <% // Usar allArticles que já foi montado acima // Ordenar por visualizações e
-                                            pegar top 5 const mostRead=[...allArticles].sort((a, b)=> (b.visualizacoes
-                                            || 0) - (a.visualizacoes || 0)).slice(0, 5);
-                                            mostRead.forEach((article, index) => { %>
-                                            <article class="most-read-item">
-                                                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
-                                                    <span class="most-read-number">
-                                                        <%= index + 1 %>
-                                                    </span>
-                                                    <div class="most-read-content">
-                                                        <h3 class="most-read-title">
-                                                            <%= article.titulo %>
-                                                        </h3>
-                                                        <div class="most-read-meta">
-                                                            <span class="most-read-category <%= article.categoria %>">
-                                                                <%= article.categoryName || article.categoria %>
-                                                            </span>
-                                                            <span class="most-read-views">
-                                                                <i class="fas fa-eye"></i>
-                                                                <%= article.visualizacoes || 0 %>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            </article>
-                                            <% }); %>
-                                    </div>
-                                </section>
-                            </aside>
+                <article class="trending-card">
+                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
+                        <div class="trending-card-image">
+                            <img src="<%= article.imagem %>" alt="<%= article.titulo %>" loading="lazy" height="140">
+                            <span class="trending-rank"><%= index + 1 %></span>
                         </div>
-        </div>
-    </main>
+                        <div class="trending-card-content">
+                            <span class="trending-category <%= article.categoryClass || article.categoria %>">
+                                <%= article.subcategoria || article.categoryName || article.categoria %>
+                            </span>
+                            <h3 class="trending-card-title"><%= article.titulo %></h3>
+                            <div class="trending-meta">
+                                <span class="trending-views">
+                                    <i class="fas fa-eye"></i> <%= article.visualizacoes || 0 %>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </article>
+                <% }); %>
+            </div>
+        </section>
 
-    <%- include('partials/footer') %>
+        <!-- Layout com Sidebar -->
+        <div class="content-with-sidebar">
+            <!-- Coluna Principal de Notícias -->
+            <div class="main-news-column">
+                <!-- Todas as Notícias -->
+                <section class="news-section all-news-section">
+                    <div class="news-list" id="newsList">
+                        <%
+                        // Mostrar apenas os primeiros 10
+                        var displayArticles = allArticles.slice(0, 10);
+                        
+                        if (displayArticles.length === 0) {
+                        %>
+                        <div style="padding: 40px; text-align: center; color: #666;">
+                            <i class="fas fa-newspaper" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
+                            <p style="font-size: 18px;">Nenhuma notícia disponível no momento.</p>
+                            <p style="font-size: 14px; margin-top: 10px;">Em breve teremos novidades!</p>
+                        </div>
+                        <% } else { 
+                            displayArticles.forEach(function(article) {
+                        %>
+                        <article class="news-item-horizontal">
+                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
+                                <div class="news-item-image">
+                                    <img src="<%= article.imagem %>" alt="<%= article.titulo %>" loading="lazy" width="280" height="180">
+                                </div>
+                                <div class="news-item-content">
+                                    <span class="news-item-category <%= article.categoryClass %>">
+                                        <%= article.subcategoria || article.categoryName %>
+                                    </span>
+                                    <h3 class="news-item-title"><%= article.titulo %></h3>
+                                    <p class="news-item-description"><%= article.descricao %></p>
+                                    <div class="news-item-meta">
+                                        <span class="news-date"><%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %></span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                        <% }); } %>
+                    </div>
+                    
+                    <!-- Elemento sentinela para detectar scroll (invisível) -->
+                    <div id="scrollSentinel" style="height: 10px;"></div>
+                    <div id="loadingIndicator" style="display: none; text-align: center; padding: 30px 20px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 28px; color: var(--color-primary);"></i>
+                        <p style="margin-top: 12px; color: var(--color-text-light); font-size: 14px;">Carregando mais notícias...</p>
+                    </div>
+                    <div id="loadMoreContainer" style="text-align: center; padding: 20px;">
+                        <button id="loadMoreBtn" onclick="loadMoreManual()" style="background: linear-gradient(135deg, #FF6B00 0%, #E65100 100%); color: white; border: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3); transition: all 0.2s;">
+                            <i class="fas fa-plus"></i> Carregar mais notícias
+                        </button>
+                    </div>
+                    <div id="endOfArticles" style="display: none; text-align: center; padding: 30px 20px; color: #999;">
+                        <i class="fas fa-check-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <p style="font-size: 14px;">Você viu todas as notícias!</p>
+                    </div>
+                </section>
+
+                <!-- Script para scroll infinito -->
+                <script>
+                    var allArticlesData = <%- JSON.stringify(allArticles.slice(0, 100).map(function(a) { return { categoria: a.categoria, urlAmigavel: a.urlAmigavel, imagem: a.imagem, titulo: a.titulo, descricao: a.descricao, dataPublicacao: a.dataPublicacao, categoryClass: a.categoryClass, categoryName: a.categoryName, subcategoria: a.subcategoria }; })) %>;
+                    var currentIndex = 10;
+                    var isLoading = false;
+                    var autoLoadCount = 0;
+                    var MAX_AUTO_LOADS = 1;
+
+                    console.log('Total de artigos disponíveis para scroll:', allArticlesData.length);
+
+                    document.getElementById('loadMoreContainer').style.display = 'none';
+
+                    if (currentIndex >= allArticlesData.length) {
+                        if (allArticlesData.length > 0) {
+                            document.getElementById('endOfArticles').style.display = 'block';
+                        }
+                    }
+
+                    function doLoadMore() {
+                        var newsList = document.getElementById('newsList');
+                        var nextArticles = allArticlesData.slice(currentIndex, currentIndex + 10);
+
+                        if (nextArticles.length === 0) {
+                            document.getElementById('loadMoreContainer').style.display = 'none';
+                            document.getElementById('endOfArticles').style.display = 'block';
+                            return;
+                        }
+
+                        nextArticles.forEach(function(article) {
+                            var articleHTML = '<article class="news-item-horizontal"><a href="/' + article.categoria + '/' + article.urlAmigavel + '"><div class="news-item-image"><img src="' + article.imagem + '" alt="' + article.titulo + '" loading="lazy" width="280" height="180"></div><div class="news-item-content"><span class="news-item-category ' + article.categoryClass + '">' + (article.subcategoria || article.categoryName) + '</span><h3 class="news-item-title">' + article.titulo + '</h3><p class="news-item-description">' + article.descricao + '</p><div class="news-item-meta"><span class="news-date">' + new Date(article.dataPublicacao).toLocaleDateString('pt-BR') + '</span></div></div></a></article>';
+                            newsList.insertAdjacentHTML('beforeend', articleHTML);
+                        });
+
+                        currentIndex += 10;
+
+                        if (currentIndex >= allArticlesData.length) {
+                            document.getElementById('loadMoreContainer').style.display = 'none';
+                            document.getElementById('endOfArticles').style.display = 'block';
+                        }
+                    }
+
+                    function loadMoreManual() {
+                        if (isLoading || currentIndex >= allArticlesData.length) return;
+
+                        isLoading = true;
+                        var btn = document.getElementById('loadMoreBtn');
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                        btn.disabled = true;
+
+                        setTimeout(function() {
+                            doLoadMore();
+                            isLoading = false;
+                            btn.innerHTML = '<i class="fas fa-plus"></i> Carregar mais notícias';
+                            btn.disabled = false;
+                        }, 300);
+                    }
+
+                    function loadMoreArticles() {
+                        if (isLoading || currentIndex >= allArticlesData.length || autoLoadCount >= MAX_AUTO_LOADS) return;
+
+                        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                        var windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+                        var documentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, document.body.offsetHeight, document.documentElement.offsetHeight);
+
+                        var scrollPosition = scrollTop + windowHeight;
+                        var threshold = documentHeight - 800;
+
+                        if (scrollPosition >= threshold) {
+                            isLoading = true;
+                            document.getElementById('loadingIndicator').style.display = 'block';
+
+                            setTimeout(function() {
+                                doLoadMore();
+                                autoLoadCount++;
+                                isLoading = false;
+                                document.getElementById('loadingIndicator').style.display = 'none';
+
+                                if (autoLoadCount >= MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
+                                    document.getElementById('loadMoreContainer').style.display = 'block';
+                                }
+                            }, 300);
+                        }
+                    }
+
+                    if ('IntersectionObserver' in window) {
+                        var sentinel = document.getElementById('scrollSentinel');
+                        var observer = new IntersectionObserver(function(entries) {
+                            entries.forEach(function(entry) {
+                                if (entry.isIntersecting && !isLoading && autoLoadCount < MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
+                                    isLoading = true;
+                                    document.getElementById('loadingIndicator').style.display = 'block';
+
+                                    setTimeout(function() {
+                                        doLoadMore();
+                                        autoLoadCount++;
+                                        isLoading = false;
+                                        document.getElementById('loadingIndicator').style.display = 'none';
+
+                                        if (autoLoadCount >= MAX_AUTO_LOADS && currentIndex < allArticlesData.length) {
+                                            document.getElementById('loadMoreContainer').style.display = 'block';
+                                            observer.disconnect();
+                                        }
+                                    }, 300);
+                                }
+                            });
+                        }, { root: null, rootMargin: '200px', threshold: 0 });
+
+                        observer.observe(sentinel);
+                    } else {
+                        window.addEventListener('scroll', loadMoreArticles, { passive: true });
+                    }
+
+                    var lastScrollTop = 0;
+                    window.addEventListener('scroll', function() {
+                        var st = window.pageYOffset || document.documentElement.scrollTop;
+                        if (st > lastScrollTop && !isLoading && autoLoadCount < MAX_AUTO_LOADS) {
+                            loadMoreArticles();
+                        }
+                        lastScrollTop = st <= 0 ? 0 : st;
+                    }, { passive: true });
+                </script>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Mais Lidas da Semana -->
+                <section class="sidebar-section most-read-section">
+                    <div class="section-header">
+                        <h2 class="section-title most-read-title">
+                            <i class="fas fa-fire"></i> Mais Lidas da Semana
+                        </h2>
+                    </div>
+                    <div class="most-read-list">
+                        <%
+                        var mostRead = allArticles.slice().sort(function(a, b) {
+                            return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                        }).slice(0, 5);
+                        
+                        mostRead.forEach(function(article, index) {
+                        %>
+                        <article class="most-read-item">
+                            <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
+                                <span class="most-read-number"><%= index + 1 %></span>
+                                <div class="most-read-content">
+                                    <h3 class="most-read-title"><%= article.titulo %></h3>
+                                    <div class="most-read-meta">
+                                        <span class="most-read-category <%= article.categoria %>">
+                                            <%= article.categoryName || article.categoria %>
+                                        </span>
+                                        <span class="most-read-views">
+                                            <i class="fas fa-eye"></i> <%= article.visualizacoes || 0 %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                        <% }); %>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>
