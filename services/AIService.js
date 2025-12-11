@@ -3886,9 +3886,39 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
   }
 
   /**
+   * Verifica se o vídeo tem stream de áudio
+   */
+  static async verificarAudioNoVideo(videoPath) {
+    return new Promise((resolve) => {
+      ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        if (err) {
+          console.log('⚠️ Erro ao verificar streams do vídeo:', err.message);
+          resolve(false);
+          return;
+        }
+        
+        const audioStreams = metadata.streams.filter(s => s.codec_type === 'audio');
+        if (audioStreams.length > 0) {
+          console.log('✅ Vídeo possui stream de áudio');
+          resolve(true);
+        } else {
+          console.log('⚠️ Vídeo NÃO possui stream de áudio (pode ser GIF ou vídeo mudo)');
+          resolve(false);
+        }
+      });
+    });
+  }
+
+  /**
    * Extrai áudio do vídeo usando ffmpeg
    */
   static async extrairAudioDoVideo(videoPath) {
+    // Primeiro verifica se o vídeo tem áudio
+    const temAudio = await this.verificarAudioNoVideo(videoPath);
+    if (!temAudio) {
+      throw new Error('O vídeo não possui áudio para transcrever (pode ser um GIF ou vídeo mudo)');
+    }
+    
     return new Promise((resolve, reject) => {
       const audioPath = videoPath.replace('.mp4', '.mp3');
       console.log('🔊 Extraindo áudio para:', audioPath);
