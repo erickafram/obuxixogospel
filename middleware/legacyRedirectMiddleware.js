@@ -6,7 +6,16 @@
 module.exports = function (req, res, next) {
   const url = req.path;
 
-  // Padrões de URLs antigas que devem ser redirecionadas
+  // Redirect URLs AMP no formato antigo /amp/categoria/slug para /categoria/slug/amp
+  const ampOldFormat = url.match(/^\/amp\/([^/]+)\/([^/]+)\/?$/);
+  if (ampOldFormat) {
+    const categoria = ampOldFormat[1];
+    const slug = ampOldFormat[2];
+    const newUrl = `/${categoria}/${slug}/amp`;
+    console.log(`🔄 Redirecionando AMP antigo: ${url} -> ${newUrl}`);
+    return res.redirect(301, newUrl);
+  }
+
   // Padrões de URLs antigas que devem ser redirecionadas
   const legacyPatterns = [
     // Posts antigos no formato /YYYY/MM/DD/titulo/
