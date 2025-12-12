@@ -2,36 +2,39 @@
 
     <main class="main-content">
         <div class="container">
-            <% // Criar mapa de categorias para lookup rápido (usado em várias seções) const catMap={}; if (typeof
-                categories !=='undefined' && categories) { categories.forEach(cat=> {
-                catMap[cat.slug] = { nome: cat.nome, cor: cat.cor };
-                });
+            <% 
+                // Criar mapa de categorias para lookup rápido (usado em várias seções) 
+                var catMap = {}; 
+                if (typeof categories !== 'undefined' && categories) { 
+                    categories.forEach(function(cat) {
+                        catMap[cat.slug] = { nome: cat.nome, cor: cat.cor };
+                    });
                 }
 
                 // Combinar todos os artigos de TODAS as categorias do banco
-                let allArticles = [];
+                var allArticles = [];
                 if (typeof articlesByCategory !== 'undefined' && articlesByCategory) {
-                Object.keys(articlesByCategory).forEach(slug => {
-                const articles = articlesByCategory[slug];
-                if (articles && articles.length > 0) {
-                articles.forEach(a => {
-                a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
-                a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
-                a.categoryClass = slug;
-                allArticles.push(a);
-                });
-                }
-                });
+                    Object.keys(articlesByCategory).forEach(function(slug) {
+                        var articles = articlesByCategory[slug];
+                        if (articles && articles.length > 0) {
+                            articles.forEach(function(a) {
+                                a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
+                                a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
+                                a.categoryClass = slug;
+                                allArticles.push(a);
+                            });
+                        }
+                    });
                 }
 
                 // Filtrar notícia em destaque para não duplicar
                 if (destaque) {
-                allArticles = allArticles.filter(a => a.id !== destaque.id);
+                    allArticles = allArticles.filter(function(a) { return a.id !== destaque.id; });
                 }
 
                 // Ordenar por data (mais recentes primeiro)
-                allArticles.sort((a, b) => new Date(b.dataPublicacao) - new Date(a.dataPublicacao));
-                %>
+                allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); });
+            %>
 
                 <!-- Hero Section - Notícia em Destaque -->
                 <% if (destaque) { %>
@@ -41,12 +44,14 @@
                                 <img src="<%= destaque.imagem %>" alt="<%= destaque.titulo %>" fetchpriority="high"
                                     width="1200" height="630">
                                 <div class="hero-overlay">
-                                    <% const categoryNames={}; if (typeof categories !=='undefined' && categories) {
-                                        categories.forEach(cat=> {
-                                        categoryNames[cat.slug] = cat.nome;
-                                        });
+                                    <% 
+                                        var categoryNames = {}; 
+                                        if (typeof categories !== 'undefined' && categories) {
+                                            categories.forEach(function(cat) {
+                                                categoryNames[cat.slug] = cat.nome;
+                                            });
                                         }
-                                        %>
+                                    %>
                                         <span class="hero-category <%= destaque.categoria %>">
                                             <%= categoryNames[destaque.categoria] || destaque.categoria %>
                                         </span>
@@ -70,25 +75,30 @@
                                 </h2>
                             </div>
                             <div class="trending-grid">
-                                <% // Filtrar artigos de hoje e ordenar por visualizações const hoje=new Date();
-                                    hoje.setHours(0, 0, 0, 0); const artigosHoje=allArticles .filter(a=> {
-                                    const dataArtigo = new Date(a.dataPublicacao);
-                                    dataArtigo.setHours(0, 0, 0, 0);
-                                    return dataArtigo.getTime() === hoje.getTime();
+                                <% 
+                                    // Filtrar artigos de hoje e ordenar por visualizações 
+                                    var hoje = new Date();
+                                    hoje.setHours(0, 0, 0, 0); 
+                                    var artigosHoje = allArticles.filter(function(a) {
+                                        var dataArtigo = new Date(a.dataPublicacao);
+                                        dataArtigo.setHours(0, 0, 0, 0);
+                                        return dataArtigo.getTime() === hoje.getTime();
                                     })
-                                    .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
+                                    .sort(function(a, b) { return (b.visualizacoes || 0) - (a.visualizacoes || 0); })
                                     .slice(0, 4);
 
                                     // Se não tiver 4 artigos de hoje, completar com os mais lidos recentes
-                                    let trendingArticles = artigosHoje;
-                                    if (trendingArticles.length < 4) { const maisLidos=allArticles .filter(a=>
-                                        !trendingArticles.find(t => t.id === a.id))
-                                        .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
+                                    var trendingArticles = artigosHoje;
+                                    if (trendingArticles.length < 4) { 
+                                        var maisLidos = allArticles.filter(function(a) {
+                                            return !trendingArticles.find(function(t) { return t.id === a.id; });
+                                        })
+                                        .sort(function(a, b) { return (b.visualizacoes || 0) - (a.visualizacoes || 0); })
                                         .slice(0, 4 - trendingArticles.length);
-                                        trendingArticles = [...trendingArticles, ...maisLidos];
-                                        }
+                                        trendingArticles = trendingArticles.concat(maisLidos);
+                                    }
 
-                                        trendingArticles.forEach((article, index) => { %>
+                                    trendingArticles.forEach(function(article, index) { %>
                                         <article class="trending-card">
                                             <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                                 <div class="trending-card-image">
@@ -127,8 +137,10 @@
                                 <!-- Todas as Notícias -->
                                 <section class="news-section all-news-section">
                                     <div class="news-list" id="newsList">
-                                        <% // Mostrar apenas os primeiros 10 const displayArticles=allArticles.slice(0,
-                                            10); if (displayArticles.length===0) { %>
+                                        <% 
+                                            // Mostrar apenas os primeiros 10 
+                                            var displayArticles = allArticles.slice(0, 10); 
+                                            if (displayArticles.length === 0) { %>
                                             <div style="padding: 40px; text-align: center; color: #666;">
                                                 <i class="fas fa-newspaper"
                                                     style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
@@ -137,7 +149,7 @@
                                                     novidades!
                                                 </p>
                                             </div>
-                                            <% } else { displayArticles.forEach(article=> { %>
+                                            <% } else { displayArticles.forEach(function(article) { %>
                                                 <article class="news-item-horizontal">
                                                     <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                                         <div class="news-item-image">
@@ -389,10 +401,13 @@
                                         </h2>
                                     </div>
                                     <div class="most-read-list">
-                                        <% // Usar allArticles que já foi montado acima // Ordenar por visualizações e
-                                            pegar top 5 const mostRead=[...allArticles].sort((a, b)=> (b.visualizacoes
-                                            || 0) - (a.visualizacoes || 0)).slice(0, 5);
-                                            mostRead.forEach((article, index) => { %>
+                                        <% 
+                                            // Usar allArticles que já foi montado acima 
+                                            // Ordenar por visualizações e pegar top 5 
+                                            var mostRead = allArticles.slice().sort(function(a, b) { 
+                                                return (b.visualizacoes || 0) - (a.visualizacoes || 0); 
+                                            }).slice(0, 5);
+                                            mostRead.forEach(function(article, index) { %>
                                             <article class="most-read-item">
                                                 <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                                     <span class="most-read-number">
