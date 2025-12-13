@@ -38,6 +38,14 @@ class AIService {
   /**
    * Faz uma requisição para a API da IA com retry automático
    */
+  static async gerarConteudo(prompt, systemPrompt = 'Você é um assistente útil.') {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: prompt }
+    ];
+    return await this.makeRequest(messages);
+  }
+
   static async makeRequest(messages, temperature = 0.7, maxTokens = 2000, retries = 3) {
     const { apiKey, apiUrl, model } = await this.getConfig();
 
@@ -46,16 +54,16 @@ class AIService {
     }
 
     let lastError;
-    
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`🤖 Tentativa ${attempt}/${retries} de requisição à IA...`);
         console.log(`   📡 URL: ${apiUrl}`);
         console.log(`   🤖 Modelo: ${model}`);
         console.log(`   📝 Tokens máx: ${maxTokens}`);
-        
+
         const startTime = Date.now();
-        
+
         const response = await axios.post(
           apiUrl,
           {
@@ -75,13 +83,13 @@ class AIService {
 
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
         console.log(`✅ Resposta da IA recebida em ${duration}s`);
-        
+
         return response.data.choices[0].message.content;
       } catch (error) {
         lastError = error;
         const errorMessage = error.response?.data?.error?.message || error.message;
-        const isRetryable = 
-          errorMessage.includes('timeout') || 
+        const isRetryable =
+          errorMessage.includes('timeout') ||
           errorMessage.includes('Service unavailable') ||
           errorMessage.includes('rate limit') ||
           errorMessage.includes('overloaded') ||
@@ -90,12 +98,12 @@ class AIService {
           errorMessage.includes('429') ||
           error.code === 'ECONNRESET' ||
           error.code === 'ETIMEDOUT';
-        
+
         console.error(`❌ Erro na tentativa ${attempt}:`, errorMessage);
-        
+
         if (isRetryable && attempt < retries) {
           const waitTime = Math.min(30000, 5000 * Math.pow(2, attempt - 1)); // 5s, 10s, 20s (max 30s)
-          console.log(`⏳ Aguardando ${waitTime/1000}s antes de tentar novamente...`);
+          console.log(`⏳ Aguardando ${waitTime / 1000}s antes de tentar novamente...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         } else if (!isRetryable) {
           // Erro não recuperável, não tenta novamente
@@ -103,7 +111,7 @@ class AIService {
         }
       }
     }
-    
+
     console.error('Erro na API da IA após todas as tentativas:', lastError.response?.data || lastError.message);
     throw new Error('Erro ao comunicar com a IA: ' + (lastError.response?.data?.error?.message || lastError.message));
   }
@@ -588,7 +596,7 @@ class AIService {
 
       // Limpar a query - manter apenas o termo de busca principal
       let cleanQuery = query.trim();
-      
+
       // Bing Image Search - URL otimizada para resultados precisos
       // qft=+filterui:photo-photo - apenas fotos reais
       // form=IRFLTR - formato de filtro
@@ -626,10 +634,10 @@ class AIService {
             const metadata = JSON.parse(m);
             if (metadata.murl && !urlsAdicionadas.has(metadata.murl)) {
               // Verificar se e uma URL de imagem valida
-              const isValidImage = /\.(jpg|jpeg|png|gif|webp|bmp)/i.test(metadata.murl) || 
-                                   metadata.murl.includes('bing.net') ||
-                                   metadata.murl.includes('bing.com');
-              
+              const isValidImage = /\.(jpg|jpeg|png|gif|webp|bmp)/i.test(metadata.murl) ||
+                metadata.murl.includes('bing.net') ||
+                metadata.murl.includes('bing.com');
+
               if (isValidImage) {
                 urlsAdicionadas.add(metadata.murl);
                 imagens.push({
@@ -686,7 +694,7 @@ class AIService {
             // Tentar obter URL de alta resolucao do atributo data-src-hq
             const srcHq = $(elem).attr('data-src-hq');
             if (srcHq) src = srcHq;
-            
+
             urlsAdicionadas.add(src);
             imagens.push({
               url: src,
@@ -762,26 +770,26 @@ class AIService {
 
       // NAO adicionar contexto gospel automaticamente - buscar exatamente o que o usuario pediu
       let finalQuery = cleanQuery;
-      
+
       // Apenas adicionar contexto se explicitamente solicitado E se a query for muito generica
       if (addContext && cleanQuery.length < 20) {
         const termosBusca = cleanQuery.toLowerCase();
-        const jaTemContexto = termosBusca.includes('gospel') || 
-                              termosBusca.includes('evangélico') || 
-                              termosBusca.includes('evangelico') ||
-                              termosBusca.includes('igreja') ||
-                              termosBusca.includes('pastor') ||
-                              termosBusca.includes('cantor') ||
-                              termosBusca.includes('cristao') ||
-                              termosBusca.includes('cristão');
-        
+        const jaTemContexto = termosBusca.includes('gospel') ||
+          termosBusca.includes('evangélico') ||
+          termosBusca.includes('evangelico') ||
+          termosBusca.includes('igreja') ||
+          termosBusca.includes('pastor') ||
+          termosBusca.includes('cantor') ||
+          termosBusca.includes('cristao') ||
+          termosBusca.includes('cristão');
+
         if (!jaTemContexto) {
           finalQuery = `${cleanQuery} gospel`;
         }
       }
-      
+
       console.log('📡 Query final para Google:', finalQuery);
-      
+
       // Buscar imagens em alta resolucao - aumentado para 10 resultados
       const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(finalQuery)}&searchType=image&num=10&imgSize=large&imgType=photo&safe=active`;
 
@@ -834,7 +842,7 @@ class AIService {
             item.displayLink.includes('twitter.com') ||
             item.displayLink.includes('tiktok.com')
           );
-          
+
           if (!imageUrl && item.image?.thumbnailLink && !isSocialMedia) {
             imageUrl = item.image.thumbnailLink;
             isHighQuality = false;
@@ -863,11 +871,11 @@ class AIService {
         try {
           const searchUrl2 = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(cleanQuery)}&searchType=image&num=10&start=11&imgSize=large&imgType=photo&safe=active`;
           const response2 = await axios.get(searchUrl2, { timeout: 10000 });
-          
+
           if (response2.data && response2.data.items) {
             for (const item of response2.data.items) {
               if (imagens.length >= 15) break;
-              
+
               if (item.link) {
                 const isValidImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(item.link);
                 if (isValidImageUrl) {
@@ -887,7 +895,7 @@ class AIService {
           console.log('Erro na busca complementar, continuando com', imagens.length, 'imagens');
         }
       }
-      
+
       // Ordenar imagens: relevância e qualidade
       imagens.sort((a, b) => {
         // Primeiro por relevância
@@ -1040,10 +1048,10 @@ class AIService {
     let informacoesAdicionais = '';
     if (pesquisarInternet) {
       console.log('🌐 Pesquisando informações adicionais na internet...');
-      
+
       // Extrair palavras-chave do texto para pesquisa
       const palavrasChavePesquisa = textoLimpo.substring(0, 200);
-      
+
       try {
         // Buscar no DuckDuckGo
         const resultadosDDG = await this.pesquisarInternet(palavrasChavePesquisa + ' gospel evangélico');
@@ -1054,7 +1062,7 @@ class AIService {
           });
           console.log(`✅ Encontradas ${resultadosDDG.length} informações adicionais no DuckDuckGo`);
         }
-        
+
         // Buscar também no Google News
         const noticiasGoogle = await this.buscarNoticiasAtuais(palavrasChavePesquisa);
         if (noticiasGoogle.length > 0) {
@@ -1071,7 +1079,7 @@ class AIService {
     }
 
     // Construir prompt com ou sem informações adicionais
-    const instrucaoAdicional = pesquisarInternet && informacoesAdicionais 
+    const instrucaoAdicional = pesquisarInternet && informacoesAdicionais
       ? `\n\n🌐 INFORMAÇÕES COMPLEMENTARES DA INTERNET:\nUse as informações abaixo para ENRIQUECER a matéria com contexto adicional (quem é a pessoa, histórico, etc). Mas mantenha o foco no conteúdo original.\n${informacoesAdicionais}`
       : '';
 
@@ -1211,19 +1219,19 @@ Retorne APENAS um objeto JSON válido:
 
       // Adicionar embed do Instagram se houver link de referência
       let conteudoFinal = resultado.conteudo;
-      
+
       // Verificar se o conteúdo já contém um embed do Instagram
       const jaTemEmbed = conteudoFinal.includes('instagram-media') || conteudoFinal.includes('instagram.com/p/');
 
       if (!jaTemEmbed && linkReferencia && linkReferencia.includes('instagram.com')) {
         console.log('📱 Adicionando embed completo do Instagram:', linkReferencia);
-        
+
         // Normalizar URL do Instagram para formato embed
         let embedUrl = linkReferencia;
         if (!embedUrl.includes('utm_source=ig_embed')) {
           embedUrl = embedUrl.replace(/\/$/, '') + '/?utm_source=ig_embed&utm_campaign=loading';
         }
-        
+
         // Embed completo do Instagram com todos os estilos e estrutura
         const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${embedUrl}" data-instgrm-version="14" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:16px;"> <a href="${embedUrl}" style=" background:#FFFFFF; line-height:0; padding:0 0; text-align:center; text-decoration:none; width:100%;" target="_blank"> <div style=" display: flex; flex-direction: row; align-items: center;"> <div style="background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 40px; margin-right: 14px; width: 40px;"></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 100px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 60px;"></div></div></div><div style="padding: 19% 0;"></div> <div style="display:block; height:50px; margin:0 auto 12px; width:50px;"><svg width="50px" height="50px" viewBox="0 0 60 60" version="1.1" xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(-511.000000, -20.000000)" fill="#000000"><g><path d="M556.869,30.41 C554.814,30.41 553.148,32.076 553.148,34.131 C553.148,36.186 554.814,37.852 556.869,37.852 C558.924,37.852 560.59,36.186 560.59,34.131 C560.59,32.076 558.924,30.41 556.869,30.41 M541,60.657 C535.114,60.657 530.342,55.887 530.342,50 C530.342,44.114 535.114,39.342 541,39.342 C546.887,39.342 551.658,44.114 551.658,50 C551.658,55.887 546.887,60.657 541,60.657 M541,33.886 C532.1,33.886 524.886,41.1 524.886,50 C524.886,58.899 532.1,66.113 541,66.113 C549.9,66.113 557.115,58.899 557.115,50 C557.115,41.1 549.9,33.886 541,33.886 M565.378,62.101 C565.244,65.022 564.756,66.606 564.346,67.663 C563.803,69.06 563.154,70.057 562.106,71.106 C561.058,72.155 560.06,72.803 558.662,73.347 C557.607,73.757 556.021,74.244 553.102,74.378 C549.944,74.521 548.997,74.552 541,74.552 C533.003,74.552 532.056,74.521 528.898,74.378 C525.979,74.244 524.393,73.757 523.338,73.347 C521.94,72.803 520.942,72.155 519.894,71.106 C518.846,70.057 518.197,69.06 517.654,67.663 C517.244,66.606 516.755,65.022 516.623,62.101 C516.479,58.943 516.448,57.996 516.448,50 C516.448,42.003 516.479,41.056 516.623,37.899 C516.755,34.978 517.244,33.391 517.654,32.338 C518.197,30.938 518.846,29.942 519.894,28.894 C520.942,27.846 521.94,27.196 523.338,26.654 C524.393,26.244 525.979,25.756 528.898,25.623 C532.057,25.479 533.004,25.448 541,25.448 C548.997,25.448 549.943,25.479 553.102,25.623 C556.021,25.756 557.607,26.244 558.662,26.654 C560.06,27.196 561.058,27.846 562.106,28.894 C563.154,29.942 563.803,30.938 564.346,32.338 C564.756,33.391 565.244,34.978 565.378,37.899 C565.522,41.056 565.552,42.003 565.552,50 C565.552,57.996 565.522,58.943 565.378,62.101 M570.82,37.631 C570.674,34.438 570.167,32.258 569.425,30.349 C568.659,28.377 567.633,26.702 565.965,25.035 C564.297,23.368 562.623,22.342 560.652,21.575 C558.743,20.834 556.562,20.326 553.369,20.18 C550.169,20.033 549.148,20 541,20 C532.853,20 531.831,20.033 528.631,20.18 C525.438,20.326 523.257,20.834 521.349,21.575 C519.376,22.342 517.703,23.368 516.035,25.035 C514.368,26.702 513.342,28.377 512.574,30.349 C511.834,32.258 511.326,34.438 511.181,37.631 C511.035,40.831 511,41.851 511,50 C511,58.147 511.035,59.17 511.181,62.369 C511.326,65.562 511.834,67.743 512.574,69.651 C513.342,71.625 514.368,73.296 516.035,74.965 C517.703,76.634 519.376,77.658 521.349,78.425 C523.257,79.167 525.438,79.673 528.631,79.82 C531.831,79.965 532.853,80.001 541,80.001 C549.148,80.001 550.169,79.965 553.369,79.82 C556.562,79.673 558.743,79.167 560.652,78.425 C562.623,77.658 564.297,76.634 565.965,74.965 C567.633,73.296 568.659,71.625 569.425,69.651 C570.167,67.743 570.674,65.562 570.82,62.369 C570.966,59.17 571,58.147 571,50 C571,41.851 570.966,40.831 570.82,37.631"></path></g></g></g></svg></div><div style="padding-top: 8px;"> <div style=" color:#3897f0; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:550; line-height:18px;">Ver essa foto no Instagram</div></div><div style="padding: 12.5% 0;"></div> <div style="display: flex; flex-direction: row; margin-bottom: 14px; align-items: center;"><div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(0px) translateY(7px);"></div> <div style="background-color: #F4F4F4; height: 12.5px; transform: rotate(-45deg) translateX(3px) translateY(1px); width: 12.5px; flex-grow: 0; margin-right: 14px; margin-left: 2px;"></div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(9px) translateY(-18px);"></div></div><div style="margin-left: 8px;"> <div style=" background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 20px; width: 20px;"></div> <div style=" width: 0; height: 0; border-top: 2px solid transparent; border-left: 6px solid #f4f4f4; border-bottom: 2px solid transparent; transform: translateX(16px) translateY(-4px) rotate(30deg)"></div></div><div style="margin-left: auto;"> <div style=" width: 0px; border-top: 8px solid #F4F4F4; border-right: 8px solid transparent; transform: translateY(16px);"></div> <div style=" background-color: #F4F4F4; flex-grow: 0; height: 12px; width: 16px; transform: translateY(-4px);"></div> <div style=" width: 0; height: 0; border-top: 8px solid #F4F4F4; border-left: 8px solid transparent; transform: translateY(-4px) translateX(8px);"></div></div></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center; margin-bottom: 24px;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 224px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 144px;"></div></div></a><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="${embedUrl}" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_blank">Uma publicação compartilhada no Instagram</a></p></div></blockquote><script async src="//www.instagram.com/embed.js"></script>`;
 
@@ -1289,9 +1297,9 @@ Retorne APENAS um objeto JSON válido:
     const isInstagram = link.includes('instagram.com');
     const isFacebook = link.includes('facebook.com') || link.includes('fb.watch') || link.includes('fb.com');
     const isYouTube = link.includes('youtube.com') || link.includes('youtu.be');
-    const isVideo = link.includes('/reel') || link.includes('/reels') || 
-                   link.includes('/watch') || link.includes('fb.watch') ||
-                   link.includes('/videos/') || isYouTube;
+    const isVideo = link.includes('/reel') || link.includes('/reels') ||
+      link.includes('/watch') || link.includes('fb.watch') ||
+      link.includes('/videos/') || isYouTube;
 
     console.log('📱 Tipo de link - Instagram:', isInstagram, 'Facebook:', isFacebook, 'YouTube:', isYouTube, 'Vídeo:', isVideo);
 
@@ -1339,7 +1347,7 @@ Retorne APENAS um objeto JSON válido:
     let informacoesInternet = '';
     if (pesquisarInternet) {
       console.log('🌐 Pesquisando informações complementares na internet...');
-      
+
       // Limpar texto para query de pesquisa
       const queryPesquisa = conteudoExtraido
         .replace(/📱 CONTEÚDO DO INSTAGRAM:/g, '')
@@ -1355,9 +1363,9 @@ Retorne APENAS um objeto JSON válido:
         .replace(/\s+/g, ' ')
         .trim()
         .substring(0, 200);
-      
+
       console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
-      
+
       try {
         // Buscar notícias no Google News
         const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
@@ -1394,7 +1402,7 @@ Retorne APENAS um objeto JSON válido:
 
     // 4. BUSCAR IMAGENS
     let imagensSugeridas = materia.imagensSugeridas || [];
-    
+
     // Se extraiu imagem do link, adicionar como primeira opção
     if (imagemExtraida) {
       imagensSugeridas.unshift({
@@ -1421,17 +1429,17 @@ Retorne APENAS um objeto JSON válido:
    */
   static async extrairConteudoFacebook(url, transcreverVideo = true) {
     console.log('📘 Extraindo conteúdo do Facebook:', url);
-    
+
     let textoLegenda = '';
     let transcricao = '';
-    
+
     // Verificar se é vídeo (Facebook tem muitos formatos de URL de vídeo)
     const isVideo = url.includes('/watch') || url.includes('fb.watch') || url.includes('/videos/') || url.includes('/reel') || url.includes('/share/v/') || url.includes('video.php');
-    
+
     // Se parece ser vídeo, SEMPRE tentar transcrever primeiro (mais confiável que scraping)
     if (isVideo && transcreverVideo) {
       console.log('🎥 Detectado vídeo do Facebook, tentando baixar e transcrever primeiro...');
-      
+
       try {
         transcricao = await this.processarVideoFacebook(url);
         if (transcricao && transcricao.length > 50) {
@@ -1441,7 +1449,7 @@ Retorne APENAS um objeto JSON válido:
         console.log('⚠️ Erro ao processar vídeo do Facebook:', error.message);
       }
     }
-    
+
     // 1. EXTRAIR TEXTO/LEGENDA DO POST (mesmo que já tenha transcrição, pode complementar)
     try {
       const response = await axios.get(url, {
@@ -1456,23 +1464,23 @@ Retorne APENAS um objeto JSON válido:
       });
 
       const $ = cheerio.load(response.data);
-      
+
       // Método 1: Meta tags (mais confiável)
       let textoPost = $('meta[property="og:description"]').attr('content') ||
-                     $('meta[name="description"]').attr('content');
-      
+        $('meta[name="description"]').attr('content');
+
       // Método 2: Título do vídeo
       if (!textoPost || textoPost.length < 20) {
         textoPost = $('meta[property="og:title"]').attr('content');
       }
-      
+
       // Método 3: Seletores específicos do Facebook
       if (!textoPost || textoPost.length < 20) {
         textoPost = $('.userContent').text() ||
-                   $('[data-testid="post_message"]').text() ||
-                   $('[data-ad-preview="message"]').text();
+          $('[data-testid="post_message"]').text() ||
+          $('[data-ad-preview="message"]').text();
       }
-      
+
       // Método 4: JSON-LD
       if (!textoPost || textoPost.length < 20) {
         const scripts = $('script[type="application/ld+json"]').toArray();
@@ -1487,17 +1495,17 @@ Retorne APENAS um objeto JSON válido:
               textoPost = jsonData.articleBody;
               break;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
-      
+
       if (textoPost && textoPost.length > 10) {
         // Limpar texto do Facebook (remover "likes", "comments", etc)
         textoPost = textoPost
           .replace(/^\d+K?\s*(likes?|curtidas?|comentários?|comments?|compartilhamentos?|shares?)[,\s]*/gi, '')
           .replace(/\s*\d+K?\s*(likes?|curtidas?|comentários?|comments?)[,\s]*/gi, '')
           .trim();
-        
+
         textoLegenda = `TEXTO DA POSTAGEM (LEGENDA):\n${textoPost}\n\n`;
         console.log('✅ Legenda do Facebook extraída:', textoPost.substring(0, 100) + '...');
       }
@@ -1505,10 +1513,10 @@ Retorne APENAS um objeto JSON válido:
     } catch (error) {
       console.log('⚠️ Erro ao extrair texto do Facebook:', error.message);
     }
-    
+
     // 2. COMBINAR RESULTADOS
     let conteudoFinal = '\n\n📘 CONTEÚDO DO FACEBOOK:\n\n';
-    
+
     if (textoLegenda) conteudoFinal += textoLegenda;
     if (transcricao && transcricao.length > 50) {
       conteudoFinal += `🎥 TRANSCRIÇÃO DO VÍDEO:\n${transcricao}\n\n`;
@@ -1559,31 +1567,31 @@ Retorne APENAS um objeto JSON válido:
   static async baixarVideoFacebook(url) {
     try {
       console.log('📥 Baixando vídeo do Facebook:', url);
-      
+
       const tempDir = path.join(__dirname, '../temp');
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
       }
-      
+
       const timestamp = Date.now();
       const videoPath = path.join(tempDir, `facebook_${timestamp}.mp4`);
-      
+
       const { execSync } = require('child_process');
       const ytDlpPath = await this.garantirYtDlp();
-      
+
       // Verificar se existe arquivo de cookies (pode ser usado para Facebook também)
       const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
       const hasCookiesFile = fs.existsSync(cookiesPath);
-      
+
       // Estratégias para baixar vídeo do Facebook
       const strategies = [];
-      
+
       // Estratégia 0: Com arquivo de cookies (se existir) - PRIORIDADE MÁXIMA
       if (hasCookiesFile) {
         strategies.push(`${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --cookies "${cookiesPath}"`);
         console.log('✅ Arquivo de cookies encontrado, será usado como prioridade para Facebook');
       }
-      
+
       // Estratégias sem cookies
       strategies.push(
         // Estratégia 1: Download direto com melhor qualidade MP4
@@ -1597,23 +1605,23 @@ Retorne APENAS um objeto JSON válido:
         // Estratégia 5: Com user-agent de navegador
         `${ytDlpPath} -f "best[ext=mp4]/best" -o "${videoPath}" "${url}" --no-warnings --no-check-certificates --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"`
       );
-      
+
       for (let i = 0; i < strategies.length; i++) {
         try {
           console.log(`🔧 Tentando estratégia ${i + 1}/${strategies.length} do yt-dlp para Facebook`);
-          
+
           execSync(strategies[i], {
             encoding: 'utf8',
             timeout: 120000,
             maxBuffer: 50 * 1024 * 1024
           });
-          
+
           // Verificar se o arquivo foi criado
           if (fs.existsSync(videoPath)) {
             console.log('✅ Vídeo do Facebook baixado:', videoPath);
             return videoPath;
           }
-          
+
           // Verificar se foi salvo com extensão diferente
           const possibleExtensions = ['.mp4', '.webm', '.mkv', '.mov'];
           for (const ext of possibleExtensions) {
@@ -1627,7 +1635,7 @@ Retorne APENAS um objeto JSON válido:
           console.log(`⚠️ Estratégia ${i + 1} falhou:`, strategyError.message.substring(0, 100));
         }
       }
-      
+
       throw new Error('Não foi possível baixar o vídeo do Facebook por nenhum método.');
     } catch (error) {
       console.error('❌ Erro ao baixar vídeo do Facebook:', error.message);
@@ -1670,7 +1678,7 @@ Retorne APENAS um objeto JSON válido:
         }
       }
     }
-    
+
     // NOTA: A pesquisa na internet será feita APÓS extrair o conteúdo do link
     // para usar o conteúdo real como base da pesquisa
 
@@ -1756,10 +1764,10 @@ Retorne APENAS um objeto JSON válido:
     let informacoesPesquisaInternet = '';
     if (pesquisarInternet) {
       console.log('🌐 Pesquisando informações na internet...');
-      
+
       // Determinar query de pesquisa: usar conteúdo extraído se disponível, senão usar o tema
       let queryPesquisa = '';
-      
+
       if (conteudoExtraido && conteudoExtraido.length > 100) {
         // Limpar o conteúdo extraído para usar como query de pesquisa
         queryPesquisa = conteudoExtraido
@@ -1781,9 +1789,9 @@ Retorne APENAS um objeto JSON válido:
         queryPesquisa = tema;
         console.log('🔍 Query baseada no tema');
       }
-      
+
       console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
-      
+
       try {
         // 1. Buscar notícias atuais do Google News (mais recentes e relevantes)
         console.log('📰 Buscando notícias no Google News...');
@@ -1809,7 +1817,7 @@ Retorne APENAS um objeto JSON válido:
           });
           console.log(`✅ Encontradas ${resultadosDDG.length} informações no DuckDuckGo`);
         }
-        
+
         // 3. Buscar notícias específicas sobre o tema (segunda pesquisa mais focada)
         if (!conteudoExtraido || conteudoExtraido.length < 100) {
           console.log('📰 Buscando notícias específicas sobre o tema...');
@@ -1826,7 +1834,7 @@ Retorne APENAS um objeto JSON válido:
             console.log(`✅ Encontradas ${noticiasTema.length} notícias específicas`);
           }
         }
-        
+
         // Adicionar ao informacoesAdicionais
         if (informacoesPesquisaInternet) {
           informacoesAdicionais += '\n\n🌐 INFORMAÇÕES DA INTERNET (USE PARA CRIAR A MATÉRIA COM FATOS REAIS):' + informacoesPesquisaInternet;
@@ -1849,7 +1857,7 @@ Retorne APENAS um objeto JSON válido:
     if (conteudoExtraido) {
       // Verificar se tem informações da internet para enriquecer
       const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
-      
+
       promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma matéria jornalística no estilo do portal Metrópoles baseada ${temInfoInternet ? 'no conteúdo fornecido, ENRIQUECIDA com as informações complementares da internet' : 'EXCLUSIVAMENTE no conteúdo fornecido abaixo'}.
 
 🚨 REGRA ABSOLUTA - NÃO INVENTE NADA:
@@ -1882,7 +1890,7 @@ Retorne APENAS um objeto JSON válido:
     } else {
       // Verificar se tem informações da internet para usar
       const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
-      
+
       if (temInfoInternet) {
         // TEM informações da internet - usar como base factual - MATÉRIA EXTENSA
         promptInstrucao = `⚠️ TAREFA CRÍTICA: Crie uma MATÉRIA JORNALÍSTICA EXTENSA E COMPLETA no estilo do portal Metrópoles/G1 sobre o tema abaixo.
@@ -2086,13 +2094,13 @@ Retorne APENAS um objeto JSON válido:
 
             if (!jaTemEmbed && links && links.length > 0 && links[0].includes('instagram.com')) {
               console.log('📱 Adicionando embed completo do Instagram:', links[0]);
-              
+
               // Normalizar URL do Instagram para formato embed
               let embedUrl = links[0];
               if (!embedUrl.includes('utm_source=ig_embed')) {
                 embedUrl = embedUrl.replace(/\/$/, '') + '/?utm_source=ig_embed&utm_campaign=loading';
               }
-              
+
               // Embed completo do Instagram com todos os estilos e estrutura
               const embedCode = `<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="${embedUrl}" data-instgrm-version="14" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:16px;"> <a href="${embedUrl}" style=" background:#FFFFFF; line-height:0; padding:0 0; text-align:center; text-decoration:none; width:100%;" target="_blank"> <div style=" display: flex; flex-direction: row; align-items: center;"> <div style="background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 40px; margin-right: 14px; width: 40px;"></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 100px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 60px;"></div></div></div><div style="padding: 19% 0;"></div> <div style="display:block; height:50px; margin:0 auto 12px; width:50px;"><svg width="50px" height="50px" viewBox="0 0 60 60" version="1.1" xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(-511.000000, -20.000000)" fill="#000000"><g><path d="M556.869,30.41 C554.814,30.41 553.148,32.076 553.148,34.131 C553.148,36.186 554.814,37.852 556.869,37.852 C558.924,37.852 560.59,36.186 560.59,34.131 C560.59,32.076 558.924,30.41 556.869,30.41 M541,60.657 C535.114,60.657 530.342,55.887 530.342,50 C530.342,44.114 535.114,39.342 541,39.342 C546.887,39.342 551.658,44.114 551.658,50 C551.658,55.887 546.887,60.657 541,60.657 M541,33.886 C532.1,33.886 524.886,41.1 524.886,50 C524.886,58.899 532.1,66.113 541,66.113 C549.9,66.113 557.115,58.899 557.115,50 C557.115,41.1 549.9,33.886 541,33.886 M565.378,62.101 C565.244,65.022 564.756,66.606 564.346,67.663 C563.803,69.06 563.154,70.057 562.106,71.106 C561.058,72.155 560.06,72.803 558.662,73.347 C557.607,73.757 556.021,74.244 553.102,74.378 C549.944,74.521 548.997,74.552 541,74.552 C533.003,74.552 532.056,74.521 528.898,74.378 C525.979,74.244 524.393,73.757 523.338,73.347 C521.94,72.803 520.942,72.155 519.894,71.106 C518.846,70.057 518.197,69.06 517.654,67.663 C517.244,66.606 516.755,65.022 516.623,62.101 C516.479,58.943 516.448,57.996 516.448,50 C516.448,42.003 516.479,41.056 516.623,37.899 C516.755,34.978 517.244,33.391 517.654,32.338 C518.197,30.938 518.846,29.942 519.894,28.894 C520.942,27.846 521.94,27.196 523.338,26.654 C524.393,26.244 525.979,25.756 528.898,25.623 C532.057,25.479 533.004,25.448 541,25.448 C548.997,25.448 549.943,25.479 553.102,25.623 C556.021,25.756 557.607,26.244 558.662,26.654 C560.06,27.196 561.058,27.846 562.106,28.894 C563.154,29.942 563.803,30.938 564.346,32.338 C564.756,33.391 565.244,34.978 565.378,37.899 C565.522,41.056 565.552,42.003 565.552,50 C565.552,57.996 565.522,58.943 565.378,62.101 M570.82,37.631 C570.674,34.438 570.167,32.258 569.425,30.349 C568.659,28.377 567.633,26.702 565.965,25.035 C564.297,23.368 562.623,22.342 560.652,21.575 C558.743,20.834 556.562,20.326 553.369,20.18 C550.169,20.033 549.148,20 541,20 C532.853,20 531.831,20.033 528.631,20.18 C525.438,20.326 523.257,20.834 521.349,21.575 C519.376,22.342 517.703,23.368 516.035,25.035 C514.368,26.702 513.342,28.377 512.574,30.349 C511.834,32.258 511.326,34.438 511.181,37.631 C511.035,40.831 511,41.851 511,50 C511,58.147 511.035,59.17 511.181,62.369 C511.326,65.562 511.834,67.743 512.574,69.651 C513.342,71.625 514.368,73.296 516.035,74.965 C517.703,76.634 519.376,77.658 521.349,78.425 C523.257,79.167 525.438,79.673 528.631,79.82 C531.831,79.965 532.853,80.001 541,80.001 C549.148,80.001 550.169,79.965 553.369,79.82 C556.562,79.673 558.743,79.167 560.652,78.425 C562.623,77.658 564.297,76.634 565.965,74.965 C567.633,73.296 568.659,71.625 569.425,69.651 C570.167,67.743 570.674,65.562 570.82,62.369 C570.966,59.17 571,58.147 571,50 C571,41.851 570.966,40.831 570.82,37.631"></path></g></g></g></svg></div><div style="padding-top: 8px;"> <div style=" color:#3897f0; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:550; line-height:18px;">Ver essa foto no Instagram</div></div><div style="padding: 12.5% 0;"></div> <div style="display: flex; flex-direction: row; margin-bottom: 14px; align-items: center;"><div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(0px) translateY(7px);"></div> <div style="background-color: #F4F4F4; height: 12.5px; transform: rotate(-45deg) translateX(3px) translateY(1px); width: 12.5px; flex-grow: 0; margin-right: 14px; margin-left: 2px;"></div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(9px) translateY(-18px);"></div></div><div style="margin-left: 8px;"> <div style=" background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 20px; width: 20px;"></div> <div style=" width: 0; height: 0; border-top: 2px solid transparent; border-left: 6px solid #f4f4f4; border-bottom: 2px solid transparent; transform: translateX(16px) translateY(-4px) rotate(30deg)"></div></div><div style="margin-left: auto;"> <div style=" width: 0px; border-top: 8px solid #F4F4F4; border-right: 8px solid transparent; transform: translateY(16px);"></div> <div style=" background-color: #F4F4F4; flex-grow: 0; height: 12px; width: 16px; transform: translateY(-4px);"></div> <div style=" width: 0; height: 0; border-top: 8px solid #F4F4F4; border-left: 8px solid transparent; transform: translateY(-4px) translateX(8px);"></div></div></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center; margin-bottom: 24px;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 224px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 144px;"></div></div></a><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="${embedUrl}" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_blank">Uma publicação compartilhada no Instagram</a></p></div></blockquote><script async src="//www.instagram.com/embed.js"></script>`;
 
@@ -2232,16 +2240,16 @@ Retorne APENAS um objeto JSON válido:
     // 🔹 PRESERVAR EMBEDS DO INSTAGRAM (apenas para conteúdo)
     let embedsInstagram = [];
     let textoSemEmbeds = texto;
-    
+
     if (tipo === 'conteudo') {
       const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
-      
+
       let match;
       while ((match = embedRegex.exec(texto)) !== null) {
         embedsInstagram.push(match[0]);
         console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado (corrigir texto)`);
       }
-      
+
       textoSemEmbeds = texto.replace(embedRegex, '');
       console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s) (corrigir texto)`);
     }
@@ -2274,7 +2282,7 @@ Retorne APENAS um objeto JSON válido:
     ];
 
     let resultado = await this.makeRequest(messages, 0.3, 2000);
-    
+
     // 🔹 REINSERIR EMBEDS DO INSTAGRAM NO FINAL
     if (embedsInstagram.length > 0) {
       console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram (corrigir texto)`);
@@ -2283,7 +2291,7 @@ Retorne APENAS um objeto JSON válido:
         console.log(`✅ Embed #${index + 1} reinserido (corrigir texto)`);
       });
     }
-    
+
     return resultado;
   }
 
@@ -2306,44 +2314,44 @@ Retorne APENAS um objeto JSON válido:
     // Detectar intenção do usuário
     let intencao = 'completa'; // padrão
     let campoAlvo = 'todos';
-    
+
     // Detectar se quer alterar apenas o título
-    if ((mensagemLower.includes('título') || mensagemLower.includes('titulo')) && 
-        !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') && 
-        !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
-        !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
-        !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
+    if ((mensagemLower.includes('título') || mensagemLower.includes('titulo')) &&
+      !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') &&
+      !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
+      !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
+      !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
       intencao = 'titulo';
       campoAlvo = 'titulo';
     }
     // Detectar se quer alterar apenas a descrição
-    else if ((mensagemLower.includes('descrição') || mensagemLower.includes('descricao')) && 
-             !mensagemLower.includes('título') && !mensagemLower.includes('titulo') && 
-             !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
-             !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
-             !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
+    else if ((mensagemLower.includes('descrição') || mensagemLower.includes('descricao')) &&
+      !mensagemLower.includes('título') && !mensagemLower.includes('titulo') &&
+      !mensagemLower.includes('conteúdo') && !mensagemLower.includes('conteudo') &&
+      !mensagemLower.includes('matéria') && !mensagemLower.includes('materia') &&
+      !mensagemLower.includes('completa') && !mensagemLower.includes('tudo')) {
       intencao = 'descricao';
       campoAlvo = 'descricao';
     }
     // Detectar se quer alterar apenas o conteúdo
-    else if ((mensagemLower.includes('conteúdo') || mensagemLower.includes('conteudo') || 
-              mensagemLower.includes('texto') || mensagemLower.includes('corpo')) && 
-             !mensagemLower.includes('título') && !mensagemLower.includes('titulo') && 
-             !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') &&
-             !mensagemLower.includes('matéria completa') && !mensagemLower.includes('materia completa') &&
-             !mensagemLower.includes('tudo')) {
+    else if ((mensagemLower.includes('conteúdo') || mensagemLower.includes('conteudo') ||
+      mensagemLower.includes('texto') || mensagemLower.includes('corpo')) &&
+      !mensagemLower.includes('título') && !mensagemLower.includes('titulo') &&
+      !mensagemLower.includes('descrição') && !mensagemLower.includes('descricao') &&
+      !mensagemLower.includes('matéria completa') && !mensagemLower.includes('materia completa') &&
+      !mensagemLower.includes('tudo')) {
       intencao = 'conteudo';
       campoAlvo = 'conteudo';
     }
     // Detectar se quer matéria completa
     else if (mensagemLower.includes('matéria completa') || mensagemLower.includes('materia completa') ||
-             mensagemLower.includes('crie uma matéria') || mensagemLower.includes('crie uma materia') ||
-             mensagemLower.includes('faça uma matéria') || mensagemLower.includes('faca uma materia') ||
-             mensagemLower.includes('criar matéria') || mensagemLower.includes('criar materia') ||
-             mensagemLower.includes('gere uma matéria') || mensagemLower.includes('gere uma materia') ||
-             (mensagemLower.includes('crie') && mensagemLower.includes('sobre')) ||
-             (mensagemLower.includes('faça') && mensagemLower.includes('sobre')) ||
-             (mensagemLower.includes('escreva') && mensagemLower.includes('sobre'))) {
+      mensagemLower.includes('crie uma matéria') || mensagemLower.includes('crie uma materia') ||
+      mensagemLower.includes('faça uma matéria') || mensagemLower.includes('faca uma materia') ||
+      mensagemLower.includes('criar matéria') || mensagemLower.includes('criar materia') ||
+      mensagemLower.includes('gere uma matéria') || mensagemLower.includes('gere uma materia') ||
+      (mensagemLower.includes('crie') && mensagemLower.includes('sobre')) ||
+      (mensagemLower.includes('faça') && mensagemLower.includes('sobre')) ||
+      (mensagemLower.includes('escreva') && mensagemLower.includes('sobre'))) {
       intencao = 'completa';
       campoAlvo = 'todos';
     }
@@ -2456,15 +2464,15 @@ ${formatoResposta}`;
 
     try {
       const response = await this.makeRequest(messages, 0.7, 4000);
-      
+
       // Parse do JSON
       let jsonStr = response.trim();
       if (jsonStr.includes('```')) {
         jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       }
-      
+
       const resultado = JSON.parse(jsonStr);
-      
+
       return {
         success: true,
         resposta: resultado.resposta || 'Aqui está a matéria que criei para você:',
@@ -2607,7 +2615,7 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
 
         // 🎥 EXTRAIR CONTEÚDO COMPLETO DO INSTAGRAM (incluindo transcrição de vídeo)
         let conteudoCompleto = post.caption || '';
-        
+
         // Se é um vídeo/reel, tentar transcrever
         if (post.url && (post.url.includes('/reel/') || post.url.includes('/reels/') || post.isVideo)) {
           console.log('🎥 Detectado vídeo/reel, tentando transcrever...');
@@ -2657,7 +2665,7 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
             // Limpar texto para query de pesquisa
             const queryPesquisa = captionLimpo.substring(0, 200);
             console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
-            
+
             // Buscar notícias relacionadas
             const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
             if (noticias.length > 0) {
@@ -2667,7 +2675,7 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
               });
               console.log(`✅ Encontradas ${noticias.length} notícias relacionadas`);
             }
-            
+
             // Buscar no DuckDuckGo
             const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
             if (resultadosDDG.length > 0) {
@@ -2837,15 +2845,15 @@ ${tipoTexto.toUpperCase()} POLÊMICO:`;
     // 🔹 PRESERVAR EMBEDS DO INSTAGRAM
     const embedsInstagram = [];
     let conteudoSemEmbeds = conteudo;
-    
+
     const embedRegex = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
-    
+
     let match;
     while ((match = embedRegex.exec(conteudo)) !== null) {
       embedsInstagram.push(match[0]);
       console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado (expandir conteúdo)`);
     }
-    
+
     conteudoSemEmbeds = conteudo.replace(embedRegex, '');
     console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s) (expandir conteúdo)`);
 
@@ -2902,7 +2910,7 @@ Agora reorganize o conteúdo fornecido acima:`
       }
 
       let conteudoExpandido = response.trim();
-      
+
       // 🔹 REINSERIR EMBEDS DO INSTAGRAM NO FINAL
       if (embedsInstagram.length > 0) {
         console.log(`📱 Reinserindo ${embedsInstagram.length} embed(s) do Instagram (expandir conteúdo)`);
@@ -2911,7 +2919,7 @@ Agora reorganize o conteúdo fornecido acima:`
           console.log(`✅ Embed #${index + 1} reinserido (expandir conteúdo)`);
         });
       }
-      
+
       console.log('✅ Conteúdo reorganizado com sucesso');
       return conteudoExpandido;
     } catch (error) {
@@ -3296,10 +3304,10 @@ Retorne APENAS um objeto JSON válido:
           const jaTemEmbedFb = conteudoLimpo.includes('fb-post') || conteudoLimpo.includes('fb-video') || conteudoLimpo.includes('facebook.com/plugins');
           if (!jaTemEmbedFb) {
             console.log('📘 Adicionando embed do Facebook:', linkReferencia);
-            
+
             // Determinar se é vídeo ou post
             const isVideo = linkReferencia.includes('/watch') || linkReferencia.includes('fb.watch') || linkReferencia.includes('/videos/') || linkReferencia.includes('/reel');
-            
+
             let embedCode;
             if (isVideo) {
               // Embed de vídeo do Facebook
@@ -3308,7 +3316,7 @@ Retorne APENAS um objeto JSON válido:
               // Embed de post do Facebook
               embedCode = `<div class="fb-post" data-href="${linkReferencia}" data-width="500" data-show-text="true" style="margin: 30px auto; max-width: 540px;"><blockquote cite="${linkReferencia}" class="fb-xfbml-parse-ignore"><a href="${linkReferencia}">Post do Facebook</a></blockquote></div>`;
             }
-            
+
             conteudoLimpo += embedCode;
           }
         }
@@ -3348,33 +3356,33 @@ Retorne APENAS um objeto JSON válido:
     // 🔹 PRESERVAR EMBEDS DO INSTAGRAM
     const embedsInstagram = [];
     let conteudoSemEmbeds = conteudoHTML;
-    
+
     // Regex para capturar blockquote do Instagram
     const embedRegexInstagram = /<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>(?:\s*<script[^>]*src="[^"]*instagram\.com[^"]*"[^>]*><\/script>)?/gi;
-    
+
     // Extrair e guardar todos os embeds do Instagram
     let match;
     while ((match = embedRegexInstagram.exec(conteudoHTML)) !== null) {
       embedsInstagram.push(match[0]);
       console.log(`📱 Embed do Instagram #${embedsInstagram.length} encontrado e preservado`);
     }
-    
+
     // Remover embeds do Instagram temporariamente
     conteudoSemEmbeds = conteudoHTML.replace(embedRegexInstagram, '');
     console.log(`✅ ${embedsInstagram.length} embed(s) do Instagram preservado(s)`);
 
     // 🔹 PRESERVAR EMBEDS DO FACEBOOK
     const embedsFacebook = [];
-    
+
     // Regex para capturar embeds do Facebook (fb-post e fb-video)
     const embedRegexFacebook = /<div[^>]*class="fb-(post|video)"[^>]*>[\s\S]*?<\/div>/gi;
-    
+
     // Extrair e guardar todos os embeds do Facebook
     while ((match = embedRegexFacebook.exec(conteudoSemEmbeds)) !== null) {
       embedsFacebook.push(match[0]);
       console.log(`📘 Embed do Facebook #${embedsFacebook.length} encontrado e preservado`);
     }
-    
+
     // Remover embeds do Facebook temporariamente
     conteudoSemEmbeds = conteudoSemEmbeds.replace(embedRegexFacebook, '');
     console.log(`✅ ${embedsFacebook.length} embed(s) do Facebook preservado(s)`);
@@ -4039,7 +4047,7 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
 
     // Limitar transcrição para não exceder limite de tokens
     const transcricaoLimitada = transcricao.substring(0, 15000);
-    
+
     // Construir contexto com metadados do vídeo
     let contextoVideo = '';
     if (metadados.tituloVideo) {
@@ -4099,27 +4107,27 @@ Se não for possível identificar pautas relevantes, retorne: []`
 
     try {
       const resposta = await this.makeRequest(messages, 0.3, 2000);
-      
+
       console.log('📄 Resposta da IA para pautas:', resposta.substring(0, 500));
-      
+
       // Parse do JSON
       let pautas = [];
       try {
         let jsonText = resposta.trim();
-        
+
         // Remover markdown code blocks
         if (jsonText.startsWith('```')) {
           jsonText = jsonText.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
         }
-        
+
         // Tentar encontrar array JSON na resposta
         const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           jsonText = jsonMatch[0];
         }
-        
+
         pautas = JSON.parse(jsonText);
-        
+
         if (!Array.isArray(pautas)) {
           console.error('Resposta não é um array, tentando converter...');
           // Se for objeto único, colocar em array
@@ -4129,10 +4137,10 @@ Se não for possível identificar pautas relevantes, retorne: []`
             pautas = [];
           }
         }
-        
+
         // Limitar à quantidade solicitada
         pautas = pautas.slice(0, quantidade);
-        
+
         // Se a IA retornou array vazio mas temos transcrição, criar pauta genérica
         if (pautas.length === 0 && transcricao.length > 100) {
           console.log('⚠️ IA não identificou pautas, criando pauta baseada no título do vídeo...');
@@ -4143,11 +4151,11 @@ Se não for possível identificar pautas relevantes, retorne: []`
             trechoRelevante: transcricao.substring(0, 500)
           }];
         }
-        
+
       } catch (parseError) {
         console.error('Erro ao parsear pautas:', parseError.message);
         console.error('Texto recebido:', resposta.substring(0, 300));
-        
+
         // Fallback: criar pauta genérica se a transcrição tem conteúdo
         if (transcricao.length > 100) {
           console.log('⚠️ Criando pauta genérica como fallback...');
@@ -4165,7 +4173,7 @@ Se não for possível identificar pautas relevantes, retorne: []`
 
     } catch (error) {
       console.error('❌ Erro ao gerar pautas:', error);
-      
+
       // Fallback em caso de erro
       if (transcricao.length > 100) {
         console.log('⚠️ Usando fallback após erro...');
@@ -4175,7 +4183,7 @@ Se não for possível identificar pautas relevantes, retorne: []`
           trechoRelevante: transcricao.substring(0, 500)
         }];
       }
-      
+
       throw error;
     }
   }
@@ -4230,7 +4238,7 @@ Se não for possível identificar pautas relevantes, retorne: []`
 
     // Limitar transcrição
     const transcricaoLimitada = transcricao.substring(0, 12000);
-    
+
     // Construir contexto do vídeo
     let contextoVideo = '';
     if (metadados.tituloVideo) {
@@ -4306,7 +4314,7 @@ RESPONDA EM JSON:
 
     try {
       const resposta = await this.makeRequest(messages, 0.4, 3000);
-      
+
       // Parse do JSON
       let materia = null;
       try {
@@ -4314,17 +4322,17 @@ RESPONDA EM JSON:
         if (jsonText.startsWith('```')) {
           jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
         }
-        
+
         // Tentar extrair JSON
         const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           materia = JSON.parse(jsonMatch[0]);
         }
-        
+
         if (!materia || !materia.titulo || !materia.conteudoHTML) {
           throw new Error('Resposta incompleta da IA');
         }
-        
+
       } catch (parseError) {
         console.error('Erro ao parsear matéria:', parseError);
         throw new Error('Erro ao processar resposta da IA');
@@ -4340,7 +4348,7 @@ RESPONDA EM JSON:
         .replace(/<\/blockquote><p>/gi, '</blockquote><br><p>');
 
       console.log(`✅ Matéria gerada: "${materia.titulo}"`);
-      
+
       return {
         titulo: materia.titulo.trim(),
         descricao: (materia.descricao || 'Matéria gerada a partir de vídeo').trim(),
@@ -4378,7 +4386,7 @@ RESPONDA EM JSON:
 
     // 1. Identificar pautas (passando metadados para contexto)
     const pautas = await this.gerarPautasDoVideo(transcricao, quantidade, metadados);
-    
+
     if (pautas.length === 0) {
       throw new Error('Não foi possível identificar pautas relevantes na transcrição');
     }
@@ -4387,15 +4395,15 @@ RESPONDA EM JSON:
 
     // 2. Gerar matéria para cada pauta
     const materias = [];
-    
+
     for (let i = 0; i < pautas.length; i++) {
       const pauta = pautas[i];
       console.log(`\n📰 Gerando matéria ${i + 1}/${pautas.length}: ${pauta.resumoPauta}`);
-      
+
       try {
         // Passar tom e metadados para identificar corretamente o autor/canal
         let materia = await this.gerarMateriaDeVideo(transcricao, pauta, categoria, tom, metadados);
-        
+
         // 3. Opcional: aplicar estilo G1/Metrópoles
         if (aplicarEstiloG1 && materia.conteudoHTML) {
           console.log('   🔄 Aplicando estilo G1/Metrópoles...');
@@ -4405,9 +4413,9 @@ RESPONDA EM JSON:
             console.log('   ⚠️ Não foi possível aplicar estilo G1, mantendo original');
           }
         }
-        
+
         materias.push(materia);
-        
+
       } catch (materiaError) {
         console.error(`   ❌ Erro ao gerar matéria ${i + 1}:`, materiaError.message);
         // Continua para a próxima pauta
