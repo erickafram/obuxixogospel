@@ -1745,6 +1745,26 @@ function convertToAMP(html) {
   // 12. Remover classes específicas do Instagram
   ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
 
+  // 12.1. Remover classes "internal-link" e similares que podem causar problemas
+  ampHtml = ampHtml.replace(/\s*class="internal-link[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*class="external-link[^"]*"/gi, '');
+  
+  // 12.2. Remover classes vazias (class="")
+  ampHtml = ampHtml.replace(/\s*class=""\s*/gi, ' ');
+  ampHtml = ampHtml.replace(/\s*class=''\s*/gi, ' ');
+
+  // 12.3. Remover atributo title de links (pode causar problemas em AMP)
+  ampHtml = ampHtml.replace(/(<a[^>]*)\s+title="[^"]*"([^>]*>)/gi, '$1$2');
+  ampHtml = ampHtml.replace(/(<a[^>]*)\s+title='[^']*'([^>]*>)/gi, '$1$2');
+
+  // 12.4. Limpar links - manter apenas href
+  ampHtml = ampHtml.replace(/<a\s+([^>]*)>/gi, (match, attrs) => {
+    // Extrair apenas href
+    const hrefMatch = attrs.match(/href="([^"]*)"/i);
+    if (!hrefMatch) return match; // Se não tem href, manter original
+    return `<a href="${hrefMatch[1]}">`;
+  });
+
   // 13. Remover tags <form> (não permitidas em AMP sem amp-form)
   ampHtml = ampHtml.replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '');
 
