@@ -1642,53 +1642,134 @@ function convertToAMP(html) {
 
   let ampHtml = html;
 
-  // Remover scripts primeiro (incluindo Instagram embed scripts)
+  // 1. Remover scripts primeiro (incluindo Instagram embed scripts)
   ampHtml = ampHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 
-  // Remover blockquotes do Instagram (ficam duplicados com iframe)
-  ampHtml = ampHtml.replace(/<blockquote[^>]*class="instagram-media"[^>]*>.*?<\/blockquote>/gi, '');
+  // 2. Remover blockquotes do Instagram (ficam duplicados com iframe)
+  ampHtml = ampHtml.replace(/<blockquote[^>]*class="instagram-media"[^>]*>[\s\S]*?<\/blockquote>/gi, '');
 
-  // Converter Instagram iframes para amp-instagram
-  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?instagram\.com\/p\/([^/]+)\/embed[^"]*"[^>]*><\/iframe>/gi, (match, postId) => {
+  // 3. Converter Instagram iframes para amp-instagram
+  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/([^/]+)\/embed[^"]*"[^>]*>[\s\S]*?<\/iframe>/gi, (match, postId) => {
     return `<amp-instagram data-shortcode="${postId}" layout="responsive" width="400" height="500"></amp-instagram>`;
   });
 
-  // Converter YouTube iframes para amp-youtube
-  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?youtube\.com\/embed\/([^"?]+)[^"]*"[^>]*><\/iframe>/gi, (match, videoId) => {
+  // 4. Converter YouTube iframes para amp-youtube
+  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?youtube\.com\/embed\/([^"?]+)[^"]*"[^>]*>[\s\S]*?<\/iframe>/gi, (match, videoId) => {
     return `<amp-youtube data-videoid="${videoId}" layout="responsive" width="680" height="400"></amp-youtube>`;
   });
 
-  // Converter <img> para <amp-img>
-  ampHtml = ampHtml.replace(/<img([^>]*)src="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
-    // Extrair width e height se existirem
-    const widthMatch = match.match(/width="?(\d+)"?/i);
-    const heightMatch = match.match(/height="?(\d+)"?/i);
+  // 5. Converter YouTube shorts
+  ampHtml = ampHtml.replace(/<iframe[^>]*src="https?:\/\/(?:www\.)?youtube\.com\/shorts\/([^"?]+)[^"]*"[^>]*>[\s\S]*?<\/iframe>/gi, (match, videoId) => {
+    return `<amp-youtube data-videoid="${videoId}" layout="responsive" width="680" height="400"></amp-youtube>`;
+  });
+
+  // 6. Converter <img> para <amp-img> (com limpeza de atributos)
+  ampHtml = ampHtml.replace(/<img\s+([^>]*)>/gi, (match, attrs) => {
+    // Extrair src
+    const srcMatch = attrs.match(/src="([^"]*)"/i);
+    if (!srcMatch) return ''; // Sem src, remover img
+    const src = srcMatch[1];
+
+    // Extrair alt
+    const altMatch = attrs.match(/alt="([^"]*)"/i);
+    const alt = altMatch ? altMatch[1] : '';
+
+    // Extrair width e height
+    const widthMatch = attrs.match(/width="?(\d+)"?/i);
+    const heightMatch = attrs.match(/height="?(\d+)"?/i);
     const width = widthMatch ? widthMatch[1] : '680';
     const height = heightMatch ? heightMatch[1] : '400';
 
-    return `<amp-img${before}src="${src}"${after} layout="responsive" width="${width}" height="${height}"></amp-img>`;
+    return `<amp-img src="${src}" alt="${alt}" layout="responsive" width="${width}" height="${height}"></amp-img>`;
   });
 
-  // Converter outros iframes para amp-iframe (genérico)
-  ampHtml = ampHtml.replace(/<iframe([^>]*)src="([^"]*)"([^>]*)><\/iframe>/gi, (match, before, src, after) => {
-    // Extrair width e height se existirem
-    const widthMatch = match.match(/width="?(\d+)"?/i);
-    const heightMatch = match.match(/height="?(\d+)"?/i);
+  // 7. Converter outros iframes para amp-iframe (genérico)
+  ampHtml = ampHtml.replace(/<iframe\s+([^>]*)>[\s\S]*?<\/iframe>/gi, (match, attrs) => {
+    // Extrair src
+    const srcMatch = attrs.match(/src="([^"]*)"/i);
+    if (!srcMatch) return ''; // Sem src, remover iframe
+    const src = srcMatch[1];
+
+    // Extrair width e height
+    const widthMatch = attrs.match(/width="?(\d+)"?/i);
+    const heightMatch = attrs.match(/height="?(\d+)"?/i);
     const width = widthMatch ? widthMatch[1] : '680';
     const height = heightMatch ? heightMatch[1] : '400';
 
     return `<amp-iframe src="${src}" layout="responsive" width="${width}" height="${height}" sandbox="allow-scripts allow-same-origin" frameborder="0"><amp-img layout="fill" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" placeholder></amp-img></amp-iframe>`;
   });
 
-  // Remover estilos inline
-  ampHtml = ampHtml.replace(/\s*style="[^"]*"/gi, '');
+  // 8. Remover TODOS os estilos inline (style="...")
+  ampHtml = ampHtml.replace(/\s*style\s*=\s*"[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*style\s*=\s*'[^']*'/gi, '');
 
-  // Remover atributos não permitidos em AMP
-  ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
+  // 9. Remover atributos de eventos JavaScript (onclick, onload, etc.)
+  ampHtml = ampHtml.replace(/\s*on\w+\s*=\s*"[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*on\w+\s*=\s*'[^']*'/gi, '');
+
+  // 10. Remover atributos não permitidos em AMP
+  const atributosProibidos = [
+    'allowtransparency',
+    'allowfullscreen',
+    'scrolling',
+    'frameborder',
+    'marginwidth',
+    'marginheight',
+    'vspace',
+    'hspace',
+    'border',
+    'align',
+    'valign',
+    'bgcolor',
+    'background',
+    'cellpadding',
+    'cellspacing',
+    'nowrap',
+    'noshade',
+    'clear',
+    'target', // target="_blank" não é permitido em alguns contextos
+    'rel' // rel pode ter valores não permitidos
+  ];
+
+  atributosProibidos.forEach(attr => {
+    const regex = new RegExp(`\\s*${attr}\\s*=\\s*["'][^"']*["']`, 'gi');
+    ampHtml = ampHtml.replace(regex, '');
+    // Também remover sem aspas
+    const regexSemAspas = new RegExp(`\\s*${attr}\\s*=\\s*\\S+`, 'gi');
+    ampHtml = ampHtml.replace(regexSemAspas, '');
+  });
+
+  // 11. Remover atributos data-instgrm-* do Instagram
   ampHtml = ampHtml.replace(/\s*data-instgrm-[^=]*="[^"]*"/gi, '');
-  ampHtml = ampHtml.replace(/\s*allowtransparency="[^"]*"/gi, '');
-  ampHtml = ampHtml.replace(/\s*allowfullscreen="[^"]*"/gi, '');
-  ampHtml = ampHtml.replace(/\s*scrolling="[^"]*"/gi, '');
+
+  // 12. Remover classes específicas do Instagram
+  ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
+
+  // 13. Remover tags <form> (não permitidas em AMP sem amp-form)
+  ampHtml = ampHtml.replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '');
+
+  // 14. Remover tags <input>, <select>, <textarea> soltas
+  ampHtml = ampHtml.replace(/<input[^>]*>/gi, '');
+  ampHtml = ampHtml.replace(/<select[^>]*>[\s\S]*?<\/select>/gi, '');
+  ampHtml = ampHtml.replace(/<textarea[^>]*>[\s\S]*?<\/textarea>/gi, '');
+
+  // 15. Remover tags <object>, <embed>, <applet>
+  ampHtml = ampHtml.replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '');
+  ampHtml = ampHtml.replace(/<embed[^>]*>/gi, '');
+  ampHtml = ampHtml.replace(/<applet[^>]*>[\s\S]*?<\/applet>/gi, '');
+
+  // 16. Remover tags <base>, <frame>, <frameset>
+  ampHtml = ampHtml.replace(/<base[^>]*>/gi, '');
+  ampHtml = ampHtml.replace(/<frame[^>]*>/gi, '');
+  ampHtml = ampHtml.replace(/<frameset[^>]*>[\s\S]*?<\/frameset>/gi, '');
+
+  // 17. Remover atributos xml:* e xmlns:*
+  ampHtml = ampHtml.replace(/\s*xml:\w+\s*=\s*"[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*xmlns:\w+\s*=\s*"[^"]*"/gi, '');
+
+  // 18. Limpar espaços extras
+  ampHtml = ampHtml.replace(/\s+>/g, '>');
+  ampHtml = ampHtml.replace(/<\s+/g, '<');
 
   return ampHtml;
 }
