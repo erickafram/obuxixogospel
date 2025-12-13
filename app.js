@@ -2738,7 +2738,7 @@ app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (
         publicado: true
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 4
+      limit: 6
     });
 
     // Carregar categorias para o menu
@@ -2837,7 +2837,7 @@ app.get('/:categorySlug/:articleSlug', CacheService.middleware(300), async (req,
         publicado: true
       },
       order: [['dataPublicacao', 'DESC']],
-      limit: 4
+      limit: 6
     });
 
     // Verificar se AMP está habilitado
