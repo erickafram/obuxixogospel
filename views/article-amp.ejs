@@ -28,7 +28,7 @@
     <!-- Open Graph -->
     <meta property="og:title" content="<%= article.titulo %>">
     <meta property="og:description" content="<%= article.descricao %>">
-    <meta property="og:image" content="<%= article.imagem %>">
+    <meta property="og:image" content="<%= article.imagem.startsWith('http') ? article.imagem : siteUrl + article.imagem %>">
     <meta property="og:type" content="article">
     <meta property="og:url" content="<%= siteUrl %>/<%= categoryRoute %>/<%= article.urlAmigavel %>">
 
@@ -36,7 +36,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<%= article.titulo %>">
     <meta name="twitter:description" content="<%= article.descricao %>">
-    <meta name="twitter:image" content="<%= article.imagem %>">
+    <meta name="twitter:image" content="<%= article.imagem.startsWith('http') ? article.imagem : siteUrl + article.imagem %>">
 
     <!-- Schema.org -->
     <script type="application/ld+json">
@@ -51,7 +51,7 @@
         "description": "<%= article.descricao %>",
         "image": {
             "@type": "ImageObject",
-            "url": "<%= article.imagem %>",
+            "url": "<%= article.imagem.startsWith('http') ? article.imagem : siteUrl + article.imagem %>",
             "width": 1200,
             "height": 630
         },
@@ -766,7 +766,7 @@
 
         <% if (article.imagem) { %>
             <div class="article-image">
-                <amp-img src="<%= article.imagem %>" alt="<%= article.titulo %>" layout="fill">
+                <amp-img src="<%= article.imagem.startsWith('http') ? article.imagem : siteUrl + article.imagem %>" alt="<%= article.titulo %>" layout="fill">
                 </amp-img>
             </div>
             <% } %>
@@ -805,7 +805,7 @@
                                     href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>">
                                     <% if (item.imagem) { %>
                                         <div class="related-image">
-                                            <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" layout="fill">
+                                            <amp-img src="<%= item.imagem.startsWith('http') ? item.imagem : siteUrl + item.imagem %>" alt="<%= item.titulo %>" layout="fill">
                                             </amp-img>
                                             <div class="category-overlay">
                                                 <%= categoryName %>

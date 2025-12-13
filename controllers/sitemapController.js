@@ -30,9 +30,10 @@ exports.generateSitemap = async (req, res) => {
 
     console.log(`📄 Encontrados ${articles.length} artigos, ${categories.length} categorias e ${pages.length} páginas`);
 
-    // Gerar XML do sitemap
+    // Gerar XML do sitemap com suporte a imagens
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
     // Página inicial
     xml += '  <url>\n';
@@ -83,6 +84,16 @@ exports.generateSitemap = async (req, res) => {
         xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.7</priority>\n';
+        
+        // Adicionar imagem do artigo (recomendado pelo Google)
+        if (article.imagem) {
+          const imageUrl = article.imagem.startsWith('http') ? article.imagem : baseUrl + article.imagem;
+          xml += '    <image:image>\n';
+          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
+          xml += `      <image:title>${escapeXml(article.titulo)}</image:title>\n`;
+          xml += '    </image:image>\n';
+        }
+        
         xml += '  </url>\n';
       }
     });
