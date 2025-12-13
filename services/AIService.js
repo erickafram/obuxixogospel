@@ -631,17 +631,270 @@ ${temInfoInternet ? '\n⚠️ USE AS INFORMAÇÕES DA INTERNET FORNECIDAS COMO B
       const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
 
       const feed = await parser.parseURL(url);
-      const noticias = feed.items.slice(0, 5).map(item => ({
+      const noticias = feed.items.slice(0, 8).map(item => ({
         titulo: item.title,
         descricao: item.contentSnippet || item.content,
         link: item.link,
-        data: item.pubDate
+        data: item.pubDate,
+        fonte: 'Google News'
       }));
 
       return noticias;
     } catch (error) {
-      console.error('Erro ao buscar notícias:', error.message);
+      console.error('Erro ao buscar notícias Google News:', error.message);
       return [];
+    }
+  }
+
+  /**
+   * Busca notícias usando Bing News RSS
+   */
+  static async buscarNoticiasBing(query) {
+    try {
+      const parser = new Parser();
+      // Bing News RSS Feed
+      const url = `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&mkt=pt-BR`;
+
+      const feed = await parser.parseURL(url);
+      const noticias = feed.items.slice(0, 8).map(item => ({
+        titulo: item.title,
+        descricao: item.contentSnippet || item.content || item.description,
+        link: item.link,
+        data: item.pubDate,
+        fonte: 'Bing News'
+      }));
+
+      console.log(`✅ Bing News: ${noticias.length} resultados para "${query.substring(0, 50)}..."`);
+      return noticias;
+    } catch (error) {
+      console.error('Erro ao buscar notícias Bing:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Busca em RSS feeds específicos de sites de notícias brasileiros
+   */
+  static async buscarRSSEspecificos(query) {
+    const parser = new Parser({
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    // Lista de RSS feeds de sites de notícias brasileiros
+    const rssFeeds = [
+      { nome: 'G1', url: 'https://g1.globo.com/rss/g1/' },
+      { nome: 'UOL', url: 'https://rss.uol.com.br/feed/noticias.xml' },
+      { nome: 'Folha', url: 'https://feeds.folha.uol.com.br/emcimadahora/rss091.xml' },
+      { nome: 'R7', url: 'https://noticias.r7.com/feed.xml' },
+      { nome: 'Terra', url: 'https://www.terra.com.br/rss/controller.htm?path=/noticias/' },
+      { nome: 'Gospel Prime', url: 'https://www.gospelprime.com.br/feed/' },
+      { nome: 'Gospel Mais', url: 'https://nfrfrfr.gospelmais.com.br/feed/' },
+      { nome: 'Pleno News', url: 'https://pleno.news/feed/' }
+    ];
+
+    const todasNoticias = [];
+    const queryLower = query.toLowerCase();
+    const palavrasChave = queryLower.split(/\s+/).filter(p => p.length > 3);
+
+    console.log(`🔍 Buscando em ${rssFeeds.length} RSS feeds...`);
+
+    // Buscar em paralelo com Promise.allSettled para não falhar se um feed der erro
+    const resultados = await Promise.allSettled(
+      rssFeeds.map(async (feed) => {
+        try {
+          const resultado = await parser.parseURL(feed.url);
+          
+          // Filtrar notícias que contenham palavras-chave da query
+          const noticiasRelevantes = resultado.items
+            .filter(item => {
+              const texto = `${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`.toLowerCase();
+              // Verificar se pelo menos 2 palavras-chave estão presentes
+              const matches = palavrasChave.filter(p => texto.includes(p));
+              return matches.length >= Math.min(2, palavrasChave.length);
+            })
+            .slice(0, 3)
+            .map(item => ({
+              titulo: item.title,
+              descricao: item.contentSnippet || item.content,
+              link: item.link,
+              data: item.pubDate,
+              fonte: feed.nome
+            }));
+
+          return noticiasRelevantes;
+        } catch (error) {
+          console.log(`⚠️ RSS ${feed.nome} falhou: ${error.message}`);
+          return [];
+        }
+      })
+    );
+
+    // Coletar resultados bem-sucedidos
+    resultados.forEach(resultado => {
+      if (resultado.status === 'fulfilled' && resultado.value.length > 0) {
+        todasNoticias.push(...resultado.value);
+      }
+    });
+
+    console.log(`✅ RSS Específicos: ${todasNoticias.length} notícias relevantes encontradas`);
+    return todasNoticias;
+  }
+
+  /**
+   * Busca notícias em sites específicos via scraping
+   */
+  static async buscarEmSitesEspecificos(query) {
+    const resultados = [];
+    const sites = [
+      {
+        nome: 'G1',
+        url: `https://g1.globo.com/busca/?q=${encodeURIComponent(query)}`,
+        seletor: '.widget--info__title',
+        seletorDesc: '.widget--info__description'
+      },
+      {
+        nome: 'UOL',
+        url: `https://busca.uol.com.br/result.html?q=${encodeURIComponent(query)}`,
+        seletor: '.results-title',
+        seletorDesc: '.results-description'
+      }
+    ];
+
+    console.log(`🔍 Buscando em ${sites.length} sites específicos...`);
+
+    for (const site of sites) {
+      try {
+        const response = await axios.get(site.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          },
+          timeout: 10000
+        });
+
+        const $ = cheerio.load(response.data);
+        
+        $(site.seletor).slice(0, 3).each((i, elem) => {
+          const titulo = $(elem).text().trim();
+          const link = $(elem).closest('a').attr('href') || $(elem).find('a').attr('href');
+          const descricao = $(elem).parent().find(site.seletorDesc).text().trim();
+
+          if (titulo && titulo.length > 10) {
+            resultados.push({
+              titulo,
+              descricao: descricao || '',
+              link: link || '',
+              fonte: site.nome
+            });
+          }
+        });
+
+        console.log(`✅ ${site.nome}: encontradas notícias`);
+      } catch (error) {
+        console.log(`⚠️ ${site.nome} falhou: ${error.message}`);
+      }
+    }
+
+    console.log(`✅ Sites Específicos: ${resultados.length} resultados`);
+    return resultados;
+  }
+
+  /**
+   * Método principal de pesquisa que agrega todas as fontes
+   * @param {string} query - Termo de busca
+   * @param {boolean} incluirRSS - Se deve incluir RSS feeds específicos
+   * @param {boolean} incluirSites - Se deve incluir scraping de sites
+   */
+  static async pesquisarTodasFontes(query, incluirRSS = true, incluirSites = false) {
+    console.log('🌐 INICIANDO PESQUISA EM MÚLTIPLAS FONTES...');
+    console.log(`📝 Query: "${query.substring(0, 100)}..."`);
+
+    const todasNoticias = [];
+    const fontesUsadas = [];
+
+    try {
+      // 1. Google News (principal)
+      console.log('📰 1/4 - Buscando no Google News...');
+      const googleNews = await this.buscarNoticiasAtuais(query);
+      if (googleNews.length > 0) {
+        todasNoticias.push(...googleNews);
+        fontesUsadas.push(`Google News (${googleNews.length})`);
+      }
+
+      // 2. Bing News
+      console.log('📰 2/4 - Buscando no Bing News...');
+      const bingNews = await this.buscarNoticiasBing(query);
+      if (bingNews.length > 0) {
+        todasNoticias.push(...bingNews);
+        fontesUsadas.push(`Bing News (${bingNews.length})`);
+      }
+
+      // 3. DuckDuckGo
+      console.log('🔎 3/4 - Buscando no DuckDuckGo...');
+      const duckResults = await this.pesquisarInternet(query);
+      if (duckResults.length > 0) {
+        // Converter formato DuckDuckGo para formato padrão
+        const duckNoticias = duckResults.map(r => ({
+          titulo: r.titulo,
+          descricao: r.snippet,
+          fonte: 'DuckDuckGo'
+        }));
+        todasNoticias.push(...duckNoticias);
+        fontesUsadas.push(`DuckDuckGo (${duckNoticias.length})`);
+      }
+
+      // 4. RSS Feeds específicos (opcional, mais lento)
+      if (incluirRSS) {
+        console.log('📡 4/4 - Buscando em RSS feeds específicos...');
+        const rssResults = await this.buscarRSSEspecificos(query);
+        if (rssResults.length > 0) {
+          todasNoticias.push(...rssResults);
+          fontesUsadas.push(`RSS Feeds (${rssResults.length})`);
+        }
+      }
+
+      // 5. Sites específicos via scraping (opcional, mais lento)
+      if (incluirSites) {
+        console.log('🌐 5/5 - Buscando em sites específicos...');
+        const sitesResults = await this.buscarEmSitesEspecificos(query);
+        if (sitesResults.length > 0) {
+          todasNoticias.push(...sitesResults);
+          fontesUsadas.push(`Sites (${sitesResults.length})`);
+        }
+      }
+
+      // Remover duplicatas baseado no título
+      const titulosVistos = new Set();
+      const noticiasUnicas = todasNoticias.filter(n => {
+        const tituloNormalizado = n.titulo?.toLowerCase().trim();
+        if (!tituloNormalizado || titulosVistos.has(tituloNormalizado)) {
+          return false;
+        }
+        titulosVistos.add(tituloNormalizado);
+        return true;
+      });
+
+      console.log('═══════════════════════════════════════════');
+      console.log(`✅ PESQUISA CONCLUÍDA`);
+      console.log(`📊 Total de fontes: ${fontesUsadas.length}`);
+      console.log(`📰 Total de notícias: ${noticiasUnicas.length} (${todasNoticias.length} antes de remover duplicatas)`);
+      console.log(`📋 Fontes: ${fontesUsadas.join(', ')}`);
+      console.log('═══════════════════════════════════════════');
+
+      return {
+        noticias: noticiasUnicas,
+        fontes: fontesUsadas,
+        total: noticiasUnicas.length
+      };
+    } catch (error) {
+      console.error('❌ Erro na pesquisa múltipla:', error.message);
+      return {
+        noticias: todasNoticias,
+        fontes: fontesUsadas,
+        total: todasNoticias.length
+      };
     }
   }
 
@@ -1885,39 +2138,44 @@ Retorne APENAS um objeto JSON válido:
       console.log('🔍 Query de pesquisa:', queryPesquisa.substring(0, 100) + '...');
 
       try {
-        // 1. Buscar notícias atuais do Google News (mais recentes e relevantes)
-        console.log('📰 Buscando notícias no Google News...');
-        const noticias = await this.buscarNoticiasAtuais(queryPesquisa);
-        if (noticias.length > 0) {
-          informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS ATUAIS (Google News) - USE ESTAS INFORMAÇÕES:\n';
-          noticias.forEach((n, i) => {
-            informacoesPesquisaInternet += `\n${i + 1}. ${n.titulo}`;
-            if (n.descricao) informacoesPesquisaInternet += `\n   Resumo: ${n.descricao}`;
-            if (n.data) informacoesPesquisaInternet += `\n   Data: ${n.data}`;
-            informacoesPesquisaInternet += '\n';
+        // 🚀 USAR NOVO MÉTODO QUE AGREGA MÚLTIPLAS FONTES
+        console.log('🌐 Iniciando pesquisa em MÚLTIPLAS FONTES...');
+        const resultadoPesquisa = await this.pesquisarTodasFontes(queryPesquisa, true, false);
+        
+        if (resultadoPesquisa.noticias.length > 0) {
+          informacoesPesquisaInternet += `\n\n📰 INFORMAÇÕES DE ${resultadoPesquisa.fontes.length} FONTES (${resultadoPesquisa.total} resultados) - USE TODAS ESTAS INFORMAÇÕES:\n`;
+          informacoesPesquisaInternet += `\n📋 Fontes consultadas: ${resultadoPesquisa.fontes.join(', ')}\n`;
+          
+          // Agrupar por fonte para melhor organização
+          const porFonte = {};
+          resultadoPesquisa.noticias.forEach(n => {
+            const fonte = n.fonte || 'Outras';
+            if (!porFonte[fonte]) porFonte[fonte] = [];
+            porFonte[fonte].push(n);
           });
-          console.log(`✅ Encontradas ${noticias.length} notícias no Google News`);
+          
+          // Adicionar notícias agrupadas por fonte
+          Object.entries(porFonte).forEach(([fonte, noticias]) => {
+            informacoesPesquisaInternet += `\n\n📌 ${fonte.toUpperCase()}:\n`;
+            noticias.forEach((n, i) => {
+              informacoesPesquisaInternet += `\n${i + 1}. ${n.titulo}`;
+              if (n.descricao) informacoesPesquisaInternet += `\n   Resumo: ${n.descricao.substring(0, 300)}`;
+              if (n.data) informacoesPesquisaInternet += `\n   Data: ${n.data}`;
+              informacoesPesquisaInternet += '\n';
+            });
+          });
+          
+          console.log(`✅ Total: ${resultadoPesquisa.total} notícias de ${resultadoPesquisa.fontes.length} fontes`);
         }
 
-        // 2. Buscar no DuckDuckGo para informações gerais
-        console.log('🔎 Buscando informações no DuckDuckGo...');
-        const resultadosDDG = await this.pesquisarInternet(queryPesquisa + ' gospel evangélico');
-        if (resultadosDDG.length > 0) {
-          informacoesPesquisaInternet += '\n\n📚 INFORMAÇÕES ADICIONAIS DA INTERNET:\n';
-          resultadosDDG.forEach((r, i) => {
-            informacoesPesquisaInternet += `\n${i + 1}. ${r.titulo}\n   ${r.snippet}\n`;
-          });
-          console.log(`✅ Encontradas ${resultadosDDG.length} informações no DuckDuckGo`);
-        }
-
-        // 3. Buscar notícias específicas sobre o tema (segunda pesquisa mais focada)
+        // Busca adicional específica sobre o tema (se não tem conteúdo extraído)
         if (!conteudoExtraido || conteudoExtraido.length < 100) {
           console.log('📰 Buscando notícias específicas sobre o tema...');
-          const noticiasTema = await this.buscarNoticiasAtuais(tema + ' últimas notícias');
+          const noticiasTema = await this.buscarNoticiasAtuais(tema + ' últimas notícias 2024 2025');
           if (noticiasTema.length > 0) {
             informacoesPesquisaInternet += '\n\n📰 NOTÍCIAS ESPECÍFICAS SOBRE O TEMA:\n';
             noticiasTema.forEach((n, i) => {
-              if (!informacoesPesquisaInternet.includes(n.titulo)) { // Evitar duplicatas
+              if (!informacoesPesquisaInternet.includes(n.titulo)) {
                 informacoesPesquisaInternet += `\n${i + 1}. ${n.titulo}`;
                 if (n.descricao) informacoesPesquisaInternet += `\n   ${n.descricao}`;
                 informacoesPesquisaInternet += '\n';
