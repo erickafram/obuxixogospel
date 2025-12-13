@@ -10,7 +10,7 @@ exports.generateSitemap = async (req, res) => {
     // Buscar todos os artigos publicados E com data de publicação no passado (não agendados)
     const agora = new Date();
     const articles = await Article.findAll({
-      where: { 
+      where: {
         publicado: true,
         dataPublicacao: { [Op.lte]: agora } // Exclui matérias agendadas
       },
@@ -147,9 +147,7 @@ exports.generateNewsSitemap = async (req, res) => {
         xml += `      <news:title>${escapeXml(article.titulo)}</news:title>\n`;
 
         // Adicionar keywords se houver
-        if (article.tags) {
-          xml += `      <news:keywords>${escapeXml(article.tags)}</news:keywords>\n`;
-        }
+
 
         xml += '    </news:news>\n';
         xml += '  </url>\n';
@@ -186,7 +184,7 @@ exports.generateRobotsTxt = (req, res) => {
   const robotsTxt = `User-agent: *
 Allow: /
 
-# Bloquear conteúdo antigo (2019-2024)
+# Bloquear conteúdo antigo (2019-2024 - Ajuste conforme necessário)
 Disallow: /2017/
 Disallow: /2018/
 Disallow: /2019/
@@ -195,7 +193,7 @@ Disallow: /2021/
 Disallow: /2022/
 Disallow: /2023/
 Disallow: /2024/
-Disallow: /2025/
+# Disallow: /2025/ - REMOVIDO para permitir indexação do ano corrente
 
 # Disallow admin areas
 Disallow: /dashboard/

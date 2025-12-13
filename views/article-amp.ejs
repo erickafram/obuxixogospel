@@ -55,21 +55,26 @@
             "width": 1200,
             "height": 630
         },
-        "datePublished": "<%= article.dataPublicacao %>",
+        "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
         "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "author": {
             "@type": "Person",
             "name": "<%= article.autor %>",
-            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\\s+/g, '-') %>"
+            "url": "<%= siteUrl %>/autor/<%= article.autor.toLowerCase().replace(/\s+/g, '-') %>"
         },
         "publisher": {
             "@type": "Organization",
             "name": "Obuxixo Gospel",
+            "url": "<%= siteUrl %>",
             "logo": {
                 "@type": "ImageObject",
-                "url": "<%= siteUrl %>/images/logo.png"
+                "url": "<%= siteUrl %>/images/logo.png",
+                "width": 600,
+                "height": 60
             }
-        }
+        },
+        "isAccessibleForFree": true,
+        "inLanguage": "pt-BR"
     }
     </script>
 
@@ -265,19 +270,25 @@
         }
 
         @keyframes bellGlow {
-            0%, 100% { 
+
+            0%,
+            100% {
                 box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
             }
-            50% { 
+
+            50% {
                 box-shadow: 0 4px 16px rgba(255, 107, 53, 0.5);
             }
         }
 
         @keyframes pulse {
-            0%, 100% { 
+
+            0%,
+            100% {
                 transform: scale(1);
             }
-            50% { 
+
+            50% {
                 transform: scale(1.1);
             }
         }
@@ -714,15 +725,18 @@
         <div class="header-content">
             <button class="menu-btn" on="tap:sidebar.toggle">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </button>
             <a href="<%= siteUrl %>" class="logo">Obuxixo Gospel</a>
             <a href="<%= siteUrl %>" class="news-bell" title="Ver últimas notícias">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C10.9 2 10 2.9 10 4V4.29C7.03 5.17 5 7.9 5 11V17L3 19V20H21V19L19 17V11C19 7.9 16.97 5.17 14 4.29V4C14 2.9 13.1 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
+                    <path
+                        d="M12 2C10.9 2 10 2.9 10 4V4.29C7.03 5.17 5 7.9 5 11V17L3 19V20H21V19L19 17V11C19 7.9 16.97 5.17 14 4.29V4C14 2.9 13.1 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z" />
                 </svg>
-                <span class="bell-badge"><%= typeof ultimasNoticias !== 'undefined' ? ultimasNoticias.length : 5 %></span>
+                <span class="bell-badge">
+                    <%= typeof ultimasNoticias !=='undefined' ? ultimasNoticias.length : 5 %>
+                </span>
             </a>
             <span class="amp-badge">⚡ AMP</span>
         </div>
@@ -757,59 +771,60 @@
             </div>
             <% } %>
 
-            <!-- Social Share Above Article -->
-            <div class="social-share social-share-top">
-                <h3>Compartilhe esta notícia</h3>
-                <div class="share-buttons">
-                    <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
-                    <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
-                    <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
-                </div>
-            </div>
-
-            <div class="article-content">
-                <%- article.conteudo %>
-            </div>
-
-            <!-- Social Share -->
-            <div class="social-share">
-                <h3>Compartilhe esta notícia</h3>
-                <div class="share-buttons">
-                    <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
-                    <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
-                    <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
-                </div>
-            </div>
-
-            <!-- Related Articles -->
-            <% if (typeof related !=='undefined' && related && related.length> 0) { %>
-                <div class="related-section">
-                    <h2 class="related-title">📰 Notícias Relacionadas</h2>
-                    <div class="related-grid">
-                        <% related.forEach(item=> { %>
-                            <a class="related-item" href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>">
-                                <% if (item.imagem) { %>
-                                    <div class="related-image">
-                                        <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" layout="fill">
-                                        </amp-img>
-                                        <div class="category-overlay">
-                                            <%= categoryName %>
-                                        </div>
-                                    </div>
-                                    <% } %>
-                                        <div class="related-content">
-                                            <h3 class="related-item-title">
-                                                <%= item.titulo %>
-                                            </h3>
-                                            <div class="related-meta">
-                                                📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
-                                            </div>
-                                        </div>
-                            </a>
-                            <% }); %>
+                <!-- Social Share Above Article -->
+                <div class="social-share social-share-top">
+                    <h3>Compartilhe esta notícia</h3>
+                    <div class="share-buttons">
+                        <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
                     </div>
                 </div>
-                <% } %>
+
+                <div class="article-content">
+                    <%- article.conteudo %>
+                </div>
+
+                <!-- Social Share -->
+                <div class="social-share">
+                    <h3>Compartilhe esta notícia</h3>
+                    <div class="share-buttons">
+                        <amp-social-share type="whatsapp" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="facebook" width="48" height="48"></amp-social-share>
+                        <amp-social-share type="twitter" width="48" height="48"></amp-social-share>
+                    </div>
+                </div>
+
+                <!-- Related Articles -->
+                <% if (typeof related !=='undefined' && related && related.length> 0) { %>
+                    <div class="related-section">
+                        <h2 class="related-title">📰 Notícias Relacionadas</h2>
+                        <div class="related-grid">
+                            <% related.forEach(item=> { %>
+                                <a class="related-item"
+                                    href="<%= siteUrl %>/<%= categoryRoute %>/<%= item.urlAmigavel %>">
+                                    <% if (item.imagem) { %>
+                                        <div class="related-image">
+                                            <amp-img src="<%= item.imagem %>" alt="<%= item.titulo %>" layout="fill">
+                                            </amp-img>
+                                            <div class="category-overlay">
+                                                <%= categoryName %>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                                            <div class="related-content">
+                                                <h3 class="related-item-title">
+                                                    <%= item.titulo %>
+                                                </h3>
+                                                <div class="related-meta">
+                                                    📅 <%= new Date(item.dataPublicacao).toLocaleDateString('pt-BR') %>
+                                                </div>
+                                            </div>
+                                </a>
+                                <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
     </div>
 
     <!-- Footer -->
