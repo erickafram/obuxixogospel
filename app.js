@@ -1745,9 +1745,34 @@ function convertToAMP(html) {
   // 12. Remover classes específicas do Instagram
   ampHtml = ampHtml.replace(/\s*class="[^"]*instagram[^"]*"/gi, '');
 
-  // 12.1. Remover classes "internal-link" e similares que podem causar problemas
+  // 12.1. LIMPEZA AGRESSIVA DE LINKS - Remover TODOS os atributos exceto href
+  // Isso corrige atributos malformados como: class="internal-link target=" _blank""
+  ampHtml = ampHtml.replace(/<a\s+([^>]*)>/gi, (match, attrs) => {
+    // Extrair apenas o href
+    const hrefMatch = attrs.match(/href\s*=\s*["']([^"']*)["']/i);
+    if (!hrefMatch) {
+      // Se não tem href, tentar extrair de atributo malformado
+      const hrefAlt = attrs.match(/href\s*=\s*([^\s>]+)/i);
+      if (hrefAlt) {
+        return `<a href="${hrefAlt[1].replace(/["']/g, '')}">`;
+      }
+      return match; // Manter original se não encontrar href
+    }
+    return `<a href="${hrefMatch[1]}">`;
+  });
+
+  // 12.2. Remover classes "internal-link" e similares (backup caso o 12.1 não pegue tudo)
   ampHtml = ampHtml.replace(/\s*class="internal-link[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*class="external-link[^"]*"/gi, '');
+  
+  // 12.3. Remover atributos title de qualquer tag
+  ampHtml = ampHtml.replace(/\s*title\s*=\s*"[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*title\s*=\s*'[^']*'/gi, '');
+  
+  // 12.4. Remover classes vazias e malformadas
+  ampHtml = ampHtml.replace(/\s*class\s*=\s*""\s*/gi, ' ');
+  ampHtml = ampHtml.replace(/\s*class\s*=\s*''\s*/gi, ' ');
+  ampHtml = ampHtml.replace(/\s*class\s*=\s*"[^"]*target[^"]*"/gi, ''); // class com target dentro (malformado)
   
   // 12.2. Remover classes vazias (class="")
   ampHtml = ampHtml.replace(/\s*class=""\s*/gi, ' ');
