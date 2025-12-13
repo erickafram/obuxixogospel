@@ -2026,13 +2026,13 @@ app.get('/busca', async (req, res) => {
 // Criar matéria com IA
 app.post('/api/ia/criar-materia', async (req, res) => {
   try {
-    const { tema, categoria, palavrasChave, pesquisarInternet, links } = req.body;
+    const { tema, categoria, palavrasChave, pesquisarInternet, links, tipoMateria } = req.body;
 
     if (!tema) {
       return res.status(400).json({ error: 'Tema é obrigatório' });
     }
 
-    const materia = await AIService.criarMateria(tema, categoria, palavrasChave, pesquisarInternet, links);
+    const materia = await AIService.criarMateria(tema, categoria, palavrasChave, pesquisarInternet, links, tipoMateria);
     res.json({ success: true, materia });
   } catch (error) {
     console.error('Erro ao criar matéria com IA:', error);

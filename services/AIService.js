@@ -23,6 +23,96 @@ class AIService {
   }
 
   /**
+   * Retorna o prompt especializado baseado no tipo de matéria
+   * @param {string} tipoMateria - 'padrao', 'investigativa', 'perfil', 'polemica'
+   * @param {string} tema - O tema/assunto da matéria
+   * @param {boolean} temInfoInternet - Se tem informações da internet disponíveis
+   */
+  static getPromptEspecializado(tipoMateria, tema, temInfoInternet = false) {
+    const dataAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    
+    const prompts = {
+      // 🔥 MATÉRIA INVESTIGATIVA COM FURO
+      'investigativa': `Você é um jornalista investigativo experiente, especializado em religião, política e bastidores do poder.
+
+Crie uma matéria jornalística original, profunda e inédita, com potencial de furo de reportagem, sobre o seguinte tema:
+${tema}
+
+Regras obrigatórias:
+- NÃO invente fatos.
+- Use apenas informações plausíveis, baseadas em padrões reais, bastidores conhecidos e fatos públicos.
+- Quando algo não puder ser confirmado, deixe claro como QUESTIONAMENTO, INDÍCIO ou LACUNA DE INFORMAÇÃO.
+- Contextualize o tema com o cenário atual (${dataAtual}).
+- A matéria deve explicar:
+  1) Quem está envolvido
+  2) O que aconteceu
+  3) O que NÃO foi divulgado publicamente
+  4) Por que isso importa
+  5) Quais perguntas permanecem sem resposta
+- Use linguagem jornalística profissional, estilo G1/UOL/Folha.
+- Evite sensacionalismo barato, mas permita impacto e tensão narrativa.
+- Estruture com título forte, subtítulo, intertítulos e conclusão analítica.
+- Termine com um bloco chamado: "Perguntas que ainda precisam ser respondidas".
+
+A matéria deve parecer algo que ainda não foi publicado em nenhum site.
+${temInfoInternet ? '\n⚠️ USE AS INFORMAÇÕES DA INTERNET FORNECIDAS COMO BASE FACTUAL PARA A INVESTIGAÇÃO.' : ''}`,
+
+      // 🧠 PERFIL PROFUNDO (BIOGRAFIA/LEGADO)
+      'perfil': `Atue como um jornalista especializado em perfis biográficos investigativos.
+
+Escreva uma matéria inédita e aprofundada sobre:
+${tema}
+
+A abordagem deve ir além do óbvio e responder:
+- Quem foi/é essa pessoa além do que o público conhecia/conhece
+- Que influência ela exercia/exerce nos bastidores
+- Quais redes de poder, fé ou influência ela mantinha/mantém
+- O que sua ausência ou presença muda no cenário atual
+- Quais lacunas de informação existem sobre sua trajetória
+
+Regras:
+- Não inventar dados
+- Diferenciar claramente fatos confirmados de análises e hipóteses
+- Linguagem profissional, respeitosa e crítica
+- Evitar tom de homenagem; priorizar análise jornalística
+- Estrutura com título, subtítulo, blocos temáticos e conclusão
+
+Produza uma matéria exclusiva, com profundidade e relevância social.
+${temInfoInternet ? '\n⚠️ USE AS INFORMAÇÕES DA INTERNET FORNECIDAS PARA ENRIQUECER O PERFIL COM DADOS REAIS.' : ''}`,
+
+      // 💣 POLÊMICA/BASTIDORES MIDIÁTICOS
+      'polemica': `Você é um jornalista investigativo focado em mídia, religião e cultura digital.
+
+Crie uma matéria com potencial de viralização e furo de reportagem sobre:
+${tema}
+
+A matéria deve:
+- Apontar contradições entre discurso público e bastidores
+- Analisar possíveis edições, omissões ou controle de narrativa
+- Usar indícios públicos, reações nas redes e relatos como base
+- NÃO afirmar crimes ou ilegalidades sem prova
+- Tratar tudo com cuidado jurídico (uso de "segundo relatos", "há indícios", "fontes afirmam")
+
+Inclua:
+- O que foi divulgado oficialmente
+- O que estaria sendo omitido
+- Por que isso importa para o público
+- O impacto social, religioso ou cultural do caso
+
+Finalize com:
+"Por que este caso merece investigação jornalística contínua".
+
+Use tom sóbrio, evitando juízo de valor direto.
+${temInfoInternet ? '\n⚠️ USE AS INFORMAÇÕES DA INTERNET FORNECIDAS COMO BASE PARA A ANÁLISE.' : ''}`,
+
+      // 📰 MATÉRIA PADRÃO (default)
+      'padrao': null // Usa o prompt padrão existente
+    };
+
+    return prompts[tipoMateria] || null;
+  }
+
+  /**
    * Obtém as configurações da IA
    */
   static async getConfig() {
@@ -1645,13 +1735,15 @@ Retorne APENAS um objeto JSON válido:
 
   /**
    * Cria uma matéria completa baseada em um tema
+   * @param {string} tipoMateria - Tipo: 'padrao', 'investigativa', 'perfil', 'polemica'
    */
-  static async criarMateria(tema, categoria = 'Notícias', palavrasChave = '', pesquisarInternet = false, links = []) {
+  static async criarMateria(tema, categoria = 'Notícias', palavrasChave = '', pesquisarInternet = false, links = [], tipoMateria = 'padrao') {
     console.log('🎬 INÍCIO criarMateria');
     console.log('Tema:', tema.substring(0, 100));
     console.log('Categoria:', categoria);
     console.log('PesquisarInternet:', pesquisarInternet);
     console.log('Links:', links);
+    console.log('🎯 Tipo de Matéria:', tipoMateria);
 
     if (!await this.isActive()) {
       throw new Error('O assistente de IA está desativado');
@@ -1852,9 +1944,29 @@ Retorne APENAS um objeto JSON válido:
     let promptInstrucao = '';
     console.log('🔨 Construindo prompt...');
 
-    const systemRole = 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.';
+    // Verificar se tem informações da internet
+    const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
 
-    if (conteudoExtraido) {
+    // Verificar se deve usar prompt especializado
+    const promptEspecializado = this.getPromptEspecializado(tipoMateria, tema, temInfoInternet);
+    
+    let systemRole = 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.';
+
+    // Se tem prompt especializado (investigativa, perfil, polemica), usar ele
+    if (promptEspecializado && tipoMateria !== 'padrao') {
+      console.log('🎯 Usando prompt especializado:', tipoMateria);
+      
+      // Ajustar system role para tipos especializados
+      if (tipoMateria === 'investigativa') {
+        systemRole = 'Você é um jornalista investigativo experiente, especializado em religião, política e bastidores do poder. Seu trabalho é revelar o que não foi divulgado publicamente.';
+      } else if (tipoMateria === 'perfil') {
+        systemRole = 'Você é um jornalista especializado em perfis biográficos investigativos. Você vai além do óbvio para revelar quem realmente é a pessoa.';
+      } else if (tipoMateria === 'polemica') {
+        systemRole = 'Você é um jornalista investigativo focado em mídia, religião e cultura digital. Você analisa contradições e bastidores com cuidado jurídico.';
+      }
+      
+      promptInstrucao = promptEspecializado;
+    } else if (conteudoExtraido) {
       // Verificar se tem informações da internet para enriquecer
       const temInfoInternet = pesquisarInternet && informacoesPesquisaInternet && informacoesPesquisaInternet.length > 50;
 
