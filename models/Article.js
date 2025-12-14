@@ -15,10 +15,13 @@ module.exports = (sequelize, DataTypes) => {
       // Para associar com Category, seria necessário migração
     }
 
-    // Método para incrementar visualizações
+    // Método para incrementar visualizações SEM alterar updatedAt
     async incrementViews() {
-      this.visualizacoes += 1;
-      await this.save();
+      await this.constructor.increment('visualizacoes', {
+        where: { id: this.id },
+        silent: true // Não atualiza updatedAt
+      });
+      this.visualizacoes += 1; // Atualiza localmente também
     }
 
     // Método para gerar URL amigável

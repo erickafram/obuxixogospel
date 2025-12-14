@@ -40,15 +40,17 @@ exports.getAllArticles = async (req, res) => {
 // Obter notícia específica por slug
 exports.getArticleBySlug = async (req, res) => {
   try {
-    const article = await Article.findOne({ urlAmigavel: req.params.slug });
+    const article = await Article.findOne({ where: { urlAmigavel: req.params.slug } });
 
     if (!article) {
       return res.status(404).json({ success: false, message: 'Notícia não encontrada' });
     }
 
-    // Incrementar views
-    article.views += 1;
-    await article.save();
+    // Incrementar views SEM alterar updatedAt (evita reindexação desnecessária pelo Google)
+    await Article.increment('visualizacoes', { 
+      where: { id: article.id },
+      silent: true // Não atualiza updatedAt
+    });
 
     res.json({ success: true, data: article });
   } catch (error) {
