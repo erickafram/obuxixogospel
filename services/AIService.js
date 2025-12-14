@@ -3886,15 +3886,51 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
   }
 
   /**
+   * Verifica se o vídeo contém stream de áudio
+   */
+  static async verificarAudioNoVideo(videoPath) {
+    return new Promise((resolve) => {
+      ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        if (err) {
+          console.log('⚠️ Erro ao verificar streams do vídeo:', err.message);
+          resolve(false);
+          return;
+        }
+        
+        const audioStreams = metadata.streams?.filter(s => s.codec_type === 'audio') || [];
+        const hasAudio = audioStreams.length > 0;
+        
+        if (hasAudio) {
+          console.log(`✅ Vídeo contém ${audioStreams.length} stream(s) de áudio`);
+        } else {
+          console.log('⚠️ Vídeo não contém stream de áudio');
+        }
+        
+        resolve(hasAudio);
+      });
+    });
+  }
+
+  /**
    * Extrai áudio do vídeo usando ffmpeg
    */
   static async extrairAudioDoVideo(videoPath) {
+    // Primeiro verificar se o vídeo tem áudio
+    const hasAudio = await this.verificarAudioNoVideo(videoPath);
+    
+    if (!hasAudio) {
+      throw new Error('O vídeo não contém áudio para transcrição. Pode ser uma foto/imagem ou vídeo sem som.');
+    }
+    
     return new Promise((resolve, reject) => {
       const audioPath = videoPath.replace('.mp4', '.mp3');
       console.log('🔊 Extraindo áudio para:', audioPath);
 
       ffmpeg(videoPath)
         .toFormat('mp3')
+        .audioCodec('libmp3lame')
+        .audioChannels(1)
+        .audioFrequency(16000)
         .on('end', () => {
           console.log('✅ Áudio extraído com sucesso');
           resolve(audioPath);
@@ -3998,8 +4034,13 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
     try {
       // 1. Baixar vídeo
       videoPath = await this.baixarVideoInstagram(url);
+      
+      if (!videoPath) {
+        console.log('⚠️ Não foi possível baixar o vídeo');
+        return null;
+      }
 
-      // 2. Extrair áudio
+      // 2. Extrair áudio (já verifica se tem áudio)
       audioPath = await this.extrairAudioDoVideo(videoPath);
 
       // 3. Transcrever
@@ -4013,6 +4054,13 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
     } catch (error) {
       // Limpar arquivos em caso de erro
       this.limparArquivosTemporarios(videoPath, audioPath);
+
+      // Se o erro é sobre falta de áudio, retornar null em vez de lançar exceção
+      if (error.message.includes('não contém áudio') || 
+          error.message.includes('does not contain any stream')) {
+        console.log('⚠️ Vídeo sem áudio - continuando sem transcrição');
+        return null;
+      }
 
       console.error('❌ Erro ao processar vídeo:', error.message);
       throw error;
