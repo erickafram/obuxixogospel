@@ -3747,9 +3747,22 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
       }
 
-      // Método 4: yt-dlp (Último recurso - mais robusto)
+      // Método 4: yt-dlp download direto (com merge de áudio+vídeo)
       try {
-        console.log('🔄 Tentando método 4: yt-dlp');
+        console.log('🔄 Tentando método 4: yt-dlp (download direto com áudio)');
+        const downloaded = await this.baixarVideoComYtDlp(url, videoPath);
+
+        if (downloaded && fs.existsSync(videoPath)) {
+          console.log('✅ Vídeo baixado via yt-dlp (com áudio):', videoPath);
+          return videoPath;
+        }
+      } catch (e) {
+        console.log('❌ Método 4 (yt-dlp direto) falhou:', e.message);
+      }
+
+      // Método 5: yt-dlp via URL (fallback - pode não ter áudio)
+      try {
+        console.log('🔄 Tentando método 5: yt-dlp via URL (fallback)');
         const videoUrl = await this.obterUrlVideoComYtDlp(url);
 
         if (videoUrl) {
@@ -3763,11 +3776,11 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
           });
 
           fs.writeFileSync(videoPath, videoResponse.data);
-          console.log('✅ Vídeo salvo via yt-dlp:', videoPath);
+          console.log('⚠️ Vídeo salvo via URL (pode não ter áudio):', videoPath);
           return videoPath;
         }
       } catch (e) {
-        console.log('❌ Método 4 (yt-dlp) falhou:', e.message);
+        console.log('❌ Método 5 (yt-dlp URL) falhou:', e.message);
       }
 
       throw new Error('Não foi possível baixar o vídeo por nenhum método.');
@@ -3882,6 +3895,89 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
     } catch (error) {
       console.error('❌ Erro ao executar yt-dlp:', error.message);
       return null;
+    }
+  }
+
+  /**
+   * Baixa vídeo diretamente com yt-dlp (com merge de áudio+vídeo)
+   * Isso é necessário porque o Instagram separa streams de áudio e vídeo
+   */
+  static async baixarVideoComYtDlp(instagramUrl, outputPath) {
+    try {
+      const { execSync } = require('child_process');
+      const ytDlpPath = await this.garantirYtDlp();
+
+      // Verificar se existe arquivo de cookies manual
+      const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
+      const hasCookiesFile = fs.existsSync(cookiesPath);
+
+      console.log('🎬 Baixando vídeo diretamente com yt-dlp (com áudio)...');
+
+      // Comando base: baixar melhor qualidade com merge de áudio
+      // -f "bv*+ba/b" = melhor vídeo + melhor áudio, ou melhor combinado
+      // --merge-output-format mp4 = garantir saída em mp4
+      let baseCmd = `${ytDlpPath} --no-warnings -f "bv*+ba/b" --merge-output-format mp4 -o "${outputPath}"`;
+      
+      // Adicionar cookies se existir
+      if (hasCookiesFile) {
+        baseCmd += ` --cookies "${cookiesPath}"`;
+        console.log('✅ Usando arquivo de cookies');
+      }
+
+      const strategies = [
+        baseCmd + ` "${instagramUrl}"`,
+        // Fallback: formato padrão
+        `${ytDlpPath} --no-warnings -o "${outputPath}" ${hasCookiesFile ? `--cookies "${cookiesPath}"` : ''} "${instagramUrl}"`,
+        // Fallback: com user-agent
+        `${ytDlpPath} --no-warnings -o "${outputPath}" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "${instagramUrl}"`
+      ];
+
+      for (let i = 0; i < strategies.length; i++) {
+        try {
+          console.log(`🔧 Tentando download direto ${i + 1}/${strategies.length}...`);
+          
+          execSync(strategies[i], {
+            encoding: 'utf8',
+            timeout: 120000, // 2 minutos
+            maxBuffer: 50 * 1024 * 1024 // 50MB
+          });
+
+          // Verificar se o arquivo foi criado
+          if (fs.existsSync(outputPath)) {
+            const stats = fs.statSync(outputPath);
+            if (stats.size > 1000) { // Pelo menos 1KB
+              console.log(`✅ Vídeo baixado com sucesso: ${(stats.size / 1024 / 1024).toFixed(2)}MB`);
+              return true;
+            }
+          }
+          
+          // yt-dlp pode adicionar extensão, verificar variações
+          const possiblePaths = [
+            outputPath,
+            outputPath.replace('.mp4', '.webm'),
+            outputPath + '.mp4'
+          ];
+          
+          for (const p of possiblePaths) {
+            if (fs.existsSync(p) && fs.statSync(p).size > 1000) {
+              // Renomear para o path esperado se necessário
+              if (p !== outputPath) {
+                fs.renameSync(p, outputPath);
+              }
+              console.log('✅ Vídeo baixado com sucesso');
+              return true;
+            }
+          }
+          
+        } catch (strategyError) {
+          console.log(`⚠️ Estratégia de download ${i + 1} falhou:`, strategyError.message?.substring(0, 100));
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Erro ao baixar vídeo com yt-dlp:', error.message);
+      return false;
     }
   }
 
