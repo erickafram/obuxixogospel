@@ -3392,11 +3392,28 @@ Retorne APENAS um objeto JSON válido:
     const messages = [
       {
         role: 'system',
-        content: 'Você é um jornalista experiente do portal Metrópoles. Seu estilo de escrita é direto, informativo, objetivo e levemente formal, mas acessível. Você prioriza a clareza e a precisão dos fatos.'
+        content: 'Você é um jornalista experiente da Globo/Metrópoles. Seu estilo é ESTRITAMENTE FACTUAL e IMPARCIAL. Você NUNCA emite opiniões, julgamentos ou posicionamentos. Você apenas NARRA os fatos como um repórter profissional, sem tomar partido de nenhum lado.'
       },
       {
         role: 'user',
-        content: `⚠️ TAREFA: Reescreva a matéria abaixo no estilo jornalístico do portal Metrópoles, mantendo TODOS os fatos e contexto da matéria original.
+        content: `⚠️ TAREFA: Reescreva a matéria abaixo no estilo jornalístico IMPARCIAL da Globo/Metrópoles.
+
+🚨 REGRA MAIS IMPORTANTE - IMPARCIALIDADE TOTAL:
+- ❌ NUNCA emita opinião ou julgamento sobre o assunto
+- ❌ NUNCA use frases como "busca combater", "promove uma leitura", "destaca a contradição"
+- ❌ NUNCA tome partido de nenhum lado em polêmicas
+- ❌ NUNCA use adjetivos valorativos como "grotesco", "absurdo", "correto", "errado"
+- ❌ NUNCA faça "reflexões finais" ou conclusões opinativas
+- ✅ APENAS narre os fatos: quem disse o quê, quando e onde
+- ✅ Use sempre: "afirmou", "declarou", "publicou", "questionou", "disse"
+- ✅ Atribua TODAS as opiniões às fontes: "Segundo fulano...", "De acordo com..."
+
+🎯 ESTILO GLOBO/METRÓPOLES - NARRAÇÃO DOS FATOS:
+- ✅ "O perfil publicou nas redes sociais que..."
+- ✅ "Na publicação, é afirmado que..."
+- ✅ "O autor do post questiona..."
+- ✅ "Segundo o conteúdo compartilhado..."
+- ❌ NUNCA: "A reflexão destaca...", "O posicionamento busca...", "É importante notar..."
 
 🎯 REGRA PRINCIPAL - MANTENHA O CONTEXTO:
 - ✅ Mantenha TODOS os nomes, lugares, datas e fatos mencionados no texto original
@@ -3412,24 +3429,19 @@ Retorne APENAS um objeto JSON válido:
 4. ❌ NÃO invente declarações de pessoas não mencionadas
 5. ❌ NÃO mude nomes de pessoas ou organizações
 
-✅ PODE FAZER (ESTILO METRÓPOLES):
-1. ✅ Reorganizar as informações em melhor estrutura jornalística profissional
-2. ✅ Adicionar contexto genérico sobre o tema (sem inventar fatos)
-3. ✅ Usar sinônimos e variar a linguagem mantendo o sentido
-4. ✅ Melhorar conectivos e fluidez do texto
-5. ✅ Tornar o texto informativo e direto
-
 ESTRUTURA OBRIGATÓRIA:
 1. **Lide** (1-2 parágrafos): Fato principal de forma DIRETA e informativa
-   - Exemplo: "A pastora Ivaneide faleceu nesta terça-feira (20/11), deixando fiéis comovidos."
+   - Exemplo: "O perfil McTrans publicou em suas redes sociais questionamentos sobre..."
    - Foco no quê, quem, quando e onde.
    
-2. **Desenvolvimento** (2-3 parágrafos): Detalhes e contexto
+2. **Desenvolvimento** (2-3 parágrafos): Detalhes e contexto FACTUAL
    - Use <h3> para subtítulos quando apropriado
    - Mantenha parágrafos de tamanho médio (3-5 linhas)
+   - SEMPRE atribua opiniões às fontes
    
-3. **Conclusão** (1 parágrafo): Encerramento informativo
-   - Informações sobre desdobramentos ou contexto final
+3. **Encerramento** (1 parágrafo): Informação adicional SEM opinião
+   - Apenas fatos adicionais ou contexto
+   - NUNCA faça "reflexão final" ou conclusão opinativa
 
 FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <p>texto aqui</p> para CADA parágrafo
@@ -3441,13 +3453,13 @@ FORMATAÇÃO HTML - MUITO IMPORTANTE:
 - Use <strong> apenas para nomes importantes
 - Formato: <p>texto1</p><p>texto2</p><h3>título</h3><p>texto3</p>
 
-LINGUAGEM (ESTILO METRÓPOLES):
-- ✅ "Morre a pastora Ivaneide, da Obra Restauração Saquassú"
-- ✅ "O falecimento foi confirmado pela igreja onde ela atuava"
-- ✅ "Ela era conhecida pelo trabalho comunitário na região"
-- ✅ Tom informativo, sério e direto
-- ✅ Parágrafos bem estruturados
-- ❌ Evite: "está de luto", "manifestaram apoio" (clichês excessivos)
+LINGUAGEM JORNALÍSTICA IMPARCIAL:
+- ✅ "O autor afirmou que..." (atribui a opinião)
+- ✅ "Segundo a publicação..." (não é opinião do jornalista)
+- ✅ "O conteúdo menciona que..." (factual)
+- ✅ "De acordo com o post..." (atribuição clara)
+- ❌ NUNCA: "É importante destacar...", "Vale ressaltar...", "A reflexão mostra..."
+- ❌ NUNCA: frases que pareçam opinião do jornalista
 - ❌ Evite: jargões técnicos ou linguagem rebuscada
 
 TEXTO ORIGINAL:
