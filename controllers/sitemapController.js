@@ -168,8 +168,8 @@ exports.generateNewsSitemap = async (req, res) => {
         xml += `      <news:title>${escapeXml(article.titulo)}</news:title>\n`;
 
         // Adicionar keywords se houver
-        if (article.tags) {
-          xml += `      <news:keywords>${escapeXml(article.tags)}</news:keywords>\n`;
+        if (article.keywords || article.tags) {
+          xml += `      <news:keywords>${escapeXml(article.keywords || article.tags)}</news:keywords>\n`;
         }
 
         xml += '    </news:news>\n';

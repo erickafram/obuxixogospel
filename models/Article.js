@@ -119,6 +119,30 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: null,
       field: 'fact_check',
       comment: 'Dados de fact-check: claim, claimAuthor, claimAuthorType, claimDate, rating, ratingName'
+    },
+    metaTitulo: {
+      type: DataTypes.STRING(70),
+      allowNull: true,
+      defaultValue: null,
+      field: 'meta_titulo'
+    },
+    metaDescricao: {
+      type: DataTypes.STRING(160),
+      allowNull: true,
+      defaultValue: null,
+      field: 'meta_descricao'
+    },
+    keywords: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      defaultValue: null,
+      field: 'keywords'
+    },
+    slugCustomizado: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'slug_customizado'
     }
   }, {
     sequelize,
