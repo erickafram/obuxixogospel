@@ -2,30 +2,39 @@
 
     <main class="main-content" id="main-content" role="main">
         <div class="container">
-            <% // Criar mapa de categorias para lookup rápido (usado em várias seções) const catMap={}; if (typeof
-                categories !=='undefined' && categories) { categories.forEach(function(cat) { catMap[cat.slug]={ nome:
-                cat.nome, cor: cat.cor }; }); } // Combinar todos os artigos de TODAS as categorias do banco let
-                allArticles=[]; if (typeof articlesByCategory !=='undefined' && articlesByCategory) {
-                Object.keys(articlesByCategory).forEach(function(slug) { const articles=articlesByCategory[slug]; if
-                (articles && articles.length> 0) {
-                articles.forEach(function(a) {
-                a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
-                a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
-                a.categoryClass = slug;
-                allArticles.push(a);
+            <%
+            // Criar mapa de categorias para lookup rápido
+            const catMap = {};
+            if (typeof categories !== 'undefined' && categories) {
+                categories.forEach(function(cat) {
+                    catMap[cat.slug] = { nome: cat.nome, cor: cat.cor };
                 });
-                }
+            }
+            
+            // Combinar todos os artigos de TODAS as categorias do banco
+            let allArticles = [];
+            if (typeof articlesByCategory !== 'undefined' && articlesByCategory) {
+                Object.keys(articlesByCategory).forEach(function(slug) {
+                    const articles = articlesByCategory[slug];
+                    if (articles && articles.length > 0) {
+                        articles.forEach(function(a) {
+                            a.categoryName = catMap[slug] ? catMap[slug].nome : slug;
+                            a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6';
+                            a.categoryClass = slug;
+                            allArticles.push(a);
+                        });
+                    }
                 });
-                }
+            }
 
-                // Filtrar notícia em destaque para não duplicar
-                if (destaque) {
+            // Filtrar notícia em destaque para não duplicar
+            if (destaque) {
                 allArticles = allArticles.filter(function(a) { return a.id !== destaque.id; });
-                }
+            }
 
-                // Ordenar por data (mais recentes primeiro)
-                allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); });
-                %>
+            // Ordenar por data (mais recentes primeiro)
+            allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); });
+        %>
 
                 <!-- SEO Title Hidden/Visible Strategy -->
                 <h1 class="site-main-title">Últimas Notícias do Mundo Gospel e Evangélico</h1>
@@ -62,18 +71,30 @@
                                 </h2>
                             </div>
                             <div class="trending-grid">
-                                <% // Filtrar artigos de hoje e ordenar por visualizações var hoje=new Date();
-                                    hoje.setHours(0, 0, 0, 0); var artigosHoje=allArticles.filter(function(a) { var
-                                    dataArtigo=new Date(a.dataPublicacao); dataArtigo.setHours(0, 0, 0, 0); return
-                                    dataArtigo.getTime()===hoje.getTime(); }).sort(function(a, b) { return
-                                    (b.visualizacoes || 0) - (a.visualizacoes || 0); }).slice(0, 4); // Se não tiver 4
-                                    artigos de hoje, completar com os mais lidos recentes var
-                                    trendingArticles=artigosHoje; if (trendingArticles.length < 4) { var
-                                    maisLidos=allArticles.filter(function(a) { return !trendingArticles.find(function(t)
-                                    { return t.id===a.id; }); }).sort(function(a, b) { return (b.visualizacoes || 0) -
-                                    (a.visualizacoes || 0); }).slice(0, 4 - trendingArticles.length);
-                                    trendingArticles=trendingArticles.concat(maisLidos); }
-                                    trendingArticles.forEach(function(article, index) { %>
+                                <%
+                                    // Filtrar artigos de hoje e ordenar por visualizações
+                                    var hoje = new Date();
+                                    hoje.setHours(0, 0, 0, 0);
+                                    var artigosHoje = allArticles.filter(function(a) {
+                                        var dataArtigo = new Date(a.dataPublicacao);
+                                        dataArtigo.setHours(0, 0, 0, 0);
+                                        return dataArtigo.getTime() === hoje.getTime();
+                                    }).sort(function(a, b) {
+                                        return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                                    }).slice(0, 4);
+                                    
+                                    // Se não tiver 4 artigos de hoje, completar com os mais lidos recentes
+                                    var trendingArticles = artigosHoje;
+                                    if (trendingArticles.length < 4) {
+                                        var maisLidos = allArticles.filter(function(a) {
+                                            return !trendingArticles.find(function(t) { return t.id === a.id; });
+                                        }).sort(function(a, b) {
+                                            return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                                        }).slice(0, 4 - trendingArticles.length);
+                                        trendingArticles = trendingArticles.concat(maisLidos);
+                                    }
+                                    trendingArticles.forEach(function(article, index) {
+                                %>
                                     <article class="trending-card">
                                         <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                             <div class="trending-card-image">
@@ -106,8 +127,11 @@
                                 <!-- Todas as Notícias -->
                                 <section class="news-section all-news-section">
                                     <div class="news-list" id="newsList">
-                                        <% // Mostrar apenas os primeiros 10 var displayArticles=allArticles.slice(0,
-                                            10); if (displayArticles.length===0) { %>
+                                        <%
+                                            // Mostrar apenas os primeiros 10
+                                            var displayArticles = allArticles.slice(0, 10);
+                                            if (displayArticles.length === 0) {
+                                        %>
                                             <div style="padding: 40px; text-align: center; color: #666;">
                                                 <i class="fas fa-newspaper"
                                                     style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
@@ -321,9 +345,12 @@
                                         </h2>
                                     </div>
                                     <div class="most-read-list">
-                                        <% var mostRead=allArticles.slice().sort(function(a, b) { return
-                                            (b.visualizacoes || 0) - (a.visualizacoes || 0); }).slice(0, 5);
-                                            mostRead.forEach(function(article, index) { %>
+                                        <%
+                                            var mostRead = allArticles.slice().sort(function(a, b) {
+                                                return (b.visualizacoes || 0) - (a.visualizacoes || 0);
+                                            }).slice(0, 5);
+                                            mostRead.forEach(function(article, index) {
+                                        %>
                                             <article class="most-read-item">
                                                 <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>">
                                                     <span class="most-read-number">
