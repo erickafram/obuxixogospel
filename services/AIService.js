@@ -3747,16 +3747,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
       }
 
-<<<<<<< HEAD
-      // Método 4: yt-dlp (Último recurso - mais robusto, baixa vídeo+áudio mesclado)
-      try {
-        console.log('🔄 Tentando método 4: yt-dlp');
-        const downloadedVideoPath = await this.obterUrlVideoComYtDlp(url);
-
-        if (downloadedVideoPath && fs.existsSync(downloadedVideoPath)) {
-          console.log('✅ Vídeo baixado via yt-dlp (com áudio):', downloadedVideoPath);
-          return downloadedVideoPath; // Já é o caminho do arquivo baixado
-=======
       // Método 4: yt-dlp download direto (com merge de áudio+vídeo)
       try {
         console.log('🔄 Tentando método 4: yt-dlp (download direto com áudio)');
@@ -3788,7 +3778,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
           fs.writeFileSync(videoPath, videoResponse.data);
           console.log('⚠️ Vídeo salvo via URL (pode não ter áudio):', videoPath);
           return videoPath;
->>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
         }
       } catch (e) {
         console.log('❌ Método 5 (yt-dlp URL) falhou:', e.message);
@@ -3927,9 +3916,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
   }
 
   /**
-<<<<<<< HEAD
-   * Verifica se o vídeo tem stream de áudio
-=======
    * Baixa vídeo diretamente com yt-dlp (com merge de áudio+vídeo)
    * Isso é necessário porque o Instagram separa streams de áudio e vídeo
    */
@@ -4014,7 +4000,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
 
   /**
    * Verifica se o vídeo contém stream de áudio
->>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
    */
   static async verificarAudioNoVideo(videoPath) {
     return new Promise((resolve) => {
@@ -4025,16 +4010,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
           return;
         }
         
-<<<<<<< HEAD
-        const audioStreams = metadata.streams.filter(s => s.codec_type === 'audio');
-        if (audioStreams.length > 0) {
-          console.log('✅ Vídeo possui stream de áudio');
-          resolve(true);
-        } else {
-          console.log('⚠️ Vídeo NÃO possui stream de áudio (pode ser GIF ou vídeo mudo)');
-          resolve(false);
-        }
-=======
         const audioStreams = metadata.streams?.filter(s => s.codec_type === 'audio') || [];
         const hasAudio = audioStreams.length > 0;
         
@@ -4045,7 +4020,6 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         }
         
         resolve(hasAudio);
->>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
       });
     });
   }
@@ -4054,18 +4028,11 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
    * Extrai áudio do vídeo usando ffmpeg
    */
   static async extrairAudioDoVideo(videoPath) {
-<<<<<<< HEAD
-    // Primeiro verifica se o vídeo tem áudio
-    const temAudio = await this.verificarAudioNoVideo(videoPath);
-    if (!temAudio) {
-      throw new Error('O vídeo não possui áudio para transcrever (pode ser um GIF ou vídeo mudo)');
-=======
     // Primeiro verificar se o vídeo tem áudio
     const hasAudio = await this.verificarAudioNoVideo(videoPath);
     
     if (!hasAudio) {
       throw new Error('O vídeo não contém áudio para transcrição. Pode ser uma foto/imagem ou vídeo sem som.');
->>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
     }
     
     return new Promise((resolve, reject) => {
