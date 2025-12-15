@@ -1769,6 +1769,13 @@ app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (
   }
 });
 
+// Redirecionamento AMP: /amp/:categoria/:slug → /:categoria/:slug/amp (301)
+app.get('/amp/:categorySlug/:articleSlug', (req, res) => {
+  const newUrl = `/${req.params.categorySlug}/${req.params.articleSlug}/amp`;
+  console.log(`🔀 Redirecionamento AMP 301: /amp/${req.params.categorySlug}/${req.params.articleSlug} → ${newUrl}`);
+  res.redirect(301, newUrl);
+});
+
 // Rotas legadas para compatibilidade - redirecionam para a categoria correta do banco
 // /noticia/:slug → /:categoria/:slug
 app.get('/noticia/:slug', async (req, res) => {
