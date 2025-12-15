@@ -1702,6 +1702,68 @@ function convertToAMP(html) {
   return ampHtml;
 }
 
+// NOVA ROTA: Página de Autor
+const authorsConfig = require('./config/authors');
+
+app.get('/autor/:slug', CacheService.middleware(300), async (req, res) => {
+  try {
+    const authorSlug = req.params.slug;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 12;
+    const offset = (page - 1) * limit;
+
+    // 1. Tentar achar o autor no arquivo de configuração
+    let authorData = authorsConfig[authorSlug];
+
+    // 2. Se não achar pelo slug exato, tentar normalizar o nome
+    if (!authorData) {
+      const nameFromSlug = authorSlug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      authorData = {
+        name: nameFromSlug,
+        role: 'Colaborador',
+        bio: 'Jornalista colaborador do Obuxixo Gospel.',
+        image: '/images/default-user.png',
+        social: {}
+      };
+    }
+
+    const { count, rows: articles } = await Article.findAndCountAll({
+      where: {
+        publicado: true,
+        autor: {
+          [sequelize.Sequelize.Op.like]: `%${authorData.name}%`
+        }
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: limit,
+      offset: offset
+    });
+
+    res.render('author', {
+      author: authorData,
+      articles: articles,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+      seo: {
+        title: `${authorData.name} - Obuxixo Gospel`,
+        description: `Confira as últimas notícias e artigos escritos por ${authorData.name} no Obuxixo Gospel.`
+      },
+      // Dados essenciais para o header
+      user: req.session.userId ? { id: req.session.userId, nome: req.session.userNome, tipo: req.session.userTipo } : null,
+      categories: await Category.findAll({ order: [['ordem', 'ASC']] }),
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br'
+    });
+
+  } catch (error) {
+    console.error('Erro na página de autor:', error);
+    res.status(500).render('error', { message: 'Erro ao carregar perfil do autor' });
+  }
+});
+
 // Rota AMP do artigo
 app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (req, res) => {
   try {
