@@ -10,7 +10,7 @@ exports.generateSitemap = async (req, res) => {
     // Buscar todos os artigos publicados E com data de publicação no passado (não agendados)
     const agora = new Date();
     const articles = await Article.findAll({
-      where: { 
+      where: {
         publicado: true,
         dataPublicacao: { [Op.lte]: agora } // Exclui matérias agendadas
       },
@@ -73,7 +73,7 @@ exports.generateSitemap = async (req, res) => {
     // Artigos - usar slug da categoria diretamente do banco
     // Também coletar autores únicos para E-E-A-T
     const autoresUnicos = new Set();
-    
+
     articles.forEach(article => {
       if (article.urlAmigavel && article.categoria) {
         const lastmod = article.updatedAt || article.dataPublicacao || new Date();
@@ -87,14 +87,14 @@ exports.generateSitemap = async (req, res) => {
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.7</priority>\n';
         xml += '  </url>\n';
-        
+
         // Coletar autor para página de autor (E-E-A-T)
         if (article.autor) {
           autoresUnicos.add(article.autor);
         }
       }
     });
-    
+
     // Páginas de autores (E-E-A-T - importante para Google Discover 2025)
     autoresUnicos.forEach(autor => {
       const autorSlug = autor.toLowerCase().replace(/\s+/g, '-');
@@ -105,7 +105,7 @@ exports.generateSitemap = async (req, res) => {
       xml += '    <priority>0.6</priority>\n';
       xml += '  </url>\n';
     });
-    
+
     console.log(`👤 Adicionados ${autoresUnicos.size} autores ao sitemap`);
 
     xml += '</urlset>';
@@ -207,16 +207,7 @@ exports.generateRobotsTxt = (req, res) => {
   const robotsTxt = `User-agent: *
 Allow: /
 
-# Bloquear conteúdo antigo (2019-2024)
-Disallow: /2017/
-Disallow: /2018/
-Disallow: /2019/
-Disallow: /2020/
-Disallow: /2021/
-Disallow: /2022/
-Disallow: /2023/
-Disallow: /2024/
-Disallow: /2025/
+
 
 # Disallow admin areas
 Disallow: /dashboard/

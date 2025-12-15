@@ -1800,8 +1800,8 @@ app.get('/artigo/:slug', async (req, res) => {
       return res.status(404).send('Conteúdo não encontrado');
     }
 
-    // Incrementar visualizações
-    await article.increment('visualizacoes');
+    // Incrementar visualizações SEM alterar updatedAt (evita reindexação pelo Google)
+    await article.increment('visualizacoes', { silent: true });
 
     // Registrar visualização no PageView para estatísticas diárias
     try {
@@ -2740,8 +2740,8 @@ app.get('/:categorySlug/:articleSlug', CacheService.middleware(300), async (req,
       });
     }
 
-    // Incrementar visualizações
-    await article.increment('visualizacoes');
+    // Incrementar visualizações SEM alterar updatedAt (evita reindexação pelo Google)
+    await article.increment('visualizacoes', { silent: true });
 
     // Registrar visualização no PageView para estatísticas diárias
     try {

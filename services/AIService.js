@@ -3747,6 +3747,7 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         console.log('❌ Método 3 (insta-fetcher) falhou:', e.message);
       }
 
+<<<<<<< HEAD
       // Método 4: yt-dlp (Último recurso - mais robusto, baixa vídeo+áudio mesclado)
       try {
         console.log('🔄 Tentando método 4: yt-dlp');
@@ -3755,9 +3756,42 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
         if (downloadedVideoPath && fs.existsSync(downloadedVideoPath)) {
           console.log('✅ Vídeo baixado via yt-dlp (com áudio):', downloadedVideoPath);
           return downloadedVideoPath; // Já é o caminho do arquivo baixado
+=======
+      // Método 4: yt-dlp download direto (com merge de áudio+vídeo)
+      try {
+        console.log('🔄 Tentando método 4: yt-dlp (download direto com áudio)');
+        const downloaded = await this.baixarVideoComYtDlp(url, videoPath);
+
+        if (downloaded && fs.existsSync(videoPath)) {
+          console.log('✅ Vídeo baixado via yt-dlp (com áudio):', videoPath);
+          return videoPath;
         }
       } catch (e) {
-        console.log('❌ Método 4 (yt-dlp) falhou:', e.message);
+        console.log('❌ Método 4 (yt-dlp direto) falhou:', e.message);
+      }
+
+      // Método 5: yt-dlp via URL (fallback - pode não ter áudio)
+      try {
+        console.log('🔄 Tentando método 5: yt-dlp via URL (fallback)');
+        const videoUrl = await this.obterUrlVideoComYtDlp(url);
+
+        if (videoUrl) {
+          console.log('✅ URL do vídeo obtida via yt-dlp');
+          const videoResponse = await axios.get(videoUrl, {
+            responseType: 'arraybuffer',
+            timeout: 60000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+
+          fs.writeFileSync(videoPath, videoResponse.data);
+          console.log('⚠️ Vídeo salvo via URL (pode não ter áudio):', videoPath);
+          return videoPath;
+>>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
+        }
+      } catch (e) {
+        console.log('❌ Método 5 (yt-dlp URL) falhou:', e.message);
       }
 
       throw new Error('Não foi possível baixar o vídeo por nenhum método.');
@@ -3893,7 +3927,94 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
   }
 
   /**
+<<<<<<< HEAD
    * Verifica se o vídeo tem stream de áudio
+=======
+   * Baixa vídeo diretamente com yt-dlp (com merge de áudio+vídeo)
+   * Isso é necessário porque o Instagram separa streams de áudio e vídeo
+   */
+  static async baixarVideoComYtDlp(instagramUrl, outputPath) {
+    try {
+      const { execSync } = require('child_process');
+      const ytDlpPath = await this.garantirYtDlp();
+
+      // Verificar se existe arquivo de cookies manual
+      const cookiesPath = path.join(__dirname, '../instagram-cookies.txt');
+      const hasCookiesFile = fs.existsSync(cookiesPath);
+
+      console.log('🎬 Baixando vídeo diretamente com yt-dlp (com áudio)...');
+
+      // Comando base: baixar melhor qualidade com merge de áudio
+      // -f "bv*+ba/b" = melhor vídeo + melhor áudio, ou melhor combinado
+      // --merge-output-format mp4 = garantir saída em mp4
+      let baseCmd = `${ytDlpPath} --no-warnings -f "bv*+ba/b" --merge-output-format mp4 -o "${outputPath}"`;
+      
+      // Adicionar cookies se existir
+      if (hasCookiesFile) {
+        baseCmd += ` --cookies "${cookiesPath}"`;
+        console.log('✅ Usando arquivo de cookies');
+      }
+
+      const strategies = [
+        baseCmd + ` "${instagramUrl}"`,
+        // Fallback: formato padrão
+        `${ytDlpPath} --no-warnings -o "${outputPath}" ${hasCookiesFile ? `--cookies "${cookiesPath}"` : ''} "${instagramUrl}"`,
+        // Fallback: com user-agent
+        `${ytDlpPath} --no-warnings -o "${outputPath}" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "${instagramUrl}"`
+      ];
+
+      for (let i = 0; i < strategies.length; i++) {
+        try {
+          console.log(`🔧 Tentando download direto ${i + 1}/${strategies.length}...`);
+          
+          execSync(strategies[i], {
+            encoding: 'utf8',
+            timeout: 120000, // 2 minutos
+            maxBuffer: 50 * 1024 * 1024 // 50MB
+          });
+
+          // Verificar se o arquivo foi criado
+          if (fs.existsSync(outputPath)) {
+            const stats = fs.statSync(outputPath);
+            if (stats.size > 1000) { // Pelo menos 1KB
+              console.log(`✅ Vídeo baixado com sucesso: ${(stats.size / 1024 / 1024).toFixed(2)}MB`);
+              return true;
+            }
+          }
+          
+          // yt-dlp pode adicionar extensão, verificar variações
+          const possiblePaths = [
+            outputPath,
+            outputPath.replace('.mp4', '.webm'),
+            outputPath + '.mp4'
+          ];
+          
+          for (const p of possiblePaths) {
+            if (fs.existsSync(p) && fs.statSync(p).size > 1000) {
+              // Renomear para o path esperado se necessário
+              if (p !== outputPath) {
+                fs.renameSync(p, outputPath);
+              }
+              console.log('✅ Vídeo baixado com sucesso');
+              return true;
+            }
+          }
+          
+        } catch (strategyError) {
+          console.log(`⚠️ Estratégia de download ${i + 1} falhou:`, strategyError.message?.substring(0, 100));
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Erro ao baixar vídeo com yt-dlp:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Verifica se o vídeo contém stream de áudio
+>>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
    */
   static async verificarAudioNoVideo(videoPath) {
     return new Promise((resolve) => {
@@ -3904,6 +4025,7 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
           return;
         }
         
+<<<<<<< HEAD
         const audioStreams = metadata.streams.filter(s => s.codec_type === 'audio');
         if (audioStreams.length > 0) {
           console.log('✅ Vídeo possui stream de áudio');
@@ -3912,6 +4034,18 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
           console.log('⚠️ Vídeo NÃO possui stream de áudio (pode ser GIF ou vídeo mudo)');
           resolve(false);
         }
+=======
+        const audioStreams = metadata.streams?.filter(s => s.codec_type === 'audio') || [];
+        const hasAudio = audioStreams.length > 0;
+        
+        if (hasAudio) {
+          console.log(`✅ Vídeo contém ${audioStreams.length} stream(s) de áudio`);
+        } else {
+          console.log('⚠️ Vídeo não contém stream de áudio');
+        }
+        
+        resolve(hasAudio);
+>>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
       });
     });
   }
@@ -3920,10 +4054,18 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
    * Extrai áudio do vídeo usando ffmpeg
    */
   static async extrairAudioDoVideo(videoPath) {
+<<<<<<< HEAD
     // Primeiro verifica se o vídeo tem áudio
     const temAudio = await this.verificarAudioNoVideo(videoPath);
     if (!temAudio) {
       throw new Error('O vídeo não possui áudio para transcrever (pode ser um GIF ou vídeo mudo)');
+=======
+    // Primeiro verificar se o vídeo tem áudio
+    const hasAudio = await this.verificarAudioNoVideo(videoPath);
+    
+    if (!hasAudio) {
+      throw new Error('O vídeo não contém áudio para transcrição. Pode ser uma foto/imagem ou vídeo sem som.');
+>>>>>>> b6fecd09d6262c16e7266e7c02c0ecb34f0d5482
     }
     
     return new Promise((resolve, reject) => {
@@ -3932,6 +4074,9 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
 
       ffmpeg(videoPath)
         .toFormat('mp3')
+        .audioCodec('libmp3lame')
+        .audioChannels(1)
+        .audioFrequency(16000)
         .on('end', () => {
           console.log('✅ Áudio extraído com sucesso');
           resolve(audioPath);
@@ -4035,8 +4180,13 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
     try {
       // 1. Baixar vídeo
       videoPath = await this.baixarVideoInstagram(url);
+      
+      if (!videoPath) {
+        console.log('⚠️ Não foi possível baixar o vídeo');
+        return null;
+      }
 
-      // 2. Extrair áudio
+      // 2. Extrair áudio (já verifica se tem áudio)
       audioPath = await this.extrairAudioDoVideo(videoPath);
 
       // 3. Transcrever
@@ -4050,6 +4200,13 @@ RETORNE APENAS UM OBJETO JSON VÁLIDO:
     } catch (error) {
       // Limpar arquivos em caso de erro
       this.limparArquivosTemporarios(videoPath, audioPath);
+
+      // Se o erro é sobre falta de áudio, retornar null em vez de lançar exceção
+      if (error.message.includes('não contém áudio') || 
+          error.message.includes('does not contain any stream')) {
+        console.log('⚠️ Vídeo sem áudio - continuando sem transcrição');
+        return null;
+      }
 
       console.error('❌ Erro ao processar vídeo:', error.message);
       throw error;
