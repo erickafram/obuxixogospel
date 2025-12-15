@@ -171,7 +171,7 @@
 
                                 <!-- Script para scroll infinito -->
                                 <script>
-                                    var allArticlesData = <% - JSON.stringify(allArticles.slice(0, 100).map(function (a) { return { categoria: a.categoria, urlAmigavel: a.urlAmigavel, imagem: a.imagem, titulo: a.titulo, descricao: a.descricao, dataPublicacao: a.dataPublicacao, categoryClass: a.categoryClass, categoryName: a.categoryName, subcategoria: a.subcategoria }; })) %>;
+                                    var allArticlesData = <%- JSON.stringify(allArticles.slice(0, 100).map(function (a) { return { categoria: a.categoria, urlAmigavel: a.urlAmigavel, imagem: a.imagem, titulo: a.titulo, descricao: a.descricao, dataPublicacao: a.dataPublicacao, categoryClass: a.categoryClass, categoryName: a.categoryName, subcategoria: a.subcategoria }; })) %>;
                                     var currentIndex = 10;
                                     var isLoading = false;
                                     var autoLoadCount = 0;
