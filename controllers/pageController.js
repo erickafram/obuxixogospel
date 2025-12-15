@@ -6,7 +6,7 @@ exports.index = async (req, res) => {
     const pages = await Page.findAll({
       order: [['ordem', 'ASC'], ['titulo', 'ASC']]
     });
-    
+
     res.render('dashboard/paginas/index', {
       user: req.session.user,
       pages
@@ -25,7 +25,7 @@ exports.novo = async (req, res) => {
       attributes: ['id', 'nome'],
       order: [['nome', 'ASC']]
     });
-    
+
     res.render('dashboard/paginas/form', {
       user: req.session.user,
       isEdit: false,
@@ -42,17 +42,17 @@ exports.novo = async (req, res) => {
 exports.editar = async (req, res) => {
   try {
     const page = await Page.findByPk(req.params.id);
-    
+
     if (!page) {
       return res.status(404).send('Página não encontrada');
     }
-    
+
     const forms = await Form.findAll({
       where: { ativo: true },
       attributes: ['id', 'nome'],
       order: [['nome', 'ASC']]
     });
-    
+
     res.render('dashboard/paginas/form', {
       user: req.session.user,
       isEdit: true,
@@ -69,7 +69,7 @@ exports.editar = async (req, res) => {
 exports.criar = async (req, res) => {
   try {
     const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu, formId } = req.body;
-    
+
     await Page.create({
       titulo,
       slug,
@@ -81,7 +81,7 @@ exports.criar = async (req, res) => {
       exibirMenu: exibirMenu === 'on' || exibirMenu === true,
       formId: formId ? parseInt(formId) : null
     });
-    
+
     res.redirect('/dashboard/paginas?success=Página criada com sucesso');
   } catch (error) {
     console.error('Erro ao criar página:', error);
@@ -93,13 +93,13 @@ exports.criar = async (req, res) => {
 exports.atualizar = async (req, res) => {
   try {
     const { titulo, slug, conteudo, descricao, ativo, ordem, exibirFooter, exibirMenu, formId } = req.body;
-    
+
     const page = await Page.findByPk(req.params.id);
-    
+
     if (!page) {
       return res.status(404).send('Página não encontrada');
     }
-    
+
     await page.update({
       titulo,
       slug,
@@ -111,7 +111,7 @@ exports.atualizar = async (req, res) => {
       exibirMenu: exibirMenu === 'on' || exibirMenu === true,
       formId: formId ? parseInt(formId) : null
     });
-    
+
     res.redirect('/dashboard/paginas?success=Página atualizada com sucesso');
   } catch (error) {
     console.error('Erro ao atualizar página:', error);
@@ -123,13 +123,13 @@ exports.atualizar = async (req, res) => {
 exports.deletar = async (req, res) => {
   try {
     const page = await Page.findByPk(req.params.id);
-    
+
     if (!page) {
       return res.status(404).json({ success: false, error: 'Página não encontrada' });
     }
-    
+
     await page.destroy();
-    
+
     res.json({ success: true, message: 'Página deletada com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar página:', error);
@@ -141,20 +141,20 @@ exports.deletar = async (req, res) => {
 exports.reordenar = async (req, res) => {
   try {
     const { ordem } = req.body;
-    
+
     if (!ordem || !Array.isArray(ordem)) {
       return res.status(400).json({ success: false, error: 'Dados inválidos' });
     }
-    
+
     // Atualizar ordem de cada página
     const promises = ordem.map((item, index) => {
       return Page.update({ ordem: index }, {
         where: { id: item.id }
       });
     });
-    
+
     await Promise.all(promises);
-    
+
     res.json({ success: true, message: 'Ordem atualizada com sucesso' });
   } catch (error) {
     console.error('Erro ao reordenar páginas:', error);
@@ -173,7 +173,7 @@ exports.exibir = async (req, res) => {
         required: false
       }]
     });
-    
+
     if (!page) {
       return res.status(404).send('Página não encontrada');
     }
@@ -181,7 +181,7 @@ exports.exibir = async (req, res) => {
     // SEO específico para a página
     const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
     const seo = {
-      title: `${page.titulo} | Obuxixo Gospel`,
+      title: `${page.titulo} - O Buxixo Gospel - Notícias Gospel e Evangélicas`,
       description: page.descricao || `${page.titulo} - Obuxixo Gospel`,
       keywords: `${page.titulo}, obuxixo gospel, gospel`,
       url: `${baseUrl}/pagina/${page.slug}`,
@@ -210,7 +210,7 @@ exports.exibir = async (req, res) => {
         }
       }
     };
-    
+
     res.render('page', {
       page,
       form: page.form || null,
