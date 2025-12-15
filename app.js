@@ -191,7 +191,7 @@ app.use(async (req, res, next) => {
     // Só carrega para páginas públicas (não dashboard)
     if (!req.path.startsWith('/dashboard') && !req.path.startsWith('/api')) {
       const ultimasNoticias = await Article.findAll({
-        where: { 
+        where: {
           publicado: true,
           dataPublicacao: { [require('sequelize').Op.lte]: new Date() }
         },
@@ -243,31 +243,31 @@ app.get('/api/push/test', (req, res) => {
 app.post('/api/push/subscribe', async (req, res) => {
   console.log('📥 POST /api/push/subscribe recebido');
   console.log('📥 Body:', JSON.stringify(req.body).substring(0, 200));
-  
+
   try {
     const subscription = req.body;
-    
+
     // Validar dados recebidos
     if (!subscription || !subscription.endpoint) {
       console.error('❌ Subscription inválida: endpoint ausente');
       return res.status(400).json({ success: false, error: 'Endpoint ausente' });
     }
-    
+
     if (!subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
       console.error('❌ Subscription inválida: keys ausentes');
       return res.status(400).json({ success: false, error: 'Keys ausentes' });
     }
-    
+
     console.log('📥 Nova subscription de push recebida:', subscription.endpoint?.substring(0, 50) + '...');
-    
+
     // Salvar no banco de dados
     const { PushSubscription } = require('./models');
-    
+
     if (!PushSubscription) {
       console.error('❌ Modelo PushSubscription não encontrado');
       return res.status(500).json({ success: false, error: 'Modelo não encontrado' });
     }
-    
+
     // Verificar se já existe
     const existing = await PushSubscription.findOne({
       where: { endpoint: subscription.endpoint }
@@ -307,9 +307,9 @@ async function sendPushNotification(title, body, url, icon = '/images/logo-icon.
   try {
     const { PushSubscription } = require('./models');
     const subscriptions = await PushSubscription.findAll({ where: { active: true } });
-    
+
     console.log(`📤 Enviando notificação para ${subscriptions.length} inscritos...`);
-    
+
     const payload = JSON.stringify({
       title: title,
       body: body,
@@ -893,7 +893,7 @@ app.post('/dashboard/posts/criar', isAuthenticated, upload.none(), async (req, r
       GoogleIndexingService.publishUrl(url).catch(err =>
         console.error('Background Indexing API Error:', err)
       );
-      
+
       // Postar nas redes sociais automaticamente
       const SocialMediaService = require('./services/SocialMediaService');
       const models = require('./models');
@@ -1108,7 +1108,7 @@ app.post('/dashboard/posts/editar/:id', isAuthenticated, upload.none(), async (r
       GoogleIndexingService.publishUrl(url).catch(err =>
         console.error('Background Indexing API Error:', err)
       );
-      
+
       // Postar nas redes sociais (apenas na primeira publicação)
       if (deveAdicionarLinks) {
         const SocialMediaService = require('./services/SocialMediaService');
@@ -1571,6 +1571,8 @@ const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemap);
 app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
+const feedController = require('./controllers/feedController');
+app.get('/feed', feedController.generateFeed);
 
 // Rotas de páginas públicas
 app.get('/', CacheService.middleware(300), async (req, res) => {
@@ -1693,7 +1695,7 @@ function convertToAMP(html) {
   // Remover atributos JSON malformados (ex: "text":="" "<p="">)
   ampHtml = ampHtml.replace(/\s*"[^"]*":\s*=\s*"[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*"<[^"]*">/gi, '');
-  
+
   // Limpar tags com atributos inválidos que começam com aspas
   ampHtml = ampHtml.replace(/<(\w+)\s+"[^>]*>/gi, '<$1>');
 
@@ -2364,30 +2366,30 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
   // Aumentar timeout da requisição para 5 minutos (processo demorado)
   req.setTimeout(300000); // 5 minutos
   res.setTimeout(300000);
-  
+
   // Desabilitar timeout do socket
   if (req.socket) {
     req.socket.setTimeout(300000);
   }
-  
+
   try {
-    const { 
+    const {
       platform = 'youtube',
       videoUrl,
-      youtubeUrl, 
+      youtubeUrl,
       facebookUrl,
       instagramUrl,
       twitterUrl,
-      quantidade = 3, 
-      categoria = 'noticias', 
-      autor = 'Redação Obuxixo Gospel', 
-      aplicarEstiloG1 = true, 
-      tom = 'normal' 
+      quantidade = 3,
+      categoria = 'noticias',
+      autor = 'Redação Obuxixo Gospel',
+      aplicarEstiloG1 = true,
+      tom = 'normal'
     } = req.body;
 
     // Determinar a URL baseada na plataforma
     let urlToProcess = videoUrl || youtubeUrl || facebookUrl || instagramUrl || twitterUrl;
-    
+
     console.log('🎬 Iniciando geração de matérias a partir de vídeo...');
     console.log('   Plataforma:', platform);
     console.log('   URL:', urlToProcess);
@@ -2401,15 +2403,15 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
     if (platform === 'youtube' || (urlToProcess && (urlToProcess.includes('youtube.com') || urlToProcess.includes('youtu.be')))) {
       // YouTube - usar transcrição
       if (!urlToProcess || !TranscriptionService.isValidYoutubeUrl(urlToProcess)) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'URL do YouTube inválida. Por favor, insira uma URL válida.' 
+        return res.status(400).json({
+          success: false,
+          error: 'URL do YouTube inválida. Por favor, insira uma URL válida.'
         });
       }
 
       console.log('📝 Obtendo transcrição do vídeo do YouTube...');
       transcricaoResult = await TranscriptionService.transcreverYoutubeVideo(urlToProcess);
-    } 
+    }
     else if (platform === 'facebook' || (urlToProcess && (urlToProcess.includes('facebook.com') || urlToProcess.includes('fb.watch')))) {
       // Facebook - usar função específica que baixa vídeo e transcreve (usa cookies)
       console.log('📝 Extraindo conteúdo do vídeo do Facebook (com transcrição)...');
@@ -2425,9 +2427,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         console.log(`✅ Conteúdo do Facebook extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
       } catch (err) {
         console.error('Erro ao extrair Facebook:', err);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Não foi possível extrair o conteúdo do vídeo do Facebook. Verifique se o vídeo é público ou tente copiar o texto manualmente.' 
+        return res.status(400).json({
+          success: false,
+          error: 'Não foi possível extrair o conteúdo do vídeo do Facebook. Verifique se o vídeo é público ou tente copiar o texto manualmente.'
         });
       }
     }
@@ -2446,9 +2448,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         console.log(`✅ Conteúdo do Instagram extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
       } catch (err) {
         console.error('Erro ao extrair Instagram:', err);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Não foi possível extrair o conteúdo do Instagram. Verifique se o post é público ou tente copiar o texto manualmente.' 
+        return res.status(400).json({
+          success: false,
+          error: 'Não foi possível extrair o conteúdo do Instagram. Verifique se o post é público ou tente copiar o texto manualmente.'
         });
       }
     }
@@ -2466,23 +2468,23 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
         console.log(`✅ Conteúdo do X/Twitter extraído: ${transcricaoResult.textoTranscricao.length} caracteres`);
       } catch (err) {
         console.error('Erro ao extrair Twitter:', err);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Não foi possível extrair o conteúdo do X/Twitter. Tente copiar o texto manualmente.' 
+        return res.status(400).json({
+          success: false,
+          error: 'Não foi possível extrair o conteúdo do X/Twitter. Tente copiar o texto manualmente.'
         });
       }
     }
     else {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Plataforma não suportada ou URL inválida.' 
+      return res.status(400).json({
+        success: false,
+        error: 'Plataforma não suportada ou URL inválida.'
       });
     }
-    
+
     if (!transcricaoResult.textoTranscricao || transcricaoResult.textoTranscricao.length < 100) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Transcrição muito curta ou vazia. Verifique se o vídeo possui legendas disponíveis.' 
+      return res.status(400).json({
+        success: false,
+        error: 'Transcrição muito curta ou vazia. Verifique se o vídeo possui legendas disponíveis.'
       });
     }
 
@@ -2496,12 +2498,12 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
     // 2. Gerar matérias com IA (passando metadados do vídeo e tom)
     console.log('🤖 Gerando matérias com IA...');
-    
+
     // Criar promise com timeout de 4 minutos para a geração de matérias
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout: A geração de matérias demorou muito. Tente com menos matérias ou um vídeo mais curto.')), 240000);
     });
-    
+
     const geracaoPromise = AIService.gerarMateriasDeVideo(
       transcricaoResult.textoTranscricao,
       Math.min(quantidade, 5), // Máximo 5
@@ -2514,7 +2516,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
       },
       tom
     );
-    
+
     // Race entre a geração e o timeout
     const materias = await Promise.race([geracaoPromise, timeoutPromise]);
 
@@ -2523,7 +2525,7 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
     // 3. Salvar cada matéria como AGENDADA para 2 dias depois (não publicada)
     const slugify = require('slugify');
     const materiassSalvas = [];
-    
+
     // Calcular data de publicação: 2 dias a partir de agora
     // Para múltiplas matérias, espaçar 1 hora entre cada
     const dataBase = new Date();
@@ -2569,8 +2571,8 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
           titulo: materia.titulo,
           descricao: materia.descricao || 'Matéria gerada a partir de vídeo',
           conteudo: conteudoFinal,
-          imagem: transcricaoResult.videoId ? 
-            `https://img.youtube.com/vi/${transcricaoResult.videoId}/maxresdefault.jpg` : 
+          imagem: transcricaoResult.videoId ?
+            `https://img.youtube.com/vi/${transcricaoResult.videoId}/maxresdefault.jpg` :
             '/images/default-post.jpg',
           categoria: categoria,
           autor: autor,
@@ -2599,9 +2601,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
     }
 
     if (materiassSalvas.length === 0) {
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Não foi possível salvar nenhuma matéria. Tente novamente.' 
+      return res.status(500).json({
+        success: false,
+        error: 'Não foi possível salvar nenhuma matéria. Tente novamente.'
       });
     }
 
@@ -2620,9 +2622,9 @@ app.post('/api/video/gerar-materias', isAuthenticated, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao gerar matérias de vídeo:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Erro ao processar vídeo. Tente novamente.' 
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro ao processar vídeo. Tente novamente.'
     });
   }
 });

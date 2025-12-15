@@ -14,7 +14,7 @@ module.exports = function (req, res, next) {
 
     // URLs do WordPress antigo
     /^\/wp-content\/.+/,
-    /^\/feed\/?$/,
+    // /^\/feed\/?$/, // Removido para permitir novo feed RSS nativo
     /^\/feed\/.+/,
 
     // Sitemaps antigos
