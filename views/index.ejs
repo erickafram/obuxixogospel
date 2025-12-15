@@ -48,8 +48,7 @@
                                     width="1200" height="630">
                                 <div class="hero-overlay">
                                     <span class="hero-category <%= destaque.categoria %>">
-                                        <%= catMap[destaque.categoria] ? catMap[destaque.categoria].nome :
-                                            destaque.categoria %>
+                                        <%= catMap[destaque.categoria] ? catMap[destaque.categoria].nome : destaque.categoria %>
                                     </span>
                                     <h2 class="hero-title">
                                         <%= destaque.titulo %>
@@ -105,10 +104,8 @@
                                                 </span>
                                             </div>
                                             <div class="trending-card-content">
-                                                <span
-                                                    class="trending-category <%= article.categoryClass || article.categoria %>">
-                                                    <%= article.subcategoria || article.categoryName ||
-                                                        article.categoria %>
+                                                <span class="trending-category <%= article.categoryClass || article.categoria %>">
+                                                    <%= article.subcategoria || article.categoryName || article.categoria %>
                                                 </span>
                                                 <h3 class="trending-card-title">
                                                     <%= article.titulo %>
@@ -147,8 +144,7 @@
                                                                 loading="lazy" width="280" height="180">
                                                         </div>
                                                         <div class="news-item-content">
-                                                            <span
-                                                                class="news-item-category <%= article.categoryClass %>">
+                                                            <span class="news-item-category <%= article.categoryClass %>">
                                                                 <%= article.subcategoria || article.categoryName %>
                                                             </span>
                                                             <h3 class="news-item-title">
@@ -159,9 +155,7 @@
                                                             </p>
                                                             <div class="news-item-meta">
                                                                 <span class="news-date">
-                                                                    <%= new
-                                                                        Date(article.dataPublicacao).toLocaleDateString('pt-BR')
-                                                                        %>
+                                                                    <%= new Date(article.dataPublicacao).toLocaleDateString('pt-BR') %>
                                                                 </span>
                                                             </div>
                                                         </div>
