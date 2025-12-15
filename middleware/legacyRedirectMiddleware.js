@@ -38,6 +38,9 @@ module.exports = function (req, res, next) {
     /^\/professor-.+\/amp\/?$/,
     /^\/presspulse-.+/,
 
+    // Correção de typo (politicia -> politica)
+    /^\/politicia\/.+/,
+
     // URLs de login do WordPress antigo
     /^\/wp-login\.php.*/
   ];
@@ -58,6 +61,12 @@ module.exports = function (req, res, next) {
     else if (url.includes('/category/')) {
       const match = url.match(/\/category\/([^/]+)/);
       if (match) keywords = match[1];
+    }
+    // Correção direta de typo: politicia -> politica
+    else if (url.includes('/politicia/')) {
+      const newUrl = url.replace('/politicia/', '/politica/');
+      console.log(`🔄 Redirecionando Typo: ${url} -> ${newUrl}`);
+      return res.redirect(301, newUrl);
     }
     // Extrair de datas /YYYY/MM/DD/slug
     else if (url.match(/\/\d{4}\/\d{2}\/\d{2}\//)) {

@@ -1728,8 +1728,6 @@ app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (
       return res.status(404).send('Conteúdo não encontrado');
     }
 
-    console.log(`✅ AMP: Artigo encontrado - ${article.titulo}`);
-
     // Converter conteúdo para AMP
     const ampArticle = {
       ...article.toJSON(),

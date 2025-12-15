@@ -36,7 +36,10 @@
                                     <div class="article-meta">
                                         <span class="article-author">
                                             <i class="fas fa-user"></i>
-                                            <%= article.autor %>
+                                            <a href="/autor/<%= article.autor.toLowerCase().replace(/[^a-z0-9]+/g, '-') %>"
+                                                style="color: inherit; text-decoration: none;">
+                                                <%= article.autor %>
+                                            </a>
                                         </span>
                                         <span class="article-date">
                                             <i class="fas fa-clock"></i>
@@ -69,55 +72,65 @@
 
                                 <%- article.conteudo %>
 
-                                <!-- Verificação de Fatos -->
-                                <div class="fact-check-section" id="factCheckSection">
-                                    <div class="fact-check-header" onclick="toggleFactCheck()">
-                                        <div class="fact-check-badge">
-                                            <i class="fas fa-check"></i>
-                                            <span>Notícia Verificada</span>
-                                        </div>
-                                        <div class="fact-check-status" id="factCheckStatus">
-                                            <span class="status-text">Ver detalhes da verificação</span>
-                                            <i class="fas fa-chevron-down" id="factCheckArrow"></i>
-                                        </div>
-                                    </div>
-                                    <div class="fact-check-content" id="factCheckContent" style="display: none;">
-                                        <div class="fact-check-loading" id="factCheckLoading">
-                                            <div class="loading-spinner"></div>
-                                            <p class="loading-status" id="loadingStatus">Iniciando verificação...</p>
-                                            <div class="loading-steps">
-                                                <div class="loading-step" id="step1"><i class="fas fa-circle"></i> Pesquisando em sites confiáveis</div>
-                                                <div class="loading-step" id="step2"><i class="fas fa-circle"></i> Verificando em redes sociais</div>
-                                                <div class="loading-step" id="step3"><i class="fas fa-circle"></i> Analisando fontes oficiais</div>
-                                                <div class="loading-step" id="step4"><i class="fas fa-circle"></i> Processando com IA</div>
+                                    <!-- Verificação de Fatos -->
+                                    <div class="fact-check-section" id="factCheckSection">
+                                        <div class="fact-check-header" onclick="toggleFactCheck()">
+                                            <div class="fact-check-badge">
+                                                <i class="fas fa-check"></i>
+                                                <span>Notícia Verificada</span>
+                                            </div>
+                                            <div class="fact-check-status" id="factCheckStatus">
+                                                <span class="status-text">Ver detalhes da verificação</span>
+                                                <i class="fas fa-chevron-down" id="factCheckArrow"></i>
                                             </div>
                                         </div>
-                                        <div class="fact-check-result" id="factCheckResult" style="display: none;"></div>
+                                        <div class="fact-check-content" id="factCheckContent" style="display: none;">
+                                            <div class="fact-check-loading" id="factCheckLoading">
+                                                <div class="loading-spinner"></div>
+                                                <p class="loading-status" id="loadingStatus">Iniciando verificação...
+                                                </p>
+                                                <div class="loading-steps">
+                                                    <div class="loading-step" id="step1"><i class="fas fa-circle"></i>
+                                                        Pesquisando em sites confiáveis</div>
+                                                    <div class="loading-step" id="step2"><i class="fas fa-circle"></i>
+                                                        Verificando em redes sociais</div>
+                                                    <div class="loading-step" id="step3"><i class="fas fa-circle"></i>
+                                                        Analisando fontes oficiais</div>
+                                                    <div class="loading-step" id="step4"><i class="fas fa-circle"></i>
+                                                        Processando com IA</div>
+                                                </div>
+                                            </div>
+                                            <div class="fact-check-result" id="factCheckResult" style="display: none;">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="article-footer-share">
-                                    <div class="share-box">
-                                        <div class="share-box-header">
-                                            <i class="fas fa-share-alt"></i>
-                                            <h3>Gostou da notícia? Compartilhe!</h3>
-                                        </div>
-                                        <div class="article-share">
-                                            <a href="#" class="share-btn facebook" title="Compartilhar no Facebook" aria-label="Facebook">
-                                                <i class="fab fa-facebook-f"></i>
-                                            </a>
-                                            <a href="#" class="share-btn twitter" title="Compartilhar no Twitter" aria-label="Twitter">
-                                                <i class="fab fa-twitter"></i>
-                                            </a>
-                                            <a href="#" class="share-btn whatsapp" title="Compartilhar no WhatsApp" aria-label="WhatsApp">
-                                                <i class="fab fa-whatsapp"></i>
-                                            </a>
-                                            <a href="#" class="share-btn linkedin" title="Compartilhar no LinkedIn" aria-label="LinkedIn">
-                                                <i class="fab fa-linkedin-in"></i>
-                                            </a>
+                                    <div class="article-footer-share">
+                                        <div class="share-box">
+                                            <div class="share-box-header">
+                                                <i class="fas fa-share-alt"></i>
+                                                <h3>Gostou da notícia? Compartilhe!</h3>
+                                            </div>
+                                            <div class="article-share">
+                                                <a href="#" class="share-btn facebook" title="Compartilhar no Facebook"
+                                                    aria-label="Facebook">
+                                                    <i class="fab fa-facebook-f"></i>
+                                                </a>
+                                                <a href="#" class="share-btn twitter" title="Compartilhar no Twitter"
+                                                    aria-label="Twitter">
+                                                    <i class="fab fa-twitter"></i>
+                                                </a>
+                                                <a href="#" class="share-btn whatsapp" title="Compartilhar no WhatsApp"
+                                                    aria-label="WhatsApp">
+                                                    <i class="fab fa-whatsapp"></i>
+                                                </a>
+                                                <a href="#" class="share-btn linkedin" title="Compartilhar no LinkedIn"
+                                                    aria-label="LinkedIn">
+                                                    <i class="fab fa-linkedin-in"></i>
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
                         </div>
 
@@ -405,13 +418,13 @@
                     function toggleFactCheck() {
                         const content = document.getElementById('factCheckContent');
                         const arrow = document.getElementById('factCheckArrow');
-                        
+
                         factCheckExpanded = !factCheckExpanded;
-                        
+
                         if (factCheckExpanded) {
                             content.style.display = 'block';
                             arrow.classList.add('rotated');
-                            
+
                             if (!factCheckLoaded) {
                                 loadFactCheck();
                             }
@@ -425,7 +438,7 @@
                         const loading = document.getElementById('factCheckLoading');
                         const result = document.getElementById('factCheckResult');
                         const status = document.getElementById('factCheckStatus');
-                        
+
                         // Animação de progresso
                         const steps = ['step1', 'step2', 'step3', 'step4'];
                         const messages = [
@@ -434,7 +447,7 @@
                             'Analisando fontes oficiais...',
                             'Processando com Inteligência Artificial...'
                         ];
-                        
+
                         let currentStep = 0;
                         const progressInterval = setInterval(() => {
                             if (currentStep < steps.length) {
@@ -444,22 +457,22 @@
                                 currentStep++;
                             }
                         }, 1500);
-                        
+
                         try {
                             const response = await fetch(`/api/factcheck/${articleId}`);
                             const data = await response.json();
-                            
+
                             clearInterval(progressInterval);
                             // Marcar todos os steps como completos
                             steps.forEach(s => {
                                 document.getElementById(s).classList.add('completed');
                             });
-                            
+
                             setTimeout(() => {
                                 loading.style.display = 'none';
                                 result.style.display = 'block';
                                 factCheckLoaded = true;
-                                
+
                                 if (data.success) {
                                     renderFactCheckResult(data.data);
                                     updateFactCheckStatus(data.data);
@@ -491,7 +504,7 @@
                         const statusClass = data.confianca >= 70 ? 'verified' : data.confianca >= 40 ? 'partial' : 'unverified';
                         const statusIcon = data.confianca >= 70 ? 'check-circle' : data.confianca >= 40 ? 'exclamation-circle' : 'times-circle';
                         const statusText = data.confianca >= 70 ? 'Verificado' : data.confianca >= 40 ? 'Parcialmente verificado' : 'Não verificado';
-                        
+
                         status.innerHTML = `
                             <span class="status-badge ${statusClass}">
                                 <i class="fas fa-${statusIcon}"></i> ${statusText}
@@ -502,9 +515,9 @@
 
                     function renderFactCheckResult(data) {
                         const result = document.getElementById('factCheckResult');
-                        
+
                         const confiancaClass = data.confianca >= 70 ? 'high' : data.confianca >= 40 ? 'medium' : 'low';
-                        
+
                         let factsHtml = '';
                         if (data.fatos && data.fatos.length > 0) {
                             factsHtml = data.fatos.map(fato => {
@@ -523,7 +536,7 @@
                                 `;
                             }).join('');
                         }
-                        
+
                         // Gerar HTML das fontes
                         let fontesHtml = '';
                         if (data.fontes && data.fontes.length > 0) {
@@ -534,7 +547,7 @@
                                 </div>
                             `).join('');
                         }
-                        
+
                         result.innerHTML = `
                             <div class="fact-check-summary">
                                 <div class="confidence-meter">
@@ -584,10 +597,10 @@
 
                 <!-- Script para animar sublinhado dos links internos -->
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
+                    document.addEventListener('DOMContentLoaded', function () {
                         // Selecionar todos os links internos
                         const internalLinks = document.querySelectorAll('.internal-link');
-                        
+
                         if (internalLinks.length > 0 && 'IntersectionObserver' in window) {
                             // Usar Intersection Observer para animar quando o link aparecer na tela
                             const observer = new IntersectionObserver((entries) => {
