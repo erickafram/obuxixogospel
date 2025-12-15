@@ -1690,6 +1690,13 @@ function convertToAMP(html) {
   ampHtml = ampHtml.replace(/\s*allowfullscreen="[^"]*"/gi, '');
   ampHtml = ampHtml.replace(/\s*scrolling="[^"]*"/gi, '');
 
+  // Remover atributos JSON malformados (ex: "text":="" "<p="">)
+  ampHtml = ampHtml.replace(/\s*"[^"]*":\s*=\s*"[^"]*"/gi, '');
+  ampHtml = ampHtml.replace(/\s*"<[^"]*">/gi, '');
+  
+  // Limpar tags com atributos inválidos que começam com aspas
+  ampHtml = ampHtml.replace(/<(\w+)\s+"[^>]*>/gi, '<$1>');
+
   return ampHtml;
 }
 
