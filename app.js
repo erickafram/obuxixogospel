@@ -1693,7 +1693,77 @@ function convertToAMP(html) {
   return ampHtml;
 }
 
-// Rota AMP do artigo
+// Rota AMP do artigo (formato /amp/:categoria/:slug - usado no link amphtml)
+app.get('/amp/:categorySlug/:articleSlug', CacheService.middleware(300), async (req, res) => {
+  try {
+    // Verificar se AMP está habilitado
+    const ampConfig = await SystemConfig.findOne({
+      where: { chave: 'amp_habilitado' }
+    });
+
+    if (!ampConfig || ampConfig.valor !== 'true') {
+      return res.redirect(`/${req.params.categorySlug}/${req.params.articleSlug}`);
+    }
+
+    const article = await Article.findOne({
+      where: {
+        urlAmigavel: req.params.articleSlug,
+        categoria: req.params.categorySlug,
+        publicado: true
+      }
+    });
+
+    if (!article) {
+      console.log(`❌ AMP: Artigo não encontrado - categoria: ${req.params.categorySlug}, slug: ${req.params.articleSlug}`);
+      return res.status(404).send('Conteúdo não encontrado');
+    }
+
+    console.log(`✅ AMP: Artigo encontrado - ${article.titulo}`);
+
+    const ampArticle = {
+      ...article.toJSON(),
+      conteudo: convertToAMP(article.conteudo)
+    };
+
+    const { Op } = require('sequelize');
+    const related = await Article.findAll({
+      where: {
+        categoria: article.categoria,
+        id: { [Op.ne]: article.id },
+        publicado: true
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 6
+    });
+
+    const analyticsConfig = await SystemConfig.findOne({
+      where: { chave: 'amp_analytics_id' }
+    });
+
+    const category = await Category.findOne({
+      where: { slug: article.categoria }
+    });
+
+    const categories = await Category.findAll({
+      order: [['ordem', 'ASC'], ['nome', 'ASC']]
+    });
+
+    res.render('article-amp', {
+      article: ampArticle,
+      related,
+      categories,
+      categoryRoute: req.params.categorySlug,
+      categoryName: category ? category.nome : 'Notícias',
+      siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
+      ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
+    });
+  } catch (error) {
+    console.error('Erro ao carregar versão AMP:', error);
+    res.status(500).send('Erro ao carregar versão AMP');
+  }
+});
+
+// Rota AMP do artigo (formato alternativo /:categoria/:slug/amp)
 app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (req, res) => {
   try {
     // Verificar se AMP está habilitado
