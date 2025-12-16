@@ -17,8 +17,8 @@ module.exports = function (req, res, next) {
     // /^\/feed\/?$/, // Removido para permitir novo feed RSS nativo
     /^\/feed\/.+/,
 
-    // Sitemaps antigos
-    /^\/post-sitemap\d*\.xml$/,
+    // Sitemaps antigos (REMOVIDO - agora temos sitemaps próprios)
+    // /^\/post-sitemap\d*\.xml$/,
 
     // Páginas de autor antigas
     /^\/author\/.+/,

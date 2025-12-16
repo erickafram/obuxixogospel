@@ -6,14 +6,19 @@ const { Redirect } = require('../models');
  */
 async function redirectMiddleware(req, res, next) {
   try {
-    // Ignorar requisições para assets estáticos
+    // Ignorar requisições para assets estáticos e sitemaps
     if (
       req.path.startsWith('/uploads/') ||
       req.path.startsWith('/css/') ||
       req.path.startsWith('/js/') ||
       req.path.startsWith('/images/') ||
       req.path.startsWith('/dashboard/') ||
-      req.path.startsWith('/api/')
+      req.path.startsWith('/api/') ||
+      req.path.endsWith('-sitemap.xml') ||
+      req.path === '/sitemap.xml' ||
+      req.path === '/sitemap_index.xml' ||
+      req.path === '/robots.txt' ||
+      req.path === '/feed'
     ) {
       return next();
     }
