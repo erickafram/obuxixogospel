@@ -47,7 +47,6 @@ exports.generateSitemapIndex = async (req, res) => {
     });
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
     xml += '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
     // Sitemap de Posts/Artigos
@@ -116,7 +115,6 @@ exports.generatePostSitemap = async (req, res) => {
     });
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
     xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
@@ -168,7 +166,6 @@ exports.generatePageSitemap = async (req, res) => {
     });
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
     // Página inicial
@@ -220,7 +217,6 @@ exports.generateCategorySitemap = async (req, res) => {
     });
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
     categories.forEach(cat => {
@@ -260,7 +256,6 @@ exports.generateAuthorSitemap = async (req, res) => {
     const autores = [...new Set(articles.map(a => a.autor).filter(Boolean))];
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
     autores.forEach(autor => {
