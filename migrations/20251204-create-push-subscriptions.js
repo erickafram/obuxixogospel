@@ -10,7 +10,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       endpoint: {
-        type: Sequelize.TEXT,
+        type: Sequelize.STRING(500),
         allowNull: false,
         unique: true
       },

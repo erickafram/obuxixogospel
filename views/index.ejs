@@ -1,6 +1,9 @@
 <%- include('partials/header') %>
 
     <main class="main-content" id="main-content" role="main">
+        <!-- H1 SEO - Visualmente discreto mas presente para SEO -->
+        <h1 class="sr-only">Obuxixo Gospel - Notícias Gospel, Música Cristã e Eventos Evangélicos</h1>
+        
         <div class="container">
             <%
             // Criar mapa de categorias para lookup rápido
@@ -35,9 +38,6 @@
             // Ordenar por data (mais recentes primeiro)
             allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); });
         %>
-
-                <!-- SEO Title Hidden/Visible Strategy -->
-                <h1 class="site-main-title">Últimas Notícias do Mundo Gospel e Evangélico</h1>
 
                 <!-- Hero Section - Notícia em Destaque -->
                 <% if (destaque) { %>
@@ -328,6 +328,30 @@
                                     }
                                 }
                             </style>
+                            
+                            <!-- Schema ItemList para Google News -->
+                            <script type="application/ld+json">
+                            {
+                                "@context": "https://schema.org",
+                                "@type": "CollectionPage",
+                                "name": "Obuxixo Gospel - Últimas Notícias",
+                                "description": "Portal de notícias gospel com as últimas novidades sobre música cristã, eventos evangélicos e conteúdo edificante.",
+                                "url": "https://www.obuxixogospel.com.br/",
+                                "mainEntity": {
+                                    "@type": "ItemList",
+                                    "itemListElement": [
+                                        <% if (typeof allArticles !== 'undefined' && allArticles.length > 0) { 
+                                            allArticles.slice(0, 10).forEach(function(article, index) { %>
+                                        {
+                                            "@type": "ListItem",
+                                            "position": <%= index + 1 %>,
+                                            "url": "https://www.obuxixogospel.com.br/<%= article.categoria %>/<%= article.urlAmigavel %>"
+                                        }<%= index < Math.min(allArticles.length, 10) - 1 ? ',' : '' %>
+                                        <% }); } %>
+                                    ]
+                                }
+                            }
+                            </script>
 
                             <!-- Sidebar -->
                             <aside class="sidebar">

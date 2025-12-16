@@ -9,11 +9,11 @@ exports.generateFeed = async (req, res) => {
         const articles = await Article.findAll({
             where: {
                 publicado: true,
-                data_publicacao: {
+                dataPublicacao: {
                     [Op.lte]: new Date()
                 }
             },
-            order: [['data_publicacao', 'DESC']],
+            order: [['dataPublicacao', 'DESC']],
             limit: 30
         });
 

@@ -32,6 +32,9 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="<%= siteUrl + '/' + article.categoria + '/' + article.urlAmigavel %>">
 
+    <!-- RSS Feed - Importante para Google News -->
+    <link rel="alternate" type="application/rss+xml" title="Obuxixo Gospel - Feed RSS" href="<%= siteUrl %>/feed">
+
     <!-- Additional Social Media Meta Tags -->
     <meta name="thumbnail"
         content="<%= article.imagem.startsWith('http') ? article.imagem : (siteUrl + (article.imagem.startsWith('/') ? article.imagem : '/' + article.imagem)) %>">
@@ -107,13 +110,27 @@
         "headline": "<%- escapeJSON(article.titulo) %>",
         "alternativeHeadline": "<%- escapeJSON(article.descricao) %>",
         "description": "<%- escapeJSON(article.descricao) %>",
-        "image": {
-            "@type": "ImageObject",
-            "url": "<%= imageUrl %>",
-            "width": 1200,
-            "height": 630,
-            "caption": "<%- escapeJSON(article.titulo) %>"
-        },
+        "image": [
+            {
+                "@type": "ImageObject",
+                "url": "<%= imageUrl %>",
+                "width": 1200,
+                "height": 630,
+                "caption": "<%- escapeJSON(article.titulo) %>"
+            },
+            {
+                "@type": "ImageObject",
+                "url": "<%= imageUrl %>",
+                "width": 1200,
+                "height": 900
+            },
+            {
+                "@type": "ImageObject",
+                "url": "<%= imageUrl %>",
+                "width": 1200,
+                "height": 1200
+            }
+        ],
         "datePublished": "<%= new Date(article.dataPublicacao).toISOString() %>",
         "dateModified": "<%= new Date(article.updatedAt || article.dataPublicacao).toISOString() %>",
         "dateCreated": "<%= new Date(article.createdAt || article.dataPublicacao).toISOString() %>",

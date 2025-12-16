@@ -1829,7 +1829,7 @@ app.get('/:categorySlug/:articleSlug/amp', CacheService.middleware(300), async (
       categories,
       categoryRoute: req.params.categorySlug,
       categoryName: category ? category.nome : 'Notícias',
-      siteUrl: process.env.SITE_URL || 'https://obuxixogospel.com.br',
+      siteUrl: process.env.SITE_URL || 'https://www.obuxixogospel.com.br',
       ampAnalyticsId: analyticsConfig ? analyticsConfig.valor : null
     });
   } catch (error) {

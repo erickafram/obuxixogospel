@@ -173,6 +173,10 @@ exports.generateNewsSitemap = async (req, res) => {
         }
 
         xml += '    </news:news>\n';
+        
+        // Adicionar lastmod para melhor indexação
+        xml += `    <lastmod>${new Date(article.updatedAt || article.dataPublicacao).toISOString()}</lastmod>\n`;
+        
         xml += '  </url>\n';
       }
     });
