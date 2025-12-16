@@ -89,26 +89,12 @@ class GoogleSitemapService {
             try {
                 console.log(`🔄 Refreshing sitemap: ${sitemapUrl}`);
 
-                // 1. Delete the sitemap (if it exists)
-                try {
-                    await this.webmasters.sitemaps.delete({
-                        siteUrl: this.siteUrl,
-                        feedpath: sitemapUrl
-                    });
-                    console.log(`   - Deleted: ${sitemapUrl}`);
-                } catch (deleteError) {
-                    // Ignore 404s (sitemap didn't exist yet)
-                    if (deleteError.code !== 404) {
-                        console.warn(`   - Warning deleting ${sitemapUrl}: ${deleteError.message}`);
-                    }
-                }
-
-                // 2. Submit the sitemap
+                // Enviar/Pingar sitemap para o Google (sem deletar antes)
                 await this.webmasters.sitemaps.submit({
                     siteUrl: this.siteUrl,
                     feedpath: sitemapUrl
                 });
-                console.log(`   - Submitted: ${sitemapUrl}`);
+                console.log(`   - Enviado/Pingado: ${sitemapUrl}`);
 
                 results.push({ sitemap: sitemapUrl, status: 'success' });
 
