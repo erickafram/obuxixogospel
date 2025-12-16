@@ -12,9 +12,13 @@ class GoogleSitemapService {
         this.webmasters = null;
         this.enabled = false;
         this.siteUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
-        // Define sitemaps to manage
+        // Define sitemaps to manage (estilo Yoast)
         this.sitemaps = [
             `${this.siteUrl}/sitemap.xml`,
+            `${this.siteUrl}/post-sitemap.xml`,
+            `${this.siteUrl}/page-sitemap.xml`,
+            `${this.siteUrl}/category-sitemap.xml`,
+            `${this.siteUrl}/author-sitemap.xml`,
             `${this.siteUrl}/news-sitemap.xml`
         ];
     }

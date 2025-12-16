@@ -1566,10 +1566,15 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
   }
 });
 
-// Sitemap e Robots.txt
+// Sitemap e Robots.txt (estilo Yoast - múltiplos sitemaps)
 const sitemapController = require('./controllers/sitemapController');
-app.get('/sitemap.xml', sitemapController.generateSitemap);
-app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);
+app.get('/sitemap.xml', sitemapController.generateSitemapIndex);        // Índice principal
+app.get('/sitemap_index.xml', sitemapController.generateSitemapIndex); // Alias
+app.get('/post-sitemap.xml', sitemapController.generatePostSitemap);   // Artigos
+app.get('/page-sitemap.xml', sitemapController.generatePageSitemap);   // Páginas
+app.get('/category-sitemap.xml', sitemapController.generateCategorySitemap); // Categorias
+app.get('/author-sitemap.xml', sitemapController.generateAuthorSitemap);     // Autores
+app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);   // Google News
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
 const feedController = require('./controllers/feedController');
 app.get('/feed', feedController.generateFeed);

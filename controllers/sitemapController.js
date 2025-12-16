@@ -1,198 +1,7 @@
 const { Article, Category, Page } = require('../models');
 const { Op } = require('sequelize');
 
-exports.generateSitemap = async (req, res) => {
-  try {
-    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
-
-    console.log('🗺️ Gerando sitemap...');
-
-    // Buscar todos os artigos publicados E com data de publicação no passado (não agendados)
-    const agora = new Date();
-    const articles = await Article.findAll({
-      where: {
-        publicado: true,
-        dataPublicacao: { [Op.lte]: agora } // Exclui matérias agendadas
-      },
-      order: [['dataPublicacao', 'DESC']]
-    });
-
-    // Buscar todas as categorias
-    const categories = await Category.findAll({
-      order: [['nome', 'ASC']]
-    });
-
-    // Buscar todas as páginas ativas
-    const pages = await Page.findAll({
-      where: { ativo: true },
-      order: [['ordem', 'ASC']]
-    });
-
-    console.log(`📄 Encontrados ${articles.length} artigos, ${categories.length} categorias e ${pages.length} páginas`);
-
-    // Gerar XML do sitemap
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-
-    // Página inicial
-    xml += '  <url>\n';
-    xml += `    <loc>${baseUrl}/</loc>\n`;
-    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
-    xml += '    <changefreq>daily</changefreq>\n';
-    xml += '    <priority>1.0</priority>\n';
-    xml += '  </url>\n';
-
-    // Página de busca
-    xml += '  <url>\n';
-    xml += `    <loc>${baseUrl}/busca</loc>\n`;
-    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
-    xml += '    <changefreq>weekly</changefreq>\n';
-    xml += '    <priority>0.7</priority>\n';
-    xml += '  </url>\n';
-
-    // Categorias do banco de dados
-    categories.forEach(cat => {
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/categoria/${cat.slug}</loc>\n`;
-      xml += `    <lastmod>${new Date(cat.updatedAt || cat.createdAt).toISOString()}</lastmod>\n`;
-      xml += '    <changefreq>daily</changefreq>\n';
-      xml += '    <priority>0.8</priority>\n';
-      xml += '  </url>\n';
-    });
-
-    // Páginas do banco de dados
-    pages.forEach(page => {
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/pagina/${page.slug}</loc>\n`;
-      xml += `    <lastmod>${new Date(page.updatedAt || page.createdAt).toISOString()}</lastmod>\n`;
-      xml += '    <changefreq>monthly</changefreq>\n';
-      xml += '    <priority>0.6</priority>\n';
-      xml += '  </url>\n';
-    });
-
-    // Artigos - usar slug da categoria diretamente do banco
-    // Também coletar autores únicos para E-E-A-T
-    const autoresUnicos = new Set();
-
-    articles.forEach(article => {
-      if (article.urlAmigavel && article.categoria) {
-        const lastmod = article.updatedAt || article.dataPublicacao || new Date();
-
-        // Usa o slug da categoria diretamente (já vem do banco)
-        const categorySlug = article.categoria;
-
-        xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/${categorySlug}/${article.urlAmigavel}</loc>\n`;
-        xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
-        xml += '    <changefreq>weekly</changefreq>\n';
-        xml += '    <priority>0.7</priority>\n';
-        xml += '  </url>\n';
-
-        // Coletar autor para página de autor (E-E-A-T)
-        if (article.autor) {
-          autoresUnicos.add(article.autor);
-        }
-      }
-    });
-
-    // Páginas de autores (E-E-A-T - importante para Google Discover 2025)
-    autoresUnicos.forEach(autor => {
-      const autorSlug = autor.toLowerCase().replace(/\s+/g, '-');
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/autor/${autorSlug}</loc>\n`;
-      xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
-      xml += '    <changefreq>monthly</changefreq>\n';
-      xml += '    <priority>0.6</priority>\n';
-      xml += '  </url>\n';
-    });
-
-    console.log(`👤 Adicionados ${autoresUnicos.size} autores ao sitemap`);
-
-    xml += '</urlset>';
-
-    console.log('✅ Sitemap gerado com sucesso');
-
-    res.header('Content-Type', 'application/xml');
-    res.send(xml);
-  } catch (error) {
-    console.error('❌ Erro ao gerar sitemap:', error);
-    console.error('Stack:', error.stack);
-    res.status(500).send(`Erro ao gerar sitemap: ${error.message}`);
-  }
-};
-
-// Gerar sitemap específico para Google News (últimas 48h)
-exports.generateNewsSitemap = async (req, res) => {
-  try {
-    const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
-
-    console.log('📰 Gerando Google News Sitemap...');
-
-    // Buscar artigos publicados nas últimas 48 horas
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
-
-    const agora = new Date();
-    const recentArticles = await Article.findAll({
-      where: {
-        publicado: true,
-        dataPublicacao: {
-          [Op.gte]: twoDaysAgo,
-          [Op.lte]: agora // Exclui matérias agendadas
-        }
-      },
-      order: [['dataPublicacao', 'DESC']],
-      limit: 1000 // Google News aceita até 1000 artigos
-    });
-
-    console.log(`📄 Encontrados ${recentArticles.length} artigos recentes para Google News`);
-
-    // Gerar XML do Google News Sitemap
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
-    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n';
-
-    // Artigos recentes
-    recentArticles.forEach(article => {
-      if (article.urlAmigavel && article.categoria) {
-        const pubDate = new Date(article.dataPublicacao);
-
-        xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
-        xml += '    <news:news>\n';
-        xml += '      <news:publication>\n';
-        xml += '        <news:name>Obuxixo Gospel</news:name>\n';
-        xml += '        <news:language>pt</news:language>\n';
-        xml += '      </news:publication>\n';
-        xml += `      <news:publication_date>${pubDate.toISOString()}</news:publication_date>\n`;
-        xml += `      <news:title>${escapeXml(article.titulo)}</news:title>\n`;
-
-        // Adicionar keywords se houver
-        if (article.keywords || article.tags) {
-          xml += `      <news:keywords>${escapeXml(article.keywords || article.tags)}</news:keywords>\n`;
-        }
-
-        xml += '    </news:news>\n';
-        
-        // Adicionar lastmod para melhor indexação
-        xml += `    <lastmod>${new Date(article.updatedAt || article.dataPublicacao).toISOString()}</lastmod>\n`;
-        
-        xml += '  </url>\n';
-      }
-    });
-
-    xml += '</urlset>';
-
-    console.log('✅ Google News Sitemap gerado com sucesso');
-
-    res.header('Content-Type', 'application/xml');
-    res.send(xml);
-  } catch (error) {
-    console.error('❌ Erro ao gerar Google News Sitemap:', error);
-    console.error('Stack:', error.stack);
-    res.status(500).send(`Erro ao gerar Google News Sitemap: ${error.message}`);
-  }
-};
+const BASE_URL = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
 
 // Função auxiliar para escapar caracteres XML
 function escapeXml(unsafe) {
@@ -205,25 +14,378 @@ function escapeXml(unsafe) {
     .replace(/'/g, '&apos;');
 }
 
-exports.generateRobotsTxt = (req, res) => {
-  const baseUrl = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
+// Função para obter URL da imagem
+function getImageUrl(imagem) {
+  if (!imagem) return '';
+  if (imagem.startsWith('http')) return imagem;
+  return BASE_URL + (imagem.startsWith('/') ? imagem : '/' + imagem);
+}
 
+// ============================================
+// SITEMAP INDEX (Principal - estilo Yoast)
+// ============================================
+exports.generateSitemapIndex = async (req, res) => {
+  try {
+    console.log('🗺️ Gerando Sitemap Index...');
+
+    // Buscar última modificação de cada tipo
+    const lastArticle = await Article.findOne({
+      where: { publicado: true },
+      order: [['updatedAt', 'DESC']],
+      attributes: ['updatedAt']
+    });
+
+    const lastCategory = await Category.findOne({
+      order: [['updatedAt', 'DESC']],
+      attributes: ['updatedAt']
+    });
+
+    const lastPage = await Page.findOne({
+      where: { ativo: true },
+      order: [['updatedAt', 'DESC']],
+      attributes: ['updatedAt']
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
+    xml += '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    // Sitemap de Posts/Artigos
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${BASE_URL}/post-sitemap.xml</loc>\n`;
+    if (lastArticle) {
+      xml += `    <lastmod>${new Date(lastArticle.updatedAt).toISOString()}</lastmod>\n`;
+    }
+    xml += '  </sitemap>\n';
+
+    // Sitemap de Páginas
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${BASE_URL}/page-sitemap.xml</loc>\n`;
+    if (lastPage) {
+      xml += `    <lastmod>${new Date(lastPage.updatedAt).toISOString()}</lastmod>\n`;
+    }
+    xml += '  </sitemap>\n';
+
+    // Sitemap de Categorias
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${BASE_URL}/category-sitemap.xml</loc>\n`;
+    if (lastCategory) {
+      xml += `    <lastmod>${new Date(lastCategory.updatedAt).toISOString()}</lastmod>\n`;
+    }
+    xml += '  </sitemap>\n';
+
+    // Sitemap de Autores
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${BASE_URL}/author-sitemap.xml</loc>\n`;
+    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+    xml += '  </sitemap>\n';
+
+    // News Sitemap (Google News)
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${BASE_URL}/news-sitemap.xml</loc>\n`;
+    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+    xml += '  </sitemap>\n';
+
+    xml += '</sitemapindex>';
+
+    console.log('✅ Sitemap Index gerado com sucesso');
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Sitemap Index:', error);
+    res.status(500).send(`Erro ao gerar sitemap: ${error.message}`);
+  }
+};
+
+
+// ============================================
+// POST SITEMAP (Artigos)
+// ============================================
+exports.generatePostSitemap = async (req, res) => {
+  try {
+    console.log('📰 Gerando Post Sitemap...');
+
+    const agora = new Date();
+    const articles = await Article.findAll({
+      where: {
+        publicado: true,
+        dataPublicacao: { [Op.lte]: agora }
+      },
+      order: [['dataPublicacao', 'DESC']],
+      attributes: ['id', 'titulo', 'descricao', 'urlAmigavel', 'categoria', 'imagem', 'dataPublicacao', 'updatedAt']
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
+
+    articles.forEach(article => {
+      if (article.urlAmigavel && article.categoria) {
+        const lastmod = article.updatedAt || article.dataPublicacao;
+        const imageUrl = getImageUrl(article.imagem);
+
+        xml += '  <url>\n';
+        xml += `    <loc>${BASE_URL}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
+        xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
+        xml += '    <changefreq>weekly</changefreq>\n';
+        xml += '    <priority>0.8</priority>\n';
+
+        if (imageUrl) {
+          xml += '    <image:image>\n';
+          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
+          xml += `      <image:title>${escapeXml(article.titulo)}</image:title>\n`;
+          xml += `      <image:caption>${escapeXml(article.descricao || article.titulo)}</image:caption>\n`;
+          xml += '    </image:image>\n';
+        }
+
+        xml += '  </url>\n';
+      }
+    });
+
+    xml += '</urlset>';
+
+    console.log(`✅ Post Sitemap gerado: ${articles.length} artigos`);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Post Sitemap:', error);
+    res.status(500).send(`Erro: ${error.message}`);
+  }
+};
+
+// ============================================
+// PAGE SITEMAP (Páginas estáticas)
+// ============================================
+exports.generatePageSitemap = async (req, res) => {
+  try {
+    console.log('📄 Gerando Page Sitemap...');
+
+    const pages = await Page.findAll({
+      where: { ativo: true },
+      order: [['ordem', 'ASC']],
+      attributes: ['titulo', 'slug', 'updatedAt', 'createdAt']
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    // Página inicial
+    xml += '  <url>\n';
+    xml += `    <loc>${BASE_URL}/</loc>\n`;
+    xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+    xml += '    <changefreq>daily</changefreq>\n';
+    xml += '    <priority>1.0</priority>\n';
+    xml += '  </url>\n';
+
+    // Página de busca
+    xml += '  <url>\n';
+    xml += `    <loc>${BASE_URL}/busca</loc>\n`;
+    xml += '    <changefreq>weekly</changefreq>\n';
+    xml += '    <priority>0.5</priority>\n';
+    xml += '  </url>\n';
+
+    // Páginas do banco
+    pages.forEach(page => {
+      xml += '  <url>\n';
+      xml += `    <loc>${BASE_URL}/pagina/${page.slug}</loc>\n`;
+      xml += `    <lastmod>${new Date(page.updatedAt || page.createdAt).toISOString()}</lastmod>\n`;
+      xml += '    <changefreq>monthly</changefreq>\n';
+      xml += '    <priority>0.6</priority>\n';
+      xml += '  </url>\n';
+    });
+
+    xml += '</urlset>';
+
+    console.log(`✅ Page Sitemap gerado: ${pages.length + 2} páginas`);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Page Sitemap:', error);
+    res.status(500).send(`Erro: ${error.message}`);
+  }
+};
+
+// ============================================
+// CATEGORY SITEMAP (Categorias)
+// ============================================
+exports.generateCategorySitemap = async (req, res) => {
+  try {
+    console.log('📁 Gerando Category Sitemap...');
+
+    const categories = await Category.findAll({
+      order: [['ordem', 'ASC']],
+      attributes: ['nome', 'slug', 'updatedAt', 'createdAt']
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    categories.forEach(cat => {
+      xml += '  <url>\n';
+      xml += `    <loc>${BASE_URL}/categoria/${cat.slug}</loc>\n`;
+      xml += `    <lastmod>${new Date(cat.updatedAt || cat.createdAt).toISOString()}</lastmod>\n`;
+      xml += '    <changefreq>daily</changefreq>\n';
+      xml += '    <priority>0.7</priority>\n';
+      xml += '  </url>\n';
+    });
+
+    xml += '</urlset>';
+
+    console.log(`✅ Category Sitemap gerado: ${categories.length} categorias`);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Category Sitemap:', error);
+    res.status(500).send(`Erro: ${error.message}`);
+  }
+};
+
+// ============================================
+// AUTHOR SITEMAP (Autores - E-E-A-T)
+// ============================================
+exports.generateAuthorSitemap = async (req, res) => {
+  try {
+    console.log('👤 Gerando Author Sitemap...');
+
+    // Buscar autores únicos dos artigos
+    const articles = await Article.findAll({
+      where: { publicado: true },
+      attributes: ['autor'],
+      group: ['autor']
+    });
+
+    const autores = [...new Set(articles.map(a => a.autor).filter(Boolean))];
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<?xml-stylesheet type="text/xsl" href="/sitemap-style.xsl"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    autores.forEach(autor => {
+      const autorSlug = autor.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      xml += '  <url>\n';
+      xml += `    <loc>${BASE_URL}/autor/${autorSlug}</loc>\n`;
+      xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+      xml += '    <changefreq>weekly</changefreq>\n';
+      xml += '    <priority>0.6</priority>\n';
+      xml += '  </url>\n';
+    });
+
+    xml += '</urlset>';
+
+    console.log(`✅ Author Sitemap gerado: ${autores.length} autores`);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar Author Sitemap:', error);
+    res.status(500).send(`Erro: ${error.message}`);
+  }
+};
+
+
+// ============================================
+// NEWS SITEMAP (Google News - últimas 48h)
+// ============================================
+exports.generateNewsSitemap = async (req, res) => {
+  try {
+    console.log('📰 Gerando Google News Sitemap...');
+
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+
+    const agora = new Date();
+    const recentArticles = await Article.findAll({
+      where: {
+        publicado: true,
+        dataPublicacao: {
+          [Op.gte]: twoDaysAgo,
+          [Op.lte]: agora
+        }
+      },
+      order: [['dataPublicacao', 'DESC']],
+      limit: 1000,
+      attributes: ['titulo', 'descricao', 'urlAmigavel', 'categoria', 'imagem', 'keywords', 'dataPublicacao', 'updatedAt']
+    });
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"\n';
+    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
+
+    recentArticles.forEach(article => {
+      if (article.urlAmigavel && article.categoria) {
+        const pubDate = new Date(article.dataPublicacao);
+        const imageUrl = getImageUrl(article.imagem);
+
+        xml += '  <url>\n';
+        xml += `    <loc>${BASE_URL}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
+        xml += '    <news:news>\n';
+        xml += '      <news:publication>\n';
+        xml += '        <news:name>Obuxixo Gospel</news:name>\n';
+        xml += '        <news:language>pt</news:language>\n';
+        xml += '      </news:publication>\n';
+        xml += `      <news:publication_date>${pubDate.toISOString()}</news:publication_date>\n`;
+        xml += `      <news:title>${escapeXml(article.titulo)}</news:title>\n`;
+
+        if (article.keywords) {
+          xml += `      <news:keywords>${escapeXml(article.keywords)}</news:keywords>\n`;
+        }
+
+        xml += '    </news:news>\n';
+
+        // Imagem - IMPORTANTE para Google News/Discover
+        if (imageUrl) {
+          xml += '    <image:image>\n';
+          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
+          xml += `      <image:title>${escapeXml(article.titulo)}</image:title>\n`;
+          xml += `      <image:caption>${escapeXml(article.descricao || article.titulo)}</image:caption>\n`;
+          xml += '    </image:image>\n';
+        }
+
+        xml += `    <lastmod>${new Date(article.updatedAt || article.dataPublicacao).toISOString()}</lastmod>\n`;
+        xml += '  </url>\n';
+      }
+    });
+
+    xml += '</urlset>';
+
+    console.log(`✅ News Sitemap gerado: ${recentArticles.length} artigos`);
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('❌ Erro ao gerar News Sitemap:', error);
+    res.status(500).send(`Erro: ${error.message}`);
+  }
+};
+
+// ============================================
+// ROBOTS.TXT
+// ============================================
+exports.generateRobotsTxt = (req, res) => {
   const robotsTxt = `User-agent: *
 Allow: /
-
-
 
 # Disallow admin areas
 Disallow: /dashboard/
 Disallow: /login/
 Disallow: /api/
 Disallow: /admin/
-Disallow: /tag/
 
-Sitemap: ${baseUrl}/sitemap.xml
-Sitemap: ${baseUrl}/news-sitemap.xml
+# Sitemaps
+Sitemap: ${BASE_URL}/sitemap.xml
+Sitemap: ${BASE_URL}/news-sitemap.xml
+
+# RSS Feed
+# ${BASE_URL}/feed
 `;
 
   res.header('Content-Type', 'text/plain');
   res.send(robotsTxt);
 };
+
+// ============================================
+// SITEMAP LEGADO (mantém compatibilidade)
+// ============================================
+exports.generateSitemap = exports.generateSitemapIndex;
