@@ -28,6 +28,10 @@ exports.generateSitemapIndex = async (req, res) => {
   try {
     console.log('🗺️ Gerando Sitemap Index...');
 
+    // Definir Content-Type como XML imediatamente
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.header('X-Content-Type-Options', 'nosniff');
+
     // Buscar última modificação de cada tipo
     const lastArticle = await Article.findOne({
       where: { publicado: true },
@@ -88,11 +92,11 @@ exports.generateSitemapIndex = async (req, res) => {
     xml += '</sitemapindex>';
 
     console.log('✅ Sitemap Index gerado com sucesso');
-    res.header('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {
     console.error('❌ Erro ao gerar Sitemap Index:', error);
-    res.status(500).send(`Erro ao gerar sitemap: ${error.message}`);
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.status(500).send(`<?xml version="1.0" encoding="UTF-8"?>\n<error>Erro ao gerar sitemap: ${escapeXml(error.message)}</error>`);
   }
 };
 
@@ -103,6 +107,10 @@ exports.generateSitemapIndex = async (req, res) => {
 exports.generatePostSitemap = async (req, res) => {
   try {
     console.log('📰 Gerando Post Sitemap...');
+
+    // Definir Content-Type como XML imediatamente
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.header('X-Content-Type-Options', 'nosniff');
 
     const agora = new Date();
     const articles = await Article.findAll({
@@ -144,11 +152,12 @@ exports.generatePostSitemap = async (req, res) => {
     xml += '</urlset>';
 
     console.log(`✅ Post Sitemap gerado: ${articles.length} artigos`);
-    res.header('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {
     console.error('❌ Erro ao gerar Post Sitemap:', error);
-    res.status(500).send(`Erro: ${error.message}`);
+    // Retornar XML de erro em vez de HTML
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.status(500).send(`<?xml version="1.0" encoding="UTF-8"?>\n<error>Erro ao gerar sitemap: ${escapeXml(error.message)}</error>`);
   }
 };
 
