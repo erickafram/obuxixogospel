@@ -6,7 +6,9 @@ const BASE_URL = process.env.SITE_URL || 'https://www.obuxixogospel.com.br';
 // Função auxiliar para escapar caracteres XML
 function escapeXml(unsafe) {
   if (!unsafe) return '';
-  return unsafe.toString()
+  // Remover caracteres de controle inválidos (0x00-0x08, 0x0B-0x0C, 0x0E-0x1F)
+  const clean = unsafe.toString().replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F]/g, '');
+  return clean
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -19,6 +21,19 @@ function getImageUrl(imagem) {
   if (!imagem) return '';
   if (imagem.startsWith('http')) return imagem;
   return BASE_URL + (imagem.startsWith('/') ? imagem : '/' + imagem);
+}
+
+// Função para codificar URLs para XML (encodeURI + escapeXml)
+function safeUrl(url) {
+  if (!url) return '';
+  try {
+    // encodeURI resolve espaços e caracteres especiais em URLs
+    const encoded = encodeURI(url);
+    // escapeXml resolve & < > " ' para o XML
+    return escapeXml(encoded);
+  } catch (e) {
+    return escapeXml(url);
+  }
 }
 
 // ============================================
@@ -55,7 +70,7 @@ exports.generateSitemapIndex = async (req, res) => {
 
     // Sitemap de Posts/Artigos
     xml += '  <sitemap>\n';
-    xml += `    <loc>${BASE_URL}/post-sitemap.xml</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/post-sitemap.xml')}</loc>\n`;
     if (lastArticle) {
       xml += `    <lastmod>${new Date(lastArticle.updatedAt).toISOString()}</lastmod>\n`;
     }
@@ -63,7 +78,7 @@ exports.generateSitemapIndex = async (req, res) => {
 
     // Sitemap de Páginas
     xml += '  <sitemap>\n';
-    xml += `    <loc>${BASE_URL}/page-sitemap.xml</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/page-sitemap.xml')}</loc>\n`;
     if (lastPage) {
       xml += `    <lastmod>${new Date(lastPage.updatedAt).toISOString()}</lastmod>\n`;
     }
@@ -71,7 +86,7 @@ exports.generateSitemapIndex = async (req, res) => {
 
     // Sitemap de Categorias
     xml += '  <sitemap>\n';
-    xml += `    <loc>${BASE_URL}/category-sitemap.xml</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/category-sitemap.xml')}</loc>\n`;
     if (lastCategory) {
       xml += `    <lastmod>${new Date(lastCategory.updatedAt).toISOString()}</lastmod>\n`;
     }
@@ -79,13 +94,13 @@ exports.generateSitemapIndex = async (req, res) => {
 
     // Sitemap de Autores
     xml += '  <sitemap>\n';
-    xml += `    <loc>${BASE_URL}/author-sitemap.xml</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/author-sitemap.xml')}</loc>\n`;
     xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
     xml += '  </sitemap>\n';
 
     // News Sitemap (Google News)
     xml += '  <sitemap>\n';
-    xml += `    <loc>${BASE_URL}/news-sitemap.xml</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/news-sitemap.xml')}</loc>\n`;
     xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
     xml += '  </sitemap>\n';
 
@@ -132,14 +147,14 @@ exports.generatePostSitemap = async (req, res) => {
         const imageUrl = getImageUrl(article.imagem);
 
         xml += '  <url>\n';
-        xml += `    <loc>${BASE_URL}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
+        xml += `    <loc>${safeUrl(`${BASE_URL}/${article.categoria}/${article.urlAmigavel}`)}</loc>\n`;
         xml += `    <lastmod>${new Date(lastmod).toISOString()}</lastmod>\n`;
         xml += '    <changefreq>weekly</changefreq>\n';
         xml += '    <priority>0.8</priority>\n';
 
         if (imageUrl) {
           xml += '    <image:image>\n';
-          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
+          xml += `      <image:loc>${safeUrl(imageUrl)}</image:loc>\n`;
           xml += `      <image:title>${escapeXml(article.titulo)}</image:title>\n`;
           xml += `      <image:caption>${escapeXml(article.descricao || article.titulo)}</image:caption>\n`;
           xml += '    </image:image>\n';
@@ -179,7 +194,7 @@ exports.generatePageSitemap = async (req, res) => {
 
     // Página inicial
     xml += '  <url>\n';
-    xml += `    <loc>${BASE_URL}/</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/')}</loc>\n`;
     xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
     xml += '    <changefreq>daily</changefreq>\n';
     xml += '    <priority>1.0</priority>\n';
@@ -187,7 +202,7 @@ exports.generatePageSitemap = async (req, res) => {
 
     // Página de busca
     xml += '  <url>\n';
-    xml += `    <loc>${BASE_URL}/busca</loc>\n`;
+    xml += `    <loc>${safeUrl(BASE_URL + '/busca')}</loc>\n`;
     xml += '    <changefreq>weekly</changefreq>\n';
     xml += '    <priority>0.5</priority>\n';
     xml += '  </url>\n';
@@ -195,7 +210,7 @@ exports.generatePageSitemap = async (req, res) => {
     // Páginas do banco
     pages.forEach(page => {
       xml += '  <url>\n';
-      xml += `    <loc>${BASE_URL}/pagina/${page.slug}</loc>\n`;
+      xml += `    <loc>${safeUrl(`${BASE_URL}/pagina/${page.slug}`)}</loc>\n`;
       xml += `    <lastmod>${new Date(page.updatedAt || page.createdAt).toISOString()}</lastmod>\n`;
       xml += '    <changefreq>monthly</changefreq>\n';
       xml += '    <priority>0.6</priority>\n';
@@ -230,7 +245,7 @@ exports.generateCategorySitemap = async (req, res) => {
 
     categories.forEach(cat => {
       xml += '  <url>\n';
-      xml += `    <loc>${BASE_URL}/categoria/${cat.slug}</loc>\n`;
+      xml += `    <loc>${safeUrl(`${BASE_URL}/categoria/${cat.slug}`)}</loc>\n`;
       xml += `    <lastmod>${new Date(cat.updatedAt || cat.createdAt).toISOString()}</lastmod>\n`;
       xml += '    <changefreq>daily</changefreq>\n';
       xml += '    <priority>0.7</priority>\n';
@@ -270,7 +285,7 @@ exports.generateAuthorSitemap = async (req, res) => {
     autores.forEach(autor => {
       const autorSlug = autor.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       xml += '  <url>\n';
-      xml += `    <loc>${BASE_URL}/autor/${autorSlug}</loc>\n`;
+      xml += `    <loc>${safeUrl(`${BASE_URL}/autor/${autorSlug}`)}</loc>\n`;
       xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
       xml += '    <changefreq>weekly</changefreq>\n';
       xml += '    <priority>0.6</priority>\n';
@@ -324,7 +339,7 @@ exports.generateNewsSitemap = async (req, res) => {
         const imageUrl = getImageUrl(article.imagem);
 
         xml += '  <url>\n';
-        xml += `    <loc>${BASE_URL}/${article.categoria}/${article.urlAmigavel}</loc>\n`;
+        xml += `    <loc>${safeUrl(`${BASE_URL}/${article.categoria}/${article.urlAmigavel}`)}</loc>\n`;
         xml += '    <news:news>\n';
         xml += '      <news:publication>\n';
         xml += '        <news:name>Obuxixo Gospel</news:name>\n';
@@ -342,7 +357,7 @@ exports.generateNewsSitemap = async (req, res) => {
         // Imagem - IMPORTANTE para Google News/Discover
         if (imageUrl) {
           xml += '    <image:image>\n';
-          xml += `      <image:loc>${escapeXml(imageUrl)}</image:loc>\n`;
+          xml += `      <image:loc>${safeUrl(imageUrl)}</image:loc>\n`;
           xml += `      <image:title>${escapeXml(article.titulo)}</image:title>\n`;
           xml += `      <image:caption>${escapeXml(article.descricao || article.titulo)}</image:caption>\n`;
           xml += '    </image:image>\n';
