@@ -1,528 +1,545 @@
-    <footer class="footer">
-        <div class="container">
-            <!-- Main Footer Content -->
-            <div class="footer-content">
-                <!-- About Section -->
-                <div class="footer-section footer-about">
-                    <h4>Obuxixo Gospel</h4>
-                    <p class="footer-description">Seu portal de notícias gospel com as últimas novidades sobre música, eventos, ministérios e muito mais do universo cristão.</p>
-                    <div class="footer-contact">
-                        <p><i class="fas fa-envelope"></i> contato@obuxixogospel.com.br</p>
-                        <p><i class="fas fa-phone"></i> (63) 99290-1378</p>
-                    </div>
-                    <div class="social-links-footer">
-                        <a href="#" target="_blank" title="Facebook" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                        <a href="#" target="_blank" title="Instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" target="_blank" title="YouTube" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="#" target="_blank" title="Twitter" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" target="_blank" title="TikTok" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-                    </div>
+<footer class="footer">
+    <div class="container">
+        <!-- Main Footer Content -->
+        <div class="footer-content">
+            <!-- About Section -->
+            <div class="footer-section footer-about">
+                <h4>Obuxixo Gospel</h4>
+                <p class="footer-description">O Buxixo Gospel traz as últimas notícias do mundo gospel, lançamentos da
+                    música cristã, polêmicas, agenda de eventos. Fique por dentro de tudo!</p>
+                <div class="footer-contact">
+                    <p><i class="fas fa-envelope"></i> contato@obuxixogospel.com.br</p>
+                    <p><i class="fas fa-phone"></i> (63) 99290-1378</p>
                 </div>
-
-                <!-- Categories -->
-                <div class="footer-section">
-                    <h4>Categorias</h4>
-                    <ul>
-                        <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-                            <% categories.slice(0, 6).forEach(cat => { %>
-                                <li><a href="/categoria/<%= cat.slug %>"><i class="fas fa-angle-right"></i> <%= cat.nome %></a></li>
-                            <% }); %>
-                        <% } else { %>
-                            <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
-                        <% } %>
-                    </ul>
-                </div>
-                
-                <!-- Quick Links -->
-                <div class="footer-section">
-                    <h4>Links Rápidos</h4>
-                    <ul>
-                        <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
-                        <li><a href="/pagina/sobre-nos"><i class="fas fa-angle-right"></i> Sobre Nós</a></li>
-                        <li><a href="/pagina/contato"><i class="fas fa-angle-right"></i> Contato</a></li>
-                        <li><a href="/pagina/anuncie-conosco"><i class="fas fa-angle-right"></i> Anuncie Conosco</a></li>
-                        <li><a href="/pagina/trabalhe-conosco"><i class="fas fa-angle-right"></i> Trabalhe Conosco</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Legal -->
-                <div class="footer-section">
-                    <h4>Informações Legais</h4>
-                    <ul>
-                        <li><a href="/pagina/termos-de-uso"><i class="fas fa-angle-right"></i> Termos de Uso</a></li>
-                        <li><a href="/pagina/politica-de-privacidade"><i class="fas fa-angle-right"></i> Política de Privacidade</a></li>
-                        <li><a href="/pagina/politica-de-cookies"><i class="fas fa-angle-right"></i> Política de Cookies</a></li>
-                        <li><a href="/sitemap.xml"><i class="fas fa-angle-right"></i> Mapa do Site</a></li>
-                    </ul>
+                <div class="social-links-footer">
+                    <a href="#" target="_blank" title="Facebook" aria-label="Facebook"><i
+                            class="fab fa-facebook"></i></a>
+                    <a href="#" target="_blank" title="Instagram" aria-label="Instagram"><i
+                            class="fab fa-instagram"></i></a>
+                    <a href="#" target="_blank" title="YouTube" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="#" target="_blank" title="Twitter" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" target="_blank" title="TikTok" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
 
-            <!-- Footer Bottom -->
-            <div class="footer-bottom">
-                <div class="footer-bottom-content">
-                    <p class="copyright">
-                        <i class="fas fa-copyright"></i> 2025 <strong>Obuxixo Gospel</strong> - Todos os direitos reservados
-                    </p>
-                    <p class="footer-credits">
-                        Desenvolvido com <i class="fas fa-heart"></i> para a comunidade gospel
-                    </p>
-                </div>
+            <!-- Categories -->
+            <div class="footer-section">
+                <h4>Categorias</h4>
+                <ul>
+                    <% if (typeof categories !=='undefined' && categories.length> 0) { %>
+                        <% categories.slice(0, 6).forEach(cat=> { %>
+                            <li><a href="/categoria/<%= cat.slug %>"><i class="fas fa-angle-right"></i>
+                                    <%= cat.nome %>
+                                </a></li>
+                            <% }); %>
+                                <% } else { %>
+                                    <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
+                                    <% } %>
+                </ul>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="/"><i class="fas fa-angle-right"></i> Início</a></li>
+                    <li><a href="/pagina/sobre-nos"><i class="fas fa-angle-right"></i> Sobre Nós</a></li>
+                    <li><a href="/pagina/contato"><i class="fas fa-angle-right"></i> Contato</a></li>
+                    <li><a href="/pagina/anuncie-conosco"><i class="fas fa-angle-right"></i> Anuncie Conosco</a></li>
+                    <li><a href="/pagina/trabalhe-conosco"><i class="fas fa-angle-right"></i> Trabalhe Conosco</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal -->
+            <div class="footer-section">
+                <h4>Informações Legais</h4>
+                <ul>
+                    <li><a href="/pagina/termos-de-uso"><i class="fas fa-angle-right"></i> Termos de Uso</a></li>
+                    <li><a href="/pagina/politica-de-privacidade"><i class="fas fa-angle-right"></i> Política de
+                            Privacidade</a></li>
+                    <li><a href="/pagina/politica-de-cookies"><i class="fas fa-angle-right"></i> Política de Cookies</a>
+                    </li>
+                    <li><a href="/sitemap.xml"><i class="fas fa-angle-right"></i> Mapa do Site</a></li>
+                </ul>
             </div>
         </div>
-    </footer>
 
-    <script src="/js/main.js"></script>
-    
-    <!-- Instagram Embed Script -->
-    <script async src="//www.instagram.com/embed.js"></script>
-    
-    <!-- Facebook SDK -->
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" 
-            src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v18.0" 
-            nonce="YOUR_NONCE">
-    </script>
-
-    <!-- Banner de Cookies Fixo na Parte Inferior -->
-    <div class="cookie-banner" id="cookieBanner">
-        <div class="cookie-content">
-            <div class="cookie-text">
-                <p>Usamos cookies para melhorar sua experiência. Ao continuar, você concorda com nossa <a href="/pagina/politica-de-privacidade">Política de Privacidade</a> e <a href="/pagina/politica-de-cookies">Política de Cookies</a>.</p>
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-content">
+                <p class="copyright">
+                    <i class="fas fa-copyright"></i> 2025 <strong>Obuxixo Gospel</strong> - Todos os direitos reservados
+                </p>
+                <p class="footer-credits">
+                    Desenvolvido com <i class="fas fa-heart"></i> para a comunidade gospel
+                </p>
             </div>
-            <button class="cookie-accept" id="acceptCookies">
-                Prosseguir
-            </button>
         </div>
     </div>
+</footer>
 
-    <style>
-        /* Sino de Notificações no Header */
-        .notifications-wrapper {
-            position: relative;
+<script src="/js/main.js"></script>
+
+<!-- Instagram Embed Script -->
+<script async src="//www.instagram.com/embed.js"></script>
+
+<!-- Facebook SDK -->
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v18.0"
+    nonce="YOUR_NONCE">
+    </script>
+
+<!-- Banner de Cookies Fixo na Parte Inferior -->
+<div class="cookie-banner" id="cookieBanner">
+    <div class="cookie-content">
+        <div class="cookie-text">
+            <p>Usamos cookies para melhorar sua experiência. Ao continuar, você concorda com nossa <a
+                    href="/pagina/politica-de-privacidade">Política de Privacidade</a> e <a
+                    href="/pagina/politica-de-cookies">Política de Cookies</a>.</p>
+        </div>
+        <button class="cookie-accept" id="acceptCookies">
+            Prosseguir
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Sino de Notificações no Header */
+    .notifications-wrapper {
+        position: relative;
+    }
+
+    .notifications-toggle {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 8px;
+        position: relative;
+        transition: color 0.3s ease;
+    }
+
+    .notifications-toggle:hover {
+        color: #FF6B35;
+    }
+
+    .notifications-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #FF6B35;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        animation: pulse-badge 2s infinite;
+    }
+
+    @keyframes pulse-badge {
+
+        0%,
+        100% {
+            transform: scale(1);
         }
 
-        .notifications-toggle {
-            background: none;
-            border: none;
-            color: #333;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 8px;
-            position: relative;
-            transition: color 0.3s ease;
+        50% {
+            transform: scale(1.1);
         }
+    }
 
-        .notifications-toggle:hover {
-            color: #FF6B35;
-        }
+    .notifications-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 380px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        overflow: hidden;
+        pointer-events: none;
+    }
 
-        .notifications-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: #FF6B35;
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            min-width: 16px;
-            height: 16px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 4px;
-            animation: pulse-badge 2s infinite;
-        }
+    .notifications-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(5px);
+        pointer-events: auto;
+    }
 
-        @keyframes pulse-badge {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
+    .notifications-header {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        padding: 14px 18px;
+        font-weight: 600;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .notifications-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 380px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-            z-index: 1000;
-            overflow: hidden;
-            pointer-events: none;
-        }
+    .notifications-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
 
-        .notifications-dropdown.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(5px);
-            pointer-events: auto;
-        }
+    .notification-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        text-decoration: none;
+        color: #333;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s ease;
+    }
 
-        .notifications-header {
-            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
-            color: white;
-            padding: 14px 18px;
-            font-weight: 600;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .notification-item:hover {
+        background: #fff8f5;
+    }
 
-        .notifications-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
+    .notification-thumb {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
 
-        .notification-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px;
-            text-decoration: none;
-            color: #333;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s ease;
-        }
+    .notification-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 
-        .notification-item:hover {
-            background: #fff8f5;
-        }
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
 
-        .notification-thumb {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
+    .notification-title {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        color: #222;
+        margin-bottom: 6px;
+    }
 
-        .notification-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .notification-time {
+        font-size: 11px;
+        color: #FF6B35;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 
-        .notification-content {
-            flex: 1;
-            min-width: 0;
-        }
+    .no-notifications {
+        padding: 30px;
+        text-align: center;
+        color: #999;
+    }
 
-        .notification-title {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            line-height: 1.4;
-            color: #222;
-            margin-bottom: 6px;
-        }
+    .no-notifications i {
+        font-size: 2rem;
+        color: #FF6B35;
+        margin-bottom: 10px;
+        display: block;
+    }
 
-        .notification-time {
-            font-size: 11px;
-            color: #FF6B35;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+    .notifications-footer {
+        display: block;
+        padding: 14px 18px;
+        text-align: center;
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
 
-        .no-notifications {
-            padding: 30px;
-            text-align: center;
-            color: #999;
-        }
+    .notifications-footer:hover {
+        opacity: 0.9;
+    }
 
-        .no-notifications i {
-            font-size: 2rem;
-            color: #FF6B35;
-            margin-bottom: 10px;
-            display: block;
-        }
+    .notifications-footer i {
+        margin-left: 5px;
+    }
 
-        .notifications-footer {
-            display: block;
-            padding: 14px 18px;
-            text-align: center;
-            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
+    /* Banner de Cookies - Compacto e Laranja */
+    .cookie-banner {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #fff;
+        padding: 20px 30px;
+        z-index: 99999;
+        transition: all 0.4s ease;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        max-width: 90%;
+        width: 900px;
+    }
 
-        .notifications-footer:hover {
-            opacity: 0.9;
-        }
+    .cookie-banner.active {
+        transform: translateX(-50%) translateY(0);
+    }
 
-        .notifications-footer i {
-            margin-left: 5px;
-        }
+    .cookie-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
 
-        /* Banner de Cookies - Compacto e Laranja */
+    .cookie-text {
+        flex: 1;
+    }
+
+    .cookie-text p {
+        color: #333;
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    .cookie-text a {
+        color: #FF6B35;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .cookie-text a:hover {
+        text-decoration: underline;
+    }
+
+    .cookie-accept {
+        background: #007bff;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .cookie-accept:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+
+    /* Cookie banner hidden state */
+    .cookie-banner.hidden {
+        display: none !important;
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
         .cookie-banner {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #fff;
-            padding: 20px 30px;
-            z-index: 99999;
-            transition: all 0.4s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-            max-width: 90%;
-            width: 900px;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            transform: translateY(100px);
+            width: auto;
+            max-width: none;
+            padding: 16px 20px;
         }
 
         .cookie-banner.active {
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(0);
         }
 
         .cookie-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-        }
-
-        .cookie-text {
-            flex: 1;
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
         }
 
         .cookie-text p {
-            color: #333;
-            font-size: 14px;
-            line-height: 1.4;
-            margin: 0;
-        }
-
-        .cookie-text a {
-            color: #FF6B35;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .cookie-text a:hover {
-            text-decoration: underline;
+            font-size: 13px;
         }
 
         .cookie-accept {
-            background: #007bff;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            flex-shrink: 0;
+            width: 100%;
+            justify-content: center;
         }
 
-        .cookie-accept:hover {
-            background: #0056b3;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        /* Dropdown de notificações para mobile */
+        .notifications-dropdown {
+            position: absolute;
+            top: calc(100% + 5px);
+            right: -10px;
+            width: 300px;
+            max-height: 70vh;
+            border-radius: 12px;
         }
 
-        /* Cookie banner hidden state */
-        .cookie-banner.hidden {
-            display: none !important;
+        .notifications-header {
+            padding: 10px 14px;
+            font-size: 13px;
         }
 
-        /* Responsivo */
-        @media (max-width: 768px) {
-            .cookie-banner {
-                bottom: 10px;
-                left: 10px;
-                right: 10px;
-                transform: translateY(100px);
-                width: auto;
-                max-width: none;
-                padding: 16px 20px;
-            }
-
-            .cookie-banner.active {
-                transform: translateY(0);
-            }
-
-            .cookie-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 12px;
-            }
-
-            .cookie-text p {
-                font-size: 13px;
-            }
-
-            .cookie-accept {
-                width: 100%;
-                justify-content: center;
-            }
-
-            /* Dropdown de notificações para mobile */
-            .notifications-dropdown {
-                position: absolute;
-                top: calc(100% + 5px);
-                right: -10px;
-                width: 300px;
-                max-height: 70vh;
-                border-radius: 12px;
-            }
-
-            .notifications-header {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
-
-            .notifications-list {
-                max-height: 280px;
-            }
-
-            .notification-item {
-                padding: 10px 12px;
-                gap: 10px;
-            }
-
-            .notification-thumb {
-                width: 45px;
-                height: 45px;
-                border-radius: 8px;
-            }
-
-            .notification-title {
-                font-size: 12px;
-                line-height: 1.3;
-                margin-bottom: 4px;
-            }
-
-            .notification-time {
-                font-size: 10px;
-            }
-
-            .notifications-footer {
-                padding: 10px 14px;
-                font-size: 12px;
-            }
+        .notifications-list {
+            max-height: 280px;
         }
 
-        @media (max-width: 480px) {
-            .notifications-dropdown {
-                position: absolute;
-                top: calc(100% + 5px);
-                right: -50px;
-                width: 280px;
-                max-height: 60vh;
-                border-radius: 12px;
-            }
-
-            .notifications-list {
-                max-height: 250px;
-            }
-
-            .notification-item {
-                padding: 8px 10px;
-                gap: 8px;
-            }
-
-            .notification-thumb {
-                width: 40px;
-                height: 40px;
-            }
-
-            .notification-title {
-                font-size: 11px;
-            }
-
-            .notification-time {
-                font-size: 9px;
-            }
+        .notification-item {
+            padding: 10px 12px;
+            gap: 10px;
         }
-    </style>
 
-    <script>
-        // Controle do Banner de Cookies
-        (function() {
-            const banner = document.getElementById('cookieBanner');
-            const acceptBtn = document.getElementById('acceptCookies');
-            const STORAGE_KEY = 'obuxixo_cookies_accepted';
+        .notification-thumb {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+        }
 
-            function shouldShowBanner() {
-                return !localStorage.getItem(STORAGE_KEY);
-            }
+        .notification-title {
+            font-size: 12px;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
 
-            function acceptCookies() {
-                localStorage.setItem(STORAGE_KEY, 'true');
-                banner.classList.remove('active');
-                // Esconder completamente após a animação
-                setTimeout(() => {
-                    banner.classList.add('hidden');
-                    banner.style.display = 'none';
-                }, 400);
-            }
+        .notification-time {
+            font-size: 10px;
+        }
 
-            // Mostrar banner se necessário
-            if (shouldShowBanner()) {
-                setTimeout(() => {
-                    banner.classList.add('active');
-                }, 1000);
-            } else {
-                // Se já aceitou, esconder completamente
+        .notifications-footer {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .notifications-dropdown {
+            position: absolute;
+            top: calc(100% + 5px);
+            right: -50px;
+            width: 280px;
+            max-height: 60vh;
+            border-radius: 12px;
+        }
+
+        .notifications-list {
+            max-height: 250px;
+        }
+
+        .notification-item {
+            padding: 8px 10px;
+            gap: 8px;
+        }
+
+        .notification-thumb {
+            width: 40px;
+            height: 40px;
+        }
+
+        .notification-title {
+            font-size: 11px;
+        }
+
+        .notification-time {
+            font-size: 9px;
+        }
+    }
+</style>
+
+<script>
+    // Controle do Banner de Cookies
+    (function () {
+        const banner = document.getElementById('cookieBanner');
+        const acceptBtn = document.getElementById('acceptCookies');
+        const STORAGE_KEY = 'obuxixo_cookies_accepted';
+
+        function shouldShowBanner() {
+            return !localStorage.getItem(STORAGE_KEY);
+        }
+
+        function acceptCookies() {
+            localStorage.setItem(STORAGE_KEY, 'true');
+            banner.classList.remove('active');
+            // Esconder completamente após a animação
+            setTimeout(() => {
                 banner.classList.add('hidden');
                 banner.style.display = 'none';
-            }
+            }, 400);
+        }
 
-            if (acceptBtn) {
-                acceptBtn.addEventListener('click', acceptCookies);
-            }
-        })();
+        // Mostrar banner se necessário
+        if (shouldShowBanner()) {
+            setTimeout(() => {
+                banner.classList.add('active');
+            }, 1000);
+        } else {
+            // Se já aceitou, esconder completamente
+            banner.classList.add('hidden');
+            banner.style.display = 'none';
+        }
 
-        // Controle do Dropdown de Notificações
-        (function() {
-            const toggle = document.getElementById('notificationsToggle');
-            const dropdown = document.getElementById('notificationsDropdown');
+        if (acceptBtn) {
+            acceptBtn.addEventListener('click', acceptCookies);
+        }
+    })();
 
-            if (toggle && dropdown) {
-                toggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    // Toggle usando display
-                    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
-                        dropdown.style.display = 'block';
-                        dropdown.classList.add('active');
-                    } else {
-                        dropdown.style.display = 'none';
-                        dropdown.classList.remove('active');
-                    }
-                });
+    // Controle do Dropdown de Notificações
+    (function () {
+        const toggle = document.getElementById('notificationsToggle');
+        const dropdown = document.getElementById('notificationsDropdown');
 
-                // Fechar ao clicar fora
-                document.addEventListener('click', function(e) {
-                    if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
-                        dropdown.style.display = 'none';
-                        dropdown.classList.remove('active');
-                    }
-                });
+        if (toggle && dropdown) {
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                // Toggle usando display
+                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                    dropdown.style.display = 'block';
+                    dropdown.classList.add('active');
+                } else {
+                    dropdown.style.display = 'none';
+                    dropdown.classList.remove('active');
+                }
+            });
 
-                // Fechar com ESC
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape') {
-                        dropdown.style.display = 'none';
-                        dropdown.classList.remove('active');
-                    }
-                });
-            }
-        })();
-    </script>
+            // Fechar ao clicar fora
+            document.addEventListener('click', function (e) {
+                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                    dropdown.classList.remove('active');
+                }
+            });
 
-    <!-- Push Notifications -->
-    <script src="/js/push-notifications.js?v=<%= typeof appVersion !== 'undefined' ? appVersion : '1.0.31' %>" defer></script>
+            // Fechar com ESC
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    dropdown.style.display = 'none';
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+    })();
+</script>
+
+<!-- Push Notifications -->
+<script src="/js/push-notifications.js?v=<%= typeof appVersion !== 'undefined' ? appVersion : '1.0.31' %>"
+    defer></script>
 </body>
+
 </html>
