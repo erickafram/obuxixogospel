@@ -386,11 +386,46 @@ exports.generateRobotsTxt = (req, res) => {
   const robotsTxt = `User-agent: *
 Allow: /
 
-# Disallow admin areas
+# Bloquear áreas administrativas
 Disallow: /dashboard/
 Disallow: /login/
 Disallow: /api/
 Disallow: /admin/
+
+# Bloquear URLs antigas do WordPress
+Disallow: /wp-content/
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /wp-login.php
+
+# Bloquear URLs com datas antigas (formato WordPress)
+Disallow: /2017/
+Disallow: /2018/
+Disallow: /2019/
+Disallow: /2020/
+Disallow: /2021/
+Disallow: /2022/
+Disallow: /2023/
+Disallow: /2024/
+
+# Bloquear parâmetros AMP antigos
+Disallow: /*?amp=
+Disallow: /*?noamp=
+Disallow: /*&amp=
+Disallow: /*&noamp=
+
+# Bloquear lixo de ads
+Disallow: /*adsbygoogle*
+
+# Bloquear tags e categorias antigas
+Disallow: /tag/
+Disallow: /category/
+Disallow: /author/
+
+# Bloquear busca (evita indexação de páginas de resultado vazias - soft 404)
+Disallow: /busca
+Disallow: /busca?
+Disallow: /busca/*
 
 # Sitemaps
 Sitemap: ${BASE_URL}/sitemap.xml

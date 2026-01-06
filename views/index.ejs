@@ -4,8 +4,6 @@
     <div class="container">
         <% var catMap = {}; if (typeof categories !== 'undefined' && categories) { categories.forEach(function(cat) { catMap[cat.slug] = { nome: cat.nome, cor: cat.cor }; }); } var allArticles = []; if (typeof articlesByCategory !== 'undefined' && articlesByCategory) { Object.keys(articlesByCategory).forEach(function(slug) { var articles = articlesByCategory[slug]; if (articles && articles.length > 0) { articles.forEach(function(a) { a.categoryName = catMap[slug] ? catMap[slug].nome : slug; a.categoryColor = catMap[slug] ? catMap[slug].cor : '#3b82f6'; a.categoryClass = slug; allArticles.push(a); }); } }); } if (destaque) { allArticles = allArticles.filter(function(a) { return a.id !== destaque.id; }); } allArticles.sort(function(a, b) { return new Date(b.dataPublicacao) - new Date(a.dataPublicacao); }); %>
 
-        <h1 class="site-main-title">Últimas Notícias do Mundo Gospel e Evangélico</h1>
-
         <% if (destaque) { %>
         <section class="hero-section">
             <a href="/<%= destaque.categoria %>/<%= destaque.urlAmigavel %>" class="hero-card">
