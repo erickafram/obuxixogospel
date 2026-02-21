@@ -79,28 +79,28 @@
 
     /* News Item Horizontal - Mobile */
     .news-item-horizontal {
-        padding-bottom: 15px;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #eee;
+        padding: 15px;
+        margin-bottom: 0;
+        border-bottom: none;
     }
 
     .news-item-horizontal a {
         display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
     }
 
     .news-item-image {
-        width: 100px;
-        min-width: 100px;
-        height: 70px;
-        border-radius: 6px;
+        width: 100%;
+        min-width: 100%;
+        height: 200px;
+        border-radius: 8px;
         flex-shrink: 0;
     }
 
     .news-item-image img {
-        border-radius: 6px;
+        border-radius: 8px;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -116,10 +116,10 @@
     }
 
     .news-item-title {
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         line-height: 1.35;
-        margin-bottom: 4px;
+        margin-bottom: 8px;
         color: #1a1a1a;
         display: -webkit-box;
         -webkit-line-clamp: 3;
@@ -127,9 +127,11 @@
         overflow: hidden;
     }
 
-    /* Ocultar descrição no mobile para ficar mais limpo */
+    /* Mostrar descrição no mobile com o novo layout de card */
     .news-item-description {
-        display: none;
+        display: -webkit-box;
+        font-size: 14px;
+        margin-bottom: 12px;
     }
 
     /* Estilo bullet/categoria pequena */
@@ -156,6 +158,19 @@
         display: none;
     }
 
+    /* Header Mobile — topbar oculto no CSS do style.css, logo 60px + nav ~40px = 100px */
+    body:has(.admin-bar) .main-content,
+    body:has(.admin-bar) main,
+    body:has(.admin-bar) .hero-section {
+        margin-top: 140px;
+    }
+
+    body:not(:has(.admin-bar)) .main-content,
+    body:not(:has(.admin-bar)) main,
+    body:not(:has(.admin-bar)) .hero-section {
+        margin-top: 30px;
+    }
+
     /* Header Mobile */
     .menu-hamburger {
         display: flex;
@@ -174,39 +189,7 @@
         font-weight: 900 !important;
     }
 
-    .logo-badge {
-        font-size: 11px !important;
-        padding: 5px 7px !important;
-    }
-
-    .logo-badge small {
-        font-size: 7px !important;
-    }
-    
-    /* Garantir que o logo fique centralizado em páginas de artigo */
-    .article-page .logo {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-    }
-    
-    .article-page .logo-text {
-        font-size: 20px !important;
-        font-weight: 900 !important;
-    }
-    
-    .article-page .logo-badge {
-        font-size: 11px !important;
-        padding: 5px 7px !important;
-    }
-
     .header-nav {
-        display: none;
-    }
-
-    .conta-globo span,
-    .search-toggle span,
-    .menu-hamburger span {
         display: none;
     }
 
@@ -215,28 +198,24 @@
         width: 280px;
         left: -280px;
     }
-    
+
     .mobile-menu-header {
         padding: 16px;
     }
-    
+
     .mobile-menu-header h3 {
         font-size: 16px;
     }
-    
+
     .close-menu {
         width: 32px;
         height: 32px;
     }
-    
-    .close-menu i {
-        font-size: 18px;
-    }
-    
+
     .mobile-menu-links {
-        padding: 16px 12px;
+        padding: 12px;
     }
-    
+
     .mobile-menu-links a {
         padding: 12px 14px;
         font-size: 14px;
