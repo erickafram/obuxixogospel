@@ -5,19 +5,62 @@
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.snow.css" rel="stylesheet">
 
     <div class="dashboard-content">
+        <!-- Header aprimorado com breadcrumb e barra de progresso -->
         <div class="content-header">
-            <div>
-                <h1>
-                    <%= isEdit ? 'Editar Post' : 'Novo Post' %>
-                </h1>
-                <p>
-                    <%= isEdit ? 'Atualize as informações do post' : 'Crie um novo artigo para o portal' %>
-                </p>
+            <div class="content-header-top">
+                <div class="content-header-info">
+                    <nav class="breadcrumb-nav">
+                        <a href="/dashboard"><i class="fas fa-home"></i></a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="/dashboard/posts">Posts</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>
+                            <%= isEdit ? 'Editar' : 'Novo' %>
+                        </span>
+                    </nav>
+                    <h1>
+                        <i class="fas fa-<%= isEdit ? 'edit' : 'plus-circle' %>" style="color: #0669de;"></i>
+                        <%= isEdit ? 'Editar Post' : 'Novo Post' %>
+                    </h1>
+                    <p>
+                        <%= isEdit ? 'Atualize as informações do post abaixo'
+                            : 'Preencha os campos para criar um novo artigo' %>
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <a href="/dashboard/posts" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
             </div>
-            <div class="header-actions">
-                <a href="/dashboard/posts" class="btn btn-secondary">
-                    ← Voltar
-                </a>
+            <!-- Barra de progresso do preenchimento -->
+            <div class="form-progress-bar">
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="titulo">
+                        <div class="step-dot"><i class="fas fa-heading"></i></div>
+                        <span>Título</span>
+                    </div>
+                    <div class="progress-connector"></div>
+                    <div class="progress-step" data-step="descricao">
+                        <div class="step-dot"><i class="fas fa-align-left"></i></div>
+                        <span>Descrição</span>
+                    </div>
+                    <div class="progress-connector"></div>
+                    <div class="progress-step" data-step="conteudo">
+                        <div class="step-dot"><i class="fas fa-file-alt"></i></div>
+                        <span>Conteúdo</span>
+                    </div>
+                    <div class="progress-connector"></div>
+                    <div class="progress-step" data-step="categoria">
+                        <div class="step-dot"><i class="fas fa-folder"></i></div>
+                        <span>Categoria</span>
+                    </div>
+                    <div class="progress-connector"></div>
+                    <div class="progress-step" data-step="imagem">
+                        <div class="step-dot"><i class="fas fa-image"></i></div>
+                        <span>Imagem</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -26,14 +69,21 @@
             <div class="form-grid">
                 <!-- Coluna Principal -->
                 <div class="form-main">
-                    <div class="card">
+                    <!-- Card Título e Descrição -->
+                    <div class="card" id="cardTituloDesc">
+                        <div class="card-header card-header-blue">
+                            <h3><i class="fas fa-pen-fancy"></i> Informações Básicas</h3>
+                            <span class="card-badge">Obrigatório</span>
+                        </div>
                         <div class="card-body">
                             <div class="form-group">
-                                <label for="titulo">Título *</label>
+                                <label for="titulo"><i class="fas fa-heading" style="color:#0669de;"></i> Título
+                                    *</label>
                                 <div class="input-with-ai">
-                                    <input type="text" id="titulo" name="titulo" class="form-control"
+                                    <input type="text" id="titulo" name="titulo" class="form-control form-control-lg"
                                         value="<%= isEdit ? article.titulo : '' %>"
-                                        placeholder="Digite o título do post..." required>
+                                        placeholder="Ex: Pastor anuncia novo projeto social na comunidade..." required
+                                        oninput="updateProgress()">
                                     <div class="ai-dropdown-wrapper">
                                         <button type="button" class="btn-ai-small"
                                             onclick="toggleAIDropdownField('titulo')" title="Opções de IA">
@@ -51,14 +101,19 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="char-counter" id="tituloCounter">
+                                    <span id="tituloLen">0</span>/100 caracteres
+                                </div>
                             </div>
 
                             <div class="form-group">
-                                <label for="descricao">Descrição *</label>
+                                <label for="descricao"><i class="fas fa-align-left" style="color:#0669de;"></i>
+                                    Descrição *</label>
                                 <div class="input-with-ai">
                                     <textarea id="descricao" name="descricao" class="form-control" rows="3"
-                                        placeholder="Resumo que aparece nas listagens..."
-                                        required><%= isEdit ? article.descricao : '' %></textarea>
+                                        placeholder="Resumo breve que aparecerá nas listagens e pesquisas do Google..."
+                                        required
+                                        oninput="updateProgress()"><%= isEdit ? article.descricao : '' %></textarea>
                                     <div class="ai-dropdown-wrapper">
                                         <button type="button" class="btn-ai-small"
                                             onclick="toggleAIDropdownField('descricao')" title="Opções de IA">
@@ -76,103 +131,117 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Conteúdo *</label>
-                                <div class="editor-toolbar-custom">
-                                    <div class="editor-toolbar-left">
-                                        <button type="button" class="btn-insert-media"
-                                            onclick="openMediaLibrary('content')">
-                                            <i class="fas fa-images"></i> Inserir Mídia
-                                        </button>
-                                        <div class="btn-ai-dropdown">
-                                            <button type="button" class="btn-ai-correct"
-                                                onclick="toggleAIDropdown(event)">
-                                                ✨ Corrigir com IA <i class="fas fa-caret-down"></i>
-                                            </button>
-                                            <div class="ai-dropdown-menu" id="aiDropdownMenu">
-                                                <button type="button" class="ai-dropdown-item"
-                                                    onclick="corrigirConteudo('corrigir')">
-                                                    <i class="fas fa-spell-check"></i> Corrigir Erros de Português
-                                                </button>
-                                                <button type="button" class="ai-dropdown-item"
-                                                    onclick="corrigirConteudo('reescrever')">
-                                                    <i class="fas fa-sync-alt"></i> Reescrever Matéria (Estilo G1)
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn-ai-enhance"
-                                            onclick="abrirModalAcrescentarInfo()">
-                                            <i class="fas fa-plus-circle"></i> Acrescentar Informação
-                                        </button>
-                                        <button type="button" class="btn-ai-assistant" onclick="abrirAssistenteIA()">
-                                            <i class="fas fa-robot"></i> Assistente IA
-                                        </button>
-                                    </div>
-                                    <div class="editor-mode-toggle">
-                                        <button type="button" class="mode-btn active" data-mode="visual"
-                                            onclick="toggleEditorMode('visual')">
-                                            <i class="fas fa-eye"></i> Visual
-                                        </button>
-                                        <button type="button" class="mode-btn" data-mode="code"
-                                            onclick="toggleEditorMode('code')">
-                                            <i class="fas fa-code"></i> Código
-                                        </button>
-                                    </div>
+                                <div class="char-counter" id="descricaoCounter">
+                                    <span id="descricaoLen">0</span>/160 caracteres <span class="seo-hint">(ideal para
+                                        SEO)</span>
                                 </div>
-                                <div id="editor" style="height: 400px; background: white;"></div>
-                                <textarea id="conteudo" name="conteudo" class="form-control code-editor"
-                                    style="display: none; height: 400px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6;"><%= isEdit ? article.conteudo : '' %></textarea>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Conteúdo -->
+                    <div class="card" id="cardConteudo">
+                        <div class="card-header card-header-purple">
+                            <h3><i class="fas fa-file-alt"></i> Conteúdo da Matéria</h3>
+                            <span class="card-badge card-badge-purple">Editor</span>
+                        </div>
+                        <div class="card-body" style="padding-bottom: 8px;">
+                            <div class="editor-toolbar-custom">
+                                <div class="editor-toolbar-left">
+                                    <button type="button" class="btn-insert-media"
+                                        onclick="openMediaLibrary('content')">
+                                        <i class="fas fa-images"></i> Inserir Mídia
+                                    </button>
+                                    <div class="btn-ai-dropdown">
+                                        <button type="button" class="btn-ai-correct" onclick="toggleAIDropdown(event)">
+                                            ✨ Corrigir com IA <i class="fas fa-caret-down"></i>
+                                        </button>
+                                        <div class="ai-dropdown-menu" id="aiDropdownMenu">
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="corrigirConteudo('corrigir')">
+                                                <i class="fas fa-spell-check"></i> Corrigir Erros de Português
+                                            </button>
+                                            <button type="button" class="ai-dropdown-item"
+                                                onclick="corrigirConteudo('reescrever')">
+                                                <i class="fas fa-sync-alt"></i> Reescrever Matéria (Estilo G1)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-ai-enhance" onclick="abrirModalAcrescentarInfo()">
+                                        <i class="fas fa-plus-circle"></i> Acrescentar Informação
+                                    </button>
+                                    <button type="button" class="btn-ai-assistant" onclick="abrirAssistenteIA()">
+                                        <i class="fas fa-robot"></i> Assistente IA
+                                    </button>
+                                </div>
+                                <div class="editor-mode-toggle">
+                                    <button type="button" class="mode-btn active" data-mode="visual"
+                                        onclick="toggleEditorMode('visual')">
+                                        <i class="fas fa-eye"></i> Visual
+                                    </button>
+                                    <button type="button" class="mode-btn" data-mode="code"
+                                        onclick="toggleEditorMode('code')">
+                                        <i class="fas fa-code"></i> Código
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="editor" style="height: 400px; background: white;"></div>
+                            <textarea id="conteudo" name="conteudo" class="form-control code-editor"
+                                style="display: none; height: 400px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6;"
+                                oninput="updateProgress()"><%= isEdit ? article.conteudo : '' %></textarea>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sidebar -->
                 <div class="form-sidebar">
-                    <!-- Botão Criar com IA -->
+                    <!-- Botão Criar com IA - Destaque -->
                     <button type="button" class="btn btn-ai-sidebar" onclick="openAIModal()">
-                        🤖 Criar com IA
+                        <span class="btn-ai-icon">🤖</span>
+                        <span class="btn-ai-text">
+                            <strong>Criar com IA</strong>
+                            <small>Gere matérias automaticamente</small>
+                        </span>
                     </button>
 
-                    <!-- Publicação -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Publicação</h3>
+                    <!-- Card Ações Rápidas (Publicação) - Sticky -->
+                    <div class="card card-sticky" id="cardPublicacao">
+                        <div class="card-header card-header-green">
+                            <h3><i class="fas fa-paper-plane"></i> Publicação</h3>
                         </div>
                         <div class="card-body">
-                            <div class="form-check">
-                                <label>
-                                    <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true"
-                                        <%=isEdit && article.publicado ? 'checked' : '' %>
-                                    >
-                                    <span>Publicar imediatamente</span>
-                                </label>
+                            <div class="publish-toggles">
+                                <div class="form-check">
+                                    <label>
+                                        <input type="checkbox" id="publicadoCheckbox" name="publicado" value="true"
+                                            <%=isEdit && article.publicado ? 'checked' : '' %>
+                                        >
+                                        <span><i class="fas fa-globe" style="color:#10B981;"></i> Publicar
+                                            imediatamente</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <label>
+                                        <input type="checkbox" name="destaque" value="true" <%=isEdit &&
+                                            article.destaque ? 'checked' : '' %>
+                                        >
+                                        <span><i class="fas fa-star" style="color:#F59E0B;"></i> Marcar como
+                                            destaque</span>
+                                    </label>
+                                </div>
                             </div>
 
-                            <div class="form-check">
-                                <label>
-                                    <input type="checkbox" name="destaque" value="true" <%=isEdit && article.destaque
-                                        ? 'checked' : '' %>
-                                    >
-                                    <span>Marcar como destaque</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group" style="margin-top: 16px;">
-                                <label for="dataPublicacao">
-                                    <i class="fas fa-calendar-alt"></i> Data e Hora de Publicação (Horário de Brasília)
+                            <div class="schedule-section">
+                                <label for="dataPublicacao" class="schedule-label">
+                                    <i class="fas fa-calendar-alt"></i> Agendar Publicação
                                 </label>
                                 <input type="datetime-local" id="dataPublicacao" name="dataPublicacao"
                                     class="form-control" value="<%= 
                                     (() => {
                                         const data = isEdit && article.dataPublicacao ? new Date(article.dataPublicacao) : new Date();
-                                        // Ajustar para horário de Brasília (UTC-3)
-                                        // Subtrair 3 horas do UTC para obter horário de Brasília
-                                        const offsetBrasilia = -3 * 60 * 60 * 1000; // -3 horas em milissegundos
+                                        const offsetBrasilia = -3 * 60 * 60 * 1000;
                                         const dataBrasilia = new Date(data.getTime() + offsetBrasilia);
-                                        // Formatar para datetime-local (YYYY-MM-DDTHH:mm)
                                         const year = dataBrasilia.getUTCFullYear();
                                         const month = String(dataBrasilia.getUTCMonth() + 1).padStart(2, '0');
                                         const day = String(dataBrasilia.getUTCDate()).padStart(2, '0');
@@ -185,45 +254,47 @@
                                     style="margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
                                     <i class="fas fa-clock"></i> <span id="agendamentoTexto"></span>
                                 </div>
-                                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
-                                    <i class="fas fa-info-circle"></i> <strong>Agendamento:</strong> Escolha uma
-                                    data/hora futura para agendar a publicação automática
+                                <small class="schedule-hint">
+                                    <i class="fas fa-info-circle"></i> Horário de Brasília (UTC-3)
                                 </small>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="salvarRascunho()">
-                                    <i class="fas fa-file"></i> Rascunho
+                            <!-- Botões de Ação Principais -->
+                            <div class="publish-actions">
+                                <button type="button" class="btn btn-draft" onclick="salvarRascunho()">
+                                    <i class="fas fa-file-alt"></i> Salvar Rascunho
                                 </button>
-                                <button type="submit" class="btn btn-primary btn-sm">
+                                <button type="submit" class="btn btn-publish">
                                     <i class="fas fa-paper-plane"></i>
-                                    <%= isEdit ? 'Atualizar' : 'Publicar' %>
+                                    <%= isEdit ? 'Atualizar Post' : 'Publicar Post' %>
                                 </button>
                             </div>
 
-                            <!-- Botao Verificar Fatos -->
-                            <button type="button" class="btn btn-factcheck" onclick="verificarFatosMateria()">
-                                <i class="fas fa-search"></i> Verificar Fatos
-                            </button>
-
-                            <% if (isEdit && article.categoria && article.urlAmigavel) { %>
-                                <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>?preview=true"
-                                    target="_blank" class="btn btn-secondary btn-block btn-sm" style="margin-top: 8px;">
-                                    <i class="fas fa-eye"></i> Visualizar
-                                </a>
-                                <% } %>
+                            <!-- Ações Extras -->
+                            <div class="publish-extras">
+                                <button type="button" class="btn-extra" onclick="verificarFatosMateria()">
+                                    <i class="fas fa-search"></i> Verificar Fatos
+                                </button>
+                                <% if (isEdit && article.categoria && article.urlAmigavel) { %>
+                                    <a href="/<%= article.categoria %>/<%= article.urlAmigavel %>?preview=true"
+                                        target="_blank" class="btn-extra">
+                                        <i class="fas fa-eye"></i> Visualizar no Site
+                                    </a>
+                                    <% } %>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Categoria -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Categoria</h3>
+                    <!-- Card Categoria -->
+                    <div class="card" id="cardCategoria">
+                        <div class="card-header card-header-orange">
+                            <h3><i class="fas fa-folder-open"></i> Categoria</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-group">
                                 <label for="categoria">Categoria *</label>
-                                <select id="categoria" name="categoria" class="form-control" required>
+                                <select id="categoria" name="categoria" class="form-control" required
+                                    onchange="updateProgress()">
                                     <option value="">Selecione uma categoria...</option>
                                     <% if (typeof categories !=='undefined' && categories.length> 0) { %>
                                         <% categories.forEach(cat=> { %>
@@ -236,8 +307,9 @@
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label for="subcategoria">Subcategoria</label>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="subcategoria">Subcategoria <span
+                                        class="optional-tag">Opcional</span></label>
                                 <input type="text" id="subcategoria" name="subcategoria" class="form-control"
                                     value="<%= isEdit && article.subcategoria ? article.subcategoria : '' %>"
                                     placeholder="Ex: Lançamentos, Eventos...">
@@ -245,24 +317,13 @@
                         </div>
                     </div>
 
-                    <!-- Imagem Destaque -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Imagem Destaque</h3>
+                    <!-- Card Imagem Destaque -->
+                    <div class="card" id="cardImagem">
+                        <div class="card-header card-header-pink">
+                            <h3><i class="fas fa-image"></i> Imagem Destaque</h3>
                         </div>
                         <div class="card-body">
-                            <button type="button" class="btn btn-primary btn-block" onclick="openMediaLibrary()">
-                                <i class="fas fa-images"></i> Selecionar da Biblioteca
-                            </button>
-                            <button type="button" class="btn btn-warning btn-block" style="margin-top:8px;" onclick="buscarImagemBingPeloTitulo()">
-                                <i class="fas fa-search"></i> Buscar imagem no Bing pelo título
-                            </button>
-
-                            <!-- Campo Hidden -->
-                            <input type="hidden" id="imagem" name="imagem" value="<%= isEdit ? article.imagem : '' %>"
-                                required>
-
-                            <!-- Preview -->
+                            <!-- Preview (aparece primeiro quando existe) -->
                             <div class="image-preview" id="imagePreview"
                                 style="<%= isEdit && article.imagem ? '' : 'display: none;' %>">
                                 <img src="<%= isEdit ? article.imagem : '' %>" alt="Preview" id="previewImg"
@@ -272,89 +333,107 @@
                                 </button>
                             </div>
 
+                            <!-- Botões de seleção de imagem -->
+                            <div class="image-buttons">
+                                <button type="button" class="btn-image-select" onclick="openMediaLibrary()">
+                                    <i class="fas fa-images"></i> Biblioteca de Mídia
+                                </button>
+                                <button type="button" class="btn-image-search" onclick="buscarImagemBingPeloTitulo()">
+                                    <i class="fas fa-search"></i> Buscar no Bing
+                                </button>
+                            </div>
+
+                            <!-- Campo Hidden -->
+                            <input type="hidden" id="imagem" name="imagem" value="<%= isEdit ? article.imagem : '' %>"
+                                required>
+
                             <!-- Sugestões Bing inline -->
                             <div id="bingImageSuggestPanel" style="display:none; margin-top:12px;">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                                    <strong style="font-size:13px;"><i class="fas fa-magic"></i> Sugestões do Bing para o título</strong>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('bingImageSuggestPanel').style.display='none'">
+                                <div
+                                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                    <strong style="font-size:13px;"><i class="fas fa-magic"></i> Sugestões do
+                                        Bing</strong>
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                        onclick="document.getElementById('bingImageSuggestPanel').style.display='none'">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                                <div id="bingImageSuggestLoading" style="display:none; text-align:center; padding:16px; color:#666;">
-                                    <i class="fas fa-spinner fa-spin"></i> Buscando imagens no Bing...
+                                <div id="bingImageSuggestLoading"
+                                    style="display:none; text-align:center; padding:16px; color:#666;">
+                                    <i class="fas fa-spinner fa-spin"></i> Buscando imagens...
                                 </div>
-                                <div id="bingImageSuggestResults" class="bing-results-grid" style="max-height:300px; overflow-y:auto;"></div>
+                                <div id="bingImageSuggestResults" class="bing-results-grid"
+                                    style="max-height:300px; overflow-y:auto;"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Autor -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Autor</h3>
-                            <div class="card-body">
-                                <div class="form-check" style="margin-bottom: 12px;">
-                                    <label>
-                                        <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
-                                            onchange="toggleFactCheckFields()" <%=isEdit && article.factCheck &&
-                                            article.factCheck.claim ? 'checked' : '' %>>
-                                        <span>Este artigo é uma verificação de fatos</span>
-                                    </label>
+                    <!-- Card Fact-Check (separado) -->
+                    <div class="card" id="cardFactCheck">
+                        <div class="card-header card-header-teal">
+                            <h3><i class="fas fa-shield-alt"></i> Verificação de Fatos</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check" style="margin-bottom: 12px;">
+                                <label>
+                                    <input type="checkbox" id="isFactCheck" name="isFactCheck" value="true"
+                                        onchange="toggleFactCheckFields()" <%=isEdit && article.factCheck &&
+                                        article.factCheck.claim ? 'checked' : '' %>>
+                                    <span>Este artigo é uma verificação de fatos</span>
+                                </label>
+                            </div>
+
+                            <div id="factCheckFields"
+                                style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
+                                <div class="form-group">
+                                    <label for="factCheckClaim">Afirmação verificada *</label>
+                                    <textarea id="factCheckClaim" name="factCheckClaim" class="form-control" rows="2"
+                                        placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
+                                    <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
                                 </div>
 
-                                <div id="factCheckFields"
-                                    style="display: <%= isEdit && article.factCheck && article.factCheck.claim ? 'block' : 'none' %>;">
-                                    <div class="form-group">
-                                        <label for="factCheckClaim">Afirmação verificada *</label>
-                                        <textarea id="factCheckClaim" name="factCheckClaim" class="form-control"
-                                            rows="2"
-                                            placeholder="Ex: Pastor X afirmou que vai chover dinheiro..."><%= isEdit && article.factCheck ? (article.factCheck.claim || '') : '' %></textarea>
-                                        <small style="color: #666;">A afirmação/boato que está sendo verificado</small>
-                                    </div>
+                                <div class="form-group">
+                                    <label for="factCheckAuthor">Quem fez a afirmação</label>
+                                    <input type="text" id="factCheckAuthor" name="factCheckAuthor" class="form-control"
+                                        placeholder="Ex: Pastor X, Site Y, WhatsApp..."
+                                        value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
+                                </div>
 
-                                    <div class="form-group">
-                                        <label for="factCheckAuthor">Quem fez a afirmação</label>
-                                        <input type="text" id="factCheckAuthor" name="factCheckAuthor"
-                                            class="form-control" placeholder="Ex: Pastor X, Site Y, WhatsApp..."
-                                            value="<%= isEdit && article.factCheck ? (article.factCheck.claimAuthor || '') : '' %>">
-                                    </div>
+                                <div class="form-group">
+                                    <label for="factCheckAuthorType">Tipo do autor</label>
+                                    <select id="factCheckAuthorType" name="factCheckAuthorType" class="form-control">
+                                        <option value="Person" <%=isEdit && article.factCheck &&
+                                            article.factCheck.claimAuthorType==='Person' ? 'selected' : '' %>>Pessoa
+                                        </option>
+                                        <option value="Organization" <%=isEdit && article.factCheck &&
+                                            article.factCheck.claimAuthorType==='Organization' ? 'selected' : '' %>
+                                            >Organização/Site</option>
+                                    </select>
+                                </div>
 
-                                    <div class="form-group">
-                                        <label for="factCheckAuthorType">Tipo do autor</label>
-                                        <select id="factCheckAuthorType" name="factCheckAuthorType"
-                                            class="form-control">
-                                            <option value="Person" <%=isEdit && article.factCheck &&
-                                                article.factCheck.claimAuthorType==='Person' ? 'selected' : '' %>>Pessoa
-                                            </option>
-                                            <option value="Organization" <%=isEdit && article.factCheck &&
-                                                article.factCheck.claimAuthorType==='Organization' ? 'selected' : '' %>
-                                                >Organização/Site</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="factCheckRating">Veredito *</label>
-                                        <select id="factCheckRating" name="factCheckRating" class="form-control">
-                                            <option value="1" <%=isEdit && article.factCheck &&
-                                                article.factCheck.rating==1 ? 'selected' : '' %>>❌ Falso</option>
-                                            <option value="2" <%=isEdit && article.factCheck &&
-                                                article.factCheck.rating==2 ? 'selected' : '' %>>⚠️ Majoritariamente
-                                                Falso</option>
-                                            <option value="3" <%=isEdit && article.factCheck &&
-                                                article.factCheck.rating==3 ? 'selected' : '' %>>🔶 Parcialmente
-                                                Verdadeiro</option>
-                                            <option value="4" <%=isEdit && article.factCheck &&
-                                                article.factCheck.rating==4 ? 'selected' : '' %>>✅ Majoritariamente
-                                                Verdadeiro</option>
-                                            <option value="5" <%=isEdit && article.factCheck &&
-                                                article.factCheck.rating==5 ? 'selected' : '' %>>✅ Verdadeiro</option>
-                                        </select>
-                                    </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="factCheckRating">Veredito *</label>
+                                    <select id="factCheckRating" name="factCheckRating" class="form-control">
+                                        <option value="1" <%=isEdit && article.factCheck && article.factCheck.rating==1
+                                            ? 'selected' : '' %>>❌ Falso</option>
+                                        <option value="2" <%=isEdit && article.factCheck && article.factCheck.rating==2
+                                            ? 'selected' : '' %>>⚠️ Majoritariamente
+                                            Falso</option>
+                                        <option value="3" <%=isEdit && article.factCheck && article.factCheck.rating==3
+                                            ? 'selected' : '' %>>🔶 Parcialmente
+                                            Verdadeiro</option>
+                                        <option value="4" <%=isEdit && article.factCheck && article.factCheck.rating==4
+                                            ? 'selected' : '' %>>✅ Majoritariamente
+                                            Verdadeiro</option>
+                                        <option value="5" <%=isEdit && article.factCheck && article.factCheck.rating==5
+                                            ? 'selected' : '' %>>✅ Verdadeiro</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
         </form>
     </div>
 
@@ -386,8 +465,12 @@
                 <div class="ai-form ai-tab-content active" id="ai-tab-tema">
                     <div class="form-group">
                         <label for="aiTema">Tema da Matéria *</label>
-                        <textarea id="aiTema" class="form-control" rows="6" placeholder="Descreva o tema com o máximo de detalhes possível:&#10;&#10;• Quem são as pessoas envolvidas?&#10;• O que aconteceu ou vai acontecer?&#10;• Quando e onde ocorreu/ocorrerá?&#10;• Qual o contexto da notícia?&#10;• Informações adicionais relevantes&#10;&#10;Quanto mais detalhes você fornecer, mais completa será a matéria gerada (1.000 a 3.000 palavras)."></textarea>
-                        <small class="form-text" style="color: #059669; font-weight: 500;"><i class="fas fa-info-circle"></i> Forneça informações detalhadas sobre o tema. Com a pesquisa na internet ativada, a IA gerará uma matéria completa de 1.000 a 3.000 palavras baseada em fatos reais.</small>
+                        <textarea id="aiTema" class="form-control" rows="6"
+                            placeholder="Descreva o tema com o máximo de detalhes possível:&#10;&#10;• Quem são as pessoas envolvidas?&#10;• O que aconteceu ou vai acontecer?&#10;• Quando e onde ocorreu/ocorrerá?&#10;• Qual o contexto da notícia?&#10;• Informações adicionais relevantes&#10;&#10;Quanto mais detalhes você fornecer, mais completa será a matéria gerada (1.000 a 3.000 palavras)."></textarea>
+                        <small class="form-text" style="color: #059669; font-weight: 500;"><i
+                                class="fas fa-info-circle"></i> Forneça informações detalhadas sobre o tema. Com a
+                            pesquisa na internet ativada, a IA gerará uma matéria completa de 1.000 a 3.000 palavras
+                            baseada em fatos reais.</small>
                     </div>
 
                     <div class="form-group">
@@ -991,17 +1074,52 @@
     </div>
 
     <style>
-        /* Header da página */
+        /* ============================================
+           LAYOUT REDESENHADO - MAIS INTUITIVO
+           ============================================ */
+
+        /* Header com Breadcrumb */
         .content-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 28px;
             padding: 24px;
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             border-radius: 16px;
             border: 1px solid #E2E8F0;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .content-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+
+        .breadcrumb-nav a {
+            color: #718096;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .breadcrumb-nav a:hover {
+            color: #0669de;
+        }
+
+        .breadcrumb-nav i.fa-chevron-right {
+            font-size: 8px;
+            color: #CBD5E0;
+        }
+
+        .breadcrumb-nav span {
+            color: #2D3748;
+            font-weight: 600;
         }
 
         .content-header h1 {
@@ -1016,11 +1134,7 @@
         }
 
         .content-header h1::before {
-            content: '';
-            width: 4px;
-            height: 28px;
-            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
-            border-radius: 2px;
+            display: none;
         }
 
         .content-header p {
@@ -1028,9 +1142,447 @@
             color: #718096;
             margin: 0;
             font-weight: 400;
-            padding-left: 16px;
         }
 
+        /* Barra de Progresso */
+        .form-progress-bar {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #E2E8F0;
+        }
+
+        .progress-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .progress-step .step-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #A0AEC0;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .progress-step span {
+            font-size: 10px;
+            color: #A0AEC0;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: color 0.3s ease;
+        }
+
+        .progress-step.active .step-dot {
+            background: #0669de;
+            color: white;
+            border-color: #0669de;
+            box-shadow: 0 2px 8px rgba(6, 105, 222, 0.3);
+        }
+
+        .progress-step.active span {
+            color: #0669de;
+            font-weight: 600;
+        }
+
+        .progress-step.completed .step-dot {
+            background: #10B981;
+            color: white;
+            border-color: #10B981;
+        }
+
+        .progress-step.completed span {
+            color: #10B981;
+        }
+
+        .progress-connector {
+            width: 40px;
+            height: 3px;
+            background: #E2E8F0;
+            margin: 0 4px;
+            margin-bottom: 20px;
+            border-radius: 2px;
+            transition: background 0.3s ease;
+        }
+
+        .progress-connector.active {
+            background: #10B981;
+        }
+
+        /* Card Headers Coloridos */
+        .card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #F0F0F0;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 13px;
+            font-weight: 700;
+            margin: 0;
+            color: #2D3748;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h3::before {
+            display: none;
+        }
+
+        .card-header h3 i {
+            font-size: 14px;
+        }
+
+        .card-header-blue {
+            border-bottom: 2px solid #0669de;
+            background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 100%);
+        }
+
+        .card-header-blue h3 i {
+            color: #0669de;
+        }
+
+        .card-header-purple {
+            border-bottom: 2px solid #8B5CF6;
+            background: linear-gradient(135deg, #F5F3FF 0%, #F8FAFC 100%);
+        }
+
+        .card-header-purple h3 i {
+            color: #8B5CF6;
+        }
+
+        .card-header-green {
+            border-bottom: 2px solid #10B981;
+            background: linear-gradient(135deg, #ECFDF5 0%, #F8FAFC 100%);
+        }
+
+        .card-header-green h3 i {
+            color: #10B981;
+        }
+
+        .card-header-orange {
+            border-bottom: 2px solid #F59E0B;
+            background: linear-gradient(135deg, #FFFBEB 0%, #F8FAFC 100%);
+        }
+
+        .card-header-orange h3 i {
+            color: #F59E0B;
+        }
+
+        .card-header-pink {
+            border-bottom: 2px solid #EC4899;
+            background: linear-gradient(135deg, #FDF2F8 0%, #F8FAFC 100%);
+        }
+
+        .card-header-pink h3 i {
+            color: #EC4899;
+        }
+
+        .card-header-teal {
+            border-bottom: 2px solid #14B8A6;
+            background: linear-gradient(135deg, #F0FDFA 0%, #F8FAFC 100%);
+        }
+
+        .card-header-teal h3 i {
+            color: #14B8A6;
+        }
+
+        /* Badges nos Cards */
+        .card-badge {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: #EFF6FF;
+            color: #0669de;
+            border: 1px solid #BFDBFE;
+        }
+
+        .card-badge-purple {
+            background: #F5F3FF;
+            color: #8B5CF6;
+            border: 1px solid #DDD6FE;
+        }
+
+        /* Opcional Tag */
+        .optional-tag {
+            font-size: 9px;
+            color: #A0AEC0;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* Card Sticky (Publicação) */
+        .card-sticky {
+            position: sticky;
+            top: 70px;
+            z-index: 10;
+        }
+
+        /* Form Control Large */
+        .form-control-lg {
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* Contadores de caracteres */
+        .char-counter {
+            text-align: right;
+            font-size: 11px;
+            color: #A0AEC0;
+            margin-top: 4px;
+        }
+
+        .char-counter .seo-hint {
+            color: #10B981;
+            font-weight: 500;
+        }
+
+        /* Seção de Agendamento */
+        .schedule-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #F0F0F0;
+        }
+
+        .schedule-label {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #4A5568 !important;
+            text-transform: none !important;
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px !important;
+        }
+
+        .schedule-hint {
+            color: #A0AEC0;
+            font-size: 11px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Botões de Publicação */
+        .publish-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-draft {
+            width: 100%;
+            justify-content: center;
+            padding: 11px 16px;
+            background: #F7FAFC;
+            color: #4A5568;
+            border: 2px solid #E2E8F0;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-draft:hover {
+            background: #EDF2F7;
+            border-color: #CBD5E0;
+            transform: translateY(-1px);
+        }
+
+        .btn-publish {
+            width: 100%;
+            justify-content: center;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            letter-spacing: 0.3px;
+        }
+
+        .btn-publish:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-publish:active {
+            transform: translateY(0);
+        }
+
+        /* Ações Extras */
+        .publish-extras {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #F0F0F0;
+        }
+
+        .btn-extra {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 10px;
+            background: transparent;
+            color: #718096;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+
+        .btn-extra:hover {
+            background: #F7FAFC;
+            color: #0669de;
+            border-color: #CBD5E0;
+        }
+
+        /* Botão IA Sidebar reformulado */
+        .btn-ai-sidebar {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+            width: 100%;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .btn-ai-sidebar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45);
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+        }
+
+        .btn-ai-icon {
+            font-size: 26px;
+            line-height: 1;
+        }
+
+        .btn-ai-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .btn-ai-text strong {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .btn-ai-text small {
+            font-size: 11px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        /* Botões de Imagem */
+        .image-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-image-select,
+        .btn-image-search {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: none;
+        }
+
+        .btn-image-select {
+            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(6, 105, 222, 0.2);
+        }
+
+        .btn-image-select:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(6, 105, 222, 0.3);
+        }
+
+        .btn-image-search {
+            background: #FFFBEB;
+            color: #D97706;
+            border: 1px solid #FDE68A;
+        }
+
+        .btn-image-search:hover {
+            background: #FEF3C7;
+            transform: translateY(-1px);
+        }
+
+        /* Publish Toggles */
+        .publish-toggles {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Form Grid Layout */
         .post-form {
             margin-top: 20px;
         }
@@ -1061,32 +1613,6 @@
 
         .card:hover {
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #F0F0F0;
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-        }
-
-        .card-header h3 {
-            font-size: 13px;
-            font-weight: 700;
-            margin: 0;
-            color: #2D3748;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-header h3::before {
-            content: '';
-            width: 3px;
-            height: 16px;
-            background: linear-gradient(135deg, #0669de 0%, #3d8bfd 100%);
-            border-radius: 2px;
         }
 
         .card-body {
@@ -1978,6 +2504,22 @@
                 flex-direction: column;
             }
 
+            .form-progress-bar {
+                display: none;
+            }
+
+            .card-sticky {
+                position: static;
+            }
+
+            .breadcrumb-nav {
+                font-size: 11px;
+            }
+
+            .content-header h1 {
+                font-size: 20px;
+            }
+
             /* Reordenar: sidebar primeiro, depois main */
             .form-sidebar {
                 order: -1;
@@ -2296,35 +2838,7 @@
             box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
         }
 
-        /* Botão Criar com IA na Sidebar - Maior e destacado */
-        .btn-ai-sidebar {
-            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 11px;
-            font-weight: 600;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-            width: 100%;
-            margin-bottom: 20px;
-        }
 
-        .btn-ai-sidebar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
-            background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
-        }
-
-        .btn-ai-sidebar:active {
-            transform: translateY(0);
-        }
 
         .input-with-ai {
             position: relative;
@@ -3368,6 +3882,126 @@
         var editorMode = 'visual';
         var embedInstagram = ''; // Guardar embed do Instagram durante edicao
 
+        // ============================================
+        // BARRA DE PROGRESSO E CONTADORES
+        // ============================================
+
+        // Atualizar barra de progresso
+        function updateProgress() {
+            const steps = document.querySelectorAll('.progress-step');
+            const connectors = document.querySelectorAll('.progress-connector');
+
+            const titulo = document.getElementById('titulo');
+            const descricao = document.getElementById('descricao');
+            const conteudo = document.getElementById('conteudo');
+            const categoria = document.getElementById('categoria');
+            const imagem = document.getElementById('imagem');
+
+            const fields = [
+                { el: titulo, step: 'titulo', check: () => titulo && titulo.value.trim().length > 0 },
+                { el: descricao, step: 'descricao', check: () => descricao && descricao.value.trim().length > 0 },
+                {
+                    el: conteudo, step: 'conteudo', check: () => {
+                        if (quill) return quill.getText().trim().length > 1;
+                        return conteudo && conteudo.value.trim().length > 0;
+                    }
+                },
+                { el: categoria, step: 'categoria', check: () => categoria && categoria.value.trim().length > 0 },
+                { el: imagem, step: 'imagem', check: () => imagem && imagem.value.trim().length > 0 }
+            ];
+
+            let lastCompleted = -1;
+
+            fields.forEach((f, i) => {
+                const stepEl = steps[i];
+                if (!stepEl) return;
+
+                if (f.check()) {
+                    stepEl.classList.add('completed');
+                    stepEl.classList.remove('active');
+                    lastCompleted = i;
+                } else {
+                    stepEl.classList.remove('completed');
+                    stepEl.classList.remove('active');
+                }
+            });
+
+            // Marcar o próximo passo como ativo
+            const nextActive = lastCompleted + 1;
+            if (nextActive < steps.length && !fields[nextActive].check()) {
+                steps[nextActive].classList.add('active');
+            }
+
+            // Atualizar conectores
+            connectors.forEach((c, i) => {
+                if (i <= lastCompleted) {
+                    c.classList.add('active');
+                } else {
+                    c.classList.remove('active');
+                }
+            });
+
+            // Atualizar contadores
+            updateCharCounters();
+        }
+
+        // Atualizar contadores de caracteres
+        function updateCharCounters() {
+            const titulo = document.getElementById('titulo');
+            const descricao = document.getElementById('descricao');
+            const tituloLen = document.getElementById('tituloLen');
+            const descricaoLen = document.getElementById('descricaoLen');
+
+            if (titulo && tituloLen) {
+                tituloLen.textContent = titulo.value.length;
+            }
+            if (descricao && descricaoLen) {
+                descricaoLen.textContent = descricao.value.length;
+            }
+        }
+
+        // Salvar Rascunho
+        function salvarRascunho() {
+            const publicadoCheckbox = document.getElementById('publicadoCheckbox');
+            if (publicadoCheckbox) {
+                publicadoCheckbox.checked = false;
+            }
+            // Submit the form
+            const form = document.querySelector('.post-form');
+            if (form) {
+                form.submit();
+            }
+        }
+
+        // Inicializar contadores e progresso ao carregar
+        document.addEventListener('DOMContentLoaded', function () {
+            updateProgress();
+            updateCharCounters();
+
+            // Observar mudanças no Quill editor
+            setTimeout(function () {
+                if (quill) {
+                    quill.on('text-change', function () {
+                        updateProgress();
+                    });
+                }
+            }, 1000);
+
+            // Observar mudanças no campo de imagem
+            const imagemField = document.getElementById('imagem');
+            if (imagemField) {
+                const observer = new MutationObserver(function () {
+                    updateProgress();
+                });
+                observer.observe(imagemField, { attributes: true, attributeFilter: ['value'] });
+
+                // Fallback: verificar periodicamente
+                setInterval(function () {
+                    updateProgress();
+                }, 2000);
+            }
+        });
+
         // Alternar entre modo visual e código (DECLARAR NO TOPO PARA ESTAR DISPONÍVEL)
         function toggleEditorMode(mode) {
             const editor = document.getElementById('editor');
@@ -3455,7 +4089,7 @@
             console.log('✅ Quill inicializado com sucesso');
 
             // Detectar e converter links do YouTube em embeds
-            quill.on('text-change', function(delta, oldDelta, source) {
+            quill.on('text-change', function (delta, oldDelta, source) {
                 if (source === 'user') {
                     convertYouTubeLinksToEmbed();
                 }
@@ -3463,7 +4097,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
+                let conteudoCarregado = <% - JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
@@ -3710,41 +4344,41 @@
         function convertYouTubeLinksToEmbed() {
             if (youtubeConvertTimeout) clearTimeout(youtubeConvertTimeout);
             if (isConvertingYoutube) return;
-            
+
             youtubeConvertTimeout = setTimeout(() => {
                 try {
                     if (!quill || !quill.root) return;
-                    
+
                     const content = quill.root.innerHTML;
                     if (!content) return;
-                    
+
                     // Padrões de URL do YouTube
                     const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/g;
-                    
+
                     let newContent = content;
                     let hasChanges = false;
                     let match;
-                    
+
                     while ((match = youtubeRegex.exec(content)) !== null) {
                         const fullUrl = match[0];
                         const videoId = match[1];
-                        
+
                         // Pular se já tem embed deste vídeo
                         if (newContent.includes('youtube.com/embed/' + videoId)) continue;
-                        
+
                         // Pular se está dentro de src ou href
                         const idx = match.index;
                         const before = content.substring(Math.max(0, idx - 10), idx);
                         if (before.includes('src=') || before.includes('href=')) continue;
-                        
+
                         // Criar embed
                         const embed = '<p><br></p><div class="video-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:15px 0;"><iframe src="https://www.youtube.com/embed/' + videoId + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div><p><br></p>';
-                        
+
                         newContent = newContent.replace(fullUrl, embed);
                         hasChanges = true;
                         console.log('🎬 YouTube convertido:', videoId);
                     }
-                    
+
                     if (hasChanges) {
                         isConvertingYoutube = true;
                         const delta = quill.clipboard.convert(newContent);
