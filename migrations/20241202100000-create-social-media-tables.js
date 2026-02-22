@@ -96,13 +96,7 @@ module.exports = {
       },
       article_id: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'articles',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        allowNull: false
       },
       platform: {
         type: Sequelize.ENUM('instagram', 'facebook', 'twitter', 'threads'),
