@@ -85,7 +85,7 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       }
-    });
+    }, { ifNotExists: true });
 
     // Tabela de histórico de postagens
     await queryInterface.createTable('social_media_posts', {
@@ -144,7 +144,7 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       }
-    });
+    }, { ifNotExists: true });
 
     // Índices
     await queryInterface.addIndex('social_media_posts', ['article_id']);
