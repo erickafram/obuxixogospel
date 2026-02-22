@@ -1,0 +1,3 @@
+1.Preciso que vc altere dentro da materia, esta duplicando o menu do admin-bar, esta aparcendo duas vezes no topo
+r/noticias/pastor-fabio-aborda-questao-do-divorcio-em-caso-de-adulterio
+2. Preciso desenvolver algo aqui que funcione, quando for editar a materia e a imagem estiver com erro, vejo que temos a api dp bing no Biblioteca de Mídia, quero que o sistema seja capaz de selecionar uma imagem do bing que tem haver com o titulo da materia para nao precisar o usuario excluir e pesquisar no buscar no bing e vincular a materia para colcoar na imagem destaque na materia editada exemplo /dashboard/posts/editar/295

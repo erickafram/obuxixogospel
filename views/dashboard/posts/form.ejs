@@ -254,6 +254,9 @@
                             <button type="button" class="btn btn-primary btn-block" onclick="openMediaLibrary()">
                                 <i class="fas fa-images"></i> Selecionar da Biblioteca
                             </button>
+                            <button type="button" class="btn btn-warning btn-block" style="margin-top:8px;" onclick="buscarImagemBingPeloTitulo()">
+                                <i class="fas fa-search"></i> Buscar imagem no Bing pelo título
+                            </button>
 
                             <!-- Campo Hidden -->
                             <input type="hidden" id="imagem" name="imagem" value="<%= isEdit ? article.imagem : '' %>"
@@ -262,10 +265,25 @@
                             <!-- Preview -->
                             <div class="image-preview" id="imagePreview"
                                 style="<%= isEdit && article.imagem ? '' : 'display: none;' %>">
-                                <img src="<%= isEdit ? article.imagem : '' %>" alt="Preview" id="previewImg">
+                                <img src="<%= isEdit ? article.imagem : '' %>" alt="Preview" id="previewImg"
+                                    onerror="onImagePreviewError()">
                                 <button type="button" class="btn-remove" onclick="removeImage()">
                                     <i class="fas fa-times"></i>
                                 </button>
+                            </div>
+
+                            <!-- Sugestões Bing inline -->
+                            <div id="bingImageSuggestPanel" style="display:none; margin-top:12px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                    <strong style="font-size:13px;"><i class="fas fa-magic"></i> Sugestões do Bing para o título</strong>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('bingImageSuggestPanel').style.display='none'">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div id="bingImageSuggestLoading" style="display:none; text-align:center; padding:16px; color:#666;">
+                                    <i class="fas fa-spinner fa-spin"></i> Buscando imagens no Bing...
+                                </div>
+                                <div id="bingImageSuggestResults" class="bing-results-grid" style="max-height:300px; overflow-y:auto;"></div>
                             </div>
                         </div>
                     </div>
@@ -4067,6 +4085,110 @@
             } catch (error) {
                 console.error('Erro no upload:', error);
                 progressText.textContent = 'Erro no upload';
+            }
+        }
+
+        // Auto-trigger Bing suggestion when preview image fails to load
+        function onImagePreviewError() {
+            const imgEl = document.getElementById('previewImg');
+            if (imgEl) {
+                imgEl.style.display = 'none';
+            }
+            buscarImagemBingPeloTitulo();
+        }
+
+        // Busca imagens no Bing usando o título da matéria e exibe inline
+        async function buscarImagemBingPeloTitulo() {
+            const tituloEl = document.getElementById('titulo');
+            const query = tituloEl ? tituloEl.value.trim() : '';
+
+            const panel = document.getElementById('bingImageSuggestPanel');
+            const loadingDiv = document.getElementById('bingImageSuggestLoading');
+            const resultsDiv = document.getElementById('bingImageSuggestResults');
+
+            panel.style.display = 'block';
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            if (!query) {
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = '<p style="color:#888; padding:12px;">Preencha o título da matéria para buscar imagens sugeridas.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ia/buscar-imagens-bing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+
+                if (data.success && data.imagens && data.imagens.length > 0) {
+                    resultsDiv.innerHTML = data.imagens.map(img => `
+                        <div class="bing-image-item">
+                            <img src="${img.thumbnail || img.url}" alt="${img.descricao || ''}" loading="lazy"
+                                onerror="this.src='https://via.placeholder.com/300x200?text=Erro'">
+                            <div class="bing-image-overlay">
+                                <span class="bing-image-info" title="${img.descricao || ''}">${img.fonte || 'Bing'}</span>
+                                <button type="button" class="bing-image-select"
+                                    onclick="selecionarImagemBingDireto('${img.url.replace(/'/g, "\\'")}', '${(img.descricao || '').replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-check"></i> Usar
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    resultsDiv.innerHTML = '<p style="color:#888; padding:12px;">Nenhuma imagem encontrada para o título. Tente buscar manualmente na Biblioteca de Mídia.</p>';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar imagens no Bing:', error);
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = `<p style="color:#f44336; padding:12px;">Erro ao buscar imagens: ${error.message}</p>`;
+            }
+        }
+
+        // Seleciona imagem do Bing diretamente como imagem destaque (faz upload e define)
+        async function selecionarImagemBingDireto(url, descricao) {
+            const btn = event && event.target ? event.target.closest('button') : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            try {
+                const response = await fetch('/dashboard/media/upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, descricao })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const mediaUrl = data.media.url;
+                    document.getElementById('imagem').value = mediaUrl;
+                    const imgEl = document.getElementById('previewImg');
+                    imgEl.style.display = '';
+                    imgEl.src = mediaUrl;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    document.getElementById('bingImageSuggestPanel').style.display = 'none';
+                } else {
+                    alert('Erro ao salvar imagem: ' + (data.error || 'Erro desconhecido'));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check"></i> Usar';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao selecionar imagem do Bing:', error);
+                alert('Erro ao salvar imagem: ' + error.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Usar';
+                }
             }
         }
 
