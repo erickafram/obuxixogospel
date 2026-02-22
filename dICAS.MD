@@ -28,10 +28,10 @@ git push -u origin main
 # Execute estes comandos no servidor via SSH
 
 # 1. Navegar para o diretório do projeto
-cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+cd /home/obuxixogospel/htdocs/www.obuxixogospel.com.br
 
 # 2. (Primeira vez apenas) Corrigir ownership do Git
-git config --global --add safe.directory /home/obuxixogospel/htdocs/www.obuxixogospel.com.br/obuxixogospel
+git config --global --add safe.directory /home/obuxixogospel/htdocs/www.obuxixogospel.com.br
 
 # 3. Puxar atualizações do GitHub
 git pull origin main
