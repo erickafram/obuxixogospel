@@ -1570,12 +1570,81 @@ app.post('/dashboard/media/:id/edit', isAuthenticated, async (req, res) => {
 const sitemapController = require('./controllers/sitemapController');
 app.get('/sitemap.xml', sitemapController.generateSitemapIndex);        // Índice principal
 app.get('/sitemap_index.xml', sitemapController.generateSitemapIndex); // Alias
-app.get('/post-sitemap.xml', sitemapController.generatePostSitemap);   // Artigos
+app.get('/post-sitemap.xml', sitemapController.generatePostSitemap);   // Artigos (página 1)
+app.get('/post-sitemap-:page.xml', sitemapController.generatePostSitemap); // Artigos (paginado)
 app.get('/page-sitemap.xml', sitemapController.generatePageSitemap);   // Páginas
 app.get('/category-sitemap.xml', sitemapController.generateCategorySitemap); // Categorias
 app.get('/author-sitemap.xml', sitemapController.generateAuthorSitemap);     // Autores
 app.get('/news-sitemap.xml', sitemapController.generateNewsSitemap);   // Google News
 app.get('/robots.txt', sitemapController.generateRobotsTxt);
+
+// XSL Stylesheet para sitemaps legíveis em navegadores
+app.get('/sitemap-style.xsl', (req, res) => {
+  res.header('Content-Type', 'application/xml; charset=utf-8');
+  res.header('Cache-Control', 'public, max-age=86400');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="2.0"
+  xmlns:html="http://www.w3.org/TR/REC-html40"
+  xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="html" version="1.0" encoding="UTF-8" indent="yes"/>
+<xsl:template match="/">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Sitemap XML - O Buxixo Gospel</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <style type="text/css">
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;max-width:1200px;margin:0 auto;padding:20px}
+    h1{color:#1a73e8;font-size:24px;margin-bottom:4px}
+    p.desc{color:#666;font-size:14px;margin-bottom:20px}
+    table{border-collapse:collapse;width:100%;font-size:13px}
+    th{background:#1a73e8;color:#fff;text-align:left;padding:8px 12px;font-weight:600}
+    td{padding:8px 12px;border-bottom:1px solid #eee}
+    tr:hover td{background:#f5f8ff}
+    a{color:#1a73e8;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .count{background:#e8f0fe;color:#1a73e8;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600}
+  </style>
+</head>
+<body>
+  <h1>&#x1F5FA; Sitemap XML</h1>
+  <p class="desc">Este sitemap XML é gerado automaticamente pelo O Buxixo Gospel para ajudar mecanismos de busca a indexar o conteúdo do site.</p>
+
+  <xsl:choose>
+    <xsl:when test="sitemap:sitemapindex">
+      <p><span class="count"><xsl:value-of select="count(sitemap:sitemapindex/sitemap:sitemap)"/> sitemaps</span></p>
+      <table>
+        <tr><th>Sitemap</th><th>Última Modificação</th></tr>
+        <xsl:for-each select="sitemap:sitemapindex/sitemap:sitemap">
+          <tr>
+            <td><a href="{sitemap:loc}"><xsl:value-of select="sitemap:loc"/></a></td>
+            <td><xsl:value-of select="sitemap:lastmod"/></td>
+          </tr>
+        </xsl:for-each>
+      </table>
+    </xsl:when>
+    <xsl:otherwise>
+      <p><span class="count"><xsl:value-of select="count(sitemap:urlset/sitemap:url)"/> URLs</span></p>
+      <table>
+        <tr><th>URL</th><th>Prioridade</th><th>Última Modificação</th><th>Imagem</th></tr>
+        <xsl:for-each select="sitemap:urlset/sitemap:url">
+          <tr>
+            <td><a href="{sitemap:loc}"><xsl:value-of select="sitemap:loc"/></a></td>
+            <td><xsl:value-of select="sitemap:priority"/></td>
+            <td><xsl:value-of select="sitemap:lastmod"/></td>
+            <td><xsl:if test="image:image">&#x2705;</xsl:if></td>
+          </tr>
+        </xsl:for-each>
+      </table>
+    </xsl:otherwise>
+  </xsl:choose>
+</body>
+</html>
+</xsl:template>
+</xsl:stylesheet>`);
+});
 const feedController = require('./controllers/feedController');
 app.get('/feed', feedController.generateFeed);
 
