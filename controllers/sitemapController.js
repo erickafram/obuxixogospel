@@ -307,7 +307,7 @@ exports.generateAuthorSitemap = async (req, res) => {
       where: { publicado: true },
       attributes: [
         'autor',
-        [require('sequelize').fn('MAX', require('sequelize').col('updatedAt')), 'lastUpdated'],
+        [require('sequelize').fn('MAX', require('sequelize').col('updated_at')), 'lastUpdated'],
         [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'totalArticles']
       ],
       group: ['autor']
