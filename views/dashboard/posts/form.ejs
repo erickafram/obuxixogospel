@@ -4097,7 +4097,7 @@
 
         // Carregar conteúdo existente
         <% if (isEdit && article.conteudo) { %>
-                let conteudoCarregado = <% - JSON.stringify(article.conteudo) %>;
+                let conteudoCarregado = <%- JSON.stringify(article.conteudo) %>;
                 console.log('📝 Conteúdo carregado contém embed?', conteudoCarregado.includes('instagram-media'));
                 console.log('📏 Tamanho do conteúdo carregado:', conteudoCarregado.length);
 
